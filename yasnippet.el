@@ -36,24 +36,55 @@ expanded.")
 current column if this variable is non-`nil'.")
 (make-variable-buffer-local 'yas/indent-line)
 
+(defvar yas/keymap (make-sparse-keymap)
+  "The keymap of snippet.")
+(define-key yas/keymap (kbd "TAB") 'yas/next-field-group)
+(define-key yas/keymap (kbd "S-TAB") 'yas/prev-field-group)
+(define-key yas/keymap (kbd "<S-iso-lefttab>") 'yas/prev-field-group)
+(define-key yas/keymap (kbd "<S-tab>") 'yas/prev-field-group)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defvar yas/snippet-tables (make-hash-table)
   "A hash table of snippet tables corresponding to each major-mode.")
 
+(defconst yas/escape-backslash
+  (concat "YASESCAPE" "BACKSLASH" "PROTECTGUARD"))
+(defconst yas/escape-dollar
+  (concat "YASESCAPE" "DOLLAR" "PROTECTGUARD"))
+(defconst yas/escape-backquote
+  (concat "YASESCAPE" "BACKQUOTE" "PROTECTGUARD"))
+
+(defconst yas/field-regexp
+  (concat "$\\(?1:[0-9]+\\)" "\\|"
+	  "${\\(?:\\(?1:[0-9]+\\):\\)?\\(?2:[^}]*\\)}"))
+
+(defvar yas/snippet-id-seed 0
+  "Contains the next id for a snippet")
+(defun yas/snippet-next-id ()
+  (let ((id yas/snippet-id-seed))
+    (incf yas/snippet-id-seed)
+    id))
+
 (defun yas/snippet-new ()
   "Create a new snippet."
-  (cons nil nil))
+  (cons nil (cons nil (yas/snippet-next-id))))
 (defun yas/snippet-field-groups (snippet)
   "Get field groups of SNIPPET."
   (car snippet))
 (defun yas/snippet-field-groups-set (snippet groups)
   "Set field groups of SNIPPET."
   (setf (car snippet) groups))
+(defun yas/snippet-exit-marker-set (snippet marker)
+  "Set exit marker of SNIPPET."
+  (setf (cadr snippet) marker))
 (defun yas/snippet-exit-marker (snippet)
   "Get exit marker of SNIPPET."
-  (cdr snippet))
+  (cadr snippet))
+(defun yas/snippet-id (snippet)
+  "Get id of the snippet."
+  (cddr snippet))
 (defun yas/snippet-add-field (snippet field)
   "Add FIELD to SNIPPET."
   (let ((group (find field
@@ -101,10 +132,12 @@ current column if this variable is non-`nil'.")
   (yas/snippet-field-number
    (yas/snippet-field-group-primary group)))
 (defun yas/snippet-field-group-add (group field)
-  "Add a field to the field group. If the value of the
-field is not nil, it is set the primary field of the group."
+  "Add a field to the field group. If the value of the primary 
+field is nil and that of the field is not nil, the field is set
+as the primary field of the group."
   (push field (nth 1 group))
-  (when (yas/snippet-field-value field)
+  (when (and (null (yas/snippet-field-value (car group)))
+	     (yas/snippet-field-value field))
     (setf (car group) field)))
 
 (defun yas/snippet-field-new (overlay number value)
@@ -133,17 +166,6 @@ have, compare through the start point of the overlay."
 	  nil
 	(< (overlay-start (yas/snippet-field-overlay field1))
 	   (overlay-start (yas/snippet-field-overlay field2)))))))
-
-(defconst yas/escape-backslash
-  (concat "YASESCAPE" "BACKSLASH" "PROTECTGUARD"))
-(defconst yas/escape-dollar
-  (concat "YASESCAPE" "DOLLAR" "PROTECTGUARD"))
-(defconst yas/escape-backquote
-  (concat "YASESCAPE" "BACKQUOTE" "PROTECTGUARD"))
-
-(defconst yas/field-regexp
-  (concat "$\\(?1:[0-9]+\\)" "\\|"
-	  "${\\(?:\\(?1:[0-9]+\\):\\)?\\(?2:[^}]*\\)}"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal functions
@@ -252,6 +274,16 @@ will be deleted before inserting template."
 	  (setq prev group)))
 
       ;; Step 7: Set up properties of overlays, including keymaps
+      (dolist (group (yas/snippet-field-groups snippet))
+	(let ((overlay (yas/snippet-field-overlay
+			(yas/snippet-field-group-primary group))))
+	  (overlay-put overlay 'keymap yas/keymap)
+	  (overlay-put overlay 'yas/snippet snippet)
+	  (overlay-put overlay 'yas/snippet-field-group group)
+	  (dolist (field (yas/snippet-field-group-fields group))
+	    (overlay-put (yas/snippet-field-overlay field)
+			 'face 
+			 'highlight))))
 
       ;; Step 8: Replace fields with default values
       (dolist (group (yas/snippet-field-groups snippet))
@@ -273,9 +305,18 @@ will be deleted before inserting template."
     (goto-char (point-max)))
   
   (delete-char length)))
-  
-  
 
+(defun yas/current-snippet-overlay ()
+  "Get the most proper overlay which is belongs to a snippet."
+  (let ((snippet-overlay nil))
+    (dolist (overlay (overlays-at (point)))
+      (when (overlay-get overlay 'yas/snippet)
+	(if (null snippet-overlay)
+	    (setq snippet-overlay overlay)
+	  (when (> (yas/snippet-id (overlay-get overlay 'yas/snippet))
+		   (yas/snippet-id snippet-overlay))
+	    (setq snippet-overlay overlay)))))
+    snippet-overlay))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; User level functions
@@ -295,5 +336,38 @@ otherwise, nil returned."
 	    (yas/expand-snippet start end template)
 	    t)
 	nil))))
+
+(defun yas/next-field-group ()
+  "Navigate to next field group. If there's none, exit the snippet."
+  (interactive)
+  (let ((overlay (yas/current-snippet-overlay)))
+    (if overlay
+	(let ((next (yas/snippet-field-group-next 
+		     (overlay-get overlay 'yas/snippet-field-group))))
+	  (if next
+	      (goto-char (overlay-start
+			  (yas/snippet-field-overlay
+			   (yas/snippet-field-group-primary next))))
+	    (yas/exit-snippet (overlay-get overlay 'yas/snippet))))
+      (message "Not in a snippet field."))))
+
+(defun yas/prev-field-group ()
+  "Navigate to prev field group. If there's none, exit the snippet."
+  (interactive)
+  (let ((overlay (yas/current-snippet-overlay)))
+    (if overlay
+	(let ((prev (yas/snippet-field-group-next 
+		     (overlay-get overlay 'yas/snippet-field-group))))
+	  (if prev
+	      (goto-char (overlay-start
+			  (yas/snippet-field-overlay
+			   (yas/snippet-field-group-primary prev))))
+	    (yas/exit-snippet (overlay-get overlay 'yas/snippet))))
+      (message "Not in a snippet field."))))
+
+(defun yas/exit-snippet (snippet)
+  "Goto exit-marker of SNIPPET and delete the snippet."
+  (interactive)
+  )
 
 (provide 'yasnippet)
