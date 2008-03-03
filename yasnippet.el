@@ -49,18 +49,22 @@ current column if this variable is non-`nil'.")
   "The snippet-field structure of yasnippet."
   overlay state)
 
-(defconst yas/escape-dollar "\\$")
-(defconst yas/escape-backquote "\\`")
-(defconst yas/escape-dollar-guard
+(defconst yas/escape-backslash
+  (concat "YASESCAPE" "BACKSLASH" "PROTECTGUARD"))
+(defconst yas/escape-dollar
   (concat "YASESCAPE" "DOLLAR" "PROTECTGUARD"))
-(defconst yas/escape-backquote-guard
+(defconst yas/escape-backquote
   (concat "YASESCAPE" "BACKQUOTE" "PROTECTGUARD"))
 
-(defconst yas/elisp-regexp "`\\([^`]*\\)`")
-(defconst yas/elisp-regexp-content-group 1)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun yas/eval-string (string)
+  "Evaluate STRING and convert the result to string."
+  (condition-case err
+      (format "%s" (eval (read string)))
+    (error (format "(error in elisp evaluation: %s)" 
+		   (error-message-string err)))))
 (defsubst yas/replace-all (from to)
   "Replace all occurance from FROM to TO."
   (goto-char (point-min))
@@ -110,24 +114,26 @@ current column if `yas/indent-line' is non-`nil'."
 	  (insert indent)
 	  (end-of-line))))
 
-    ;; Step 2: protect backquote
-    (yas/replace-all yas/escape-backquote yas/escape-backquote-guard)
+    ;; Step 2: protect backslash and backquote
+    (yas/replace-all "\\\\" yas/escape-backslash)
+    (yas/replace-all "\\`" yas/escape-backquote)
 
     ;; Step 3: evaluate all backquotes
     (goto-char (point-min))
-    (while (re-search-forward yas/elisp-regexp nil t)
-      (replace-match (format "%s" (eval 
-				   (read
-				    (match-string-no-properties
-				     yas/elisp-regexp-content-group))))
+    (while (re-search-forward "`\\([^`]*\\)`" nil t)
+      (replace-match (yas/eval-string (match-string-no-properties 1))
 		     t t))
 
-    ;; Step 4: protect dollar
-    (yas/replace-all yas/escape-dollar yas/escape-dollar-guard)
+    ;; Step 4: protect all escapes, including backslash and backquot
+    ;; which may be produced in Step 3
+    (yas/replace-all "\\\\" yas/escape-backslash)
+    (yas/replace-all "\\`" yas/escape-backquote)
+    (yas/replace-all "\\$" yas/escape-dollar)
 
     ;; Step : restore all escape characters
-    (yas/replace-all yas/escape-dollar-guard yas/escape-dollar)
-    (yas/replace-all yas/escape-backquote-guard yas/escape-backquote)
+    (yas/replace-all yas/escape-dollar "$")
+    (yas/replace-all yas/escape-backquote "`")
+    (yas/replace-all yas/escape-backslash "\\")
 
     (buffer-string)))
 
