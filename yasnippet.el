@@ -45,6 +45,10 @@ current column if this variable is non-`nil'.")
 (defstruct yas/snippet
   "The snippet structure of yasnippet."
   overlay fields exit-marker)
+(defstruct yas/snippet-field-group
+  "A group of snippet field. They will all get updated when the
+primary field is being edited."
+  primary fields next prev)
 (defstruct yas/snippet-field
   "The snippet-field structure of yasnippet."
   overlay state)
@@ -55,6 +59,10 @@ current column if this variable is non-`nil'.")
   (concat "YASESCAPE" "DOLLAR" "PROTECTGUARD"))
 (defconst yas/escape-backquote
   (concat "YASESCAPE" "BACKQUOTE" "PROTECTGUARD"))
+
+(defconst yas/field-regexp
+  (concat "$\\(?1:[0-9]+\\)" "\\|"
+	  "${\\(?:\\(?1:[0-9]+\\):\\)?\\(?2:[^}]*\\)}"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal functions
@@ -129,6 +137,8 @@ current column if `yas/indent-line' is non-`nil'."
     (yas/replace-all "\\\\" yas/escape-backslash)
     (yas/replace-all "\\`" yas/escape-backquote)
     (yas/replace-all "\\$" yas/escape-dollar)
+
+    ;; Step 5: Create overlays for each field
 
     ;; Step : restore all escape characters
     (yas/replace-all yas/escape-dollar "$")
