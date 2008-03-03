@@ -118,7 +118,7 @@ current column if this variable is non-`nil'.")
   (nth 2 group))
 (defun yas/snippet-field-group-set-prev (group prev)
   "Set previous field group of GROUP."
-  (setf (nth 2 group) prev))
+  (setf (nth 3 group) prev))
 (defun yas/snippet-field-group-prev (group)
   "Get previous field group."
   (nth 3 group))
@@ -356,7 +356,7 @@ otherwise, nil returned."
   (interactive)
   (let ((overlay (yas/current-snippet-overlay)))
     (if overlay
-	(let ((prev (yas/snippet-field-group-next 
+	(let ((prev (yas/snippet-field-group-prev
 		     (overlay-get overlay 'yas/snippet-field-group))))
 	  (if prev
 	      (goto-char (overlay-start
