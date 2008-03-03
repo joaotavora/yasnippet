@@ -323,7 +323,7 @@ will be deleted before inserting template."
 	(if (null snippet-overlay)
 	    (setq snippet-overlay overlay)
 	  (when (> (yas/snippet-id (overlay-get overlay 'yas/snippet))
-		   (yas/snippet-id snippet-overlay))
+		   (yas/snippet-id (overlay-get snippet-overlay 'yas/snippet)))
 	    (setq snippet-overlay overlay)))))
     snippet-overlay))
 
@@ -378,6 +378,8 @@ otherwise, nil returned."
   "Goto exit-marker of SNIPPET and delete the snippet."
   (interactive)
   (goto-char (yas/snippet-exit-marker snippet))
-  )
+  (dolist (group (yas/snippet-field-groups snippet))
+    (dolist (field (yas/snippet-field-group-fields group))
+      (delete-overlay (yas/snippet-field-overlay field)))))
 
 (provide 'yasnippet)
