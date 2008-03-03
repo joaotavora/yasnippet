@@ -61,8 +61,9 @@ expanded.")
 (defun yas/expand-snippet (start end template)
   "Expand snippet at current point. Text between START and END
 will be deleted before inserting template."
-  (delete-region start end)
-  (insert template))
+  (goto-char start)
+  (insert template)
+  (delete-char (- end start)))
 
 (defun yas/define (mode key template)
   "Define a snippet. Expanding KEY into TEMPLATE."
