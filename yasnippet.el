@@ -311,9 +311,22 @@ will be deleted before inserting template."
       ;; Step 10: move to end and make sure exit-marker exist
       (goto-char (point-max))
       (unless (yas/snippet-exit-marker snippet)
-	(yas/snippet-exit-marker-set snippet (copy-marker (point) t)))))
-  
-  (delete-char length)))
+	(yas/snippet-exit-marker-set snippet (copy-marker (point) t)))
+
+      ;; Step 11: remove the trigger key
+      (widen)
+      (delete-char length)
+
+      ;; Step 12: place the cursor at a proper place
+      (let ((groups (yas/snippet-field-groups snippet))
+	    (exit-marker (yas/snippet-exit-marker snippet)))
+	(if groups
+	    (goto-char (overlay-start 
+			(yas/snippet-field-overlay
+			 (yas/snippet-field-group-primary
+			  (car groups)))))
+	  ;; no need to call exit-snippet, since no overlay created.
+	  (goto-char exit-marker)))))))
 
 (defun yas/current-snippet-overlay ()
   "Get the most proper overlay which is belongs to a snippet."
