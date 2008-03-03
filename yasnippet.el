@@ -249,14 +249,20 @@ will be deleted before inserting template."
       ;; Step 5: Create fields
       (goto-char (point-min))
       (while (re-search-forward yas/field-regexp nil t)
-	(yas/snippet-add-field
-	 snippet
-	 (yas/snippet-field-new
-	  (make-overlay (match-beginning 0) (match-end 0))
-	  (if (match-string-no-properties 1)
-	      (string-to-number (match-string-no-properties 1))
-	    nil)
-	  (match-string-no-properties 2))))
+	(let ((number (match-string-no-properties 1)))
+	  (if (and number
+		   (string= "0" number))
+	      (progn
+		(replace-match "")
+		(yas/snippet-exit-marker-set
+		 snippet
+		 (copy-marker (point) t)))
+	    (yas/snippet-add-field
+	     snippet
+	     (yas/snippet-field-new
+	      (make-overlay (match-beginning 0) (match-end 0))
+	      (and number (string-to-number number))
+	      (match-string-no-properties 2))))))
 
       ;; Step 6: Sort and link each field group
       (yas/snippet-field-groups-set
@@ -295,14 +301,17 @@ will be deleted before inserting template."
 		   (length (- end start)))
 	      (goto-char start)
 	      (insert value)
-	      (delete-char length))))))
+	      (delete-char length)))))
 
-    ;; Step : restore all escape characters
-    (yas/replace-all yas/escape-dollar "$")
-    (yas/replace-all yas/escape-backquote "`")
-    (yas/replace-all yas/escape-backslash "\\")
+      ;; Step 9: restore all escape characters
+      (yas/replace-all yas/escape-dollar "$")
+      (yas/replace-all yas/escape-backquote "`")
+      (yas/replace-all yas/escape-backslash "\\")
 
-    (goto-char (point-max)))
+      ;; Step 10: move to end and make sure exit-marker exist
+      (goto-char (point-max))
+      (unless (yas/snippet-exit-marker snippet)
+	(yas/snippet-exit-marker-set snippet (copy-marker (point) t)))))
   
   (delete-char length)))
 
@@ -368,6 +377,7 @@ otherwise, nil returned."
 (defun yas/exit-snippet (snippet)
   "Goto exit-marker of SNIPPET and delete the snippet."
   (interactive)
+  (goto-char (yas/snippet-exit-marker snippet))
   )
 
 (provide 'yasnippet)
