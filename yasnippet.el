@@ -24,14 +24,47 @@
 
 (require 'cl)
 
-(defvar yas/snippet-tables (make-hash-table)
-  "A hash table of snippet tables corresponding to each major-mode.")
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; User customizable variables
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defvar yas/key-syntax "w"
   "Syntax of a key. This is used to determine the current key being 
 expanded.")
 
+(defvar yas/indent-line t
+  "Each (except the 1st) line of the snippet template is indented to
+current column if this variable is non-`nil'.")
+(make-variable-buffer-local 'yas/indent-line)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Internal variables
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defvar yas/snippet-tables (make-hash-table)
+  "A hash table of snippet tables corresponding to each major-mode.")
+
+(defstruct yas/snippet
+  "The snippet structure of yasnippet."
+  overlay fields exit-marker)
+(defstruct yas/snippet-field
+  "The snippet-field structure of yasnippet."
+  overlay state)
+
+(defconst yas/escape-dollar "\\$")
+(defconst yas/escape-backquote "\\`")
+(defconst yas/escape-dollar-guard
+  (concat "YASESCAPE" "DOLLAR" "PROTECTGUARD"))
+(defconst yas/escape-backquote-guard
+  (concat "YASESCAPE" "BACKQUOTE" "PROTECTGUARD"))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Internal functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defsubst yas/replace-all (from to)
+  "Replace all occurance from FROM to TO."
+  (save-excursion
+    (goto-char (point-min))
+    (while (search-forward from nil t)
+      (replace-match to nil t))))
 (defun yas/snippet-table (mode)
   "Get the snippet table corresponding to MODE."
   (let ((table (gethash mode yas/snippet-tables)))
@@ -58,17 +91,53 @@ expanded.")
 	    start
 	    end))))
 
+(defun yas/create-snippet (template 
+			   indent? column tabify? tab-width)
+  "Create a snippet according to TEMPLATE. Each line is indented to
+current column if `yas/indent-line' is non-`nil'."
+  (with-temp-buffer
+    (insert template)
+    
+    ;; Step 1: do necessary indent
+    (when indent?
+      (let* ((indent (if tabify?
+			 (concat (make-string (/ column tab-width) ?\t)
+				 (make-string (% column tab-width) ?\ ))
+		       (make-string column ?\ ))))
+	(goto-char (point-min))
+	(while (zerop (forward-line))
+	  (insert indent)
+	  (end-of-line))))
+
+    ;; Step 2: protect escape characters
+    (yas/replace-all yas/escape-dollar yas/escape-dollar-guard)
+    (yas/replace-all yas/escape-backquote yas/escape-backquote-guard)
+
+    ;; Step : restore escape characters
+    (yas/replace-all yas/escape-dollar-guard yas/escape-dollar)
+    (yas/replace-all yas/escape-backquote-guard yas/escape-backquote)
+
+    (buffer-string)))
+
 (defun yas/expand-snippet (start end template)
   "Expand snippet at current point. Text between START and END
 will be deleted before inserting template."
   (goto-char start)
-  (insert template)
+  (insert (yas/create-snippet template
+			      yas/indent-line   ; indent?
+			      (current-column)	; column
+			      indent-tabs-mode  ; tabify?
+			      tab-width		; tab-width
+			      ))
   (delete-char (- end start)))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; User level functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun yas/define (mode key template)
   "Define a snippet. Expanding KEY into TEMPLATE."
   (puthash key template (yas/snippet-table mode)))
-
 
 (defun yas/expand ()
   "Expand a snippet. When a snippet is expanded, t is returned,
