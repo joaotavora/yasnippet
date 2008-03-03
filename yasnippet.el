@@ -42,16 +42,97 @@ current column if this variable is non-`nil'.")
 (defvar yas/snippet-tables (make-hash-table)
   "A hash table of snippet tables corresponding to each major-mode.")
 
-(defstruct yas/snippet
-  "The snippet structure of yasnippet."
-  overlay fields exit-marker)
-(defstruct yas/snippet-field-group
-  "A group of snippet field. They will all get updated when the
-primary field is being edited."
-  primary fields next prev)
-(defstruct yas/snippet-field
-  "The snippet-field structure of yasnippet."
-  overlay state)
+(defun yas/snippet-new ()
+  "Create a new snippet."
+  (cons nil nil))
+(defun yas/snippet-field-groups (snippet)
+  "Get field groups of SNIPPET."
+  (car snippet))
+(defun yas/snippet-field-groups-set (snippet groups)
+  "Set field groups of SNIPPET."
+  (setf (car snippet) groups))
+(defun yas/snippet-exit-marker (snippet)
+  "Get exit marker of SNIPPET."
+  (cdr snippet))
+(defun yas/snippet-add-field (snippet field)
+  "Add FIELD to SNIPPET."
+  (let ((group (find field
+		     (yas/snippet-field-groups snippet)
+		     :test
+		     '(lambda (field group)
+			(= (yas/snippet-field-number field)
+			   (yas/snippet-field-group-number group))))))
+    (if group
+	(yas/snippet-field-group-add group field)
+      (push (yas/snippet-field-group-new field)
+	    (car snippet)))))
+
+(defun yas/snippet-field-group-new (field)
+  "Create a new field group."
+  (list field             ; primary field
+	(list field)      ; fields
+	nil		  ; next field group
+	nil))		  ; prev field group
+(defun yas/snippet-field-group-primary (group)
+  "Get the primary field of this group."
+  (car group))
+(defun yas/snippet-field-group-fields (group)
+  "Get all fields belonging to this group."
+  (cadr group))
+(defun yas/snippet-field-group-set-next (group next)
+  "Set next field group of GROUP."
+  (setf (nth 2 group) next))
+(defun yas/snippet-field-group-next (group)
+  "Get next field group."
+  (nth 2 group))
+(defun yas/snippet-field-group-set-prev (group prev)
+  "Set previous field group of GROUP."
+  (setf (nth 2 group) prev))
+(defun yas/snippet-field-group-prev (group)
+  "Get previous field group."
+  (nth 3 group))
+(defun yas/snippet-field-group-value (group)
+  "Get the default value of the field group."
+  (or (yas/snippet-field-value
+       (yas/snippet-field-group-primary group))
+      ""))
+(defun yas/snippet-field-group-number (group)
+  "Get the number of the field group."
+  (yas/snippet-field-number
+   (yas/snippet-field-group-primary group)))
+(defun yas/snippet-field-group-add (group field)
+  "Add a field to the field group. If the value of the
+field is not nil, it is set the primary field of the group."
+  (push field (nth 1 group))
+  (when (yas/snippet-field-value field)
+    (setf (car group) field)))
+
+(defun yas/snippet-field-new (overlay number value)
+  "Create a new snippet-field."
+  (cons overlay (cons number value)))
+(defun yas/snippet-field-overlay (field)
+  "Get the overlay of the field."
+  (car field))
+(defun yas/snippet-field-number (field)
+  "Get the number of the field."
+  (cadr field))
+(defun yas/snippet-field-value (field)
+  "Get the value of the field."
+  (cddr field))
+(defun yas/snippet-field-compare (field1 field2)
+  "Compare two fields. The field with a number is sorted first.
+If they both have a number, compare through the number. If neither
+have, compare through the start point of the overlay."
+  (let ((n1 (yas/snippet-field-number field1))
+	(n2 (yas/snippet-field-number field2)))
+    (if n1
+	(if n2
+	    (< n1 n2)
+	  t)
+      (if n2
+	  nil
+	(< (overlay-start (yas/snippet-field-overlay field1))
+	   (overlay-start (yas/snippet-field-overlay field2)))))))
 
 (defconst yas/escape-backslash
   (concat "YASESCAPE" "BACKSLASH" "PROTECTGUARD"))
@@ -138,7 +219,47 @@ current column if `yas/indent-line' is non-`nil'."
     (yas/replace-all "\\`" yas/escape-backquote)
     (yas/replace-all "\\$" yas/escape-dollar)
 
-    ;; Step 5: Create overlays for each field
+    (let ((snippet (yas/snippet-new)))
+      ;; Step 5: Create fields
+      (goto-char (point-min))
+      (while (re-search-forward yas/field-regexp nil t)
+	(yas/snippet-add-field
+	 snippet
+	 (yas/snippet-field-new
+	  (make-overlay (match-beginning 0) (match-end 0))
+	  (if (match-string-no-properties 1)
+	      (string-to-number (match-string-no-properties 1))
+	    nil)
+	  (match-string-no-properties 2))))
+
+      ;; Step 6: Sort and link each field group
+      (yas/snippet-field-groups-set
+       snippet
+       (sort (yas/snippet-field-groups snippet)
+	    '(lambda (group1 group2)
+	       (yas/snippet-field-compare
+		(yas/snippet-field-group-primary group1)
+		(yas/snippet-field-group-primary group2)))))
+      (let ((prev nil))
+	(dolist (group (yas/snippet-field-groups snippet))
+	  (yas/snippet-field-group-set-prev group prev)
+	  (when prev
+	    (yas/snippet-field-group-set-next prev group))
+	  (setq prev group)))
+
+      ;; Step 7: Set up properties of overlays, including keymaps
+
+      ;; Step 8: Replace fields with default values
+      (dolist (group (yas/snippet-field-groups snippet))
+	(let ((value (yas/snippet-field-group-value group)))
+	  (dolist (field (yas/snippet-field-group-fields group))
+	    (let* ((overlay (yas/snippet-field-overlay field))
+		   (start (overlay-start overlay))
+		   (end (overlay-end overlay))
+		   (length (- end start)))
+	      (goto-char start)
+	      (insert value)
+	      (delete-char length))))))
 
     ;; Step : restore all escape characters
     (yas/replace-all yas/escape-dollar "$")
