@@ -185,23 +185,27 @@ have, compare through the start point of the overlay."
 	    start
 	    end))))
 
-(defun yas/create-snippet (template 
-			   indent? column tabify? tab-width)
-  "Create a snippet according to TEMPLATE. Each line is indented to
-current column if `yas/indent-line' is non-`nil'."
-  (with-temp-buffer
+(defun yas/expand-snippet (start end template)
+  "Expand snippet at current point. Text between START and END
+will be deleted before inserting template."
+  (goto-char start)
+
+  (let ((length (- end start))
+	(column (current-column)))
+  (save-restriction
+    (narrow-to-region start start)
+
     (insert template)
-    
     ;; Step 1: do necessary indent
-    (when indent?
-      (let* ((indent (if tabify?
+    (when yas/indent-line
+      (let* ((indent (if indent-tabs-mode
 			 (concat (make-string (/ column tab-width) ?\t)
 				 (make-string (% column tab-width) ?\ ))
 		       (make-string column ?\ ))))
 	(goto-char (point-min))
-	(while (zerop (forward-line))
-	  (insert indent)
-	  (end-of-line))))
+	(while (and (zerop (forward-line))
+		    (= (current-column) 0))
+	  (insert indent))))
 
     ;; Step 2: protect backslash and backquote
     (yas/replace-all "\\\\" yas/escape-backslash)
@@ -236,10 +240,10 @@ current column if `yas/indent-line' is non-`nil'."
       (yas/snippet-field-groups-set
        snippet
        (sort (yas/snippet-field-groups snippet)
-	    '(lambda (group1 group2)
-	       (yas/snippet-field-compare
-		(yas/snippet-field-group-primary group1)
-		(yas/snippet-field-group-primary group2)))))
+	     '(lambda (group1 group2)
+		(yas/snippet-field-compare
+		 (yas/snippet-field-group-primary group1)
+		 (yas/snippet-field-group-primary group2)))))
       (let ((prev nil))
 	(dolist (group (yas/snippet-field-groups snippet))
 	  (yas/snippet-field-group-set-prev group prev)
@@ -266,19 +270,11 @@ current column if `yas/indent-line' is non-`nil'."
     (yas/replace-all yas/escape-backquote "`")
     (yas/replace-all yas/escape-backslash "\\")
 
-    (buffer-string)))
-
-(defun yas/expand-snippet (start end template)
-  "Expand snippet at current point. Text between START and END
-will be deleted before inserting template."
-  (goto-char start)
-  (insert (yas/create-snippet template
-			      yas/indent-line   ; indent?
-			      (current-column)	; column
-			      indent-tabs-mode  ; tabify?
-			      tab-width		; tab-width
-			      ))
-  (delete-char (- end start)))
+    (goto-char (point-max)))
+  
+  (delete-char length)))
+  
+  
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
