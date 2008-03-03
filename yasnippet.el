@@ -56,15 +56,16 @@ current column if this variable is non-`nil'.")
 (defconst yas/escape-backquote-guard
   (concat "YASESCAPE" "BACKQUOTE" "PROTECTGUARD"))
 
+(defconst yas/elisp-regexp "`\\([^`]*\\)`")
+(defconst yas/elisp-regexp-content-group 1)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defsubst yas/replace-all (from to)
   "Replace all occurance from FROM to TO."
-  (save-excursion
-    (goto-char (point-min))
-    (while (search-forward from nil t)
-      (replace-match to nil t))))
+  (goto-char (point-min))
+  (while (search-forward from nil t)
+    (replace-match to t t)))
 (defun yas/snippet-table (mode)
   "Get the snippet table corresponding to MODE."
   (let ((table (gethash mode yas/snippet-tables)))
@@ -109,11 +110,22 @@ current column if `yas/indent-line' is non-`nil'."
 	  (insert indent)
 	  (end-of-line))))
 
-    ;; Step 2: protect escape characters
-    (yas/replace-all yas/escape-dollar yas/escape-dollar-guard)
+    ;; Step 2: protect backquote
     (yas/replace-all yas/escape-backquote yas/escape-backquote-guard)
 
-    ;; Step : restore escape characters
+    ;; Step 3: evaluate all backquotes
+    (goto-char (point-min))
+    (while (re-search-forward yas/elisp-regexp nil t)
+      (replace-match (format "%s" (eval 
+				   (read
+				    (match-string-no-properties
+				     yas/elisp-regexp-content-group))))
+		     t t))
+
+    ;; Step 4: protect dollar
+    (yas/replace-all yas/escape-dollar yas/escape-dollar-guard)
+
+    ;; Step : restore all escape characters
     (yas/replace-all yas/escape-dollar-guard yas/escape-dollar)
     (yas/replace-all yas/escape-backquote-guard yas/escape-backquote)
 
