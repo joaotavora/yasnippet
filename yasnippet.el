@@ -174,7 +174,8 @@ have, compare through the start point of the overlay."
   (gethash key snippet-table))
 
 (defun yas/current-key ()
-  "Get the key under current position."
+  "Get the key under current position. A key is used to find
+the template of a snippet in the current snippet-table."
   (let ((start (point))
 	(end (point)))
     (save-excursion
