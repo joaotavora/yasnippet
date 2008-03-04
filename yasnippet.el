@@ -73,6 +73,9 @@ current column if this variable is non-`nil'.")
 (defvar yas/overlay-insert-in-front-hooks
   (list 'yas/overlay-insert-in-front-hook)
   "The list of hooks of the overlay inserted in front event.")
+(defvar yas/overlay-insert-behind-hooks
+  (list 'yas/overlay-insert-behind-hook)
+  "The list of hooks of the overlay inserted behind event.")
 
 (defun yas/snippet-new ()
   "Create a new snippet."
@@ -236,17 +239,25 @@ have, compare through the start point of the overlay."
   (when (and after? (not undo-in-progress))
     (yas/synchronize-fields (overlay-get overlay 'yas/snippet-field-group))))
 (defun yas/overlay-insert-in-front-hook (overlay after? beg end &optional length)
-  "Hook for snippet overlay when text is inserted in front of snippet."
-  (let ((field-group (overlay-get overlay 'yas/snippet-field-group)))
-    (when (and after? (not undo-in-progress))
-      (when (and (= length 0)
-		 (overlay-get overlay 'yas/snippet-field-initial-value))
+  "Hook for snippet overlay when text is inserted in front of a snippet field."
+  (when after?
+    (let ((field-group (overlay-get overlay 'yas/snippet-field-group)))
+      (when (overlay-get overlay 'yas/snippet-field-initial-value)
 	(let ((inhibit-modification-hooks t))
 	  (overlay-put overlay 'yas/snippet-field-initial-value nil)
 	  (save-excursion
 	    (goto-char end)
 	    (delete-char (- (overlay-end overlay) end)))))
       (yas/synchronize-fields field-group))))
+(defun yas/overlay-insert-behind-hook (overlay after? beg end &optional length)
+  "Hook for snippet overlay when text is inserted just behind a snippet field."
+  (when (and after?
+	     (null (yas/current-snippet-overlay beg))) ; not inside another field
+    (move-overlay overlay
+		  (overlay-start overlay)
+		  end)
+    (yas/synchronize-fields
+     (overlay-get overlay 'yas/snippet-field-group))))
 
 (defun yas/expand-snippet (start end template)
   "Expand snippet at current point. Text between START and END
@@ -347,6 +358,7 @@ will be deleted before inserting template."
 	    (overlay-put overlay 'yas/snippet-field-initial-value t)
 	    (overlay-put overlay 'modification-hooks yas/overlay-modification-hooks)
 	    (overlay-put overlay 'insert-in-front-hooks yas/overlay-insert-in-front-hooks)
+	    (overlay-put overlay 'insert-behind-hooks yas/overlay-insert-behind-hooks)
 	    (dolist (field (yas/snippet-field-group-fields group))
 	      (overlay-put (yas/snippet-field-overlay field)
 			   'face 
@@ -372,10 +384,11 @@ will be deleted before inserting template."
 	    ;; no need to call exit-snippet, since no overlay created.
 	    (goto-char exit-marker)))))))
 
-(defun yas/current-snippet-overlay ()
+(defun yas/current-snippet-overlay (&optional point)
   "Get the most proper overlay which is belongs to a snippet."
-  (let ((snippet-overlay nil))
-    (dolist (overlay (overlays-at (point)))
+  (let ((point (or point (point)))
+	(snippet-overlay nil))
+    (dolist (overlay (overlays-at point))
       (when (overlay-get overlay 'yas/snippet)
 	(if (null snippet-overlay)
 	    (setq snippet-overlay overlay)
