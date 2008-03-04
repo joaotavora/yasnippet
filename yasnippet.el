@@ -86,12 +86,13 @@ current column if this variable is non-`nil'.")
   (groups nil)
   (exit-marker nil)
   (id (yas/snippet-next-id) :read-only t))
-(defstruct (yas/group (:constructor yas/make-group (primary-field)))
+(defstruct (yas/group (:constructor yas/make-group (primary-field snippet)))
   "A group contains a list of field with the same number."
   primary-field
   (fields (list primary-field))
   (next nil)
-  (prev nil))
+  (prev nil)
+  snippet)
 (defstruct (yas/field (:constructor yas/make-field (overlay number value)))
   "A field in a snippet."
   overlay
@@ -108,7 +109,7 @@ current column if this variable is non-`nil'.")
 			   (yas/group-number group))))))
     (if group
 	(yas/group-add-field group field)
-      (push (yas/make-group field)
+      (push (yas/make-group field snippet)
 	    (yas/snippet-groups snippet)))))
 
 (defun yas/group-value (group)
