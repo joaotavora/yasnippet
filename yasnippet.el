@@ -254,8 +254,7 @@ will be deleted before inserting template."
   (goto-char start)
 
   (let ((length (- end start))
-	(column (current-column))
-	(inhibit-modification-hooks t))
+	(column (current-column)))
     (save-restriction
       (narrow-to-region start start)
 
@@ -321,7 +320,24 @@ will be deleted before inserting template."
 	      (yas/snippet-field-group-set-next prev group))
 	    (setq prev group)))
 
-	;; Step 7: Set up properties of overlays, including keymaps
+	;; Step 7: Replace fields with default values
+	(dolist (group (yas/snippet-field-groups snippet))
+	  (let ((value (yas/snippet-field-group-value group)))
+	    (dolist (field (yas/snippet-field-group-fields group))
+	      (let* ((overlay (yas/snippet-field-overlay field))
+		     (start (overlay-start overlay))
+		     (end (overlay-end overlay))
+		     (length (- end start)))
+		(goto-char start)
+		(insert value)
+		(delete-char length)))))
+
+	;; Step 8: restore all escape characters
+	(yas/replace-all yas/escape-dollar "$")
+	(yas/replace-all yas/escape-backquote "`")
+	(yas/replace-all yas/escape-backslash "\\")
+
+	;; Step 9: Set up properties of overlays, including keymaps
 	(dolist (group (yas/snippet-field-groups snippet))
 	  (let ((overlay (yas/snippet-field-overlay
 			  (yas/snippet-field-group-primary group))))
@@ -335,23 +351,6 @@ will be deleted before inserting template."
 	      (overlay-put (yas/snippet-field-overlay field)
 			   'face 
 			   'highlight))))
-
-	;; Step 8: Replace fields with default values
-	(dolist (group (yas/snippet-field-groups snippet))
-	  (let ((value (yas/snippet-field-group-value group)))
-	    (dolist (field (yas/snippet-field-group-fields group))
-	      (let* ((overlay (yas/snippet-field-overlay field))
-		     (start (overlay-start overlay))
-		     (end (overlay-end overlay))
-		     (length (- end start)))
-		(goto-char start)
-		(insert value)
-		(delete-char length)))))
-
-	;; Step 9: restore all escape characters
-	(yas/replace-all yas/escape-dollar "$")
-	(yas/replace-all yas/escape-backquote "`")
-	(yas/replace-all yas/escape-backslash "\\")
 
 	;; Step 10: move to end and make sure exit-marker exist
 	(goto-char (point-max))
