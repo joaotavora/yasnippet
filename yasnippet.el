@@ -67,6 +67,13 @@ current column if this variable is non-`nil'.")
     (incf yas/snippet-id-seed)
     id))
 
+(defvar yas/overlay-modification-hooks
+  (list 'yas/overlay-modification-hook)
+  "The list of hooks to the overlay modification event.")
+(defvar yas/overlay-insert-in-front-hooks
+  (list 'yas/overlay-insert-in-front-hook)
+  "The list of hooks of the overlay inserted in front event.")
+
 (defun yas/snippet-new ()
   "Create a new snippet."
   (cons nil (cons nil (yas/snippet-next-id))))
@@ -207,126 +214,164 @@ have, compare through the start point of the overlay."
 	    start
 	    end))))
 
+(defun yas/synchronize-fields (field-group)
+  "Update all fields' text according to the primary field."
+  (save-excursion
+    (let* ((inhibit-modification-hooks t)
+	   (primary (yas/snippet-field-group-primary field-group))
+	   (primary-overlay (yas/snippet-field-overlay primary))
+	   (text (buffer-substring-no-properties (overlay-start primary-overlay)
+						 (overlay-end primary-overlay))))
+      (dolist (field (yas/snippet-field-group-fields field-group))
+	(let* ((field-overlay (yas/snippet-field-overlay field))
+	       (original-length (- (overlay-end field-overlay)
+				   (overlay-start field-overlay))))
+	  (unless (eq field-overlay primary-overlay)
+	    (goto-char (overlay-start field-overlay))
+	    (insert text)
+	    (delete-char original-length)))))))
+  
+(defun yas/overlay-modification-hook (overlay after? beg end &optional length)
+  "Modification hook for snippet field overlay."
+  (when after?
+    (yas/synchronize-fields (overlay-get overlay 'yas/snippet-field-group))))
+(defun yas/overlay-insert-in-front-hook (overlay after? beg end &optional length)
+  "Hook for snippet overlay when text is inserted in front of snippet."
+  (let ((field-group (overlay-get overlay 'yas/snippet-field-group)))
+    (when after?
+      (when (and (= length 0)
+		 (overlay-get overlay 'yas/snippet-field-initial-value))
+	(let ((inhibit-modification-hooks t))
+	  (overlay-put overlay 'yas/snippet-field-initial-value nil)
+	  (save-excursion
+	    (goto-char end)
+	    (delete-char (- (overlay-end overlay) end)))))
+      (yas/synchronize-fields field-group))))
+
 (defun yas/expand-snippet (start end template)
   "Expand snippet at current point. Text between START and END
 will be deleted before inserting template."
   (goto-char start)
 
   (let ((length (- end start))
-	(column (current-column)))
-  (save-restriction
-    (narrow-to-region start start)
+	(column (current-column))
+	(inhibit-modification-hooks t))
+    (save-restriction
+      (narrow-to-region start start)
 
-    (insert template)
-    ;; Step 1: do necessary indent
-    (when yas/indent-line
-      (let* ((indent (if indent-tabs-mode
-			 (concat (make-string (/ column tab-width) ?\t)
-				 (make-string (% column tab-width) ?\ ))
-		       (make-string column ?\ ))))
-	(goto-char (point-min))
-	(while (and (zerop (forward-line))
-		    (= (current-column) 0))
-	  (insert indent))))
+      (insert template)
+      ;; Step 1: do necessary indent
+      (when yas/indent-line
+	(let* ((indent (if indent-tabs-mode
+			   (concat (make-string (/ column tab-width) ?\t)
+				   (make-string (% column tab-width) ?\ ))
+			 (make-string column ?\ ))))
+	  (goto-char (point-min))
+	  (while (and (zerop (forward-line))
+		      (= (current-column) 0))
+	    (insert indent))))
 
-    ;; Step 2: protect backslash and backquote
-    (yas/replace-all "\\\\" yas/escape-backslash)
-    (yas/replace-all "\\`" yas/escape-backquote)
+      ;; Step 2: protect backslash and backquote
+      (yas/replace-all "\\\\" yas/escape-backslash)
+      (yas/replace-all "\\`" yas/escape-backquote)
 
-    ;; Step 3: evaluate all backquotes
-    (goto-char (point-min))
-    (while (re-search-forward "`\\([^`]*\\)`" nil t)
-      (replace-match (yas/eval-string (match-string-no-properties 1))
-		     t t))
-
-    ;; Step 4: protect all escapes, including backslash and backquot
-    ;; which may be produced in Step 3
-    (yas/replace-all "\\\\" yas/escape-backslash)
-    (yas/replace-all "\\`" yas/escape-backquote)
-    (yas/replace-all "\\$" yas/escape-dollar)
-
-    (let ((snippet (yas/snippet-new)))
-      ;; Step 5: Create fields
+      ;; Step 3: evaluate all backquotes
       (goto-char (point-min))
-      (while (re-search-forward yas/field-regexp nil t)
-	(let ((number (match-string-no-properties 1)))
-	  (if (and number
-		   (string= "0" number))
-	      (progn
-		(replace-match "")
-		(yas/snippet-exit-marker-set
-		 snippet
-		 (copy-marker (point) t)))
-	    (yas/snippet-add-field
-	     snippet
-	     (yas/snippet-field-new
-	      (make-overlay (match-beginning 0) (match-end 0))
-	      (and number (string-to-number number))
-	      (match-string-no-properties 2))))))
+      (while (re-search-forward "`\\([^`]*\\)`" nil t)
+	(replace-match (yas/eval-string (match-string-no-properties 1))
+		       t t))
 
-      ;; Step 6: Sort and link each field group
-      (yas/snippet-field-groups-set
-       snippet
-       (sort (yas/snippet-field-groups snippet)
-	     '(lambda (group1 group2)
-		(yas/snippet-field-compare
-		 (yas/snippet-field-group-primary group1)
-		 (yas/snippet-field-group-primary group2)))))
-      (let ((prev nil))
+      ;; Step 4: protect all escapes, including backslash and backquot
+      ;; which may be produced in Step 3
+      (yas/replace-all "\\\\" yas/escape-backslash)
+      (yas/replace-all "\\`" yas/escape-backquote)
+      (yas/replace-all "\\$" yas/escape-dollar)
+
+      (let ((snippet (yas/snippet-new)))
+	;; Step 5: Create fields
+	(goto-char (point-min))
+	(while (re-search-forward yas/field-regexp nil t)
+	  (let ((number (match-string-no-properties 1)))
+	    (if (and number
+		     (string= "0" number))
+		(progn
+		  (replace-match "")
+		  (yas/snippet-exit-marker-set
+		   snippet
+		   (copy-marker (point) t)))
+	      (yas/snippet-add-field
+	       snippet
+	       (yas/snippet-field-new
+		(make-overlay (match-beginning 0) (match-end 0))
+		(and number (string-to-number number))
+		(match-string-no-properties 2))))))
+
+	;; Step 6: Sort and link each field group
+	(yas/snippet-field-groups-set
+	 snippet
+	 (sort (yas/snippet-field-groups snippet)
+	       '(lambda (group1 group2)
+		  (yas/snippet-field-compare
+		   (yas/snippet-field-group-primary group1)
+		   (yas/snippet-field-group-primary group2)))))
+	(let ((prev nil))
+	  (dolist (group (yas/snippet-field-groups snippet))
+	    (yas/snippet-field-group-set-prev group prev)
+	    (when prev
+	      (yas/snippet-field-group-set-next prev group))
+	    (setq prev group)))
+
+	;; Step 7: Set up properties of overlays, including keymaps
 	(dolist (group (yas/snippet-field-groups snippet))
-	  (yas/snippet-field-group-set-prev group prev)
-	  (when prev
-	    (yas/snippet-field-group-set-next prev group))
-	  (setq prev group)))
+	  (let ((overlay (yas/snippet-field-overlay
+			  (yas/snippet-field-group-primary group))))
+	    (overlay-put overlay 'keymap yas/keymap)
+	    (overlay-put overlay 'yas/snippet snippet)
+	    (overlay-put overlay 'yas/snippet-field-group group)
+	    (overlay-put overlay 'yas/snippet-field-initial-value t)
+	    (overlay-put overlay 'modification-hooks yas/overlay-modification-hooks)
+	    (overlay-put overlay 'insert-in-front-hooks yas/overlay-insert-in-front-hooks)
+	    (dolist (field (yas/snippet-field-group-fields group))
+	      (overlay-put (yas/snippet-field-overlay field)
+			   'face 
+			   'highlight))))
 
-      ;; Step 7: Set up properties of overlays, including keymaps
-      (dolist (group (yas/snippet-field-groups snippet))
-	(let ((overlay (yas/snippet-field-overlay
-			(yas/snippet-field-group-primary group))))
-	  (overlay-put overlay 'keymap yas/keymap)
-	  (overlay-put overlay 'yas/snippet snippet)
-	  (overlay-put overlay 'yas/snippet-field-group group)
-	  (dolist (field (yas/snippet-field-group-fields group))
-	    (overlay-put (yas/snippet-field-overlay field)
-			 'face 
-			 'highlight))))
+	;; Step 8: Replace fields with default values
+	(dolist (group (yas/snippet-field-groups snippet))
+	  (let ((value (yas/snippet-field-group-value group)))
+	    (dolist (field (yas/snippet-field-group-fields group))
+	      (let* ((overlay (yas/snippet-field-overlay field))
+		     (start (overlay-start overlay))
+		     (end (overlay-end overlay))
+		     (length (- end start)))
+		(goto-char start)
+		(insert value)
+		(delete-char length)))))
 
-      ;; Step 8: Replace fields with default values
-      (dolist (group (yas/snippet-field-groups snippet))
-	(let ((value (yas/snippet-field-group-value group)))
-	  (dolist (field (yas/snippet-field-group-fields group))
-	    (let* ((overlay (yas/snippet-field-overlay field))
-		   (start (overlay-start overlay))
-		   (end (overlay-end overlay))
-		   (length (- end start)))
-	      (goto-char start)
-	      (insert value)
-	      (delete-char length)))))
+	;; Step 9: restore all escape characters
+	(yas/replace-all yas/escape-dollar "$")
+	(yas/replace-all yas/escape-backquote "`")
+	(yas/replace-all yas/escape-backslash "\\")
 
-      ;; Step 9: restore all escape characters
-      (yas/replace-all yas/escape-dollar "$")
-      (yas/replace-all yas/escape-backquote "`")
-      (yas/replace-all yas/escape-backslash "\\")
+	;; Step 10: move to end and make sure exit-marker exist
+	(goto-char (point-max))
+	(unless (yas/snippet-exit-marker snippet)
+	  (yas/snippet-exit-marker-set snippet (copy-marker (point) t)))
 
-      ;; Step 10: move to end and make sure exit-marker exist
-      (goto-char (point-max))
-      (unless (yas/snippet-exit-marker snippet)
-	(yas/snippet-exit-marker-set snippet (copy-marker (point) t)))
+	;; Step 11: remove the trigger key
+	(widen)
+	(delete-char length)
 
-      ;; Step 11: remove the trigger key
-      (widen)
-      (delete-char length)
-
-      ;; Step 12: place the cursor at a proper place
-      (let ((groups (yas/snippet-field-groups snippet))
-	    (exit-marker (yas/snippet-exit-marker snippet)))
-	(if groups
-	    (goto-char (overlay-start 
-			(yas/snippet-field-overlay
-			 (yas/snippet-field-group-primary
-			  (car groups)))))
-	  ;; no need to call exit-snippet, since no overlay created.
-	  (goto-char exit-marker)))))))
+	;; Step 12: place the cursor at a proper place
+	(let ((groups (yas/snippet-field-groups snippet))
+	      (exit-marker (yas/snippet-exit-marker snippet)))
+	  (if groups
+	      (goto-char (overlay-start 
+			  (yas/snippet-field-overlay
+			   (yas/snippet-field-group-primary
+			    (car groups)))))
+	    ;; no need to call exit-snippet, since no overlay created.
+	    (goto-char exit-marker)))))))
 
 (defun yas/current-snippet-overlay ()
   "Get the most proper overlay which is belongs to a snippet."
