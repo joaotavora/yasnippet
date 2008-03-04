@@ -233,12 +233,12 @@ have, compare through the start point of the overlay."
   
 (defun yas/overlay-modification-hook (overlay after? beg end &optional length)
   "Modification hook for snippet field overlay."
-  (when after?
+  (when (and after? (not undo-in-progress))
     (yas/synchronize-fields (overlay-get overlay 'yas/snippet-field-group))))
 (defun yas/overlay-insert-in-front-hook (overlay after? beg end &optional length)
   "Hook for snippet overlay when text is inserted in front of snippet."
   (let ((field-group (overlay-get overlay 'yas/snippet-field-group)))
-    (when after?
+    (when (and after? (not undo-in-progress))
       (when (and (= length 0)
 		 (overlay-get overlay 'yas/snippet-field-initial-value))
 	(let ((inhibit-modification-hooks t))
