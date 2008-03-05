@@ -92,6 +92,7 @@ current column if this variable is non-`nil'.")
   (fields (list primary-field))
   (next nil)
   (prev nil)
+  (keymap-overlay nil)
   snippet)
 (defstruct (yas/field (:constructor yas/make-field (overlay number value)))
   "A field in a snippet."
@@ -317,7 +318,18 @@ will be deleted before inserting template."
 	      (setf (yas/group-next prev) group))
 	    (setq prev group)))
 
-	;; Step 7: Replace fields with default values
+	;; Step 7: Create keymap overlay for each group
+	(dolist (group (yas/snippet-groups snippet))
+	  (let* ((overlay (yas/field-overlay (yas/group-primary-field group)))
+		 (keymap-overlay (make-overlay (overlay-start overlay)
+					       (overlay-end overlay)
+					       nil
+					       nil
+					       t)))
+	    (overlay-put keymap-overlay 'keymap yas/keymap)
+	    (setf (yas/group-keymap-overlay group) keymap-overlay)))
+	
+	;; Step 8: Replace fields with default values
 	(dolist (group (yas/snippet-groups snippet))
 	  (let ((value (yas/group-value group)))
 	    (dolist (field (yas/group-fields group))
@@ -329,16 +341,15 @@ will be deleted before inserting template."
 		(insert value)
 		(delete-char length)))))
 
-	;; Step 8: restore all escape characters
+	;; Step 9: restore all escape characters
 	(yas/replace-all yas/escape-dollar "$")
 	(yas/replace-all yas/escape-backquote "`")
 	(yas/replace-all yas/escape-backslash "\\")
 
-	;; Step 9: Set up properties of overlays, including keymaps
+	;; Step 10: Set up properties of overlays
 	(dolist (group (yas/snippet-groups snippet))
 	  (let ((overlay (yas/field-overlay
 			  (yas/group-primary-field group))))
-	    (overlay-put overlay 'keymap yas/keymap)
 	    (overlay-put overlay 'yas/snippet snippet)
 	    (overlay-put overlay 'yas/group group)
 	    (overlay-put overlay 'yas/modified? nil)
@@ -350,12 +361,12 @@ will be deleted before inserting template."
 			   'face 
 			   'highlight))))
 
-	;; Step 10: move to end and make sure exit-marker exist
+	;; Step 11: move to end and make sure exit-marker exist
 	(goto-char (point-max))
 	(unless (yas/snippet-exit-marker snippet)
 	  (setf (yas/snippet-exit-marker snippet) (copy-marker (point) t)))
 
-	;; Step 11: Construct undo information
+	;; Step 12: Construct undo information
 	(unless (eq original-undo-list t)
 	  (add-to-list 'original-undo-list
 		       `(apply yas/undo-expand-snippet
@@ -364,11 +375,11 @@ will be deleted before inserting template."
 			       ,key
 			       ,snippet)))
 
-	;; Step 12: remove the trigger key
+	;; Step 13: remove the trigger key
 	(widen)
 	(delete-char length)
 
-	;; Step 13: place the cursor at a proper place
+	;; Step 14: place the cursor at a proper place
 	(let ((groups (yas/snippet-groups snippet))
 	      (exit-marker (yas/snippet-exit-marker snippet)))
 	  (if groups
@@ -416,7 +427,8 @@ otherwise, nil returned."
 (defun yas/next-field-group ()
   "Navigate to next field group. If there's none, exit the snippet."
   (interactive)
-  (let ((overlay (yas/current-snippet-overlay)))
+  (let ((overlay (or (yas/current-snippet-overlay)
+		     (yas/current-snippet-overlay (- (point) 1)))))
     (if overlay
 	(let ((next (yas/group-next
 		     (overlay-get overlay 'yas/group))))
@@ -430,7 +442,8 @@ otherwise, nil returned."
 (defun yas/prev-field-group ()
   "Navigate to prev field group. If there's none, exit the snippet."
   (interactive)
-  (let ((overlay (yas/current-snippet-overlay)))
+  (let ((overlay (or (yas/current-snippet-overlay)
+		     (yas/current-snippet-overlay (- (point) 1)))))
     (if overlay
 	(let ((prev (yas/group-prev
 		     (overlay-get overlay 'yas/group))))
@@ -446,6 +459,7 @@ otherwise, nil returned."
   (interactive)
   (goto-char (yas/snippet-exit-marker snippet))
   (dolist (group (yas/snippet-groups snippet))
+    (delete-overlay (yas/group-keymap-overlay group))
     (dolist (field (yas/group-fields group))
       (delete-overlay (yas/field-overlay field)))))
 
