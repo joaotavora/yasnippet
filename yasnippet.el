@@ -236,13 +236,13 @@ redo-ed."
       (setq buffer-undo-list (cdr buffer-undo-list))
       (setq undo (car buffer-undo-list)))
     ;; Remove this undo operation record
-    (setq buffer-undo-list (cdr buffer-undo-list)))
+    (setq buffer-undo-list (cdr buffer-undo-list))
   (let ((inhibit-modification-hooks t)
 	(buffer-undo-list t))
     (yas/exit-snippet snippet)
     (goto-char start)
     (delete-char (- end start))
-    (insert key)))
+    (insert key))))
 
 (defun yas/expand-snippet (start end template)
   "Expand snippet at current point. Text between START and END
