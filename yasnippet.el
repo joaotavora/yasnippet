@@ -210,14 +210,14 @@ the template of a snippet in the current snippet-table."
 (defun yas/overlay-insert-in-front-hook (overlay after? beg end &optional length)
   "Hook for snippet overlay when text is inserted in front of a snippet field."
   (when after?
-    (let ((field-group (overlay-get overlay 'yas/group)))
+    (let ((field-group (overlay-get overlay 'yas/group))
+	  (inhibit-modification-hooks t))
       (when (not (overlay-get overlay 'yas/modified?))
-	(let ((inhibit-modification-hooks t))
-	  (overlay-put overlay 'yas/modified? t)
-	  (save-excursion
-	    (goto-char end)
-	    (delete-char (- (overlay-end overlay) end)))))
-      (yas/synchronize-fields field-group))))
+	(overlay-put overlay 'yas/modified? t)
+	(save-excursion
+	  (goto-char end)
+	  (delete-char (- (overlay-end overlay) end))))
+     (yas/synchronize-fields field-group))))
 (defun yas/overlay-insert-behind-hook (overlay after? beg end &optional length)
   "Hook for snippet overlay when text is inserted just behind a snippet field."
   (when (and after?
@@ -225,8 +225,7 @@ the template of a snippet in the current snippet-table."
     (move-overlay overlay
 		  (overlay-start overlay)
 		  end)
-    (yas/synchronize-fields
-     (overlay-get overlay 'yas/group))))
+    (yas/synchronize-fields (overlay-get overlay 'yas/group))))
 
 (defun yas/undo-expand-snippet (start end key snippet)
   "Undo a snippet expansion. Delete the overlays. This undo can't be
@@ -387,7 +386,7 @@ will be deleted before inserting template."
   (let ((point (or point (point)))
 	(snippet-overlay nil))
     (dolist (overlay (overlays-at point))
-      (when (overlay-get overlay 'yas/snippet)
+      (when(overlay-get overlay 'yas/snippet)
 	(if (null snippet-overlay)
 	    (setq snippet-overlay overlay)
 	  (when (> (yas/snippet-id (overlay-get overlay 'yas/snippet))
