@@ -228,17 +228,37 @@ the template of a snippet in the current snippet-table."
     (yas/synchronize-fields
      (overlay-get overlay 'yas/group))))
 
+(defun yas/undo-expand-snippet (start end key snippet)
+  "Undo a snippet expansion. Delete the overlays. This undo can't be
+redo-ed."
+  (let ((undo (car buffer-undo-list)))
+    (while (null undo)
+      (setq buffer-undo-list (cdr buffer-undo-list))
+      (setq undo (car buffer-undo-list)))
+    ;; Remove this undo operation record
+    (setq buffer-undo-list (cdr buffer-undo-list)))
+  (let ((inhibit-modification-hooks t)
+	(buffer-undo-list t))
+    (yas/exit-snippet snippet)
+    (goto-char start)
+    (delete-char (- end start))
+    (insert key)))
+
 (defun yas/expand-snippet (start end template)
   "Expand snippet at current point. Text between START and END
 will be deleted before inserting template."
   (goto-char start)
 
-  (let ((length (- end start))
+  (let ((key (buffer-substring-no-properties start end))
+	(original-undo-list buffer-undo-list)
+	(length (- end start))
 	(column (current-column)))
     (save-restriction
       (narrow-to-region start start)
 
+      (setq buffer-undo-list t)
       (insert template)
+
       ;; Step 1: do necessary indent
       (when yas/indent-line
 	(let* ((indent (if indent-tabs-mode
@@ -336,11 +356,20 @@ will be deleted before inserting template."
 	(unless (yas/snippet-exit-marker snippet)
 	  (setf (yas/snippet-exit-marker snippet) (copy-marker (point) t)))
 
-	;; Step 11: remove the trigger key
+	;; Step 11: Construct undo information
+	(unless (eq original-undo-list t)
+	  (add-to-list 'original-undo-list
+		       `(apply yas/undo-expand-snippet
+			       ,(point-min)
+			       ,(point-max)
+			       ,key
+			       ,snippet)))
+
+	;; Step 12: remove the trigger key
 	(widen)
 	(delete-char length)
 
-	;; Step 12: place the cursor at a proper place
+	;; Step 13: place the cursor at a proper place
 	(let ((groups (yas/snippet-groups snippet))
 	      (exit-marker (yas/snippet-exit-marker snippet)))
 	  (if groups
@@ -349,7 +378,9 @@ will be deleted before inserting template."
 			   (yas/group-primary-field
 			    (car groups)))))
 	    ;; no need to call exit-snippet, since no overlay created.
-	    (goto-char exit-marker)))))))
+	    (goto-char exit-marker)))
+
+	(setq buffer-undo-list original-undo-list)))))
 
 (defun yas/current-snippet-overlay (&optional point)
   "Get the most proper overlay which is belongs to a snippet."
