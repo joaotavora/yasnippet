@@ -251,6 +251,7 @@ will be deleted before inserting template."
 
   (let ((key (buffer-substring-no-properties start end))
 	(original-undo-list buffer-undo-list)
+	(inhibit-modification-hooks t)
 	(length (- end start))
 	(column (current-column)))
     (save-restriction
@@ -405,6 +406,23 @@ will be deleted before inserting template."
 	    (setq snippet-overlay overlay)))))
     snippet-overlay))
 
+(defun yas/current-overlay-for-navigation ()
+  "Get current overlay for navigation. Might be overlay at current or previous point."
+  (let ((overlay1 (yas/current-snippet-overlay))
+	(overlay2 (if (bobp)
+		      nil
+		    (yas/current-snippet-overlay (- (point) 1)))))
+    (if (null overlay1)
+	overlay2
+      (if (or (null overlay2)
+	      (eq (overlay-get overlay1 'yas/snippet) 
+		  (overlay-get overlay2 'yas/snippet)))
+	  overlay1
+	(if (> (yas/snippet-id (overlay-get overlay2 'yas/snippet))
+	       (yas/snippet-id (overlay-get overlay1 'yas/snippet)))
+	    overlay2
+	  overlay1)))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; User level functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -427,8 +445,7 @@ otherwise, nil returned."
 (defun yas/next-field-group ()
   "Navigate to next field group. If there's none, exit the snippet."
   (interactive)
-  (let ((overlay (or (yas/current-snippet-overlay)
-		     (yas/current-snippet-overlay (- (point) 1)))))
+  (let ((overlay (yas/current-overlay-for-navigation)))
     (if overlay
 	(let ((next (yas/group-next
 		     (overlay-get overlay 'yas/group))))
@@ -442,8 +459,7 @@ otherwise, nil returned."
 (defun yas/prev-field-group ()
   "Navigate to prev field group. If there's none, exit the snippet."
   (interactive)
-  (let ((overlay (or (yas/current-snippet-overlay)
-		     (yas/current-snippet-overlay (- (point) 1)))))
+  (let ((overlay (yas/current-overlay-for-navigation)))
     (if overlay
 	(let ((prev (yas/group-prev
 		     (overlay-get overlay 'yas/group))))
