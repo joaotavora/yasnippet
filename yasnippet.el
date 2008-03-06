@@ -548,8 +548,10 @@ an example:
   "Do necessary initialization."
   (global-set-key yas/trigger-key 'yas/expand)
   (when yas/use-menu
-    (global-set-key [menu-bar yasnippet]
-		    (cons "yasnippet" yas/menu-keymap))))
+    (define-key-after global-map 
+      [menu-bar yasnippet]
+      (cons "YASnippet" yas/menu-keymap)
+      'buffer)))
 
 (defun yas/define (mode key template &optional name)
   "Define a snippet. Expanding KEY into TEMPLATE.
