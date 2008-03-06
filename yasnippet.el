@@ -27,7 +27,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; User customizable variables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defvar yas/key-syntaxes (list "w" "w_")
+(defvar yas/key-syntaxes (list "w" "w_" "w_." "^ ")
   "A list of syntax of a key. This list is tried in the order
 to try to find a key. For example, if the list is '(\"w\" \"w_\").
 And in emacs-lisp-mode, where \"-\" has the syntax of \"_\":
@@ -137,8 +137,9 @@ mode will be listed under the menu \"yasnippet\".")
 		     (yas/snippet-groups snippet)
 		     :test
 		     '(lambda (field group)
-			(= (yas/field-number field)
-			   (yas/group-number group))))))
+			(and (not (null (yas/field-number field)))
+			     (= (yas/field-number field)
+				(yas/group-number group)))))))
     (if group
 	(yas/group-add-field group field)
       (push (yas/make-group field snippet)
