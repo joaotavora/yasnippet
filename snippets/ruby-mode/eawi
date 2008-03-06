@@ -1,0 +1,3 @@
+#name : each_with_index { |e, i| ... }
+# --
+each_with_index { |${e}, ${i}| $0 }
