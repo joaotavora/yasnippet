@@ -418,6 +418,8 @@ will be deleted before inserting template."
 	(widen)
 	(delete-char length)
 
+	(setq buffer-undo-list original-undo-list)
+
 	;; Step 14: place the cursor at a proper place
 	(let ((groups (yas/snippet-groups snippet))
 	      (exit-marker (yas/snippet-exit-marker snippet)))
@@ -427,9 +429,7 @@ will be deleted before inserting template."
 			   (yas/group-primary-field
 			    (car groups)))))
 	    ;; no need to call exit-snippet, since no overlay created.
-	    (goto-char exit-marker)))
-
-	(setq buffer-undo-list original-undo-list)))))
+	    (yas/exit-snippet snippet)))))))
 
 (defun yas/current-snippet-overlay (&optional point)
   "Get the most proper overlay which is belongs to a snippet."
@@ -608,7 +608,7 @@ otherwise, nil returned."
     (let ((templates (gethash key (yas/current-snippet-table))))
       (if templates
 	  (let ((template (if (null (cdr templates)) ; only 1 template
-			      (cdar templates)
+			      (yas/template-content (cdar templates))
 			    (yas/popup-for-template templates))))
 	    (when template
 	      (yas/expand-snippet start end template)))
