@@ -560,18 +560,27 @@ an example:
 (defun yas/fake-keymap-for-popup (templates)
   "Create a fake keymap for popup menu usage."
   (cons 'keymap 
-	(cons "Select a template:"
-	      (mapcar (lambda (pair)
-			(let* ((template (cdr pair))
-			       (name (yas/template-name template))
-			       (content (yas/template-content template)))
-			  (list content 'menu-item name t)))
-		      templates))))
+	(mapcar (lambda (pair)
+		  (let* ((template (cdr pair))
+			 (name (yas/template-name template))
+			 (content (yas/template-content template)))
+		    (list content 'menu-item name t)))
+		templates)))
+
+(defun yas/point-to-coord (&optional point)
+  "Get the xoffset/yoffset information of POINT.
+If POINT is not given, default is to current point."
+  (let* ((pn (posn-at-point (or point (point))))
+	 (x-y (posn-x-y pn))
+	 (x (car x-y))
+	 (y (cdr x-y))
+	 (coord (list (list (+ x 80) (+ y 20)) (selected-window))))
+    coord))
 
 (defun yas/popup-for-template (templates)
   "Show a popup menu listing templates to let the user select one."
   (if window-system
-      (car (x-popup-menu t (yas/fake-keymap-for-popup templates)))
+      (car (x-popup-menu (yas/point-to-coord) (yas/fake-keymap-for-popup templates)))
     ;; no window system, simply select the first one
     (cdar templates)))
 
