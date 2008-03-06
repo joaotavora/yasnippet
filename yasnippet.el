@@ -503,14 +503,22 @@ otherwise, nil returned."
   (interactive)
   (let ((overlay (yas/current-overlay-for-navigation)))
     (if overlay
-	(let ((prev (yas/group-prev
-		     (overlay-get overlay 'yas/group))))
-	  (if prev
-	      (goto-char (overlay-start
-			  (yas/field-overlay
-			   (yas/group-primary-field prev))))
-	    (yas/exit-snippet (overlay-get overlay 'yas/snippet))))
-      (message "Not in a snippet field."))))
+	(yas/navigate-group (overlay-get overlay 'yas/group) nil)
+      (let ((snippet (yas/snippet-of-current-keymap))
+	    (done nil))
+	(if snippet
+	  (do* ((tabstops (yas/snippet-tabstops snippet) (cdr tabstops))
+		(tabstop (car tabstops) (car tabstops)))
+	      ((or (null tabstops)
+		   done)
+	       (unless done (message "Not in a snippet field.")))
+	    (when (= (point)
+		     (overlay-start
+		      (yas/field-overlay
+		       (yas/group-primary-field tabstop))))
+	      (setq done t)
+	      (yas/navigate-group tabstop nil)))
+	  (message "Not in a snippet field."))))))
 
 (defun yas/exit-snippet (snippet)
   "Goto exit-marker of SNIPPET and delete the snippet."
