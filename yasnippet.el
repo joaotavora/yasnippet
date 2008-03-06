@@ -27,9 +27,14 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; User customizable variables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defvar yas/key-syntax "w"
-  "Syntax of a key. This is used to determine the current key being 
-expanded.")
+(defvar yas/key-syntaxes (list "w" "w_")
+  "A list of syntax of a key. This list is tried in the order
+to try to find a key. For example, if the list is '(\"w\" \"w_\").
+And in emacs-lisp-mode, where \"-\" has the syntax of \"_\":
+
+foo-bar
+
+will first try \"bar\", if not found, then \"foo-bar\" is tried.")
 
 (defvar yas/indent-line t
   "Each (except the 1st) line of the snippet template is indented to
@@ -210,13 +215,21 @@ have, compare through the start point of the overlay."
   "Get the key under current position. A key is used to find
 the template of a snippet in the current snippet-table."
   (let ((start (point))
-	(end (point)))
-    (save-excursion
-      (skip-syntax-backward yas/key-syntax)
-      (setq start (point))
-      (list (buffer-substring-no-properties start end)
-	    start
-	    end))))
+	(end (point))
+	(syntaxes yas/key-syntaxes)
+	syntax done)
+    (while (and (not done) syntaxes)
+      (setq syntax (car syntaxes))
+      (setq syntaxes (cdr syntaxes))
+      (save-excursion
+	(skip-syntax-backward syntax)
+	(when (gethash (buffer-substring-no-properties (point) end)
+		       (yas/current-snippet-table))
+	  (setq done t)
+	  (setq start (point)))))
+    (list (buffer-substring-no-properties start end)
+	  start
+	  end)))
 
 (defun yas/synchronize-fields (field-group)
   "Update all fields' text according to the primary field."
