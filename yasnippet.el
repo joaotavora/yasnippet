@@ -574,7 +574,7 @@ If POINT is not given, default is to current point."
 	 (x-y (posn-x-y pn))
 	 (x (car x-y))
 	 (y (cdr x-y))
-	 (coord (list (list (+ x 80) (+ y 20)) (selected-window))))
+	 (coord (list (list (+ x 10) (+ y 20)) (selected-window))))
     coord))
 
 (defun yas/popup-for-template (templates)
