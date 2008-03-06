@@ -523,10 +523,11 @@ an example:
 (defun yas/directory-files (directory file?)
   "Return directory files or subdirectories in full path."
   (remove-if (lambda (file)
-	       (and (not (string-match "/\\.[^/]*$" file))
-		    (if file?
-			(not (file-directory-p file))
-		      (file-directory-p file))))
+	       (or (string-match "^\\."
+				 (file-name-nondirectory file))
+		   (if file?
+		       (file-directory-p file)
+		     (not (file-directory-p file)))))
 	     (directory-files directory t)))
 
 (defun yas/make-menu-binding (template)

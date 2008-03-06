@@ -1,4 +1,4 @@
-#name : do { бн } while (бн)
+#name : do { ... } while (...)
 # --
 do
 {

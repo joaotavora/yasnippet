@@ -1,4 +1,4 @@
-#name : struct бн { бн }
+#name : struct ... { ... }
 # --
 struct ${1:name}
 {

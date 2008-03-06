@@ -1,4 +1,4 @@
-#name : if ( бн ) { бн }
+#name : if (...) { ... }
 # --
 if (${1:condition})
 {

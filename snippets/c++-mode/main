@@ -1,4 +1,4 @@
-#name: int main(argc, argv) { бн }
+#name: int main(argc, argv) { ... }
 # --
 int main(int argc, char const *argv)
 {

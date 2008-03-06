@@ -1,4 +1,4 @@
-#name : class бн { бн }
+#name : class ... { ... }
 # --
 class ${1:Name}
 {
