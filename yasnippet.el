@@ -36,6 +36,12 @@ expanded.")
 current column if this variable is non-`nil'.")
 (make-variable-buffer-local 'yas/indent-line)
 
+(defvar yas/trigger-key (kbd "TAB")
+  "The key to bind as a trigger of snippet.")
+(defvar yas/trigger-fallback 'indent-according-to-mode
+  "The fallback command to call when there's no snippet to expand.")
+(make-variable-buffer-local 'yas/trigger-fallback)
+
 (defvar yas/keymap (make-sparse-keymap)
   "The keymap of snippet.")
 (define-key yas/keymap (kbd "TAB") 'yas/next-field-group)
@@ -43,11 +49,25 @@ current column if this variable is non-`nil'.")
 (define-key yas/keymap (kbd "<S-iso-lefttab>") 'yas/prev-field-group)
 (define-key yas/keymap (kbd "<S-tab>") 'yas/prev-field-group)
 
+(defvar yas/use-menu t
+  "If this is set to `t', all snippet template of the current
+mode will be listed under the menu \"yasnippet\".")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defvar yas/version "0.1")
+
 (defvar yas/snippet-tables (make-hash-table)
   "A hash table of snippet tables corresponding to each major-mode.")
+(defvar yas/menu-table (make-hash-table)
+  "A hash table of menus of corresponding major-mode.")
+(defvar yas/menu-keymap (make-sparse-keymap))
+;; empty menu will cause problems, so we insert some items
+(define-key yas/menu-keymap [yas/about]
+  '(menu-item "About" yas/about))
+(define-key yas/menu-keymap [yas/separator]
+  '(menu-item "--"))
 
 (defconst yas/escape-backslash
   (concat "YASESCAPE" "BACKSLASH" "PROTECTGUARD"))
@@ -165,6 +185,7 @@ have, compare through the start point of the overlay."
   (goto-char (point-min))
   (while (search-forward from nil t)
     (replace-match to t t)))
+
 (defun yas/snippet-table (mode)
   "Get the snippet table corresponding to MODE."
   (let ((table (gethash mode yas/snippet-tables)))
@@ -175,6 +196,14 @@ have, compare through the start point of the overlay."
 (defsubst yas/current-snippet-table ()
   "Get the snippet table for current major-mode."
   (yas/snippet-table major-mode))
+
+(defun yas/menu-keymap-for-mode (mode)
+  "Get the menu keymap correspondong to MODE."
+  (let ((keymap (gethash mode yas/menu-table)))
+    (unless keymap
+      (setq table (make-sparse-keymap))
+      (puthash mode keymap yas/menu-table))
+    table))
 
 (defsubst yas/template (key snippet-table)
   "Get template for KEY in SNIPPET-TABLE."
@@ -499,15 +528,45 @@ an example:
 		   (file-directory-p file))))
 	  (directory-files directory t)))
 
+(defun yas/make-menu-binding (template)
+  (lexical-let ((template (yas/template-content template)))
+    (lambda ()
+      (interactive)
+      (yas/expand-snippet (point) 
+			  (point)
+			  template))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; User level functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun yas/about ()
+  (interactive)
+  (message (concat "yasnippet (version "
+		   yas/version
+		   ") -- pluskid <pluskid@gmail.com>")))
+(defun yas/initialize ()
+  "Do necessary initialization."
+  (global-set-key yas/trigger-key 'yas/expand)
+  (when yas/use-menu
+    (global-set-key [menu-bar yasnippet]
+		    (cons "yasnippet" yas/menu-keymap))))
+
 (defun yas/define (mode key template &optional name)
   "Define a snippet. Expanding KEY into TEMPLATE.
-NAME is a description to this template."
-  (puthash key 
-	   (yas/make-template template (or name key))
-	   (yas/snippet-table mode)))
+NAME is a description to this template. Also update
+the menu if `yas/use-menu' is `t'."
+  (let ((template (yas/make-template template (or name key))))
+    (puthash key
+	     template
+	     (yas/snippet-table mode))
+    (when yas/use-menu
+      (let ((keymap (yas/menu-keymap-for-mode mode)))
+	(define-key yas/menu-keymap (vector mode) 
+	  `(menu-item ,(symbol-name mode) ,keymap))
+	(define-key  keymap (vector (make-symbol key))
+	  `(menu-item ,(yas/template-name template)
+		      ,(yas/make-menu-binding template)
+		      :keys ,(concat key " ->")))))))
 
 (defun yas/expand ()
   "Expand a snippet. When a snippet is expanded, t is returned,
@@ -516,10 +575,9 @@ otherwise, nil returned."
   (multiple-value-bind (key start end) (yas/current-key)
     (let ((template (yas/template key (yas/current-snippet-table))))
       (if template
-	  (progn
-	    (yas/expand-snippet start end (yas/template-content template))
-	    t)
-	nil))))
+	  (yas/expand-snippet start end (yas/template-content template))
+	(when yas/trigger-fallback
+	  (call-interactively yas/trigger-fallback))))))
 
 (defun yas/next-field-group ()
   "Navigate to next field group. If there's none, exit the snippet."

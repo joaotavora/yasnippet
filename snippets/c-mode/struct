@@ -1,0 +1,6 @@
+#name : struct бн { бн }
+# --
+struct ${1:name}
+{
+    $0
+};

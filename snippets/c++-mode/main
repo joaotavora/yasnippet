@@ -1,0 +1,7 @@
+#name: int main(argc, argv) { бн }
+# --
+int main(int argc, char const *argv)
+{
+    $0
+    return 0;
+}

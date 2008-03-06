@@ -1,0 +1,8 @@
+#name : class бн { бн }
+# --
+class ${1:Name}
+{
+public:
+    $1($2);
+    virtual ~$1();
+};
