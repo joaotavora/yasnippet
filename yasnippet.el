@@ -52,7 +52,8 @@ current column if this variable is non-`nil'.")
 (defvar yas/use-menu t
   "If this is set to `t', all snippet template of the current
 mode will be listed under the menu \"yasnippet\".")
-
+(defvar yas/trigger-symbol " =>"
+  "The text that will be used in menu to represent the trigger.")
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -521,12 +522,12 @@ an example:
 
 (defun yas/directory-files (directory file?)
   "Return directory files or subdirectories in full path."
-  (filter (lambda (file)
-	    (and (not (string-match "/\\.[^/]*$" file))
-		 (if file?
-		     (not (file-directory-p file))
-		   (file-directory-p file))))
-	  (directory-files directory t)))
+  (remove-if (lambda (file)
+	       (and (not (string-match "/\\.[^/]*$" file))
+		    (if file?
+			(not (file-directory-p file))
+		      (file-directory-p file))))
+	     (directory-files directory t)))
 
 (defun yas/make-menu-binding (template)
   (lexical-let ((template template))
@@ -568,7 +569,7 @@ the menu if `yas/use-menu' is `t'."
 	(define-key keymap (vector (make-symbol key))
 	  `(menu-item ,(yas/template-name template)
 		      ,(yas/make-menu-binding (yas/template-content template))
-		      :keys ,(concat key " ->")))))))
+		      :keys ,(concat key yas/trigger-symbol)))))))
 
 (defun yas/expand ()
   "Expand a snippet. When a snippet is expanded, t is returned,
@@ -666,6 +667,6 @@ content of the file is the template."
 		(define-key keymap (vector (make-symbol key))
 		  `(menu-item ,(or name key)
 			      ,(yas/make-menu-binding template)
-			      :keys ,(concat key " ->")))))))))))
+			      :keys ,(concat key yas/trigger-symbol)))))))))))
 
 (provide 'yasnippet)
