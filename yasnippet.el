@@ -522,14 +522,14 @@ an example:
 (defun yas/directory-files (directory file?)
   "Return directory files or subdirectories in full path."
   (filter (lambda (file)
-	    (and (not (string-match "/\\.\\.?$" file))
+	    (and (not (string-match "/\\.[^/]*$" file))
 		 (if file?
 		     (not (file-directory-p file))
 		   (file-directory-p file))))
 	  (directory-files directory t)))
 
 (defun yas/make-menu-binding (template)
-  (lexical-let ((template (yas/template-content template)))
+  (lexical-let ((template template))
     (lambda ()
       (interactive)
       (yas/expand-snippet (point) 
@@ -563,9 +563,9 @@ the menu if `yas/use-menu' is `t'."
       (let ((keymap (yas/menu-keymap-for-mode mode)))
 	(define-key yas/menu-keymap (vector mode) 
 	  `(menu-item ,(symbol-name mode) ,keymap))
-	(define-key  keymap (vector (make-symbol key))
+	(define-key keymap (vector (make-symbol key))
 	  `(menu-item ,(yas/template-name template)
-		      ,(yas/make-menu-binding template)
+		      ,(yas/make-menu-binding (yas/template-content template))
 		      :keys ,(concat key " ->")))))))
 
 (defun yas/expand ()
@@ -640,7 +640,11 @@ of a snippet. The file name is the trigger key and the
 content of the file is the template."
   (with-temp-buffer
     (dolist (mode (yas/directory-files directory nil))
-      (let ((table (yas/snippet-table (intern (file-name-nondirectory mode)))))
+      (let* ((mode-sym (intern (file-name-nondirectory mode)))
+	     (snippet-table (yas/snippet-table mode-sym))
+	     (keymap (if yas/use-menu
+			 (yas/menu-keymap-for-mode mode-sym)
+		       nil)))
 	(dolist (key (yas/directory-files mode t))
 	  (when (file-readable-p key)
 	    (insert-file-contents key nil nil nil t)
@@ -653,6 +657,13 @@ content of the file is the template."
 		       (yas/make-template
 			template
 			(or name key))
-		       table))))))))
+		       snippet-table)
+	      (when yas/use-menu
+		(define-key yas/menu-keymap (vector mode-sym)
+		  `(menu-item ,(symbol-name mode-sym) ,keymap))
+		(define-key keymap (vector (make-symbol key))
+		  `(menu-item ,(or name key)
+			      ,(yas/make-menu-binding template)
+			      :keys ,(concat key " ->")))))))))))
 
 (provide 'yasnippet)
