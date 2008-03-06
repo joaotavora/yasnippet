@@ -81,6 +81,10 @@ current column if this variable is non-`nil'.")
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal Structs
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defstruct (yas/template (:constructor yas/make-template (content name)))
+  "A template for a snippet."
+  content
+  name)
 (defstruct (yas/snippet (:constructor yas/make-snippet ()))
   "A snippet."
   (groups nil)
@@ -457,12 +461,53 @@ will be deleted before inserting template."
 		     (yas/group-primary-field target))))
       (yas/exit-snippet (yas/group-snippet group)))))
 
+(defun yas/parse-template ()
+  "Parse the template in the current buffer.
+If the buffer contains a line of \"# --\" then the contents
+above this line are ignored. Variables can be set above this
+line through the syntax:
+
+#name : value
+
+Currently only the \"name\" variable is recognized. Here's 
+an example:
+
+#name: #include \"...\"
+# --
+#include \"$1\""
+  (goto-char (point-min))
+  (let (template name bound)
+    (if (re-search-forward "^# --\n" nil t)
+	(progn (setq template 
+		     (buffer-substring-no-properties (point) 
+						     (point-max)))
+	       (setq bound (point))
+	       (goto-char (point-min))
+	       (while (re-search-forward "^#\\([^ ]+\\) *: *\\(.*\\)$" bound t)
+		 (when (string= "name" (match-string-no-properties 1))
+		   (setq name (match-string-no-properties 2)))))
+      (setq template
+	    (buffer-substring-no-properties (point-min) (point-max))))
+    (list template name)))
+
+(defun yas/directory-files (directory file?)
+  "Return directory files or subdirectories in full path."
+  (filter (lambda (file)
+	    (and (not (string-match "/\\.\\.?$" file))
+		 (if file?
+		     (not (file-directory-p file))
+		   (file-directory-p file))))
+	  (directory-files directory t)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; User level functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun yas/define (mode key template)
-  "Define a snippet. Expanding KEY into TEMPLATE."
-  (puthash key template (yas/snippet-table mode)))
+(defun yas/define (mode key template &optional name)
+  "Define a snippet. Expanding KEY into TEMPLATE.
+NAME is a description to this template."
+  (puthash key 
+	   (yas/make-template template (or name key))
+	   (yas/snippet-table mode)))
 
 (defun yas/expand ()
   "Expand a snippet. When a snippet is expanded, t is returned,
@@ -472,7 +517,7 @@ otherwise, nil returned."
     (let ((template (yas/template key (yas/current-snippet-table))))
       (if template
 	  (progn
-	    (yas/expand-snippet start end template)
+	    (yas/expand-snippet start end (yas/template-content template))
 	    t)
 	nil))))
 
@@ -528,5 +573,28 @@ otherwise, nil returned."
   (dolist (group (yas/snippet-groups snippet))
     (dolist (field (yas/group-fields group))
       (delete-overlay (yas/field-overlay field)))))
+
+(defun yas/load-directory (directory)
+  "Load snippet definition from a directory hierarchy.
+Below the top-level directory, each directory is a mode
+name. And under each subdirectory, each file is a definition
+of a snippet. The file name is the trigger key and the
+content of the file is the template."
+  (with-temp-buffer
+    (dolist (mode (yas/directory-files directory nil))
+      (let ((table (yas/snippet-table (intern (file-name-nondirectory mode)))))
+	(dolist (key (yas/directory-files mode t))
+	  (when (file-readable-p key)
+	    (insert-file-contents key nil nil nil t)
+	    (multiple-value-bind 
+		(key template name)
+		(cons (file-name-sans-extension 
+			(file-name-nondirectory key))
+		      (yas/parse-template))
+	      (puthash key
+		       (yas/make-template
+			template
+			(or name key))
+		       table))))))))
 
 (provide 'yasnippet)
