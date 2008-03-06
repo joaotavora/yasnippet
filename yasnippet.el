@@ -63,7 +63,7 @@ mode will be listed under the menu \"yasnippet\".")
   "A hash table of snippet tables corresponding to each major-mode.")
 (defvar yas/menu-table (make-hash-table)
   "A hash table of menus of corresponding major-mode.")
-(defvar yas/menu-keymap (make-sparse-keymap))
+(defvar yas/menu-keymap (make-sparse-keymap "YASnippet"))
 ;; empty menu will cause problems, so we insert some items
 (define-key yas/menu-keymap [yas/about]
   '(menu-item "About" yas/about))
@@ -202,13 +202,9 @@ have, compare through the start point of the overlay."
   "Get the menu keymap correspondong to MODE."
   (let ((keymap (gethash mode yas/menu-table)))
     (unless keymap
-      (setq table (make-sparse-keymap))
+      (setq keymap (make-sparse-keymap))
       (puthash mode keymap yas/menu-table))
-    table))
-
-(defsubst yas/template (key snippet-table)
-  "Get template for KEY in SNIPPET-TABLE."
-  (gethash key snippet-table))
+    keymap))
 
 (defun yas/current-key ()
   "Get the key under current position. A key is used to find
@@ -538,6 +534,33 @@ an example:
 			  (point)
 			  template))))
 
+(defun yas/modify-alist (alist key value)
+  "Modify ALIST to map KEY to VALUE. return the new alist."
+  (let ((pair (assoc key alist)))
+    (if (null pair)
+	(cons (cons key value)
+	      alist)
+      (setcdr pair value)
+      alist)))
+
+(defun yas/fake-keymap-for-popup (templates)
+  "Create a fake keymap for popup menu usage."
+  (cons 'keymap 
+	(cons "Select a template:"
+	      (mapcar (lambda (pair)
+			(let* ((template (cdr pair))
+			       (name (yas/template-name template))
+			       (content (yas/template-content template)))
+			  (list content 'menu-item name t)))
+		      templates))))
+
+(defun yas/popup-for-template (templates)
+  "Show a popup menu listing templates to let the user select one."
+  (if window-system
+      (car (x-popup-menu t (yas/fake-keymap-for-popup templates)))
+    ;; no window system, simply select the first one
+    (cdar templates)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; User level functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -559,15 +582,20 @@ an example:
   "Define a snippet. Expanding KEY into TEMPLATE.
 NAME is a description to this template. Also update
 the menu if `yas/use-menu' is `t'."
-  (let ((template (yas/make-template template (or name key))))
+  (let* ((full-key key)
+	 (key (file-name-sans-extension full-key))
+	 (template (yas/make-template template (or name key)))
+	 (snippet-table (yas/snippet-table mode)))
     (puthash key
-	     template
-	     (yas/snippet-table mode))
+	     (yas/modify-alist (gethash key snippet-table)
+			       full-key
+			       template)
+	     snippet-table)
     (when yas/use-menu
       (let ((keymap (yas/menu-keymap-for-mode mode)))
 	(define-key yas/menu-keymap (vector mode) 
 	  `(menu-item ,(symbol-name mode) ,keymap))
-	(define-key keymap (vector (make-symbol key))
+	(define-key keymap (vector (make-symbol full-key))
 	  `(menu-item ,(yas/template-name template)
 		      ,(yas/make-menu-binding (yas/template-content template))
 		      :keys ,(concat key yas/trigger-symbol)))))))
@@ -577,9 +605,13 @@ the menu if `yas/use-menu' is `t'."
 otherwise, nil returned."
   (interactive)
   (multiple-value-bind (key start end) (yas/current-key)
-    (let ((template (yas/template key (yas/current-snippet-table))))
-      (if template
-	  (yas/expand-snippet start end (yas/template-content template))
+    (let ((templates (gethash key (yas/current-snippet-table))))
+      (if templates
+	  (let ((template (if (null (cdr templates)) ; only 1 template
+			      (cdar templates)
+			    (yas/popup-for-template templates))))
+	    (when template
+	      (yas/expand-snippet start end template)))
 	(when yas/trigger-fallback
 	  (call-interactively yas/trigger-fallback))))))
 
@@ -644,30 +676,14 @@ of a snippet. The file name is the trigger key and the
 content of the file is the template."
   (with-temp-buffer
     (dolist (mode (yas/directory-files directory nil))
-      (let* ((mode-sym (intern (file-name-nondirectory mode)))
-	     (snippet-table (yas/snippet-table mode-sym))
-	     (keymap (if yas/use-menu
-			 (yas/menu-keymap-for-mode mode-sym)
-		       nil)))
-	(dolist (key (yas/directory-files mode t))
-	  (when (file-readable-p key)
-	    (insert-file-contents key nil nil nil t)
+      (let ((mode-sym (intern (file-name-nondirectory mode))))
+	(dolist (file (yas/directory-files mode t))
+	  (when (file-readable-p file)
+	    (insert-file-contents file nil nil nil t)
 	    (multiple-value-bind 
 		(key template name)
-		(cons (file-name-sans-extension 
-			(file-name-nondirectory key))
+		(cons (file-name-nondirectory file)
 		      (yas/parse-template))
-	      (puthash key
-		       (yas/make-template
-			template
-			(or name key))
-		       snippet-table)
-	      (when yas/use-menu
-		(define-key yas/menu-keymap (vector mode-sym)
-		  `(menu-item ,(symbol-name mode-sym) ,keymap))
-		(define-key keymap (vector (make-symbol key))
-		  `(menu-item ,(or name key)
-			      ,(yas/make-menu-binding template)
-			      :keys ,(concat key yas/trigger-symbol)))))))))))
+	      (yas/define mode-sym key template name))))))))
 
 (provide 'yasnippet)
