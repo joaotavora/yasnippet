@@ -143,10 +143,11 @@ mode will be listed under the menu \"yasnippet\".")
   (next nil)
   (prev nil)
   snippet)
-(defstruct (yas/field (:constructor yas/make-field (overlay number value)))
+(defstruct (yas/field (:constructor yas/make-field (overlay number value transform)))
   "A field in a snippet."
   overlay
   number
+  transform
   value)
 
 (defun yas/snippet-add-field (snippet field)
@@ -205,6 +206,15 @@ have, compare through the start point of the overlay."
       (format "%s" (eval (read string)))
     (error (format "(error in elisp evaluation: %s)" 
 		   (error-message-string err)))))
+(defun yas/calculate-field-value (field value)
+  "Calculate the value of the field. If there's a transform
+for this field, apply it. Otherwise, the value is returned
+unmodified."
+  (let ((text value)
+	(transform (yas/field-transform field)))
+    (if transform
+	(yas/eval-string transform)
+      text)))
 (defsubst yas/replace-all (from to)
   "Replace all occurance from FROM to TO."
   (goto-char (point-min))
@@ -264,7 +274,7 @@ the template of a snippet in the current snippet-table."
 				   (overlay-start field-overlay))))
 	  (unless (eq field-overlay primary-overlay)
 	    (goto-char (overlay-start field-overlay))
-	    (insert text)
+	    (insert (yas/calculate-field-value field text))
 	    (if (= (overlay-start field-overlay)
 		   (overlay-end field-overlay))
 		(move-overlay field-overlay
@@ -362,7 +372,11 @@ will be deleted before inserting template."
 	(while (re-search-forward yas/field-regexp nil t)
 	  (let ((number (or (match-string-no-properties 1)
 			    (match-string-no-properties 2)))
+		(transform nil)
 		(value (match-string-no-properties 3)))
+	    (when (eq (elt value 0) ?\$)
+	      (setq transform (substring value 1))
+	      (setq value nil))
 	    (if (and number
 		     (string= "0" number))
 		(progn
@@ -374,7 +388,8 @@ will be deleted before inserting template."
 	       (yas/make-field
 		(make-overlay (match-beginning 0) (match-end 0))
 		(and number (string-to-number number))
-		value)))))
+		value
+		transform)))))
 
 	;; Step 6: Sort and link each field group
 	(setf (yas/snippet-groups snippet)
@@ -411,7 +426,7 @@ will be deleted before inserting template."
 		     (end (overlay-end overlay))
 		     (length (- end start)))
 		(goto-char start)
-		(insert value)
+		(insert (yas/calculate-field-value field value))
 		(delete-char length)))))
 
 	;; Step 9: restore all escape characters
@@ -759,6 +774,5 @@ the menu if `yas/use-menu' is `t'."
   (dolist (group (yas/snippet-groups snippet))
     (dolist (field (yas/group-fields group))
       (delete-overlay (yas/field-overlay field)))))
-
 
 (provide 'yasnippet)
