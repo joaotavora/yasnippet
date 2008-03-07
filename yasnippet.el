@@ -57,9 +57,9 @@ will first try \"bar\", if not found, then \"foo-bar\" is tried.")
 current column if this variable is non-`nil'.")
 (make-variable-buffer-local 'yas/indent-line)
 
-(defvar yas/trigger-keys (list (kbd "TAB"))
-  "The keys to bind as a trigger of snippet.")
-(defvar yas/trigger-fallback 'indent-according-to-mode
+(defvar yas/trigger-key (kbd "<tab>")
+  "The key to bind as a trigger of snippet.")
+(defvar yas/trigger-fallback 'yas/default-trigger-fallback
   "The fallback command to call when there's no snippet to expand.")
 (make-variable-buffer-local 'yas/trigger-fallback)
 
@@ -624,6 +624,20 @@ hierarchy."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; User level functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun yas/default-trigger-fallback ()
+  "Default fallback when a snippet expansion failed.
+The default behavior is first lookup if there's binding for <tab>
+in local keymap. If found, execute it. If not found, then look up
+binding for TAB. If still not found, run `indent-for-tab-command'."
+  (interactive)
+  (let ((command (local-key-binding (kbd "<tab>"))))
+    (if command
+	(call-interactively command)
+      (setq command (key-binding (kbd "TAB")))
+      (if command
+	  (call-interactively command)
+	(call-interactively 'indent-for-tab-command)))))
+
 (defun yas/about ()
   (interactive)
   (message (concat "yasnippet (version "
@@ -652,8 +666,7 @@ content of the file is the template."
 
 (defun yas/initialize ()
   "Do necessary initialization."
-  (dolist (key yas/trigger-keys)
-    (global-set-key key 'yas/expand))
+  (global-set-key yas/trigger-key 'yas/expand)
   (when yas/use-menu
     (define-key-after 
       (lookup-key global-map [menu-bar])
