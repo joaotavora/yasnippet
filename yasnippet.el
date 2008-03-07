@@ -41,14 +41,16 @@ will first try \"bar\", if not found, then \"foo-bar\" is tried.")
 current column if this variable is non-`nil'.")
 (make-variable-buffer-local 'yas/indent-line)
 
-(defvar yas/trigger-key (kbd "TAB")
-  "The key to bind as a trigger of snippet.")
+(defvar yas/trigger-keys (list (kbd "<tab>")
+			       (kbd "TAB"))
+  "The keys to bind as a trigger of snippet.")
 (defvar yas/trigger-fallback 'indent-according-to-mode
   "The fallback command to call when there's no snippet to expand.")
 (make-variable-buffer-local 'yas/trigger-fallback)
 
 (defvar yas/keymap (make-sparse-keymap)
   "The keymap of snippet.")
+(define-key yas/keymap (kbd "<tab>") 'yas/next-field-group)
 (define-key yas/keymap (kbd "TAB") 'yas/next-field-group)
 (define-key yas/keymap (kbd "S-TAB") 'yas/prev-field-group)
 (define-key yas/keymap (kbd "<S-iso-lefttab>") 'yas/prev-field-group)
@@ -83,8 +85,8 @@ mode will be listed under the menu \"yasnippet\".")
   (concat "YASESCAPE" "BACKQUOTE" "PROTECTGUARD"))
 
 (defconst yas/field-regexp
-  (concat "$\\(?1:[0-9]+\\)" "\\|"
-	  "${\\(?:\\(?1:[0-9]+\\):\\)?\\(?2:[^}]*\\)}"))
+  (concat "$\\([0-9]+\\)" "\\|"
+	  "${\\(?:\\([0-9]+\\):\\)?\\([^}]*\\)}"))
 
 (defvar yas/snippet-id-seed 0
   "Contains the next id for a snippet")
@@ -342,7 +344,9 @@ will be deleted before inserting template."
 	;; Step 5: Create fields
 	(goto-char (point-min))
 	(while (re-search-forward yas/field-regexp nil t)
-	  (let ((number (match-string-no-properties 1)))
+	  (let ((number (or (match-string-no-properties 1)
+			    (match-string-no-properties 2)))
+		(value (match-string-no-properties 3)))
 	    (if (and number
 		     (string= "0" number))
 		(progn
@@ -354,7 +358,7 @@ will be deleted before inserting template."
 	       (yas/make-field
 		(make-overlay (match-beginning 0) (match-end 0))
 		(and number (string-to-number number))
-		(match-string-no-properties 2))))))
+		value)))))
 
 	;; Step 6: Sort and link each field group
 	(setf (yas/snippet-groups snippet)
@@ -594,7 +598,8 @@ If POINT is not given, default is to current point."
 		   ") -- pluskid <pluskid@gmail.com>")))
 (defun yas/initialize ()
   "Do necessary initialization."
-  (global-set-key yas/trigger-key 'yas/expand)
+  (dolist (key yas/trigger-keys)
+    (global-set-key key 'yas/expand))
   (when yas/use-menu
     (define-key-after global-map 
       [menu-bar yasnippet]
