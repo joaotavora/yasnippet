@@ -626,17 +626,13 @@ hierarchy."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun yas/default-trigger-fallback ()
   "Default fallback when a snippet expansion failed.
-The default behavior is first lookup if there's binding for <tab>
-in local keymap. If found, execute it. If not found, then look up
-binding for TAB. If still not found, run `indent-for-tab-command'."
+It looks key binding for TAB. If found, execute it. If not found.
+Run `indent-for-tab-command'."
   (interactive)
-  (let ((command (local-key-binding (kbd "<tab>"))))
+  (let ((command (key-binding (kbd "TAB"))))
     (if command
 	(call-interactively command)
-      (setq command (key-binding (kbd "TAB")))
-      (if command
-	  (call-interactively command)
-	(call-interactively 'indent-for-tab-command)))))
+      (call-interactively 'indent-for-tab-command))))
 
 (defun yas/about ()
   (interactive)
