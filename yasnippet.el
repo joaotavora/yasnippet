@@ -608,7 +608,7 @@ an example:
 If POINT is not given, default is to current point.
 If `posn-at-point' is not available (like in Emacs 21.3),
 t is returned simply."
-  (if (boundp 'posn-at-point)
+  (if (fboundp 'posn-at-point)
       (let ((x-y (posn-x-y (posn-at-point (or point (point))))))
 	(list (list (+ (car x-y) 10)
 		    (+ (cdr x-y) 20))
@@ -618,7 +618,8 @@ t is returned simply."
 (defun yas/popup-for-template (templates)
   "Show a popup menu listing templates to let the user select one."
   (if window-system
-      (car (x-popup-menu (yas/point-to-coord) (yas/fake-keymap-for-popup templates)))
+      (car (x-popup-menu (yas/point-to-coord) 
+			 (yas/fake-keymap-for-popup templates)))
     ;; no window system, simply select the first one
     (cdar templates)))
 
