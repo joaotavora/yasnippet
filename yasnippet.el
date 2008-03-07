@@ -778,3 +778,18 @@ the menu if `yas/use-menu' is `t'."
       (delete-overlay (yas/field-overlay field)))))
 
 (provide 'yasnippet)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Monkey patching for other functions that's causing
+;; problems to yasnippet. For details on why I patch
+;; those functions, refer to
+;;   http://code.google.com/p/yasnippet/wiki/MonkeyPatching
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defadvice c-neutralize-syntax-in-CPP
+  (around yas-mp/c-neutralize-syntax-in-CPP activate)
+  "Adviced `c-neutralize-syntax-in-CPP' to properly 
+handle the end-of-buffer error fired in it by calling
+`forward-char' at the end of buffer."
+  (condition-case err
+      ad-do-it
+    (error (message (error-message-string err)))))
