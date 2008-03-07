@@ -573,14 +573,16 @@ an example:
 
 (defun yas/point-to-coord (&optional point)
   "Get the xoffset/yoffset information of POINT.
-If POINT is not given, default is to current point."
-  (let* ((pn (posn-at-point (or point (point))))
-	 (x-y (posn-x-y pn))
-	 (x (car x-y))
-	 (y (cdr x-y))
-	 (coord (list (list (+ x 10) (+ y 20)) (selected-window))))
-    coord))
-
+If POINT is not given, default is to current point.
+If `posn-at-point' is not available (like in Emacs 21.3),
+t is returned simply."
+  (if (boundp 'posn-at-point)
+      (let ((x-y (posn-x-y (posn-at-point (or point (point))))))
+	(list (list (+ (car x-y) 10)
+		    (+ (cdr x-y) 20))
+	      (selected-window)))
+    t))
+ 
 (defun yas/popup-for-template (templates)
   "Show a popup menu listing templates to let the user select one."
   (if window-system
@@ -601,8 +603,9 @@ If POINT is not given, default is to current point."
   (dolist (key yas/trigger-keys)
     (global-set-key key 'yas/expand))
   (when yas/use-menu
-    (define-key-after global-map 
-      [menu-bar yasnippet]
+    (define-key-after 
+      (lookup-key global-map [menu-bar])
+      [yasnippet]
       (cons "YASnippet" yas/menu-keymap)
       'buffer)))
 
