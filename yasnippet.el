@@ -1,7 +1,10 @@
 ;;; yasnippet.el --- Yet another snippet extension for Emacs.
 
+;; Copyright 2008 pluskid
+;; 
 ;; Author: pluskid <pluskid@gmail.com>
 ;; Version: 0.1
+;; X-URL: http://code.google.com/p/yasnippet/
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -20,7 +23,17 @@
 
 ;;; Commentary:
 
-;; Nothing.
+;; Basic steps to setup:
+;;   1. Place `yasnippet.el' in your `load-path'.
+;;   2. In your .emacs file:
+;;        (require 'yasnippet)
+;;   3. Place the `snippets' directory somewhere. E.g: ~/.emacs.d/snippets
+;;   4. In your .emacs file
+;;        (yas/initialize)
+;;        (yas/load-directory "~/.emacs.d/snippets")
+;;
+;; For more information and detailed usage, refer to the project page:
+;;      http://code.google.com/p/yasnippet/
 
 (require 'cl)
 
