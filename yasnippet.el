@@ -630,7 +630,8 @@ It looks key binding for TAB. If found, execute it. If not found.
 Run `indent-for-tab-command'."
   (interactive)
   (let ((command (key-binding (kbd "TAB"))))
-    (if command
+    (if (and command
+	     (not (eq command 'yas/expand)))
 	(call-interactively command)
       (call-interactively 'indent-for-tab-command))))
 
