@@ -65,6 +65,7 @@ current column if this variable is non-`nil'.")
 
 (defvar yas/keymap (make-sparse-keymap)
   "The keymap of snippet.")
+(define-key yas/keymap (kbd "<tab>") 'yas/next-field-group)
 (define-key yas/keymap (kbd "TAB") 'yas/next-field-group)
 (define-key yas/keymap (kbd "S-TAB") 'yas/prev-field-group)
 (define-key yas/keymap (kbd "<S-iso-lefttab>") 'yas/prev-field-group)
