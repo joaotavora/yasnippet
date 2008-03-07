@@ -36,13 +36,15 @@ foo-bar
 
 will first try \"bar\", if not found, then \"foo-bar\" is tried.")
 
+(defvar yas/root-directory nil
+  "The root directory that stores the snippets for each major modes.")
+
 (defvar yas/indent-line t
   "Each (except the 1st) line of the snippet template is indented to
 current column if this variable is non-`nil'.")
 (make-variable-buffer-local 'yas/indent-line)
 
-(defvar yas/trigger-keys (list (kbd "<tab>")
-			       (kbd "TAB"))
+(defvar yas/trigger-keys (list (kbd "TAB"))
   "The keys to bind as a trigger of snippet.")
 (defvar yas/trigger-fallback 'indent-according-to-mode
   "The fallback command to call when there's no snippet to expand.")
@@ -50,7 +52,6 @@ current column if this variable is non-`nil'.")
 
 (defvar yas/keymap (make-sparse-keymap)
   "The keymap of snippet.")
-(define-key yas/keymap (kbd "<tab>") 'yas/next-field-group)
 (define-key yas/keymap (kbd "TAB") 'yas/next-field-group)
 (define-key yas/keymap (kbd "S-TAB") 'yas/prev-field-group)
 (define-key yas/keymap (kbd "<S-iso-lefttab>") 'yas/prev-field-group)
@@ -74,6 +75,8 @@ mode will be listed under the menu \"yasnippet\".")
 ;; empty menu will cause problems, so we insert some items
 (define-key yas/menu-keymap [yas/about]
   '(menu-item "About" yas/about))
+(define-key yas/menu-keymap [yas/reload]
+  '(menu-item "Reload all snippets" yas/reload-all))
 (define-key yas/menu-keymap [yas/separator]
   '(menu-item "--"))
 
@@ -590,6 +593,21 @@ t is returned simply."
     ;; no window system, simply select the first one
     (cdar templates)))
 
+(defun yas/load-directory-1 (directory)
+  "Really do the job of loading snippets from a directory 
+hierarchy."
+  (with-temp-buffer
+    (dolist (mode (yas/directory-files directory nil))
+      (let ((mode-sym (intern (file-name-nondirectory mode))))
+	(dolist (file (yas/directory-files mode t))
+	  (when (file-readable-p file)
+	    (insert-file-contents file nil nil nil t)
+	    (multiple-value-bind 
+		(key template name)
+		(cons (file-name-nondirectory file)
+		      (yas/parse-template))
+	      (yas/define mode-sym key template name))))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; User level functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -598,6 +616,27 @@ t is returned simply."
   (message (concat "yasnippet (version "
 		   yas/version
 		   ") -- pluskid <pluskid@gmail.com>")))
+(defun yas/reload-all ()
+  "Reload all snippets."
+  (interactive)
+  (if yas/root-directory
+      (yas/load-directory-1 yas/root-directory)
+    (call-interactively 'yas/load-directory))
+  (message "done."))
+
+(defun yas/load-directory (directory)
+  "Load snippet definition from a directory hierarchy.
+Below the top-level directory, each directory is a mode
+name. And under each subdirectory, each file is a definition
+of a snippet. The file name is the trigger key and the
+content of the file is the template."
+  (interactive "DSelect the root directory: ")
+  (unless yas/root-directory
+    (setq yas/root-directory directory))
+  (yas/load-directory-1 directory)
+  (when (interactive-p)
+    (message "done.")))
+
 (defun yas/initialize ()
   "Do necessary initialization."
   (dolist (key yas/trigger-keys)
@@ -632,8 +671,7 @@ the menu if `yas/use-menu' is `t'."
 		      :keys ,(concat key yas/trigger-symbol)))))))
 
 (defun yas/expand ()
-  "Expand a snippet. When a snippet is expanded, t is returned,
-otherwise, nil returned."
+  "Expand a snippet."
   (interactive)
   (multiple-value-bind (key start end) (yas/current-key)
     (let ((templates (gethash key (yas/current-snippet-table))))
@@ -699,22 +737,5 @@ otherwise, nil returned."
     (dolist (field (yas/group-fields group))
       (delete-overlay (yas/field-overlay field)))))
 
-(defun yas/load-directory (directory)
-  "Load snippet definition from a directory hierarchy.
-Below the top-level directory, each directory is a mode
-name. And under each subdirectory, each file is a definition
-of a snippet. The file name is the trigger key and the
-content of the file is the template."
-  (with-temp-buffer
-    (dolist (mode (yas/directory-files directory nil))
-      (let ((mode-sym (intern (file-name-nondirectory mode))))
-	(dolist (file (yas/directory-files mode t))
-	  (when (file-readable-p file)
-	    (insert-file-contents file nil nil nil t)
-	    (multiple-value-bind 
-		(key template name)
-		(cons (file-name-nondirectory file)
-		      (yas/parse-template))
-	      (yas/define mode-sym key template name))))))))
 
 (provide 'yasnippet)
