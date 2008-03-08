@@ -638,6 +638,53 @@ hierarchy."
 		      (yas/parse-template))
 	      (yas/define mode-sym key template name))))))))
 
+(defun yas/quote-string (string)
+  "Escape and quote STRING.
+foo\"bar\\! -> \"foo\\\"bar\\\\!\""
+  (concat "\""
+	  (replace-regexp-in-string "[\\\"]"
+				    "\\\\\\&"
+				    string
+				    t)
+	  "\""))
+
+(defun yas/compile-bundle (yasnippet yasnippet-bundle snippet-roots)
+  "Compile snippets in SNIPPET-ROOTS to a single bundle file.
+SNIPPET-ROOTS is a list of root directories that contains the snippets
+definition. YASNIPPET is the yasnippet.el file path. YASNIPPET-BUNDLE
+is the output file of the compile result. Here's an example:
+
+ (yas/compile-bundle \"~/.emacs.d/plugins/yasnippet/yasnippet.el\"
+                     \"~/.emacs.d/plugins/yasnippet-bundle.el\"
+                     '(\"~/.emacs.d/plugins/yasnippet/snippets\"))"
+  (let ((dirs (or (and (listp snippet-roots) snippet-roots)
+		  (list snippet-roots)))
+	(bundle-buffer nil))
+    (with-temp-buffer
+      (setq bundle-buffer (current-buffer))
+      (insert-file-contents yasnippet)
+      (goto-char (point-max))
+      (insert ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;\n")
+      (insert ";;;;      Auto-generated code         ;;;;\n")
+      (insert ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;\n")
+      (insert "(yas/initialize)\n")
+      (flet ((yas/define (mode key template name)
+			 (with-current-buffer bundle-buffer
+			   (insert "(yas/define '" (symbol-name mode) "\n")
+			   (insert "  " (yas/quote-string key) "\n")
+			   (insert "  " (yas/quote-string template) "\n")
+			   (insert "  " (yas/quote-string (or name key)))
+			   (insert ")\n"))))
+	(dolist (dir dirs)
+	  (yas/load-directory-1 dir)))
+      (insert "(provide '"
+	      (file-name-nondirectory
+	       (file-name-sans-extension
+		yasnippet-bundle))
+	      ")\n")
+      (setq buffer-file-name yasnippet-bundle)
+      (save-buffer))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; User level functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
