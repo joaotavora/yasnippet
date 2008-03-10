@@ -71,6 +71,16 @@ current column if this variable is non-`nil'.")
 (define-key yas/keymap (kbd "<S-iso-lefttab>") 'yas/prev-field-group)
 (define-key yas/keymap (kbd "<S-tab>") 'yas/prev-field-group)
 
+(defvar yas/show-all-modes-in-menu nil
+  "Currently yasnippet only all \"real modes\" to menubar. For
+example, you define snippets for \"cc-mode\" and make it the
+parent of `c-mode', `c++-mode' and `java-mode'. There's really
+no such mode like \"cc-mode\". So we don't show it in the yasnippet
+menu to avoid the menu becoming too big with strange modes. The
+snippets defined for \"cc-mode\" can still be accessed from
+menu-bar->c-mode->parent (or c++-mode, java-mode, all are ok).
+However, if you really like to show all modes in the menu, set
+this variable to t.") 
 (defvar yas/use-menu t
   "If this is set to `t', all snippet template of the current
 mode will be listed under the menu \"yasnippet\".")
@@ -800,7 +810,8 @@ real mode."
 	(define-key keymap (vector 'parent-mode)
 	  `(menu-item "parent mode"
 		      ,(yas/menu-keymap-for-mode parent-mode)))))
-    (when yas/use-menu
+    (when (and yas/use-menu
+	       (fboundp mode))
       (define-key yas/menu-keymap (vector mode)
 	`(menu-item ,(symbol-name mode) ,keymap)))
     (dolist (snippet snippets)
