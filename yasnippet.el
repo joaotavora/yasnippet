@@ -855,6 +855,16 @@ real mode."
 			,(yas/make-menu-binding (yas/template-content template))
 			:keys ,(concat key yas/trigger-symbol))))))))
 
+(defun yas/set-mode-parent (mode parent)
+  "Set parent mode of MODE to PARENT."
+  (setf (yas/snippet-table-parent
+	 (yas/snippet-table mode))
+	(yas/snippet-table parent))
+  (when yas/use-menu
+    (define-key (yas/menu-keymap-for-mode mode) (vector 'parent-mode)
+      `(menu-item "parent mode"
+		  ,(yas/menu-keymap-for-mode parent)))))
+
 (defun yas/define (mode key template &optional name)
   "Define a snippet. Expanding KEY into TEMPLATE.
 NAME is a description to this template. Also update
