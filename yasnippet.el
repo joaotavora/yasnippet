@@ -118,9 +118,9 @@ mode will be listed under the menu \"yasnippet\".")
 (defvar yas/overlay-insert-in-front-hooks
   (list 'yas/overlay-insert-in-front-hook)
   "The list of hooks of the overlay inserted in front event.")
-(defvar yas/overlay-insert-behind-hooks
-  (list 'yas/overlay-insert-behind-hook)
-  "The list of hooks of the overlay inserted behind event.")
+(defvar yas/keymap-overlay-modification-hooks
+  (list 'yas/overlay-maybe-insert-behind-hook)
+  "The list of hooks of the big keymap overlay modification event.")
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -299,14 +299,22 @@ the template of a snippet in the current snippet-table."
 	    (goto-char end)
 	    (delete-char (- (overlay-end overlay) end)))))
      (yas/synchronize-fields field-group))))
-(defun yas/overlay-insert-behind-hook (overlay after? beg end &optional length)
-  "Hook for snippet overlay when text is inserted just behind a snippet field."
+(defun yas/overlay-maybe-insert-behind-hook (overlay after? beg end &optional length)
+  "Insert behind hook sometimes doesn't get called. I don't know why.
+So I add modification hook in the big overlay and try to detect `insert-behind'
+event manually."
   (when (and after?
-	     (null (yas/current-snippet-overlay beg))) ; not inside another field
-    (move-overlay overlay
-		  (overlay-start overlay)
-		  end)
-    (yas/synchronize-fields (overlay-get overlay 'yas/group))))
+	     (= length 0)
+	     (> end beg)
+	     (null (yas/current-snippet-overlay beg))
+	     (not (bobp)))
+    (let ((field-overlay (yas/current-snippet-overlay (1- beg))))
+      (when (and field-overlay
+		 (= beg (overlay-end field-overlay)))
+	(move-overlay field-overlay
+		      (overlay-start field-overlay)
+		      end)
+	(yas/synchronize-fields (overlay-get field-overlay 'yas/group))))))
 
 (defun yas/undo-expand-snippet (start end key snippet)
   "Undo a snippet expansion. Delete the overlays. This undo can't be
@@ -412,6 +420,12 @@ will be deleted before inserting template."
 				     nil
 				     nil
 				     t)))
+	  (overlay-put overlay 
+		       'modification-hooks
+		       yas/keymap-overlay-modification-hooks)
+	  (overlay-put overlay 
+		       'insert-behind-hooks
+		       yas/keymap-overlay-modification-hooks)
 	  (overlay-put overlay 'keymap yas/keymap)
 	  (overlay-put overlay 'yas/snippet-reference snippet)
 	  (setf (yas/snippet-overlay snippet) overlay))
@@ -444,7 +458,6 @@ will be deleted before inserting template."
 	    (overlay-put overlay 'yas/modified? nil)
 	    (overlay-put overlay 'modification-hooks yas/overlay-modification-hooks)
 	    (overlay-put overlay 'insert-in-front-hooks yas/overlay-insert-in-front-hooks)
-	    (overlay-put overlay 'insert-behind-hooks yas/overlay-insert-behind-hooks)
 	    (dolist (field (yas/group-fields group))
 	      (overlay-put (yas/field-overlay field)
 			   'face 
