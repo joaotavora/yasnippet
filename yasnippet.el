@@ -357,12 +357,26 @@ event manually."
 	     (null (yas/current-snippet-overlay beg))
 	     (not (bobp)))
     (let ((field-overlay (yas/current-snippet-overlay (1- beg))))
-      (when (and field-overlay
-		 (= beg (overlay-end field-overlay)))
-	(move-overlay field-overlay
-		      (overlay-start field-overlay)
-		      end)
-	(yas/synchronize-fields (overlay-get field-overlay 'yas/group))))))
+      (if field-overlay
+	  (when (= beg (overlay-end field-overlay))
+	    (move-overlay field-overlay
+			  (overlay-start field-overlay)
+			  end)
+	    (yas/synchronize-fields (overlay-get field-overlay 'yas/group)))
+	(let ((snippet (yas/snippet-of-current-keymap))
+	      (done nil))
+	  (if snippet
+	      (do* ((tabstops (yas/snippet-tabstops snippet) (cdr tabstops))
+		    (tabstop (car tabstops) (car tabstops)))
+		  ((or (null tabstops)
+		       done))
+		(setq field-overlay (yas/field-overlay 
+				     (yas/group-primary-field tabstop)))
+		(when (= beg
+			 (overlay-start field-overlay))
+		  (move-overlay field-overlay beg end)
+		  (yas/synchronize-fields tabstop)
+		  (setq done t)))))))))
 
 (defun yas/undo-expand-snippet (start end key snippet)
   "Undo a snippet expansion. Delete the overlays. This undo can't be
