@@ -80,7 +80,7 @@ menu to avoid the menu becoming too big with strange modes. The
 snippets defined for \"cc-mode\" can still be accessed from
 menu-bar->c-mode->parent (or c++-mode, java-mode, all are ok).
 However, if you really like to show all modes in the menu, set
-this variable to t.") 
+this variable to t.")
 (defvar yas/use-menu t
   "If this is set to `t', all snippet template of the current
 mode will be listed under the menu \"yasnippet\".")
@@ -104,6 +104,9 @@ mode will be listed under the menu \"yasnippet\".")
 (define-key yas/menu-keymap [yas/separator]
   '(menu-item "--"))
 
+(defvar yas/known-modes
+  '(ruby-mode)
+  "A list of mode which is well known but not part of emacs.")
 (defconst yas/escape-backslash
   (concat "YASESCAPE" "BACKSLASH" "PROTECTGUARD"))
 (defconst yas/escape-dollar
@@ -235,6 +238,15 @@ fetch from parent if any."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun yas/real-mode? (mode)
+  "Try to find out if MODE is a real mode. The MODE bound to
+a function (like `c-mode') is considered real mode. Other well
+known mode like `ruby-mode' which is not part of Emacs might
+not bound to a function until it is loaded. So yasnippet keeps
+a list of modes like this to help the judgement."
+  (or (fboundp mode)
+      (find mode yas/known-modes)))
+
 (defun yas/eval-string (string)
   "Evaluate STRING and convert the result to string."
   (condition-case err
@@ -719,15 +731,28 @@ is the output file of the compile result. Here's an example:
       (insert ";;;;      Auto-generated code         ;;;;\n")
       (insert ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;\n")
       (insert "(yas/initialize)\n")
-      (flet ((yas/define (mode key template name)
-			 (with-current-buffer bundle-buffer
-			   (insert "(yas/define '" (symbol-name mode) "\n")
-			   (insert "  " (yas/quote-string key) "\n")
-			   (insert "  " (yas/quote-string template) "\n")
-			   (insert "  " (yas/quote-string (or name key)))
-			   (insert ")\n"))))
-	(dolist (dir dirs)
-	  (yas/load-directory-1 dir)))
+      (flet ((yas/define-snippets 
+	      (mode snippets &optional parent)
+	      (with-current-buffer bundle-buffer
+		(insert ";;; snippets for " (symbol-name mode) "\n")
+		(insert "(yas/define-snippets '" (symbol-name mode) "\n")
+		(insert "'(\n")
+		(dolist (snippet snippets)
+		  (insert "  (" 
+			  (yas/quote-string (car snippet))
+			  (yas/quote-string (cadr snippet))
+			  (if (caddr snippet)
+			      (yas/quote-string (caddr snippet))
+			    "nil")
+			  ")\n"))
+		(insert "  )\n")
+		(insert (if parent
+			    (concat "'" (symbol-name parent))
+			  "nil")
+			")\n\n"))))
+	    (dolist (dir dirs)
+	      (dolist (subdir (yas/directory-files dir nil))
+		(yas/load-directory-1 subdir nil))))
       (insert "(provide '"
 	      (file-name-nondirectory
 	       (file-name-sans-extension
@@ -811,7 +836,7 @@ real mode."
 	  `(menu-item "parent mode"
 		      ,(yas/menu-keymap-for-mode parent-mode)))))
     (when (and yas/use-menu
-	       (fboundp mode))
+	       (yas/real-mode? mode))
       (define-key yas/menu-keymap (vector mode)
 	`(menu-item ,(symbol-name mode) ,keymap)))
     (dolist (snippet snippets)
