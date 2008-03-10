@@ -870,7 +870,7 @@ real mode."
 NAME is a description to this template. Also update
 the menu if `yas/use-menu' is `t'."
   (yas/define-snippets mode
-		       (list key template name)))
+		       (list (list key template name))))
     
 
 (defun yas/expand ()
