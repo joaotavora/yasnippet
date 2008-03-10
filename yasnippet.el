@@ -3,7 +3,7 @@
 ;; Copyright 2008 pluskid
 ;; 
 ;; Author: pluskid <pluskid@gmail.com>
-;; Version: 0.1.1
+;; Version: 0.2.0
 ;; X-URL: http://code.google.com/p/yasnippet/
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -79,7 +79,7 @@ mode will be listed under the menu \"yasnippet\".")
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defvar yas/version "0.1")
+(defvar yas/version "0.2.0")
 
 (defvar yas/snippet-tables (make-hash-table)
   "A hash table of snippet tables corresponding to each major-mode.")
@@ -144,12 +144,17 @@ mode will be listed under the menu \"yasnippet\".")
   (next nil)
   (prev nil)
   snippet)
-(defstruct (yas/field (:constructor yas/make-field (overlay number value transform)))
+(defstruct (yas/field 
+	    (:constructor yas/make-field (overlay number value transform)))
   "A field in a snippet."
   overlay
   number
   transform
   value)
+(defstruct (yas/snippet-table (:constructor yas/make-snippet-table ()))
+  "A table to store snippets for a perticular mode."
+  (hash (make-hash-table :test 'equal))
+  (parent nil))
 
 (defun yas/snippet-add-field (snippet field)
   "Add FIELD to SNIPPET."
@@ -198,6 +203,25 @@ have, compare through the start point of the overlay."
 	(< (overlay-start (yas/field-overlay field1))
 	   (overlay-start (yas/field-overlay field2)))))))
 
+(defun yas/snippet-table-fetch (table key)
+  "Fetch a snippet binding to KEY from TABLE. If not found,
+fetch from parent if any."
+  (let ((templates (gethash key (yas/snippet-table-hash table))))
+    (when (and (null templates)
+	       (not (null (yas/snippet-table-parent table))))
+      (setq templates (yas/snippet-table-fetch
+		       (yas/snippet-table-parent table)
+		       key)))
+    templates))
+(defun yas/snippet-table-store (table full-key key template)
+  "Store a snippet template in the table."
+  (puthash key
+	   (yas/modify-alist (gethash key
+				      (yas/snippet-table-hash table))
+			     full-key
+			     template)
+	   (yas/snippet-table-hash table)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -226,7 +250,7 @@ unmodified."
   "Get the snippet table corresponding to MODE."
   (let ((table (gethash mode yas/snippet-tables)))
     (unless table
-      (setq table (make-hash-table :test 'equal))
+      (setq table (yas/make-snippet-table))
       (puthash mode table yas/snippet-tables))
     table))
 (defsubst yas/current-snippet-table ()
@@ -253,8 +277,9 @@ the template of a snippet in the current snippet-table."
       (setq syntaxes (cdr syntaxes))
       (save-excursion
 	(skip-syntax-backward syntax)
-	(when (gethash (buffer-substring-no-properties (point) end)
-		       (yas/current-snippet-table))
+	(when (yas/snippet-table-fetch
+	       (yas/current-snippet-table)
+	       (buffer-substring-no-properties (point) end))
 	  (setq done t)
 	  (setq start (point)))))
     (list (buffer-substring-no-properties start end)
@@ -636,20 +661,23 @@ t is returned simply."
     ;; no window system, simply select the first one
     (cdar templates)))
 
-(defun yas/load-directory-1 (directory)
+(defun yas/load-directory-1 (directory &optional parent)
   "Really do the job of loading snippets from a directory 
 hierarchy."
-  (with-temp-buffer
-    (dolist (mode (yas/directory-files directory nil))
-      (let ((mode-sym (intern (file-name-nondirectory mode))))
-	(dolist (file (yas/directory-files mode t))
-	  (when (file-readable-p file)
-	    (insert-file-contents file nil nil nil t)
-	    (multiple-value-bind 
-		(key template name)
-		(cons (file-name-nondirectory file)
+  (let ((mode-sym (intern (file-name-nondirectory directory)))
+	(snippets nil))
+    (with-temp-buffer
+      (dolist (file (yas/directory-files directory t))
+	(when (file-readable-p file)
+	  (insert-file-contents file nil nil nil t)
+	  (push (cons (file-name-nondirectory file)
 		      (yas/parse-template))
-	      (yas/define mode-sym key template name))))))))
+		snippets))))
+    (yas/define-snippets mode-sym
+			 snippets
+			 parent)
+    (dolist (subdir (yas/directory-files directory nil))
+      (yas/load-directory-1 subdir mode-sym))))
 
 (defun yas/quote-string (string)
   "Escape and quote STRING.
@@ -734,7 +762,8 @@ content of the file is the template."
   (interactive "DSelect the root directory: ")
   (unless yas/root-directory
     (setq yas/root-directory directory))
-  (yas/load-directory-1 directory)
+  (dolist (dir (yas/directory-files directory nil))
+    (yas/load-directory-1 dir))
   (when (interactive-p)
     (message "done.")))
 
@@ -748,33 +777,62 @@ content of the file is the template."
       (cons "YASnippet" yas/menu-keymap)
       'buffer)))
 
+(defun yas/define-snippets (mode snippets &optional parent-mode)
+  "Define snippets for MODE. SNIPPETS is a list of
+snippet definition, of the following form:
+ (KEY TEMPLATE NAME)
+or the NAME may be omitted. The optional 3rd parameter
+can be used to specify the parent mode of MODE. That is,
+when looking a snippet in MODE failed, it can refer to
+its parent mode. The PARENT-MODE may not need to be a 
+real mode."
+  (let ((snippet-table (yas/snippet-table mode))
+	(parent-table (if parent-mode
+			  (yas/snippet-table parent-mode)
+			nil))
+	(keymap (if yas/use-menu
+		    (yas/menu-keymap-for-mode mode)
+		  nil)))
+    (when parent-table
+      (setf (yas/snippet-table-parent snippet-table)
+	    parent-table)
+      (when yas/use-menu
+	(define-key keymap (vector 'parent-mode)
+	  `(menu-item "parent mode"
+		      ,(yas/menu-keymap-for-mode parent-mode)))))
+    (when yas/use-menu
+      (define-key yas/menu-keymap (vector mode)
+	`(menu-item ,(symbol-name mode) ,keymap)))
+    (dolist (snippet snippets)
+      (let* ((full-key (car snippet))
+	     (key (file-name-sans-extension full-key))
+	     (name (caddr snippet))
+	     (template (yas/make-template (cadr snippet)
+					  (or name key))))
+	(yas/snippet-table-store snippet-table
+				 full-key
+				 key
+				 template)
+	(when yas/use-menu
+	  (define-key keymap (vector (make-symbol full-key))
+	    `(menu-item ,(yas/template-name template)
+			,(yas/make-menu-binding (yas/template-content template))
+			:keys ,(concat key yas/trigger-symbol))))))))
+
 (defun yas/define (mode key template &optional name)
   "Define a snippet. Expanding KEY into TEMPLATE.
 NAME is a description to this template. Also update
 the menu if `yas/use-menu' is `t'."
-  (let* ((full-key key)
-	 (key (file-name-sans-extension full-key))
-	 (template (yas/make-template template (or name key)))
-	 (snippet-table (yas/snippet-table mode)))
-    (puthash key
-	     (yas/modify-alist (gethash key snippet-table)
-			       full-key
-			       template)
-	     snippet-table)
-    (when yas/use-menu
-      (let ((keymap (yas/menu-keymap-for-mode mode)))
-	(define-key yas/menu-keymap (vector mode) 
-	  `(menu-item ,(symbol-name mode) ,keymap))
-	(define-key keymap (vector (make-symbol full-key))
-	  `(menu-item ,(yas/template-name template)
-		      ,(yas/make-menu-binding (yas/template-content template))
-		      :keys ,(concat key yas/trigger-symbol)))))))
+  (yas/define-snippets mode
+		       (list key template name)))
+    
 
 (defun yas/expand ()
   "Expand a snippet."
   (interactive)
   (multiple-value-bind (key start end) (yas/current-key)
-    (let ((templates (gethash key (yas/current-snippet-table))))
+    (let ((templates (yas/snippet-table-fetch (yas/current-snippet-table)
+					      key)))
       (if templates
 	  (let ((template (if (null (cdr templates)) ; only 1 template
 			      (yas/template-content (cdar templates))
