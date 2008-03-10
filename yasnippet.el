@@ -176,7 +176,7 @@ mode will be listed under the menu \"yasnippet\".")
 		     :test
 		     '(lambda (field group)
 			(and (not (null (yas/field-number field)))
-			     (not (null (yas/group-number group))
+			     (not (null (yas/group-number group)))
 			     (= (yas/field-number field)
 				(yas/group-number group)))))))
     (if group
