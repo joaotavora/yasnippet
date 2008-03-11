@@ -1,0 +1,5 @@
+#name : def ... :
+# --
+def ${1:fname}(${self}):
+    "docstring for $1"
+    ${pass}$0

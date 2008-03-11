@@ -1,0 +1,7 @@
+#name : class ... :
+# --
+class ${1:cname}(${2:object}):
+    "docstring for $1"
+    def __init__(self, ${3:arg}):
+        self.$3 = $3
+        $0
