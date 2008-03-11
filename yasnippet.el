@@ -105,7 +105,7 @@ mode will be listed under the menu \"yasnippet\".")
   '(menu-item "--"))
 
 (defvar yas/known-modes
-  '(ruby-mode)
+  '(ruby-mode rst-mode)
   "A list of mode which is well known but not part of emacs.")
 (defconst yas/escape-backslash
   (concat "YASESCAPE" "BACKSLASH" "PROTECTGUARD"))
