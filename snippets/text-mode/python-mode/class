@@ -1,3 +1,4 @@
+#contributor : Orestis Markou
 #name : class ... :
 # --
 class ${1:cname}(${2:object}):

@@ -1,3 +1,4 @@
+#contributor : Orestis Markou
 #name : def ... :
 # --
 def ${1:fname}(${self}):
