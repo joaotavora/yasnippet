@@ -86,6 +86,15 @@ this variable to t.")
 mode will be listed under the menu \"yasnippet\".")
 (defvar yas/trigger-symbol " =>"
   "The text that will be used in menu to represent the trigger.")
+
+(defface yas/field-highlight-face
+  '((((class color) (background light)) (:background "DarkSeaGreen2"))
+    (t (:background "DimGrey")))
+  "The face used to highlight a field of snippet.")
+(defface yas/mirror-highlight-face
+  '((((class color) (background light)) (:background "LightYellow2"))
+    (t (:background "gray22")))
+  "The face used to highlight mirror fields of a snippet.")
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -520,10 +529,12 @@ will be deleted before inserting template."
 	    (overlay-put overlay 'yas/modified? nil)
 	    (overlay-put overlay 'modification-hooks yas/overlay-modification-hooks)
 	    (overlay-put overlay 'insert-in-front-hooks yas/overlay-insert-in-front-hooks)
+	    (overlay-put overlay 'face 'yas/field-highlight-face)
 	    (dolist (field (yas/group-fields group))
-	      (overlay-put (yas/field-overlay field)
-			   'face 
-			   'highlight))))
+	      (unless (equal overlay (yas/field-overlay field))
+		(overlay-put (yas/field-overlay field)
+			     'face 
+			     'yas/mirror-highlight-face)))))
 
 	;; Step 11: move to end and make sure exit-marker exist
 	(goto-char (point-max))
