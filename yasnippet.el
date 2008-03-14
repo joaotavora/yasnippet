@@ -797,7 +797,8 @@ Run `indent-for-tab-command'."
   (interactive)
   (let ((command (key-binding (kbd "TAB"))))
     (if (and command
-	     (not (eq command 'yas/expand)))
+	     (not (eq command 'yas/expand))
+	     (not (eq command 'yas/next-field-group)))
 	(call-interactively command)
       (call-interactively 'indent-for-tab-command))))
 
@@ -923,18 +924,18 @@ the menu if `yas/use-menu' is `t'."
       (let ((snippet (yas/snippet-of-current-keymap))
 	    (done nil))
 	(if snippet
-	  (do* ((tabstops (yas/snippet-tabstops snippet) (cdr tabstops))
-		(tabstop (car tabstops) (car tabstops)))
-	      ((or (null tabstops)
-		   done)
-	       (unless done (message "Not in a snippet field.")))
-	    (when (= (point)
-		     (overlay-start
-		      (yas/field-overlay
-		       (yas/group-primary-field tabstop))))
-	      (setq done t)
-	      (yas/navigate-group tabstop t)))
-	  (message "Not in a snippet field."))))))
+	    (do* ((tabstops (yas/snippet-tabstops snippet) (cdr tabstops))
+		  (tabstop (car tabstops) (car tabstops)))
+		((or (null tabstops)
+		     done)
+		 (unless done (call-interactively 'yas/expand)))
+	      (when (= (point)
+		       (overlay-start
+			(yas/field-overlay
+			 (yas/group-primary-field tabstop))))
+		(setq done t)
+		(yas/navigate-group tabstop t)))
+	  (call-interactively 'yas/expand))))))
 
 (defun yas/prev-field-group ()
   "Navigate to prev field group. If there's none, exit the snippet."
