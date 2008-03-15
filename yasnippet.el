@@ -260,7 +260,10 @@ a list of modes like this to help the judgement."
 (defun yas/eval-string (string)
   "Evaluate STRING and convert the result to string."
   (condition-case err
-      (format "%s" (eval (read string)))
+      (save-excursion
+	(save-restriction
+	  (save-match-data
+	    (format "%s" (eval (read string))))))
     (error (format "(error in elisp evaluation: %s)" 
 		   (error-message-string err)))))
 (defun yas/calculate-field-value (field value)
