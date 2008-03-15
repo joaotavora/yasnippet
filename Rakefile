@@ -32,10 +32,10 @@ desc "create a release package and upload it to google code"
 task :release => [:bundle, :package] do
   version = find_version
   sh "googlecode_upload.py -s \"YASnippet Release #{$version}\"" +
-    " -p yasnippet --config-dir=none -l \"Featured,Type-Package,OpSys-All\"" +
+    " -p yasnippet -l \"Featured,Type-Package,OpSys-All\"" +
     " pkg/yasnippet-#{$version}.tar.bz2"
   sh "googlecode_upload.py -s \"YASnippet Bundle #{$version}\"" +
-    " -p yasnippet --config-dir=none -l \"Featured,Type-Package,OpSys-All\"" +
+    " -p yasnippet -l \"Featured,Type-Package,OpSys-All\"" +
     " pkg/yasnippet-bundle-#{$version}.el.tgz"
 
 end
