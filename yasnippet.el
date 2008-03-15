@@ -707,7 +707,7 @@ t is returned simply."
       (car (x-popup-menu (yas/point-to-coord) 
 			 (yas/fake-keymap-for-popup templates)))
     ;; no window system, simply select the first one
-    (cdar templates)))
+    (yas/template-content (cdar templates))))
 
 (defun yas/load-directory-1 (directory &optional parent)
   "Really do the job of loading snippets from a directory 
