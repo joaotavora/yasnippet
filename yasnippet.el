@@ -109,6 +109,14 @@ a window system.")
   "A list of mode-hook that should be hooked to enable yas/minor-mode.
 Most modes need no special consideration. Some mode (like ruby-mode)
 doesn't call `after-change-major-mode-hook' need to be hooked explicitly.")
+
+(defvar yas/after-exit-snippet-hook
+  '()
+  "Hooks to run after a snippet exited.
+The hooks will be run in an environment where some variables bound to 
+proper values:
+ * yas/snippet-beg : The beginning of the region of the snippet.
+ * yas/snippet-end : Similar to beg.")
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1029,11 +1037,16 @@ the menu if `yas/use-menu' is `t'."
 (defun yas/exit-snippet (snippet)
   "Goto exit-marker of SNIPPET and delete the snippet."
   (interactive)
-  (goto-char (yas/snippet-exit-marker snippet))
-  (delete-overlay (yas/snippet-overlay snippet))
-  (dolist (group (yas/snippet-groups snippet))
-    (dolist (field (yas/group-fields group))
-      (delete-overlay (yas/field-overlay field)))))
+  (let ((overlay (yas/snippet-overlay snippet)))
+    (let ((yas/snippet-beg (overlay-start overlay))
+	  (yas/snippet-end (overlay-end overlay)))
+      (goto-char (yas/snippet-exit-marker snippet))
+      (delete-overlay overlay)
+      (dolist (group (yas/snippet-groups snippet))
+	(dolist (field (yas/group-fields group))
+	  (delete-overlay (yas/field-overlay field))))
+
+      (run-hooks 'yas/after-exit-snippet-hook))))
 
 (provide 'yasnippet)
 
