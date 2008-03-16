@@ -95,6 +95,16 @@ mode will be listed under the menu \"yasnippet\".")
   '((((class color) (background light)) (:background "LightYellow2"))
     (t (:background "gray22")))
   "The face used to highlight mirror fields of a snippet.")
+
+(defvar yas/window-system-popup-function #'yas/x-popup-menu-for-template
+  "When there's multiple candidate for a snippet key. This function
+is called to let user select one of them. `yas/text-popup-function'
+is used instead when not in a window system.")
+(defvar yas/text-popup-function #'yas/text-popup-for-template
+  "When there's multiple candidate for a snippet key. If not in a
+window system, this function is called to let user select one of
+them. `yas/window-system-popup-function' is used instead when in
+a window system.")
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -704,13 +714,19 @@ t is returned simply."
 	      (selected-window)))
     t))
  
-(defun yas/popup-for-template (templates)
+(defun yas/x-popup-menu-for-template (templates)
   "Show a popup menu listing templates to let the user select one."
+  (car (x-popup-menu (yas/point-to-coord)
+		     (yas/fake-keymap-for-popup templates))))
+(defun yas/text-popup-for-template (templates)
+  "Can't display popup menu in text mode. Just select the first one."
+  (yas/template-content (cdar templates)))
+
+(defun yas/popup-for-template (templates)
+
   (if window-system
-      (car (x-popup-menu (yas/point-to-coord) 
-			 (yas/fake-keymap-for-popup templates)))
-    ;; no window system, simply select the first one
-    (yas/template-content (cdar templates))))
+      (funcall yas/window-system-popup-function templates)
+    (funcall yas/text-popup-function templates)))
 
 (defun yas/load-directory-1 (directory &optional parent)
   "Really do the job of loading snippets from a directory 
