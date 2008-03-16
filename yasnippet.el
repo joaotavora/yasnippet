@@ -59,10 +59,12 @@ current column if this variable is non-`nil'.")
 
 (defvar yas/trigger-key (kbd "TAB")
   "The key to bind as a trigger of snippet.")
+(defvar yas/next-field-key (kbd "TAB")
+  "The key to navigate to next field.")
 
 (defvar yas/keymap (make-sparse-keymap)
   "The keymap of snippet.")
-(define-key yas/keymap (kbd "TAB") 'yas/next-field-group)
+(define-key yas/keymap yas/next-field-key 'yas/next-field-group)
 (define-key yas/keymap (kbd "S-TAB") 'yas/prev-field-group)
 (define-key yas/keymap (kbd "<S-iso-lefttab>") 'yas/prev-field-group)
 (define-key yas/keymap (kbd "<S-tab>") 'yas/prev-field-group)
@@ -101,6 +103,12 @@ is used instead when not in a window system.")
 window system, this function is called to let user select one of
 them. `yas/window-system-popup-function' is used instead when in
 a window system.")
+
+(defvar yas/extra-mode-hooks
+  '(ruby-mode-hook)
+  "A list of mode-hook that should be hooked to enable yas/minor-mode.
+Most modes need no special consideration. Some mode (like ruby-mode)
+doesn't call `after-change-major-mode-hook' need to be hooked explicitly.")
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -879,6 +887,9 @@ content of the file is the template."
   "Do necessary initialization."
   (add-hook 'after-change-major-mode-hook
 	    'yas/minor-mode-on)
+  (dolist (hook yas/extra-mode-hooks)
+    (add-hook hook
+	      'yas/minor-mode-on))
   (when yas/use-menu
     (define-key-after 
       (lookup-key global-map [menu-bar])
@@ -977,14 +988,21 @@ the menu if `yas/use-menu' is `t'."
 		  (tabstop (car tabstops) (car tabstops)))
 		((or (null tabstops)
 		     done)
-		 (unless done (call-interactively 'yas/expand)))
+		 (unless done 
+		   (let* ((overlay (yas/snippet-overlay snippet))
+			  (keymap (overlay-get overlay 'keymap))
+			  (command nil))
+		     (overlay-put overlay 'keymap nil)
+		     (setq command (key-binding yas/next-field-key))
+		     (when (commandp command)
+		       (call-interactively command))
+		     (overlay-put overlay 'keymap keymap))))
 	      (when (= (point)
 		       (overlay-start
 			(yas/field-overlay
 			 (yas/group-primary-field tabstop))))
 		(setq done t)
-		(yas/navigate-group tabstop t)))
-	  (call-interactively 'yas/expand))))))
+		(yas/navigate-group tabstop t))))))))
 
 (defun yas/prev-field-group ()
   "Navigate to prev field group. If there's none, exit the snippet."
