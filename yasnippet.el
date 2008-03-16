@@ -721,6 +721,20 @@ t is returned simply."
 (defun yas/text-popup-for-template (templates)
   "Can't display popup menu in text mode. Just select the first one."
   (yas/template-content (cdar templates)))
+(defun yas/dropdown-list-popup-for-template (templates)
+  "Use dropdown-list.el to popup for templates. Better than the 
+default \"select first\" behavior of `yas/text-popup-for-template'.
+You can also use this in window-system.
+
+NOTE: You need to download and install dropdown-list.el to use this."
+  (if (fboundp 'dropdown-list)
+      (yas/template-content
+       (cdr (nth (dropdown-list (mapcar (lambda (i)
+					  (yas/template-name
+					   (cdr i)))
+					templates))
+		 templates)))
+    (error "Please download and install dropdown-list.el to use this")))
 
 (defun yas/popup-for-template (templates)
 
