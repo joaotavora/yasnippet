@@ -769,12 +769,14 @@ You can also use this in window-system.
 
 NOTE: You need to download and install dropdown-list.el to use this."
   (if (fboundp 'dropdown-list)
-      (yas/template-content
-       (cdr (nth (dropdown-list (mapcar (lambda (i)
-					  (yas/template-name
-					   (cdr i)))
-					templates))
-		 templates)))
+      (let ((n (dropdown-list (mapcar (lambda (i)
+					(yas/template-name
+					 (cdr i)))
+				      templates))))
+	(if n
+	    (yas/template-content
+	     (cdr (nth n templates)))
+	  nil))
     (error "Please download and install dropdown-list.el to use this")))
 
 (defun yas/popup-for-template (templates)
