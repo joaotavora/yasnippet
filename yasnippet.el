@@ -57,15 +57,11 @@ will first try \"bar\", if not found, then \"foo-bar\" is tried.")
 current column if this variable is non-`nil'.")
 (make-variable-buffer-local 'yas/indent-line)
 
-(defvar yas/trigger-key (kbd "<tab>")
+(defvar yas/trigger-key (kbd "TAB")
   "The key to bind as a trigger of snippet.")
-(defvar yas/trigger-fallback 'yas/default-trigger-fallback
-  "The fallback command to call when there's no snippet to expand.")
-(make-variable-buffer-local 'yas/trigger-fallback)
 
 (defvar yas/keymap (make-sparse-keymap)
   "The keymap of snippet.")
-(define-key yas/keymap (kbd "<tab>") 'yas/next-field-group)
 (define-key yas/keymap (kbd "TAB") 'yas/next-field-group)
 (define-key yas/keymap (kbd "S-TAB") 'yas/prev-field-group)
 (define-key yas/keymap (kbd "<S-iso-lefttab>") 'yas/prev-field-group)
@@ -153,6 +149,35 @@ a window system.")
 (defvar yas/keymap-overlay-modification-hooks
   (list 'yas/overlay-maybe-insert-behind-hook)
   "The list of hooks of the big keymap overlay modification event.")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; YASnippet minor mode
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define-minor-mode yas/minor-mode
+  "Toggle YASnippet mode.
+With no argument, this command toggles the mode.
+positive prefix argument turns on the mode.
+Negative prefix argument turns off the mode.
+
+When YASnippet mode is enabled, the TAB key
+expands snippets of code depending on the mode.
+
+You can customize the key through `yas/trigger-key'."
+  ;; The initial value.
+  nil
+  ;; The indicator for the mode line.
+  " yas"
+  ;; The minor mode bindings.
+  `((,yas/trigger-key . yas/expand))
+  :group 'editing)
+(defun yas/minor-mode-on ()
+  "Turn on YASnippet minor mode."
+  (interactive)
+  (yas/minor-mode 1))
+(defun yas/minor-mode-off ()
+  "Turn off YASnippet minor mode."
+  (interactive)
+  (yas/minor-mode -1))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -823,18 +848,6 @@ is the output file of the compile result. Here's an example:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; User level functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun yas/default-trigger-fallback ()
-  "Default fallback when a snippet expansion failed.
-It looks key binding for TAB. If found, execute it. If not found.
-Run `indent-for-tab-command'."
-  (interactive)
-  (let ((command (key-binding (kbd "TAB"))))
-    (if (and command
-	     (not (eq command 'yas/expand))
-	     (not (eq command 'yas/next-field-group)))
-	(call-interactively command)
-      (call-interactively 'indent-for-tab-command))))
-
 (defun yas/about ()
   (interactive)
   (message (concat "yasnippet (version "
@@ -864,7 +877,8 @@ content of the file is the template."
 
 (defun yas/initialize ()
   "Do necessary initialization."
-  (global-set-key yas/trigger-key 'yas/expand)
+  (add-hook 'after-change-major-mode-hook
+	    'yas/minor-mode-on)
   (when yas/use-menu
     (define-key-after 
       (lookup-key global-map [menu-bar])
@@ -945,8 +959,10 @@ the menu if `yas/use-menu' is `t'."
 			    (yas/popup-for-template templates))))
 	    (when template
 	      (yas/expand-snippet start end template)))
-	(when yas/trigger-fallback
-	  (call-interactively yas/trigger-fallback))))))
+	(let* ((yas/minor-mode nil)
+	       (command (key-binding yas/trigger-key)))
+	  (when (commandp command)
+	    (call-interactively command)))))))
 
 (defun yas/next-field-group ()
   "Navigate to next field group. If there's none, exit the snippet."
