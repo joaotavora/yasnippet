@@ -206,7 +206,6 @@ You can customize the key through `yas/trigger-key'."
 (defstruct (yas/snippet (:constructor yas/make-snippet ()))
   "A snippet."
   (groups nil)
-  (tabstops nil)    ; tabstops are those groups whose init value is empty
   (exit-marker nil)
   (id (yas/snippet-next-id) :read-only t)
   (overlay nil))
@@ -429,16 +428,18 @@ event manually."
 	(let ((snippet (yas/snippet-of-current-keymap))
 	      (done nil))
 	  (if snippet
-	      (do* ((tabstops (yas/snippet-tabstops snippet) (cdr tabstops))
-		    (tabstop (car tabstops) (car tabstops)))
-		  ((or (null tabstops)
+	      (do* ((groups (yas/snippet-groups snippet) (cdr groups))
+		    (group (car groups) (car groups)))
+		  ((or (null groups)
 		       done))
 		(setq field-overlay (yas/field-overlay 
-				     (yas/group-primary-field tabstop)))
-		(when (= beg
-			 (overlay-start field-overlay))
+				     (yas/group-primary-field group)))
+		(when (and (= (overlay-start field-overlay)
+			      (overlay-end field-overlay))
+			   (= beg
+			      (overlay-start field-overlay)))
 		  (move-overlay field-overlay beg end)
-		  (yas/synchronize-fields tabstop)
+		  (yas/synchronize-fields group)
 		  (setq done t)))))))))
 
 (defun yas/undo-expand-snippet (start end key snippet)
@@ -558,8 +559,6 @@ will be deleted before inserting template."
 	;; Step 8: Replace fields with default values
 	(dolist (group (yas/snippet-groups snippet))
 	  (let ((value (yas/group-value group)))
-	    (when (string= "" value)
-	      (push group (yas/snippet-tabstops snippet)))
 	    (dolist (field (yas/group-fields group))
 	      (let* ((overlay (yas/field-overlay field))
 		     (start (overlay-start overlay))
@@ -994,9 +993,9 @@ the menu if `yas/use-menu' is `t'."
       (let ((snippet (yas/snippet-of-current-keymap))
 	    (done nil))
 	(if snippet
-	    (do* ((tabstops (yas/snippet-tabstops snippet) (cdr tabstops))
-		  (tabstop (car tabstops) (car tabstops)))
-		((or (null tabstops)
+	    (do* ((groups (yas/snippet-groups snippet) (cdr groups))
+		  (group (car groups) (car groups)))
+		((or (null groups)
 		     done)
 		 (unless done 
 		   (let* ((overlay (yas/snippet-overlay snippet))
@@ -1010,9 +1009,9 @@ the menu if `yas/use-menu' is `t'."
 	      (when (= (point)
 		       (overlay-start
 			(yas/field-overlay
-			 (yas/group-primary-field tabstop))))
+			 (yas/group-primary-field group))))
 		(setq done t)
-		(yas/navigate-group tabstop t))))))))
+		(yas/navigate-group group t))))))))
 
 (defun yas/prev-field-group ()
   "Navigate to prev field group. If there's none, exit the snippet."
@@ -1023,17 +1022,17 @@ the menu if `yas/use-menu' is `t'."
       (let ((snippet (yas/snippet-of-current-keymap))
 	    (done nil))
 	(if snippet
-	  (do* ((tabstops (yas/snippet-tabstops snippet) (cdr tabstops))
-		(tabstop (car tabstops) (car tabstops)))
-	      ((or (null tabstops)
+	  (do* ((groups (yas/snippet-groups snippet) (cdr groups))
+		(group (car groups) (car groups)))
+	      ((or (null groups)
 		   done)
 	       (unless done (message "Not in a snippet field.")))
 	    (when (= (point)
 		     (overlay-start
 		      (yas/field-overlay
-		       (yas/group-primary-field tabstop))))
+		       (yas/group-primary-field group))))
 	      (setq done t)
-	      (yas/navigate-group tabstop nil)))
+	      (yas/navigate-group group nil)))
 	  (message "Not in a snippet field."))))))
 
 (defun yas/exit-snippet (snippet)
