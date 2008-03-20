@@ -120,9 +120,7 @@ proper values:
 
 (defvar yas/before-expand-snippet-hook
   '()
-  "Hooks to run after a before expanding a snippet.
-If you move the cursor (e.g. call `re-search-forward') in this hook,
-please wrap it with `save-excursion', or else yanippet will get confused.")
+  "Hooks to run after a before expanding a snippet.")
 
 (defvar yas/buffer-local-condition t
   "Condition to yasnippet local to each buffer.
@@ -517,6 +515,8 @@ redo-ed."
 (defun yas/expand-snippet (start end template)
   "Expand snippet at current point. Text between START and END
 will be deleted before inserting template."
+  (run-hooks 'yas/before-expand-snippet-hook)
+
   (goto-char start)
 
   (let ((key (buffer-substring-no-properties start end))
