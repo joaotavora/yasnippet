@@ -117,6 +117,30 @@ The hooks will be run in an environment where some variables bound to
 proper values:
  * yas/snippet-beg : The beginning of the region of the snippet.
  * yas/snippet-end : Similar to beg.")
+
+(defvar yas/before-expand-snippet-hook
+  '()
+  "Hooks to run after a before expanding a snippet.
+If you move the cursor (e.g. call `re-search-forward') in this hook,
+please wrap it with `save-excursion', or else yanippet will get confused.")
+
+(defvar yas/buffer-local-condition t
+  "Condition to yasnippet local to each buffer.
+If this eval to nil, no snippet can be expanded.
+If this eval to 'require-snippet-condition, then a snippet can be expanded
+if and only if it has a condition attached and that condition eval to non-nil.
+Otherwise, if a snippet has no condition or its conditin eval to non-nil, it
+will be expanded.
+
+Here's an example:
+
+ (add-hook 'python-mode-hook
+           '(lambda ()
+              (setq yas/buffer-local-condition
+                    '(if (python-in-string/comment)
+                         'require-snippet-condition
+                       t))))")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -201,10 +225,12 @@ You can customize the key through `yas/trigger-key'."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal Structs
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defstruct (yas/template (:constructor yas/make-template (content name)))
+(defstruct (yas/template (:constructor yas/make-template
+				       (content name condition)))
   "A template for a snippet."
   content
-  name)
+  name
+  condition)
 (defstruct (yas/snippet (:constructor yas/make-snippet ()))
   "A snippet."
   (groups nil)
@@ -278,10 +304,37 @@ have, compare through the start point of the overlay."
 	(< (overlay-start (yas/field-overlay field1))
 	   (overlay-start (yas/field-overlay field2)))))))
 
+(defun yas/template-condition-predicate (condition)
+  (condition-case err
+      (save-excursion
+	(save-restriction
+	  (save-match-data
+	    (eval condition))))
+    (error (progn
+	     (message (format "[yas]error in condition evaluation: %s"
+			      (error-message-string err)))
+	     nil))))
+
+(defun yas/filter-templates-by-condition (templates)
+  "Filter the templates using the condition. The rules are:
+
+ * If the template has no condition, it is kept.
+ * If the template's condition eval to non-nil, it is kept.
+ * Otherwise (eval error or eval to nil) it is filtered."
+  (remove-if-not '(lambda (pair)
+		    (let ((condition (yas/template-condition (cdr pair))))
+		      (if (null condition)
+			  (if yas/require-template-condition
+			      nil
+			    t)
+			(yas/template-condition-predicate condition))))
+		 templates))
+
 (defun yas/snippet-table-fetch (table key)
   "Fetch a snippet binding to KEY from TABLE. If not found,
 fetch from parent if any."
-  (let ((templates (gethash key (yas/snippet-table-hash table))))
+  (let ((templates (yas/filter-templates-by-condition
+		    (gethash key (yas/snippet-table-hash table)))))
     (when (and (null templates)
 	       (not (null (yas/snippet-table-parent table))))
       (setq templates (yas/snippet-table-fetch
@@ -364,11 +417,12 @@ the template of a snippet in the current snippet-table."
       (setq syntaxes (cdr syntaxes))
       (save-excursion
 	(skip-syntax-backward syntax)
-	(when (yas/snippet-table-fetch
-	       (yas/current-snippet-table)
-	       (buffer-substring-no-properties (point) end))
+	(setq start (point)))
+      (if (yas/snippet-table-fetch
+	   (yas/current-snippet-table)
+	   (buffer-substring-no-properties start end))
 	  (setq done t)
-	  (setq start (point)))))
+	(setq start end)))
     (list (buffer-substring-no-properties start end)
 	  start
 	  end)))
@@ -686,14 +740,17 @@ line through the syntax:
 
 #name : value
 
-Currently only the \"name\" variable is recognized. Here's 
-an example:
+Here's a list of currently recognized variables:
+
+ * name
+ * contributor
+ * condition
 
 #name: #include \"...\"
 # --
 #include \"$1\""
   (goto-char (point-min))
-  (let (template name bound)
+  (let (template name bound condition)
     (if (re-search-forward "^# --\n" nil t)
 	(progn (setq template 
 		     (buffer-substring-no-properties (point) 
@@ -702,10 +759,12 @@ an example:
 	       (goto-char (point-min))
 	       (while (re-search-forward "^#\\([^ ]+\\) *: *\\(.*\\)$" bound t)
 		 (when (string= "name" (match-string-no-properties 1))
-		   (setq name (match-string-no-properties 2)))))
+		   (setq name (match-string-no-properties 2)))
+		 (when (string= "condition" (match-string-no-properties 1))
+		   (setq condition (read (match-string-no-properties 2))))))
       (setq template
 	    (buffer-substring-no-properties (point-min) (point-max))))
-    (list template name)))
+    (list template name condition)))
 
 (defun yas/directory-files (directory file?)
   "Return directory files or subdirectories in full path."
@@ -847,6 +906,9 @@ is the output file of the compile result. Here's an example:
 			  (if (caddr snippet)
 			      (yas/quote-string (caddr snippet))
 			    "nil")
+			  (if (nth 3 snippet)
+			      (format "'%s" (nth 3 snippet))
+			    "nil")
 			  ")\n"))
 		(insert "  )\n")
 		(insert (if parent
@@ -911,12 +973,13 @@ content of the file is the template."
 (defun yas/define-snippets (mode snippets &optional parent-mode)
   "Define snippets for MODE. SNIPPETS is a list of
 snippet definition, of the following form:
- (KEY TEMPLATE NAME)
-or the NAME may be omitted. The optional 3rd parameter
-can be used to specify the parent mode of MODE. That is,
-when looking a snippet in MODE failed, it can refer to
-its parent mode. The PARENT-MODE may not need to be a 
-real mode."
+
+ (KEY TEMPLATE NAME CONDITION)
+
+or the NAME and CONDITION may be omitted. The optional 3rd
+parameter can be used to specify the parent mode of MODE. That
+is, when looking a snippet in MODE failed, it can refer to its
+parent mode. The PARENT-MODE may not need to be a real mode."
   (let ((snippet-table (yas/snippet-table mode))
 	(parent-table (if parent-mode
 			  (yas/snippet-table parent-mode)
@@ -939,8 +1002,10 @@ real mode."
       (let* ((full-key (car snippet))
 	     (key (file-name-sans-extension full-key))
 	     (name (caddr snippet))
+	     (condition (nth 3 snippet))
 	     (template (yas/make-template (cadr snippet)
-					  (or name key))))
+					  (or name key)
+					  condition)))
 	(yas/snippet-table-store snippet-table
 				 full-key
 				 key
@@ -961,31 +1026,41 @@ real mode."
       `(menu-item "parent mode"
 		  ,(yas/menu-keymap-for-mode parent)))))
 
-(defun yas/define (mode key template &optional name)
+(defun yas/define (mode key template &optional name condition)
   "Define a snippet. Expanding KEY into TEMPLATE.
 NAME is a description to this template. Also update
-the menu if `yas/use-menu' is `t'."
+the menu if `yas/use-menu' is `t'. CONDITION is the
+condition attached to this snippet. If you attach a
+condition to a snippet, then it will only be expanded
+when the condition evaluated to non-nil."
   (yas/define-snippets mode
-		       (list (list key template name))))
+		       (list (list key template name condition))))
     
 
 (defun yas/expand ()
   "Expand a snippet."
   (interactive)
-  (multiple-value-bind (key start end) (yas/current-key)
-    (let ((templates (yas/snippet-table-fetch (yas/current-snippet-table)
-					      key)))
-      (if templates
-	  (let ((template (if (null (cdr templates)) ; only 1 template
-			      (yas/template-content (cdar templates))
-			    (yas/popup-for-template templates))))
-	    (when template
-	      (yas/expand-snippet start end template)))
-	(let* ((yas/minor-mode nil)
-	       (command (key-binding yas/trigger-key)))
-	  (when (commandp command)
-	    (call-interactively command)))))))
-
+  (let ((local-condition (yas/template-condition-predicate
+			  yas/buffer-local-condition)))
+    (if local-condition
+	(let ((yas/require-template-condition (if (eq local-condition
+						      'require-snippet-condition)
+						  t
+						nil)))
+	  (multiple-value-bind (key start end) (yas/current-key)
+	    (let ((templates (yas/snippet-table-fetch (yas/current-snippet-table)
+						      key)))
+	      (if templates
+		  (let ((template (if (null (cdr templates)) ; only 1 template
+				      (yas/template-content (cdar templates))
+				    (yas/popup-for-template templates))))
+		    (when template
+		      (yas/expand-snippet start end template)))
+		(let* ((yas/minor-mode nil)
+		       (command (key-binding yas/trigger-key)))
+		  (when (commandp command)
+		    (call-interactively command))))))))))
+      
 (defun yas/next-field-group ()
   "Navigate to next field group. If there's none, exit the snippet."
   (interactive)
