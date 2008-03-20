@@ -19,7 +19,7 @@ desc "create a release package"
 task :package do
   release_dir = "pkg/yasnippet-#{$version}"
   FileUtils.mkdir_p(release_dir + "/doc")
-  files = ['snippets', 'yasnippet.el', 'Rakefile']
+  files = ['snippets', 'yasnippet.el']
   FileUtils.cp_r files, release_dir
   Dir['doc/*.html'].each { |f|
     FileUtils.cp f, release_dir + '/doc' + f.sub(/^doc/, "")
