@@ -176,8 +176,18 @@ Meta data are specified in the syntax of
   #data-name : data value
 
 Any other text above ``# --`` is considered as comment and
-ignored. You might want to refer to the list of currently `supported
-meta data`_ .
+ignored. Here's a list of currently supported meta data:
+
+* ``name``: The name of the snippet. This is a one-line description of
+  the snippet. It will be displayed in the menu. So it's a good idea
+  to select a descriptive name fo a snippet -- especially
+  distinguishable among similar snippets.
+* ``contributor``: The contributor of the snippet.
+* ``condition``: The condition of the snippet. This is a piece of
+  elisp code. If a snippet has a condition, then it will only be
+  expanded when the condition code evaluate to some non-nil value.
+
+
 
 Define snippets using elisp code
 --------------------------------
@@ -561,16 +571,152 @@ also indicate where to insert and expand the ``template``.
 The Syntax of the Template
 ==========================
 
-.. _supported meta data:
+The syntax of the snippet template is simple but powerful, very
+similar to TextMate's.
 
-* ``name``: The name of the snippet. This is a one-line description of
-  the snippet. It will be displayed in the menu. So it's a good idea
-  to select a descriptive name fo a snippet -- especially
-  distinguishable among similar snippets.
-* ``contributor``: The contributor of the snippet.
-* ``condition``: The condition of the snippet. This is a piece of
-  elisp code. If a snippet has a condition, then it will only be
-  expanded when the condition code evaluate to some non-nil value.
+Plain Text
+----------
+
+Arbitrary text can be included as the content of a template. They are
+usually interpreted as plain text, except ``$`` and `````. You need to
+use ``\`` to escape them: ``\$`` and ``\```. The ``\`` itself may also
+needed to be escaped as ``\\`` sometimes.
+
+Embedded elisp code
+-------------------
+
+Elisp code can be embedded inside the template. They are written
+inside back-quotes (`````):
+
+They are evaluated when the snippet is being expanded. The evaluation
+is done in the same buffer as the snippet being expanded. Here's an
+example for ``c-mode`` to calculate the header file guard dynamically:
+
+.. sourcecode:: text
+
+  #ifndef ${1:_`(upcase (file-name-nondirectory (file-name-sans-extension (buffer-file-name))))`_H_}
+  #define $1
+  
+  $0
+  
+  #endif /* $1 */
+
+Tab Stops
+---------
+
+Tab stops are fields that you can navigate back and forth by ``TAB``
+and ``S-TAB`` [3]_. They are written by ``$`` followed with a
+number. ``$0`` has the special meaning of the *exit point* of a
+snippet. That is the last place to go when you've traveled all the
+fields. Here's a typical example:
+
+.. sourcecode:: text
+
+  <div$1>
+      $0
+  </div>
+
+Placeholders
+------------
+
+Tab stops can have default values -- a.k.a placeholders. The syntax is
+like this:
+
+.. sourcecode:: text
+
+  ${N:default value}
+
+They acts as the default value for a tab stop. But when you firstly
+type at a tab stop, the default value will be replaced by your
+typing. The number can be omitted if you don't want to create
+`mirrors`_ or `transformations`_ for this field.
+
+.. _mirrors:
+
+Mirrors
+-------
+
+We refer the tab stops with placeholders as a *field*. A field can have
+mirrors. Its mirrors will get updated when you change the text of a
+field. Here's an example:
+
+.. sourcecode:: text
+
+  \begin{${1:enumerate}}
+      $0
+  \end{$1}
+
+When you type ``"document"`` at ``${1:enumerate}``, the word
+``"document"`` will also be inserted at ``\end{$1}``. The best
+explanation is to see the screencast(`YouTube
+<http://www.youtube.com/watch?v=vOj7btx3ATg>`_ or `avi video
+<http://yasnippet.googlecode.com/files/yasnippet.avi>`_).
+
+The tab stops with the same number to the field act as its mirrors. If
+none of the tab stops has an initial value, the first one is selected
+as the field and others mirrors.
+
+.. _transformations:
+
+Transformations
+---------------
+
+If the default value of a field starts with ``$``, then it is interpreted
+as the transformation code instead of default value. A transformation
+is some arbitrary elisp code that will get evaluated in an environment
+when the variable text is bind to the inputted text of the
+field. Here's an example for Objective-C:
+
+.. sourcecode:: text
+
+  - (${1:id})${2:foo}
+  {
+      return $2;
+  }
+  
+  - (void)set${2:$(capitalize text)}:($1)aValue
+  {
+      [$2 autorelease];
+      $2 = [aValue retain];
+  }
+  $0
+
+Look at ``${2:$(capitalize text)}``, it is a transformation instead of
+a placeholder. The actual placeholder is at the first line:
+``${2:foo}``. When you type text in ``${2:foo}``, the transformation
+will be evaluated and the result will be placed there as the
+transformated text. So in this example, if you type baz in the field,
+the transformed text will be Baz. This example is also available in
+the screencast.
+
+Another example is for ``rst-mode``. In reStructuredText, the document
+title can be some text surrounded by "===" below and above. The "==="
+should be at least as long as the text. So
+
+.. sourcecode:: text
+
+  =====
+  Title
+  =====
+
+is a valid title but
+
+.. sourcecode:: text
+
+  ===
+  Title
+  ===
+
+is not. Here's an snippet for rst title: 
+
+.. sourcecode:: text
+
+  ${1:$(make-string (string-width text) ?\=)}
+  ${1:Title}
+  ${1:$(make-string (string-width text) ?\=)}
+  
+  $0
 
 .. [1] With some minor change, mainly for fixing some trivial bugs.
 .. [2] This is done when you call ``yas/initialize``.
+.. [3] Of course, this can be customized.
