@@ -3,7 +3,7 @@
 ;; Copyright 2008 pluskid
 ;; 
 ;; Author: pluskid <pluskid@gmail.com>
-;; Version: 0.3.2
+;; Version: 0.4.0
 ;; X-URL: http://code.google.com/p/yasnippet/
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -142,7 +142,7 @@ Here's an example:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defvar yas/version "0.3.2")
+(defvar yas/version "0.4.0")
 
 (defvar yas/snippet-tables (make-hash-table)
   "A hash table of snippet tables corresponding to each major-mode.")

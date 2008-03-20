@@ -19,9 +19,12 @@ end
 desc "create a release package"
 task :package do
   release_dir = "pkg/yasnippet-#{$version}"
-  FileUtils.mkdir_p(release_dir)
+  FileUtils.mkdir_p(release_dir + "/doc")
   files = ['snippets', 'yasnippet.el', 'Rakefile']
   FileUtils.cp_r files, release_dir
+  Dir['doc/*.html'].each { |f|
+    FileUtils.cp f, release_dir + '/doc' + f.sub(/^doc/, "")
+  }
   FileUtils.rm_r Dir[release_dir + "/**/.svn"]
   FileUtils.cd 'pkg'
   sh "tar cjf yasnippet-#{$version}.tar.bz2 yasnippet-#{$version}"
@@ -40,4 +43,12 @@ task :release => [:bundle, :package] do
 
 end
 
-task :default => :bundle
+desc "Generate document"
+task :doc do
+  docs = Dir['doc/*.rst']
+  docs.each { |file|
+    sh "doc/compile-doc.py #{file} #{file.sub(/rst$/, "html")}"
+  }
+end
+
+task :default => :doc
