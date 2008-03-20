@@ -11,8 +11,7 @@ FileUtils.mkdir_p('pkg')
 
 desc "generate the bundle file."
 task :bundle do
-  sh 'emacs --batch -l yasnippet.el --eval "(yas/compile-bundle ' +
-    '\"./yasnippet.el\" \"./yasnippet-bundle.el\" \"./snippets\")"'
+  sh 'emacs --batch -l yasnippet.el --eval "(yas/compile-bundle)"'
   sh "tar czf pkg/yasnippet-bundle-#{$version}.el.tgz yasnippet-bundle.el"
 end
 

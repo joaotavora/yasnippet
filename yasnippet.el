@@ -873,15 +873,28 @@ foo\"bar\\! -> \"foo\\\"bar\\\\!\""
 				    t)
 	  "\""))
 
-(defun yas/compile-bundle (yasnippet yasnippet-bundle snippet-roots)
+(defun yas/compile-bundle
+  (&optional yasnippet yasnippet-bundle snippet-roots code)
   "Compile snippets in SNIPPET-ROOTS to a single bundle file.
 SNIPPET-ROOTS is a list of root directories that contains the snippets
 definition. YASNIPPET is the yasnippet.el file path. YASNIPPET-BUNDLE
-is the output file of the compile result. Here's an example:
+is the output file of the compile result. CODE is the code you would
+like to used to initialize yasnippet. Here's the default value for
+all the parameters:
 
- (yas/compile-bundle \"~/.emacs.d/plugins/yasnippet/yasnippet.el\"
-                     \"~/.emacs.d/plugins/yasnippet-bundle.el\"
-                     '(\"~/.emacs.d/plugins/yasnippet/snippets\"))"
+ (yas/compile-bundle \"yasnippet.el\"
+                     \"./yasnippet-bundle.el\"
+                     '(\"snippets\")
+                     \"(yas/initialize)\")"
+  (when (null yasnippet)
+    (setq yasnippet "yasnippet.el"))
+  (when (null yasnippet-bundle)
+    (setq yasnippet-bundle "./yasnippet-bundle.el"))
+  (when (null snippet-roots)
+    (setq snippet-roots '("snippets")))
+  (when (null code)
+    (setq code "(yas/initialize)"))
+
   (let ((dirs (or (and (listp snippet-roots) snippet-roots)
 		  (list snippet-roots)))
 	(bundle-buffer nil))
@@ -892,7 +905,7 @@ is the output file of the compile result. Here's an example:
       (insert ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;\n")
       (insert ";;;;      Auto-generated code         ;;;;\n")
       (insert ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;\n")
-      (insert "(yas/initialize)\n")
+      (insert code "\n")
       (flet ((yas/define-snippets 
 	      (mode snippets &optional parent)
 	      (with-current-buffer bundle-buffer
@@ -902,10 +915,13 @@ is the output file of the compile result. Here's an example:
 		(dolist (snippet snippets)
 		  (insert "  (" 
 			  (yas/quote-string (car snippet))
+			  " "
 			  (yas/quote-string (cadr snippet))
+			  " "
 			  (if (caddr snippet)
 			      (yas/quote-string (caddr snippet))
 			    "nil")
+			  " "
 			  (if (nth 3 snippet)
 			      (format "'%s" (nth 3 snippet))
 			    "nil")

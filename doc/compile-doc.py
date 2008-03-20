@@ -7,7 +7,7 @@
 from pygments.formatters import HtmlFormatter
 
 # Set to True if you want inline CSS styles instead of classes
-INLINESTYLES = False
+INLINESTYLES = True
 
 from pygments.formatters import HtmlFormatter
 
