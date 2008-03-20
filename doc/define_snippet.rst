@@ -375,7 +375,8 @@ So set ``yas/buffer-local-condition`` like this
 
 And specify the condition for a snippet that you're going to expand in
 comment to be evaluated to the symbol ``force-in-comment``. Then it
-can be expanded as you expected.
+can be expanded as you expected, while other snippets like ``if``
+still can't expanded in comment. 
 
 The Syntax of the Template
 ==========================

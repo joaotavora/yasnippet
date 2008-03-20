@@ -124,11 +124,28 @@ proper values:
 
 (defvar yas/buffer-local-condition t
   "Condition to yasnippet local to each buffer.
-If this eval to nil, no snippet can be expanded.  If this eval to
-the symbol require-snippet-condition, then a snippet can be
-expanded if and only if it has a condition attached and that
-condition eval to non-nil.  Otherwise, if a snippet has no
-condition or its conditin eval to non-nil, it will be expanded.
+
+    * If yas/buffer-local-condition evaluate to nil, snippet
+      won't be expanded.
+
+    * If it evaluate to the a cons cell where the car is the
+      symbol require-snippet-condition and the cdr is a
+      symbol (let's call it requirement):
+       * If the snippet has no condition, then it won't be
+         expanded.
+       * If the snippet has a condition but evaluate to nil or
+         error occured during evaluation, it won't be expanded.
+       * If the snippet has a condition that evaluate to
+         non-nil (let's call it result):
+          * If requirement is t, the snippet is ready to be
+            expanded.
+          * If requirement is eq to result, the snippet is ready
+            to be expanded.
+          * Otherwise the snippet won't be expanded.
+    * If it evaluate to other non-nil value:
+       * If the snippet has no condition, or has a condition that
+         evaluate to non-nil, it is ready to be expanded.
+       * Otherwise, it won't be expanded.
 
 Here's an example:
 
@@ -136,7 +153,7 @@ Here's an example:
            '(lambda ()
               (setq yas/buffer-local-condition
                     '(if (python-in-string/comment)
-                         'require-snippet-condition
+                         '(require-snippet-condition . force-in-comment)
                        t))))")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
