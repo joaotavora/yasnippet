@@ -261,6 +261,122 @@ customization code instead of the default ``(yas/initialize)``. For
 example, you can set ``yas/trigger-key`` to ``(kbd "SPC")`` here if
 you like.
 
+yas/define
+~~~~~~~~~~
+
+The basic syntax for ``yas/define`` is
+
+.. sourcecode:: common-lisp
+
+  (yas/define mode key template &optional name condition)
+
+This is only a syntax sugar for
+
+.. sourcecode:: common-lisp
+
+  (yas/define-snippets mode
+                       (list (list key template name condition)))
+
+The strategy to select a snippet
+================================
+
+When user press the ``yas/trigger-key``, YASnippet try to find a
+proper snippet to expand. The strategy to find such a snippet is
+explained here.
+
+Finding the key
+---------------
+
+YASnippet search from current point backward trying to find the
+snippet to be expanded. The default searching strategy is quite
+powerful. For example, in ``c-mode``, ``"bar"``, ``"foo_bar"``,
+``"#foo_bar"`` can all be recognized as a template key. Further more,
+the searching is in that order. In other words, if ``"bar"`` is found
+to be a key to some *valid* snippet, then ``"foo_bar"`` and
+``"#foobar"`` won't be searched.
+
+However, this strategy can also be customized easily from the
+``yas/key-syntaxes`` variable. It is a list of syntax rules, the
+default value is ``("w" "w_" "w_." "^ ")``. Which means search the
+following thing until found one:
+
+* a word.
+* a symbol. In lisp, ``-`` and ``?`` can all be part of a symbol.
+* a sequence of characters of either word, symbol or punctuation.
+* a sequence of characters of non-whitespace characters.
+
+But you'd better keep the default value unless you understand what
+Emacs's syntax rule mean.
+
+The condition system
+--------------------
+
+I write forked snippet.el to make the smart-snippet.el. I call it
+*smart*-snippet because a condition can be attached to a snippet. This
+is really a good idea. However, writing condition for a snippet
+usually needs good elisp and Emacs knowledge, so it is strange to many
+user.
+
+Later I write YASnippet and persuade people to use it instead of
+smart-snippet.el. However, some user still love smart-snippet because
+it is smart. So I make YASnippet smart. Even smarter than
+smart-snippet.el. :p
+
+Consider this scenario: you are an old Emacs hacker. You like the
+abbrev-way and set ``yas/trigger-key`` to ``(kbd "SPC")``. However,
+you don't want ``if`` to be expanded as a snippet when you are typing
+in a comment block or a string (e.g. in ``python-mode``). 
+
+It's OK, just specify the condition for ``if`` to be ``(not
+(python-in-string/comment))``. But how about ``while``, ``for``,
+etc. ? Writing the same condition for all the snippets is just
+boring. So YASnippet introduce a buffer local variable
+``yas/buffer-local-condition``. You can set this variable to ``(not
+(python-in-string/comment))`` in ``python-mode-hook``. There's no way
+to do this in smart-snippet.el!
+
+Then, what if you really want some snippet even in comment? This is
+also possible! But let's stop telling the story and look at the rules:
+
+* If ``yas/buffer-local-condition`` evaluate to nil, snippet won't be
+  expanded.
+* If it evaluate to the a cons cell where the ``car`` is the symbol
+  ``require-snippet-condition`` and the ``cdr`` is a symbol (let's
+  call it ``requirement``):
+
+  * If the snippet has no condition, then it won't be expanded.
+  * If the snippet has a condition but evaluate to nil or error
+    occured during evaluation, it won't be expanded.
+  * If the snippet has a condition that evaluate to non-nil (let's
+    call it ``result``):
+
+    * If ``requirement`` is ``t``, the snippet is ready to be
+      expanded.
+    * If ``requirement`` is ``eq`` to ``result``, the snippet is ready
+      to be expanded.
+    * Otherwise the snippet won't be expanded.
+
+* If it evaluate to other non-nil value:
+
+  * If the snippet has no condition, or has a condition that evaluate
+    to non-nil, it is ready to be expanded.
+  * Otherwise, it won't be expanded.
+
+So set ``yas/buffer-local-condition`` like this
+
+.. sourcecode:: common-lisp
+
+  (add-hook 'python-mode-hook
+            '(lambda ()
+               (setq yas/buffer-local-condition
+                     '(if (python-in-string/comment)
+                          '(require-snippet-condition . force-in-comment)
+                        t))))
+
+And specify the condition for a snippet that you're going to expand in
+comment to be evaluated to the symbol ``force-in-comment``. Then it
+can be expanded as you expected.
+
 The Syntax of the Template
 ==========================
 

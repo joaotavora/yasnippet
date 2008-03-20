@@ -124,11 +124,11 @@ proper values:
 
 (defvar yas/buffer-local-condition t
   "Condition to yasnippet local to each buffer.
-If this eval to nil, no snippet can be expanded.
-If this eval to 'require-snippet-condition, then a snippet can be expanded
-if and only if it has a condition attached and that condition eval to non-nil.
-Otherwise, if a snippet has no condition or its conditin eval to non-nil, it
-will be expanded.
+If this eval to nil, no snippet can be expanded.  If this eval to
+the symbol require-snippet-condition, then a snippet can be
+expanded if and only if it has a condition attached and that
+condition eval to non-nil.  Otherwise, if a snippet has no
+condition or its conditin eval to non-nil, it will be expanded.
 
 Here's an example:
 
@@ -319,14 +319,18 @@ have, compare through the start point of the overlay."
  * If the template has no condition, it is kept.
  * If the template's condition eval to non-nil, it is kept.
  * Otherwise (eval error or eval to nil) it is filtered."
-  (remove-if-not '(lambda (pair)
-		    (let ((condition (yas/template-condition (cdr pair))))
-		      (if (null condition)
-			  (if yas/require-template-condition
-			      nil
-			    t)
-			(yas/template-condition-predicate condition))))
-		 templates))
+  (remove-if '(lambda (pair)
+		(let ((condition (yas/template-condition (cdr pair))))
+		  (if (null condition)
+		      (if yas/require-template-condition
+			  t
+			nil)
+		    (let ((result 
+			   (yas/template-condition-predicate condition)))
+		      (if (eq yas/require-template-condition t)
+			  result
+			(not (eq result yas/require-template-condition)))))))
+	     templates))
 
 (defun yas/snippet-table-fetch (table key)
   "Fetch a snippet binding to KEY from TABLE. If not found,
@@ -1059,10 +1063,12 @@ when the condition evaluated to non-nil."
   (let ((local-condition (yas/template-condition-predicate
 			  yas/buffer-local-condition)))
     (if local-condition
-	(let ((yas/require-template-condition (if (eq local-condition
-						      'require-snippet-condition)
-						  t
-						nil)))
+	(let ((yas/require-template-condition 
+	       (if (and (consp local-condition)
+			(eq 'require-snippet-condition (car local-condition))
+			(symbolp (cdr local-condition)))
+		   (cdr local-condition)
+		 nil)))
 	  (multiple-value-bind (key start end) (yas/current-key)
 	    (let ((templates (yas/snippet-table-fetch (yas/current-snippet-table)
 						      key)))
