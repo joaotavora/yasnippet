@@ -378,6 +378,186 @@ comment to be evaluated to the symbol ``force-in-comment``. Then it
 can be expanded as you expected, while other snippets like ``if``
 still can't expanded in comment. 
 
+Multiple snippet with the same key
+----------------------------------
+
+There can be multiple snippet bind to the same key. If you define a
+snippet with a key that is already used, you'll overwrite the original
+snippet definition. However, you can add a different *postfix* to the
+key.
+
+In general, the *extension* (consider a file name) is *ignored* when
+defining a snippet. So ``def``, ``def.1`` and ``def.mine`` will all be
+valid candidates when the key is ``def``.
+
+When there are multiple candidates, YASnippet will let you select
+one. The UI for selecting multiple candidate can be
+customized. There're two variable related:
+
+* ``yas/window-system-popup-function``: the function used when you
+  have a window system.
+* ``yas/text-popup-function``: the function used when you don't have a
+  window system, i.e. when you are working in a terminal.
+
+ Currently there're three solution come with YASnippet.
+
+Popup Menu
+~~~~~~~~~~
+
+The function ``yas/x-popup-menu-for-template`` can be used to show a
+popup menu for you to select. This menu will be part of you native
+window system widget, which means:
+
+* It usually looks beautiful. E.g. when you compile Emacs with gtk
+  support, this menu will be rendered with your gtk theme.
+* Emacs have little control over it. E.g. you can't use ``C-n``,
+  ``C-p`` to navigate.
+* This function can't be used when in a terminal.
+
+Just select the first one
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This one is originally used in terminal mode. It doesn't let you to
+choose anything, it just select the first one on behalf of you. So I
+bet you never want to use this. :p
+
+Use a dropdown-menu.el
+~~~~~~~~~~~~~~~~~~~~~~
+
+Originally, only the above two function is available in
+YASnippet. They are difficult to use -- especially in a
+terminal. Until later Jaeyoun Chung show me his
+``dropdown-menu.el``, I say wow! It's wonderful!
+
+* It works in both window system and terminal.
+* It is customizable, you can use ``C-n``, ``C-p`` to navigate, ``q``
+  to quite and even press ``6`` as a shortcut to select the 6th
+  candidate.
+
+So I added ``yas/dropdown-list-popup-for-template`` to support
+``dropdown-list.el``. And upload ``dropdown-list.el`` to YASnippet
+hompage for an optional download (since Jaeyoun didn't provide a URL).
+
+Then finally, in 0.4.0, I included a copy of the content of
+``dropdown-list.el`` [1]_ in ``yasnippet.el`` and made it the default
+way for selecting multiple candidates.
+
+However, the original functions are still there, you can still use this
+
+.. sourcecode:: common-lisp
+
+  (setq yas/window-system-popup-function
+        'yas/x-popup-menu-for-template)
+
+if you prefer a *modern* UI. :)
+
+The Trigger Key
+---------------
+
+YASnippet is implemented as a minor-mode (``yas/minor-mode``). The
+trigger key ``yas/trigger-key`` is defined in ``yas/minor-mode-map``
+to call ``yas/expand`` to try to expand a snippet.
+
+The Minor Mode
+~~~~~~~~~~~~~~
+
+When ``yas/minor-mode`` is enabled, the trigger key will take
+effect. The default key is ``(kbd "TAB")``, however, you can freely
+set it to some other key. By default, YASnippet add a hook to
+``after-change-major-mode-hook`` to enable ``yas/minor-mode`` [2]_ in
+every buffer. This works fine for most modes, however, some mode
+doesn't follow the Emacs convention and doens't call this hook. You
+can either explicitly hook for those mode or just add it to
+``yas/extra-mode-hooks`` to let YASnippet do it for you:
+
+.. sourcecode:: common-lisp
+
+  (require 'yasnippet)
+  (add-to-list 'yas/extra-mode-hooks
+               'ruby-mode-hook)
+  (yas/initialize)
+
+Note that **should** be put after ``(require 'yasnippet)`` and before
+``(yas/initialize)``. Further more, you may report it to me, I'll add
+that to the default value.
+
+The Fallback
+~~~~~~~~~~~~
+
+If ``yas/expand`` failed to find any suitable snippet to expand, it
+will disable the minor mode temporarily and find if there's any other
+command bind the ``yas/trigger-key``. If found, the command will be
+called. Usually this works very well -- when there's a snippet, expand
+it, otherwise, call whatever command originally bind to the trigger
+key.
+
+Other way to select a snippet
+-----------------------------
+
+When you use the trigger key (so ``yas/expand``) to expand a snippet,
+the key for the snippet is deleted before the template for the snippet
+is inserted. 
+
+However, there're other ways to insert a snippet.
+
+The Menu
+~~~~~~~~
+
+YASnippet will setup a menu just after the *Buffers* Menu in the
+menubar. The snippets for all *real* modes are listed there under the
+menu. You can select a snippet from the menu to expand it. Since you
+select manually from the menu, you can expand any snippet. For
+example, you can expand a snippet defined for ``python-mode`` in a
+``c-mode`` buffer by selecting it from the menu:
+
+* Condition system is ignored since you select to expand it
+  explicitly.
+* There will be no muliple candidates since they are listed in the
+  menu as different items.
+
+This can be convenient sometimes. However, if you don't like the
+menubar of Emacs and never use it. You can tell YASnippet don't boring
+to build a menu by setting ``yas/use-menu`` to nil.
+
+Another thing to note is that only *real* modes are listed under the
+menu. As you know, common snippets can be shared by making up a
+*virtual* parent mode. It's too bad if the menu is floored by those
+*virtual* modes. So YASnippet only show menus for those *real*
+modes. But the snippets fo the *virtual* modes can still be accessed
+through the ``parent`` submenu of some *real* mode.
+
+YASnippet use a simple way to check whether a mode is *real* or
+*virtual*: ``(fboundp mode)``. For example, the symbol ``c-mode`` is
+bound to a function while ``cc-mode`` is not. But this is not enough,
+some modes aren't part of Emacs, and maybe when initializing
+YASnippet, those modes haven't been initialized. So YASnippet also
+maintain a list of known modes (``yas/known-modes``). You can add item
+to that list if you need.
+
+Expanding From Elisp Code
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Sometimes you might want to expand a snippet directly by calling a
+functin from elisp code. You should call ``yas/expand-snippet``
+instead of ``yas/expand`` in this case.
+
+As with expanding from the menubar, condition system and multiple
+candidates won't exists here. In fact, expanding from menubar has the
+same effect of evaluating the follow code:
+
+.. sourcecode:: common-lisp
+
+  (yas/expand-snippet (point) (point) template)
+
+Where ``template`` is the template of a snippet. It is never required
+to belong to any snippet -- you can even make up it on the fly. The
+1st and 2nd parameter defines the region to be deleted after YASnippet
+inserted the template. It is used by ``yas/expand`` to indicate the
+region of the key. There's usually no need to delete any region when
+we are expanding a snippet from elisp code, so passing two ``(point)``
+is fine. Note only ``(point)`` will be fine because the 1st parameter
+also indicate where to insert and expand the ``template``.
+
 The Syntax of the Template
 ==========================
 
@@ -391,3 +571,6 @@ The Syntax of the Template
 * ``condition``: The condition of the snippet. This is a piece of
   elisp code. If a snippet has a condition, then it will only be
   expanded when the condition code evaluate to some non-nil value.
+
+.. [1] With some minor change, mainly for fixing some trivial bugs.
+.. [2] This is done when you call ``yas/initialize``.
