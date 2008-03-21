@@ -210,7 +210,11 @@ Here's an example:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defvar yas/minor-mode-map (make-sparse-keymap)
   "The keymap of yas/minor-mode")
-
+(defvar yas/minor-mode-on-hook nil
+  "Hook to call when yas/minor-mode is on.")
+(defvar yas/minor-mode-off-hook nil
+  "Hook to call when yas/minor-mode is off.")
+(define-key yas/minor-mode-map yas/trigger-key 'yas/expand)
 (define-minor-mode yas/minor-mode
   "Toggle YASnippet mode.
 With no argument, this command toggles the mode.
@@ -225,8 +229,8 @@ You can customize the key through `yas/trigger-key'."
   nil
   ;; The indicator for the mode line.
   " yas"
-  :group 'editing
-  (define-key yas/minor-mode-map yas/trigger-key 'yas/expand))
+  :group 'editing)
+
 (defun yas/minor-mode-on ()
   "Turn on YASnippet minor mode."
   (interactive)
@@ -372,6 +376,16 @@ fetch from parent if any."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun yas/ensure-minor-mode-priority ()
+  "Ensure that the key binding of yas/minor-mode takes priority."
+  (unless (eq 'yas/minor-mode
+	      (caar minor-mode-map-alist))
+    (setq minor-mode-map-alist
+	  (cons
+	   (cons 'yas/minor-mode yas/minor-mode-map)
+	   (assq-delete-all 'yas/minor-mode
+			    minor-mode-map-alist)))))
+
 (defun yas/real-mode? (mode)
   "Try to find out if MODE is a real mode. The MODE bound to
 a function (like `c-mode') is considered real mode. Other well
@@ -1000,6 +1014,8 @@ content of the file is the template."
   (dolist (hook yas/extra-mode-hooks)
     (add-hook hook
 	      'yas/minor-mode-on))
+  (add-hook 'yas/minor-mode-on-hook
+	    'yas/ensure-minor-mode-priority)
   (when yas/use-menu
     (define-key-after 
       (lookup-key global-map [menu-bar])
