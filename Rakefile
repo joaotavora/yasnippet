@@ -45,7 +45,7 @@ rule '.html' => '.rst' do |t|
   sh "doc/compile-doc.py #{t.source} > #{t.name}"
 end
 desc "Generate document"
-task :doc => FileList['doc/*.html']
+task :doc => FileList['doc/*.rst'].ext('html')
 
 namespace :doc do
   task :upload do
