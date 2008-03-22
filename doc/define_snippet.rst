@@ -411,6 +411,9 @@ customized. There're two variable related:
 
  Currently there're three solution come with YASnippet.
 
+.. image:: images/popup-menu.png
+   :align: right
+
 Popup Menu
 ~~~~~~~~~~
 
@@ -434,10 +437,13 @@ bet you never want to use this. :p
 Use a dropdown-menu.el
 ~~~~~~~~~~~~~~~~~~~~~~
 
+.. image:: images/dropdown-menu.png
+   :align: right
+
 Originally, only the above two function is available in
 YASnippet. They are difficult to use -- especially in a
-terminal. Until later Jaeyoun Chung show me his
-``dropdown-menu.el``, I say wow! It's wonderful!
+terminal. Until later Jaeyoun Chung show me his ``dropdown-menu.el``,
+I say wow! It's wonderful!
 
 * It works in both window system and terminal.
 * It is customizable, you can use ``C-n``, ``C-p`` to navigate, ``q``
@@ -470,6 +476,9 @@ to call ``yas/expand`` to try to expand a snippet.
 
 The Minor Mode
 ~~~~~~~~~~~~~~
+
+.. image:: images/minor-mode-indicator.png
+   :align: left
 
 When ``yas/minor-mode`` is enabled, the trigger key will take
 effect. The default key is ``(kbd "TAB")``, however, you can freely
@@ -519,6 +528,9 @@ menu. You can select a snippet from the menu to expand it. Since you
 select manually from the menu, you can expand any snippet. For
 example, you can expand a snippet defined for ``python-mode`` in a
 ``c-mode`` buffer by selecting it from the menu:
+
+.. image:: images/menubar.png
+   :align: right
 
 * Condition system is ignored since you select to expand it
   explicitly.
