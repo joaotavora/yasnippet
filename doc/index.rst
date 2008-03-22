@@ -131,6 +131,7 @@ Detailed Documentation
 * See `this page <define_snippet.html>`_ on how to define a snippet by
   yourself.
 * Here's the `FAQ <faq.html>`_ page.
+* Here's the `ChangeLog <changelog.html>`_.
 
 .. [1] They usually named like ``yasnippet-bundle-x.y.z.el.tgz`` where
    ``x.y.z`` is the version number.
