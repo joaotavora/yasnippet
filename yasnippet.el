@@ -3,7 +3,7 @@
 ;; Copyright 2008 pluskid
 ;; 
 ;; Author: pluskid <pluskid@gmail.com>
-;; Version: 0.4.2
+;; Version: 0.4.3
 ;; X-URL: http://code.google.com/p/yasnippet/
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -159,7 +159,7 @@ Here's an example:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defvar yas/version "0.4.2")
+(defvar yas/version "0.4.3")
 
 (defvar yas/snippet-tables (make-hash-table)
   "A hash table of snippet tables corresponding to each major-mode.")
@@ -214,7 +214,6 @@ Here's an example:
   "Hook to call when yas/minor-mode is on.")
 (defvar yas/minor-mode-off-hook nil
   "Hook to call when yas/minor-mode is off.")
-(define-key yas/minor-mode-map yas/trigger-key 'yas/expand)
 (define-minor-mode yas/minor-mode
   "Toggle YASnippet mode.
 With no argument, this command toggles the mode.
@@ -229,7 +228,8 @@ You can customize the key through `yas/trigger-key'."
   nil
   ;; The indicator for the mode line.
   " yas"
-  :group 'editing)
+  :group 'editing
+  (define-key yas/minor-mode-map yas/trigger-key 'yas/expand))
 
 (defun yas/minor-mode-on ()
   "Turn on YASnippet minor mode."

@@ -6,6 +6,11 @@ ChangeLog
 :Contact: pluskid@gmail.com
 :Date: 2008-03-22
 
+0.4.3 / 2008-03-23
+==================
+
+* Bug fix: failed to recognize user customized yas/trigger-key.
+
 0.4.2 / 2008-03-22
 ==================
 
