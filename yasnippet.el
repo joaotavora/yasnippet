@@ -1367,8 +1367,7 @@ candidate-count)))))
                     ((member key '("" [down]))
                      (setq selidx (mod (1+ (or selidx -1)) candidate-count)))
                     ((member key '("")))
-                    ((member key '("
-" [return] ""))
+                    ((member key (list (kbd "C-j") (kbd "RET") (kbd "<return>")))
                      (setq selection selidx
                            done t))
                     (t
