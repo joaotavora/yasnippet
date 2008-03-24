@@ -6,6 +6,11 @@ ChangeLog
 :Contact: pluskid@gmail.com
 :Date: 2008-03-22
 
+0.4.4 / 2008-03-24
+==================
+
+* Bug fix: dropdown-list.el doesn't recognize [return] properly.
+
 0.4.3 / 2008-03-23
 ==================
 
