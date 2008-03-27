@@ -1,8 +1,14 @@
-#contributor : Orestis Markou
+#original contributor : Orestis Markou
+#contributor : Nishio Hirokazu
 #name : class ... :
 # --
-class ${1:cname}(${2:object}):
+class ${1:ClassName}(${2:object}):
     "docstring for $1"
-    def __init__(self, ${3:arg}):
-        self.$3 = $3
+    def __init__(self, ${3:args}):
+        ${3:$
+(mapconcat
+ '(lambda (x)  (concat "self." x " = " x))
+ (split-string text ", ")
+ (concat "\n" (make-string (current-column) 32)))
+}
         $0
