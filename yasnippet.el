@@ -1134,10 +1134,12 @@ when the condition evaluated to non-nil."
 			  (keymap (overlay-get overlay 'keymap))
 			  (command nil))
 		     (overlay-put overlay 'keymap nil)
+		     (overlay-put overlay 'yas/snippet-reference nil)
 		     (setq command (key-binding yas/next-field-key))
 		     (when (commandp command)
 		       (call-interactively command))
-		     (overlay-put overlay 'keymap keymap))))
+		     (overlay-put overlay 'keymap keymap)
+		     (overlay-put overlay 'yas/snippet-reference snippet))))
 	      (when (= (point)
 		       (overlay-start
 			(yas/field-overlay
