@@ -6,9 +6,11 @@ ChangeLog
 :Contact: pluskid@gmail.com
 :Date: 2008-03-22
 
-0.4.5 
+0.4.5 / 2008-04-07
 ==================
 
+* Merge the latest dropdown-list.el.
+* Add snippets for f90-mode from Li Zhu.
 * Bug fix: l-safe-expr-p: Lisp nesting exceeds ``max-lisp-eval-depth`` error when several (more than two) snippets overlaps. Thanks sunwaybupt@newsmth for reporting this bug.
 
 0.4.4 / 2008-03-24
