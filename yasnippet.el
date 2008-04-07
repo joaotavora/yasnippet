@@ -68,6 +68,7 @@ current column if this variable is non-`nil'.")
 (define-key yas/keymap (kbd "S-TAB") 'yas/prev-field-group)
 (define-key yas/keymap (kbd "<S-iso-lefttab>") 'yas/prev-field-group)
 (define-key yas/keymap (kbd "<S-tab>") 'yas/prev-field-group)
+(define-key yas/keymap (kbd "<backtab>") 'yas/prev-field-group)
 
 (defvar yas/show-all-modes-in-menu nil
   "Currently yasnippet only all \"real modes\" to menubar. For
