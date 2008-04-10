@@ -123,7 +123,16 @@ proper values:
   '()
   "Hooks to run after a before expanding a snippet.")
 
-(defvar yas/buffer-local-condition t
+(defvar yas/buffer-local-condition 
+  '(if (and (not (bobp))
+	    (or (string= "font-lock-comment-face"
+			 (get-char-property (1- (point))
+					    'face))
+		(string= "font-lock-string-face"
+			 (get-char-property (1- (point))
+					    'face))))
+       '(require-snippet-condition . force-in-comment)
+     t)
   "Condition to yasnippet local to each buffer.
 
     * If yas/buffer-local-condition evaluate to nil, snippet
