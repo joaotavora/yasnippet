@@ -907,7 +907,6 @@ NOTE: You need to download and install dropdown-list.el to use this."
     (error "Please download and install dropdown-list.el to use this")))
 
 (defun yas/popup-for-template (templates)
-
   (if window-system
       (funcall yas/window-system-popup-function templates)
     (funcall yas/text-popup-function templates)))
@@ -1121,6 +1120,20 @@ when the condition evaluated to non-nil."
   (yas/define-snippets mode
 		       (list (list key template name condition))))
     
+
+(defun yas/hippie-try-expand (first-time?)
+  "Integrate with hippie expand. Just put this function in
+`hippie-expand-try-functions-list'."
+  (if (not first-time?)
+      (let ((yas/fall-back-behavior 'return-nil))
+	(yas/expand))
+    (when (and (null (car buffer-undo-list))
+	       (eq 'apply
+		   (car (cadr buffer-undo-list)))
+	       (eq 'yas/undo-expand-snippet
+		   (cadr (cadr buffer-undo-list))))
+      (undo 1))
+    nil))
 
 (defun yas/expand ()
   "Expand a snippet."
