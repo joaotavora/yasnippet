@@ -166,6 +166,14 @@ Here's an example:
                          '(require-snippet-condition . force-in-comment)
                        t))))")
 
+(defvar yas/fall-back-behavior 'call-other-command
+  "The fall back behavior of YASnippet when it can't find a snippet
+to expand. 
+
+ * 'call-other-command means try to temporarily disable
+    YASnippet and call other command bound to `yas/trigger-key'.
+ * 'return-nil means return nil.")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1131,12 +1139,16 @@ when the condition evaluated to non-nil."
 		(let ((template (if (null (cdr templates)) ; only 1 template
 				    (yas/template-content (cdar templates))
 				  (yas/popup-for-template templates))))
-		  (when template
-		    (yas/expand-snippet start end template)))
-	      (let* ((yas/minor-mode nil)
-		     (command (key-binding yas/trigger-key)))
-		(when (commandp command)
-		  (call-interactively command)))))))))
+		  (if template
+		    (progn (yas/expand-snippet start end template)
+			   'expanded)	; expanded successfully
+		    'interruptted))	; interrupted by user
+	      (if (eq yas/fall-back-behavior 'return-nil)
+		  nil			; return nil
+		(let* ((yas/minor-mode nil)
+		       (command (key-binding yas/trigger-key)))
+		  (when (commandp command)
+		    (call-interactively command))))))))))
       
 (defun yas/next-field-group ()
   "Navigate to next field group. If there's none, exit the snippet."
