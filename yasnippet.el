@@ -166,7 +166,7 @@ Here's an example:
                          '(require-snippet-condition . force-in-comment)
                        t))))")
 
-(defvar yas/fall-back-behavior 'call-other-command
+(defvar yas/fallback-behavior 'call-other-command
   "The fall back behavior of YASnippet when it can't find a snippet
 to expand. 
 
@@ -1125,7 +1125,7 @@ when the condition evaluated to non-nil."
   "Integrate with hippie expand. Just put this function in
 `hippie-expand-try-functions-list'."
   (if (not first-time?)
-      (let ((yas/fall-back-behavior 'return-nil))
+      (let ((yas/fallback-behavior 'return-nil))
 	(yas/expand))
     (when (and (null (car buffer-undo-list))
 	       (eq 'apply
@@ -1156,7 +1156,7 @@ when the condition evaluated to non-nil."
 		    (progn (yas/expand-snippet start end template)
 			   'expanded)	; expanded successfully
 		    'interruptted))	; interrupted by user
-	      (if (eq yas/fall-back-behavior 'return-nil)
+	      (if (eq yas/fallback-behavior 'return-nil)
 		  nil			; return nil
 		(let* ((yas/minor-mode nil)
 		       (command (key-binding yas/trigger-key)))
