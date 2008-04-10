@@ -451,19 +451,21 @@ the template of a snippet in the current snippet-table."
   (let ((start (point))
 	(end (point))
 	(syntaxes yas/key-syntaxes)
-	syntax done)
+	syntax done templates)
     (while (and (not done) syntaxes)
       (setq syntax (car syntaxes))
       (setq syntaxes (cdr syntaxes))
       (save-excursion
 	(skip-syntax-backward syntax)
 	(setq start (point)))
-      (if (yas/snippet-table-fetch
-	   (yas/current-snippet-table)
-	   (buffer-substring-no-properties start end))
+      (setq templates
+	    (yas/snippet-table-fetch
+	     (yas/current-snippet-table)
+	     (buffer-substring-no-properties start end)))
+      (if templates
 	  (setq done t)
 	(setq start end)))
-    (list (buffer-substring-no-properties start end)
+    (list templates
 	  start
 	  end)))
 
@@ -1115,19 +1117,17 @@ when the condition evaluated to non-nil."
 			(symbolp (cdr local-condition)))
 		   (cdr local-condition)
 		 nil)))
-	  (multiple-value-bind (key start end) (yas/current-key)
-	    (let ((templates (yas/snippet-table-fetch (yas/current-snippet-table)
-						      key)))
-	      (if templates
-		  (let ((template (if (null (cdr templates)) ; only 1 template
-				      (yas/template-content (cdar templates))
-				    (yas/popup-for-template templates))))
-		    (when template
-		      (yas/expand-snippet start end template)))
-		(let* ((yas/minor-mode nil)
-		       (command (key-binding yas/trigger-key)))
-		  (when (commandp command)
-		    (call-interactively command))))))))))
+	  (multiple-value-bind (templates start end) (yas/current-key)
+	    (if templates
+		(let ((template (if (null (cdr templates)) ; only 1 template
+				    (yas/template-content (cdar templates))
+				  (yas/popup-for-template templates))))
+		  (when template
+		    (yas/expand-snippet start end template)))
+	      (let* ((yas/minor-mode nil)
+		     (command (key-binding yas/trigger-key)))
+		(when (commandp command)
+		  (call-interactively command)))))))))
       
 (defun yas/next-field-group ()
   "Navigate to next field group. If there's none, exit the snippet."
