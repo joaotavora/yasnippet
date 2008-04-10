@@ -276,6 +276,12 @@ You can customize the key through `yas/trigger-key'."
   (hash (make-hash-table :test 'equal))
   (parent nil))
 
+(defun yas/snippet-valid? (snippet)
+  "See if snippet is valid (ie. still alive)."
+  (and (not (null snippet))
+       (not (null (yas/snippet-overlay snippet)))
+       (not (null (overlay-start (yas/snippet-overlay snippet))))))
+
 (defun yas/snippet-add-field (snippet field)
   "Add FIELD to SNIPPET."
   (let ((group (find field
@@ -463,25 +469,26 @@ the template of a snippet in the current snippet-table."
 
 (defun yas/synchronize-fields (field-group)
   "Update all fields' text according to the primary field."
-  (save-excursion
-    (let* ((inhibit-modification-hooks t)
-	   (primary (yas/group-primary-field field-group))
-	   (primary-overlay (yas/field-overlay primary))
-	   (text (buffer-substring-no-properties (overlay-start primary-overlay)
-						 (overlay-end primary-overlay))))
-      (dolist (field (yas/group-fields field-group))
-	(let* ((field-overlay (yas/field-overlay field))
-	       (original-length (- (overlay-end field-overlay)
-				   (overlay-start field-overlay))))
-	  (unless (eq field-overlay primary-overlay)
-	    (goto-char (overlay-start field-overlay))
-	    (insert (yas/calculate-field-value field text))
-	    (if (= (overlay-start field-overlay)
-		   (overlay-end field-overlay))
-		(move-overlay field-overlay
-			      (overlay-start field-overlay)
-			      (point))
-	      (delete-char original-length))))))))
+  (when (yas/snippet-valid? (yas/group-snippet field-group))
+    (save-excursion
+      (let* ((inhibit-modification-hooks t)
+	     (primary (yas/group-primary-field field-group))
+	     (primary-overlay (yas/field-overlay primary))
+	     (text (buffer-substring-no-properties (overlay-start primary-overlay)
+						   (overlay-end primary-overlay))))
+	(dolist (field (yas/group-fields field-group))
+	  (let* ((field-overlay (yas/field-overlay field))
+		 (original-length (- (overlay-end field-overlay)
+				     (overlay-start field-overlay))))
+	    (unless (eq field-overlay primary-overlay)
+	      (goto-char (overlay-start field-overlay))
+	      (insert (yas/calculate-field-value field text))
+	      (if (= (overlay-start field-overlay)
+		     (overlay-end field-overlay))
+		  (move-overlay field-overlay
+				(overlay-start field-overlay)
+				(point))
+		(delete-char original-length)))))))))
   
 (defun yas/overlay-modification-hook (overlay after? beg end &optional length)
   "Modification hook for snippet field overlay."
@@ -503,34 +510,39 @@ the template of a snippet in the current snippet-table."
   "Insert behind hook sometimes doesn't get called. I don't know why.
 So I add modification hook in the big overlay and try to detect `insert-behind'
 event manually."
-  (when (and after?
-	     (= length 0)
-	     (> end beg)
-	     (null (yas/current-snippet-overlay beg))
-	     (not (bobp)))
-    (let ((field-overlay (yas/current-snippet-overlay (1- beg))))
-      (if field-overlay
-	  (when (= beg (overlay-end field-overlay))
-	    (move-overlay field-overlay
-			  (overlay-start field-overlay)
-			  end)
-	    (yas/synchronize-fields (overlay-get field-overlay 'yas/group)))
-	(let ((snippet (yas/snippet-of-current-keymap))
-	      (done nil))
-	  (if snippet
-	      (do* ((groups (yas/snippet-groups snippet) (cdr groups))
-		    (group (car groups) (car groups)))
-		  ((or (null groups)
-		       done))
-		(setq field-overlay (yas/field-overlay 
-				     (yas/group-primary-field group)))
-		(when (and (= (overlay-start field-overlay)
-			      (overlay-end field-overlay))
-			   (= beg
-			      (overlay-start field-overlay)))
-		  (move-overlay field-overlay beg end)
-		  (yas/synchronize-fields group)
-		  (setq done t)))))))))
+  (when after?
+    (cond ((and (= beg end)
+		(> length 0)
+		(= (overlay-start overlay)
+		   (overlay-end overlay)))
+	   (yas/exit-snippet (overlay-get overlay 'yas/snippet-reference)))
+	  ((and (= length 0)
+		(> end beg)
+		(null (yas/current-snippet-overlay beg))
+		(not (bobp)))
+	   (let ((field-overlay (yas/current-snippet-overlay (1- beg))))
+	     (if field-overlay
+		 (when (= beg (overlay-end field-overlay))
+		   (move-overlay field-overlay
+				 (overlay-start field-overlay)
+				 end)
+		   (yas/synchronize-fields (overlay-get field-overlay 'yas/group)))
+	       (let ((snippet (yas/snippet-of-current-keymap))
+		     (done nil))
+		 (if snippet
+		     (do* ((groups (yas/snippet-groups snippet) (cdr groups))
+			   (group (car groups) (car groups)))
+			 ((or (null groups)
+			      done))
+		       (setq field-overlay (yas/field-overlay 
+					    (yas/group-primary-field group)))
+		       (when (and (= (overlay-start field-overlay)
+				     (overlay-end field-overlay))
+				  (= beg
+				     (overlay-start field-overlay)))
+			 (move-overlay field-overlay beg end)
+			 (yas/synchronize-fields group)
+			 (setq done t)))))))))))
 
 (defun yas/undo-expand-snippet (start end key snippet)
   "Undo a snippet expansion. Delete the overlays. This undo can't be
