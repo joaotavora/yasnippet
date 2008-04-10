@@ -6,12 +6,28 @@ ChangeLog
 :Contact: pluskid@gmail.com
 :Date: 2008-03-22
 
+0.5.0 / 2008-04-10
+==================
+
+* Integrate with hippie-expand. Just add ``yas/hippie-try-expand`` to
+  ``hippie-expand-try-functions-list``.
+* If you set ``yas/fall-back-behavior`` to ``'return-nil``, YASnippet
+  will return nil when it can't find a snippet to expand.
+* Defect fix: the condition of a snippet was evaluated twice in
+  earlier version.
+* Deleting snippet (using ``C-w`` or ``C-k``) won't cause serious
+  problem now.
+* Several complex snippet for python-mode from Yasser included in the
+  distribution.
+
 0.4.5 / 2008-04-07
 ==================
 
 * Merge the latest dropdown-list.el.
 * Add snippets for f90-mode from Li Zhu.
-* Bug fix: l-safe-expr-p: Lisp nesting exceeds ``max-lisp-eval-depth`` error when several (more than two) snippets overlaps. Thanks sunwaybupt@newsmth for reporting this bug.
+* Bug fix: l-safe-expr-p: Lisp nesting exceeds ``max-lisp-eval-depth``
+  error when several (more than two) snippets overlaps. Thanks
+  sunwaybupt@newsmth for reporting this bug.
 
 0.4.4 / 2008-03-24
 ==================

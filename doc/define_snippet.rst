@@ -510,6 +510,22 @@ called. Usually this works very well -- when there's a snippet, expand
 it, otherwise, call whatever command originally bind to the trigger
 key.
 
+However, you can change this behavior by customizing the
+``yas/fallback-behavior`` variable. If you set this variable to
+``'return-nil``, it will return ``nil`` instead of trying to call the
+*original* command when no snippet is found. This is useful when you
+would like YASnippet to work with other extensions,
+e.g. ``hippie-expand``. I'm also glad to tell you that integration
+with ``hippie-expand`` is already included in YASnippet.
+
+Integration with ``hippie-expand``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To integrate with ``hippie-expand``, just put
+``yas/hippie-try-expand`` in
+``hippie-expand-try-functions-list``. Personally I would like to put
+in front of the list, but it can be put anywhere you prefer.
+
 Other way to select a snippet
 -----------------------------
 
