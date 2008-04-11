@@ -190,6 +190,8 @@ to expand.
   '(menu-item "About" yas/about))
 (define-key yas/menu-keymap [yas/reload]
   '(menu-item "Reload all snippets" yas/reload-all))
+(define-key yas/menu-keymap [yas/load]
+  '(menu-item "Load snippets..." yas/load-directory))
 (define-key yas/menu-keymap [yas/separator]
   '(menu-item "--"))
 
