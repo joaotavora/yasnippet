@@ -3,7 +3,7 @@
 ;; Copyright 2008 pluskid
 ;; 
 ;; Author: pluskid <pluskid@gmail.com>
-;; Version: 0.4.5
+;; Version: 0.5.0
 ;; X-URL: http://code.google.com/p/yasnippet/
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -50,7 +50,8 @@ foo-bar
 will first try \"bar\", if not found, then \"foo-bar\" is tried.")
 
 (defvar yas/root-directory nil
-  "The root directory that stores the snippets for each major modes.")
+  "The (list of) root directory that stores the snippets for each 
+major modes.")
 
 (defvar yas/indent-line t
   "Each (except the 1st) line of the snippet template is indented to
@@ -177,7 +178,7 @@ to expand.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defvar yas/version "0.4.5")
+(defvar yas/version "0.5.0")
 
 (defvar yas/snippet-tables (make-hash-table)
   "A hash table of snippet tables corresponding to each major-mode.")
@@ -1020,7 +1021,10 @@ all the parameters:
   "Reload all snippets."
   (interactive)
   (if yas/root-directory
-      (yas/load-directory-1 yas/root-directory)
+      (if (listp yas/root-directory)
+	  (dolist (directory yas/root-directory)
+	    (yas/load-directory directory))
+	(yas/load-directory yas/root-directory))
     (call-interactively 'yas/load-directory))
   (message "done."))
 
@@ -1031,8 +1035,9 @@ name. And under each subdirectory, each file is a definition
 of a snippet. The file name is the trigger key and the
 content of the file is the template."
   (interactive "DSelect the root directory: ")
-  (unless yas/root-directory
-    (setq yas/root-directory directory))
+  (when (and (interactive-p)
+	     (file-directory-p directory))
+    (add-to-list 'yas/root-directory directory))
   (dolist (dir (yas/directory-files directory nil))
     (yas/load-directory-1 dir))
   (when (interactive-p)
