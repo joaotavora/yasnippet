@@ -1,6 +1,6 @@
-===================================================
-YASnippet - Yet Another Snippet extension for Emacs
-===================================================
+=============================
+Yet Another Snippet extension
+=============================
 
 :Author: pluskid
 :Contact: pluskid@gmail.com
