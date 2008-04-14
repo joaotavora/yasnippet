@@ -6,6 +6,11 @@ ChangeLog
 :Contact: pluskid@gmail.com
 :Date: 2008-03-22
 
+0.5.1 / 2008-04-14
+==================
+
+* Use a beautiful css style in the document.
+
 0.5.0 / 2008-04-10
 ==================
 
