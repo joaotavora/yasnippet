@@ -22,6 +22,9 @@
       <li>
         <a title="" href="changelog.html">ChangeLog</a>
       </li>
+      <li>
+        <a title="" href="http://code.google.com/p/yasnippet/downloads/list">Download</a>
+      </li>
     </ul>
     </div>
     <div id="center">
