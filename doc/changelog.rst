@@ -6,6 +6,12 @@ ChangeLog
 :Contact: pluskid@gmail.com
 :Date: 2008-03-22
 
+0.5.2 / 2008-04-20
+==================
+
+* Fix a bug for comparing string to symbol using ``string=`` (which
+  will fire an error).
+
 0.5.1 / 2008-04-14
 ==================
 
