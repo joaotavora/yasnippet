@@ -1,5 +1,4 @@
 #name : if ... end
-#condition : (looking-back "^[[:blank:]]*if")
 # --
 if ${1:condition}
   $0
