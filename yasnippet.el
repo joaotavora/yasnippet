@@ -367,18 +367,20 @@ have, compare through the start point of the overlay."
  * If the template has no condition, it is kept.
  * If the template's condition eval to non-nil, it is kept.
  * Otherwise (eval error or eval to nil) it is filtered."
-  (remove-if '(lambda (pair)
-		(let ((condition (yas/template-condition (cdr pair))))
-		  (if (null condition)
-		      (if yas/require-template-condition
-			  t
-			nil)
-		    (let ((result 
-			   (yas/template-condition-predicate condition)))
-		      (if (eq yas/require-template-condition t)
-			  result
-			(not (eq result yas/require-template-condition)))))))
-	     templates))
+  (remove-if-not '(lambda (pair)
+		    (let ((condition (yas/template-condition (cdr pair))))
+		      (if (null condition)
+			  (if yas/require-template-condition
+			      nil
+			    t)
+			(let ((result 
+			       (yas/template-condition-predicate condition)))
+			  (if yas/require-template-condition
+			      (if (eq yas/require-template-condition t)
+				  result
+				(eq result yas/require-template-condition))
+			    result)))))
+		 templates))
 
 (defun yas/snippet-table-fetch (table key)
   "Fetch a snippet binding to KEY from TABLE. If not found,
