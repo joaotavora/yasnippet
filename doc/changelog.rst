@@ -6,6 +6,11 @@ ChangeLog
 :Contact: pluskid@gmail.com
 :Date: 2008-03-22
 
+0.5.3
+==================
+
+* Fix a bug of condition system.
+
 0.5.2 / 2008-04-20
 ==================
 
