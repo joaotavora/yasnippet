@@ -107,7 +107,7 @@ them. `yas/window-system-popup-function' is used instead when in
 a window system.")
 
 (defvar yas/extra-mode-hooks
-  '(ruby-mode-hook actionscript-mode-hook)
+  '(ruby-mode-hook actionscript-mode-hook ox-mode-hook)
   "A list of mode-hook that should be hooked to enable yas/minor-mode.
 Most modes need no special consideration. Some mode (like ruby-mode)
 doesn't call `after-change-major-mode-hook' need to be hooked explicitly.")
