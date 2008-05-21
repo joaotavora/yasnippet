@@ -3,7 +3,7 @@
 ;; Copyright 2008 pluskid
 ;; 
 ;; Author: pluskid <pluskid@gmail.com>
-;; Version: 0.5.3
+;; Version: 0.5.4
 ;; X-URL: http://code.google.com/p/yasnippet/
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -178,7 +178,7 @@ to expand.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defvar yas/version "0.5.3")
+(defvar yas/version "0.5.4")
 
 (defvar yas/snippet-tables (make-hash-table)
   "A hash table of snippet tables corresponding to each major-mode.")
@@ -1332,7 +1332,7 @@ handle the end-of-buffer error fired in it by calling
   "*Bla." :group 'dropdown-list)
 
 (defface dropdown-list-selection-face
-    '((t :inherit dropdown-list :background "purple"))
+    '((t :inherit dropdown-list-face :background "purple"))
   "*Bla." :group 'dropdown-list)
 
 (defvar dropdown-list-overlays nil)
@@ -1515,4 +1515,3 @@ Use multiple times to bind different COMMANDs to the same KEY."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; dropdown-list.el ends here
-

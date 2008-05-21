@@ -6,9 +6,20 @@ ChangeLog
 :Contact: pluskid@gmail.com
 :Date: 2008-03-22
 
-0.5.3
+0.5.4 / 2008-05-15
 ==================
 
+* Added ``ox-mode-hook`` and ``python-mode-hook`` to
+  ``yas/extra-mode-hooks`` to fix the problem YASnippet is not enabled
+  in those modes.
+
+0.5.3 / 2008-05-07
+==================
+
+* Fix indent of python-mode snippets.
+* Fix a bug of dropdown-list: conflicts with color-theme (`Issue 23
+  <http://code.google.com/p/yasnippet/issues/detail?id=23>`_). Thanks
+  Mike.
 * Fix a bug of condition system.
 
 0.5.2 / 2008-04-20
