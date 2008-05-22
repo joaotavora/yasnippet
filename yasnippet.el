@@ -1039,8 +1039,7 @@ name. And under each subdirectory, each file is a definition
 of a snippet. The file name is the trigger key and the
 content of the file is the template."
   (interactive "DSelect the root directory: ")
-  (when (and (interactive-p)
-	     (file-directory-p directory))
+  (when (file-directory-p directory)
     (add-to-list 'yas/root-directory directory))
   (dolist (dir (yas/directory-files directory nil))
     (yas/load-directory-1 dir))
