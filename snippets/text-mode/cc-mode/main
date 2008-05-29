@@ -1,6 +1,6 @@
 #name: int main(argc, argv) { ... }
 # --
-int main(int argc, char const *argv)
+int main(int argc, char *argv[])
 {
     $0
     return 0;
