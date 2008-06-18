@@ -196,7 +196,7 @@ to expand.
   '(menu-item "--"))
 
 (defvar yas/known-modes
-  '(ruby-mode rst-mode)
+  '(ruby-mode rst-mode markdown-mode)
   "A list of mode which is well known but not part of emacs.")
 (defconst yas/escape-backslash
   (concat "YASESCAPE" "BACKSLASH" "PROTECTGUARD"))
