@@ -804,7 +804,7 @@ will be deleted before inserting template."
 		     (yas/group-primary-field target))))
       (yas/exit-snippet (yas/group-snippet group)))))
 
-(defun yas/parse-template ()
+(defun yas/parse-template (&optional file-name)
   "Parse the template in the current buffer.
 If the buffer contains a line of \"# --\" then the contents
 above this line are ignored. Variables can be set above this
@@ -822,7 +822,7 @@ Here's a list of currently recognized variables:
 # --
 #include \"$1\""
   (goto-char (point-min))
-  (let (template name bound condition)
+  (let ((name file-name) template bound condition)
     (if (re-search-forward "^# --\n" nil t)
 	(progn (setq template 
 		     (buffer-substring-no-properties (point) 
@@ -925,9 +925,10 @@ hierarchy."
       (dolist (file (yas/directory-files directory t))
 	(when (file-readable-p file)
 	  (insert-file-contents file nil nil nil t)
-	  (push (cons (file-name-nondirectory file)
-		      (yas/parse-template))
-		snippets))))
+	  (let ((snippet-file-name (file-name-nondirectory file)))
+	    (push (cons snippet-file-name
+			(yas/parse-template snippet-file-name))
+		  snippets)))))
     (yas/define-snippets mode-sym
 			 snippets
 			 parent)
