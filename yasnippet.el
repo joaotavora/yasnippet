@@ -1094,7 +1094,7 @@ parent mode. The PARENT-MODE may not need to be a real mode."
     (dolist (snippet snippets)
       (let* ((full-key (car snippet))
 	     (key (file-name-sans-extension full-key))
-	     (name (caddr snippet))
+	     (name (or (caddr snippet) (file-name-extension full-key)))
 	     (condition (nth 3 snippet))
 	     (template (yas/make-template (cadr snippet)
 					  (or name key)
