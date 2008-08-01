@@ -23,8 +23,8 @@ class ${1:ClassName}(${2:object}):
                   '(lambda (x)
                      (mapcar
                       (lambda (x)
-                        (replace-regexp-in-string "\s*$" ""
-                         (replace-regexp-in-string "^\s*" "" x))) x))
+                        (replace-regexp-in-string "[[:blank:]]*$" ""
+                         (replace-regexp-in-string "^[[:blank:]]*" "" x))) x))
                   (mapcar '(lambda (x) (split-string x "="))
                           (split-string text ",")))
                  indent)))
@@ -44,8 +44,8 @@ class ${1:ClassName}(${2:object}):
           '(lambda (x)
              (mapcar
               '(lambda (x)
-                 (replace-regexp-in-string "\s*$" ""
-                  (replace-regexp-in-string "^\s*" "" x)))
+                 (replace-regexp-in-string "[[:blank:]]*$" ""
+                  (replace-regexp-in-string "^[[:blank:]]*" "" x)))
               x))
           (mapcar '(lambda (x) (split-string x "="))
                   (split-string text ",")))
