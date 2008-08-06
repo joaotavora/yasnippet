@@ -430,6 +430,7 @@ a list of modes like this to help the judgement."
       (save-excursion
 	(save-restriction
 	  (save-match-data
+	    (widen)
 	    (format "%s" (eval (read string))))))
     (error (format "(error in elisp evaluation: %s)" 
 		   (error-message-string err)))))
@@ -620,6 +621,9 @@ will be deleted before inserting template."
       ;; Step 3: evaluate all backquotes
       (goto-char (point-min))
       (while (re-search-forward "`\\([^`]*\\)`" nil t)
+	;; go back so that (current-column) in elisp code evaluation
+	;; will calculate to a meaningful value
+	(goto-char (match-beginning 0))
 	(replace-match (yas/eval-string (match-string-no-properties 1))
 		       t t))
 
