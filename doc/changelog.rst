@@ -6,6 +6,26 @@ ChangeLog
 :Contact: pluskid@gmail.com
 :Date: 2008-03-22
 
+0.5.6 / 2008-08-07
+==================
+
+* Added a buffer local variable ``yas/dont-activate`` to turn off
+  ``yas/minor-mode`` in some major modes. See `Issue 29
+  <http://code.google.com/p/yasnippet/issues/detail?id=29>`_.
+* Make the environment of elisp evaluation more friendly to
+  ``(current-column)``.
+* Fixed the regular expression bug in python-mode snippets.
+* Use filename or full key extension for snippet name if no ``name``
+  property is defined.
+
+0.5.5 / 2008-05-29
+==================
+
+* Tweak ``yas/extra-mode-hooks`` so that it can be more easily
+  customized.
+* Add an entry in FAQ about why ``TAB`` key doesn't work in some
+  modes.
+
 0.5.4 / 2008-05-15
 ==================
 

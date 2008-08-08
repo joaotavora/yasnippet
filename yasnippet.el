@@ -3,7 +3,7 @@
 ;; Copyright 2008 pluskid
 ;; 
 ;; Author: pluskid <pluskid@gmail.com>
-;; Version: 0.5.4
+;; Version: 0.5.6
 ;; X-URL: http://code.google.com/p/yasnippet/
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -40,6 +40,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; User customizable variables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defvar yas/dont-activate nil
+  "If set to t, don't activate yas/minor-mode automatically.")
+(make-variable-buffer-local 'yas/dont-activate)
+
 (defvar yas/key-syntaxes (list "w" "w_" "w_." "^ ")
   "A list of syntax of a key. This list is tried in the order
 to try to find a key. For example, if the list is '(\"w\" \"w_\").
@@ -107,10 +111,14 @@ them. `yas/window-system-popup-function' is used instead when in
 a window system.")
 
 (defvar yas/extra-mode-hooks
-  '(ruby-mode-hook actionscript-mode-hook ox-mode-hook python-mode-hook)
+  '()
   "A list of mode-hook that should be hooked to enable yas/minor-mode.
 Most modes need no special consideration. Some mode (like ruby-mode)
 doesn't call `after-change-major-mode-hook' need to be hooked explicitly.")
+(mapc '(lambda (x)
+	 (add-to-list 'yas/extra-mode-hooks
+		      x))
+      '(ruby-mode-hook actionscript-mode-hook ox-mode-hook python-mode-hook))
 
 (defvar yas/after-exit-snippet-hook
   '()
@@ -178,7 +186,7 @@ to expand.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defvar yas/version "0.5.4")
+(defvar yas/version "0.5.6")
 
 (defvar yas/snippet-tables (make-hash-table)
   "A hash table of snippet tables corresponding to each major-mode.")
@@ -252,6 +260,11 @@ You can customize the key through `yas/trigger-key'."
   :group 'editing
   (define-key yas/minor-mode-map yas/trigger-key 'yas/expand))
 
+(defun yas/minor-mode-auto-on ()
+  "Turn on YASnippet minor mode unless `yas/dont-activate' is
+set to t."
+  (unless yas/dont-activate
+    (yas/minor-mode-on)))
 (defun yas/minor-mode-on ()
   "Turn on YASnippet minor mode."
   (interactive)
@@ -1054,10 +1067,10 @@ content of the file is the template."
 (defun yas/initialize ()
   "Do necessary initialization."
   (add-hook 'after-change-major-mode-hook
-	    'yas/minor-mode-on)
+	    'yas/minor-mode-auto-on)
   (dolist (hook yas/extra-mode-hooks)
     (add-hook hook
-	      'yas/minor-mode-on))
+	      'yas/minor-mode-auto-on))
   (add-hook 'yas/minor-mode-on-hook
 	    'yas/ensure-minor-mode-priority)
   (when yas/use-menu
