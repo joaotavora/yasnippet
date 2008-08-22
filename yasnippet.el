@@ -258,7 +258,9 @@ You can customize the key through `yas/trigger-key'."
   ;; The indicator for the mode line.
   " yas"
   :group 'editing
-  (define-key yas/minor-mode-map yas/trigger-key 'yas/expand))
+  (define-key yas/minor-mode-map yas/trigger-key 'yas/expand)
+
+  (set 'yas/registered-snippets (make-hash-table :test 'eq)))
 
 (defun yas/minor-mode-auto-on ()
   "Turn on YASnippet minor mode unless `yas/dont-activate' is
@@ -646,8 +648,9 @@ will be deleted before inserting template."
       (yas/replace-all "\\`" yas/escape-backquote)
       (yas/replace-all "\\$" yas/escape-dollar)
 
-      (let ((snippet (yas/make-snippet)))
-	;; Step 5: Create fields
+      ;; Step 5: Create and register a brand new snippet in the local
+      ;; `yas/registered-snippets' var. Create fields.
+      (let ((snippet (yas/register-snippet (yas/make-snippet)))) 
 	(goto-char (point-min))
 	(while (re-search-forward yas/field-regexp nil t)
 	  (let ((number (or (match-string-no-properties 1)
@@ -1246,16 +1249,138 @@ when the condition evaluated to non-nil."
 (defun yas/exit-snippet (snippet)
   "Goto exit-marker of SNIPPET and delete the snippet."
   (interactive)
-  (let ((overlay (yas/snippet-overlay snippet)))
-    (let ((yas/snippet-beg (overlay-start overlay))
-	  (yas/snippet-end (overlay-end overlay)))
-      (goto-char (yas/snippet-exit-marker snippet))
-      (delete-overlay overlay)
-      (dolist (group (yas/snippet-groups snippet))
-	(dolist (field (yas/group-fields group))
-	  (delete-overlay (yas/field-overlay field))))
+  (goto-char (yas/snippet-exit-marker snippet))
+  (yas/cleanup-snippet snippet)
+  (run-hooks 'yas/after-exit-snippet-hook))
 
-      (run-hooks 'yas/after-exit-snippet-hook))))
+;; Snippet register and unregister routines.
+;;
+;; XXX: Commentary on this section by joaot. 
+;;
+;; These routines, along with minor modifications upwards, allow some
+;; management of currently active snippets.
+;;
+;; The idea is to temporarily set `post-command-hook' while locally
+;; "registered" snippets last. After each command,
+;; `yas/check-cleanup-snippet' is run, checking for some condition and
+;; possibly unregistering the snippet. When no more snippets are
+;; registered, the `post-command-hook' is cleared up.
+;;
+;; They were introduced to fix bug 28
+;; "http://code.google.com/p/yasnippet/issues/detail?id=28". Whenever
+;; point exits a snippet or a snippet field, *all* snippets are
+;; destroyed. I think this scheme can also fix other bugs or
+;; introduce new features. It can also be used with `pre-command-hook'
+;; for instance.
+;;
+;; For example, to only allow one snippet at a time, add a similar
+;; check to `pre-command-hook' that immediately destroys all
+;; snippets if `this-command' equals `yas/snippet-expand'.
+;;
+;; Or also using `pre-command-hook', exterminate all snippets if
+;; `this-command' is `undo' and some snippet fields have already been
+;; partially filled out. This would at least work around issue 33,
+;; which complains about undo.
+;;
+;; Tell me what you think!
+;;
+
+(defvar yas/registered-snippets nil
+  "A hash table holding all active snippets")
+(eval-when-compile
+  (make-variable-buffer-local 'yas/registered-snippets))
+      
+(defun yas/register-snippet (snippet)
+  "Register SNIPPET in the `yas/registered-snippets' table. Add a
+`yas/check-cleanup-snippet' function to the buffer-local
+`post-command-hook' that should exist while at least one
+registered snippet exists in the current buffer.  Return snippet"
+  (puthash (yas/snippet-id snippet) snippet yas/registered-snippets)
+  (add-hook 'post-command-hook 'yas/check-cleanup-snippet 'append 'local)
+  snippet)
+
+(defun yas/unregister-snippet (snippet)
+  "Unregister snippet from the `yas/registered-snippets'
+table. Remove `yas/check-cleanup-snippet' from the buffer-local
+`post-command-hook' if no more snippets registered in the
+current buffer."
+  (remhash (yas/snippet-id snippet) yas/registered-snippets)
+  (when (eq 0
+	    (hash-table-count yas/registered-snippets))
+    (remove-hook 'post-command-hook 'yas/check-cleanup-snippet 'local)))
+
+(defun yas/exterminate-snippets ()
+  "Remove all locally registered snippets and remove
+  `yas/check-cleanup-snippet' from the `post-command-hook'"
+  (interactive)
+  (maphash #'(lambda (key snippet) (yas/cleanup-snippet snippet))
+	   yas/registered-snippets))
+
+(defun yas/cleanup-snippet (snippet)
+  "Cleanup SNIPPET, but leave point as it is. This renders the
+snippet as ordinary text"
+  (let* ((overlay (yas/snippet-overlay snippet))
+	 (yas/snippet-beg (overlay-start overlay))
+	 (yas/snippet-end (overlay-end overlay)))
+    (delete-overlay overlay)
+    (dolist (group (yas/snippet-groups snippet))
+      (dolist (field (yas/group-fields group))
+	(delete-overlay (yas/field-overlay field)))))
+    (yas/unregister-snippet snippet))
+
+(defun yas/check-cleanup-snippet ()
+  "Checks if point exited any of the fields of the snippet, if so
+clean it up.
+
+This function is part of `post-command-hook' while
+registered snippets last."
+  (let ((snippet (yas/snippet-of-current-keymap)))
+    (cond (;;
+	   ;; No snippet at point, cleanup *all* snippets
+	   ;; 
+	   (null snippet)
+	   (yas/exterminate-snippets))
+	  (;;
+	   ;; A snippet exits at point, but point is out of any
+	   ;; snippet field.
+	   ;;
+	   ;; XXX: `every' and `notany' should be much slower than a
+	   ;; couple of `while' loops...
+	   ;; 
+	   (and snippet
+		(every #'(lambda (group)
+			   (notany #'(lambda (field)
+				       (let ((overlay (yas/field-overlay field)))
+					 (and (>= (point) (overlay-start overlay))
+					      (<= (point) (overlay-end overlay)))))
+				   (yas/group-fields group)))
+		       (yas/snippet-groups snippet)))
+	   (yas/cleanup-snippet snippet))
+	  (;;
+	   ;; Snippet at point, and point inside a snippet field,
+	   ;; everything is normal
+	   ;; 
+	   t
+	   nil))))
+
+(defun yas/debug-some-vars ()
+  (interactive)
+  (with-output-to-temp-buffer "*YASnippet trace*"
+    (princ "Interesting YASnippet vars: \n\n")
+    (princ (format "Register hash-table: %s\n\n" yas/registered-snippets))
+    (cond ((eq (hash-table-count yas/registered-snippets) 0)
+	   (princ "  No registered snippets\n"))
+	  (t
+	   (maphash #'(lambda (key snippet)
+			(princ (format "\t key %s for snippet %s with %s  groups\n"
+				       key
+				       (yas/snippet-id snippet)
+				       (length (yas/snippet-groups snippet)))))
+		    yas/registered-snippets)))
+    (princ (format "\nPost command hook: %s\n" post-command-hook))
+    (princ (format "\nPre  command hook: %s\n" pre-command-hook))))
+
+;;(run-hooks 'yas/after-exit-snippet-hook)))) ;;; XXX: why was this here at top level?
 
 (provide 'yasnippet)
 
