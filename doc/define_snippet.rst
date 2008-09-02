@@ -748,3 +748,29 @@ is not. Here's an snippet for rst title:
 .. [1] With some minor change, mainly for fixing some trivial bugs.
 .. [2] This is done when you call ``yas/initialize``.
 .. [3] Of course, this can be customized.
+
+Indenting
+---------
+
+Many people miss the indenting feature of smart-snippet: when you
+place a ``$>`` in your snippet, an ``(indent-according-to-mode)`` will
+be executed there to indent the line. So you'll not need to hard-code
+the indenting in the snippet template, and it will be very convenient
+when you need to work with several different project where coding
+styles are different.
+
+The reason why this feature wasn't added to YASnippet until after
+0.5.6 is that it doesn't work well for all modes. In some cases
+(e.g. python-mode), calling ``indent-according-to-mode`` will break
+the overlays created by YASnippet.
+
+However, since many people asked for this feature, I finally added
+this to YASnippet. Here's an example of the usage:
+
+.. sourcecode:: text
+
+  for (${int i = 0}; ${i < 10}; ${++i})
+  {$>
+  $0$>
+  }$>
+

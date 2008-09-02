@@ -797,7 +797,14 @@ will be deleted before inserting template."
                            (yas/group-primary-field
                             (car groups)))))
             ;; no need to call exit-snippet, since no overlay created.
-            (yas/exit-snippet snippet)))))))
+            (yas/exit-snippet snippet)))
+
+        ;; Step 16: Do necessary indenting
+        (save-excursion
+          (goto-char (overlay-start (yas/snippet-overlay snippet)))
+          (while (re-search-forward "$>" nil t)
+            (replace-match "")
+            (indent-according-to-mode)))))))
 
 (defun yas/current-snippet-overlay (&optional point)
   "Get the most proper overlay which is belongs to a snippet."
