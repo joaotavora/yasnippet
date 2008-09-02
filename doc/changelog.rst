@@ -6,6 +6,14 @@ ChangeLog
 :Contact: pluskid@gmail.com
 :Date: 2008-03-22
 
+0.5.7 /
+=================
+
+* Fixed `Issue 16
+  <http://code.google.com/p/yasnippet/issues/detail?id=16>`_ by adding
+  ``$>`` support. Here's the `doc for $> indenting
+  <http://pluskid.lifegoo.com/upload/project/yasnippet/doc/define_snippet.html#indenting>`_.
+
 0.5.6 / 2008-08-07
 ==================
 
