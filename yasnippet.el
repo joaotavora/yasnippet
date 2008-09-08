@@ -62,9 +62,9 @@ major modes.")
 current column if this variable is non-`nil'.")
 (make-variable-buffer-local 'yas/indent-line)
 
-(defvar yas/trigger-key (kbd "TAB")
+(defvar yas/trigger-key (kbd "<tab>")
   "The key to bind as a trigger of snippet.")
-(defvar yas/next-field-key (kbd "TAB")
+(defvar yas/next-field-key (kbd "<tab>")
   "The key to navigate to next field.")
 
 (defvar yas/keymap (make-sparse-keymap)
@@ -245,11 +245,18 @@ to expand.
   (list 'yas/overlay-modification-hook)
   "The list of hooks to the overlay modification event.")
 (defvar yas/overlay-insert-in-front-hooks
-  (list 'yas/overlay-insert-in-front-hook)
-  "The list of hooks of the overlay inserted in front event.")
-(defvar yas/keymap-overlay-modification-hooks
-  (list 'yas/overlay-maybe-insert-behind-hook)
-  "The list of hooks of the big keymap overlay modification event.")
+   (list 'yas/overlay-insert-in-front-hook)
+   "The list of hooks of the overlay inserted in front event.")
+(defvar yas/overlay-insert-behind-hooks
+  (list 'yas/overlay-insert-behind-hook)
+  "The list of hooks of the overlay inserted behind event.")
+
+
+(setq yas/keymap-overlay-modification-hooks nil)
+
+;; (defvar yas/keymap-overlay-modification-hooks
+;;   (list 'yas/overlay-maybe-insert-behind-hook)
+;;   "The list of hooks of the big keymap overlay modification event.")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; YASnippet minor mode
@@ -341,7 +348,9 @@ TODO: describe the rest of the fields"
   number
   transform
   value
-  parent-field)
+  parent-field
+  subfields
+  group)
 (defstruct (yas/snippet-table (:constructor yas/make-snippet-table ()))
   "A table to store snippets for a perticular mode."
   (hash (make-hash-table :test 'equal))
@@ -368,9 +377,11 @@ FIELD."
                                 (yas/group-number group)))))))
     (if group
         (yas/group-add-field group field)
-      (push (yas/make-group field snippet)
-            (yas/snippet-groups snippet)))
-    field))
+      (setq group (yas/make-group field snippet))
+      (push group (yas/snippet-groups snippet)))
+
+    (setf (yas/field-group field) group))
+  field)
 
 (defun yas/group-value (group)
   "Get the default value of the field group."
@@ -547,8 +558,8 @@ the template of a snippet in the current snippet-table."
           start
           end)))
 
-(defun yas/synchronize-fields (field-group)
-  "Update all fields' text according to the primary field."
+(defun yas/synchronize-fields (field-group &optional dont-recurse-down)
+  "Update all mirror  fields' text according to the primary field."
   (when (yas/snippet-valid? (yas/group-snippet field-group))
     (save-excursion
       (let* ((inhibit-modification-hooks t)
@@ -558,7 +569,16 @@ the template of a snippet in the current snippet-table."
         (yas/replace-fields-with-value (remove-if #'(lambda (field)
                                                       (equal field primary))
                                                   (yas/group-fields field-group))
-                                       text)))))
+                                       text)
+	;; Call recursively for subfields
+	(unless dont-recurse-down
+	  (dolist (subfield (yas/field-subfields primary))
+	  (yas/synchronize-fields (yas/field-group subfield))))
+	;; Call recursively for parent field
+	(when (yas/field-parent-field primary)
+	  (yas/synchronize-fields (yas/field-group (yas/field-parent-field primary))
+				  'dont-recurse))))))
+
 (defun yas/current-field-text (field)
   (let ((primary-overlay (yas/field-overlay field)))
     (when primary-overlay
@@ -567,7 +587,18 @@ the template of a snippet in the current snippet-table."
 
 
 (defun yas/overlay-modification-hook (overlay after? beg end &optional length)
-  "Modification hook for snippet field overlay."
+  "Synchronizes all fields for the group of the current field overlay
+
+Used to ensure mirror fields in the same group contain the same value
+of the primary field."
+  (message (format "Running mod hook for %s of %s."
+		   (cond ((overlay-get overlay 'yas/snippet-reference)
+			  (format "big overlay of snippet %s," (yas/snippet-id (overlay-get overlay 'yas/snippet-reference))))
+			 ((overlay-get overlay 'yas/group)
+			  (format "field overlay of group $%s," (yas/group-number (overlay-get overlay 'yas/group))))
+			 (t
+			  "STH UNKNOWN"))
+		   overlay))
   (when (and after? (not undo-in-progress))
     (yas/synchronize-fields (overlay-get overlay 'yas/group))))
 
@@ -584,43 +615,55 @@ the template of a snippet in the current snippet-table."
             (delete-char (- (overlay-end overlay) end)))))
       (yas/synchronize-fields field-group))))
 
-(defun yas/overlay-maybe-insert-behind-hook (overlay after? beg end &optional length)
-  "Insert behind hook sometimes doesn't get called. I don't know why.
-So I add modification hook in the big overlay and try to detect `insert-behind'
-event manually."
-  (when after?
-    (cond ((and (= beg end)
-                (> length 0)
-                (= (overlay-start overlay)
-                   (overlay-end overlay)))
-           (yas/exit-snippet (overlay-get overlay 'yas/snippet-reference)))
-          ((and (= length 0)
-                (> end beg)
-                (null (yas/current-snippet-overlay beg))
-                (not (bobp)))
-           (let ((field-overlay (yas/current-snippet-overlay (1- beg))))
-             (if field-overlay
-                 (when (= beg (overlay-end field-overlay))
-                   (move-overlay field-overlay
-                                 (overlay-start field-overlay)
-                                 end)
-                   (yas/synchronize-fields (overlay-get field-overlay 'yas/group)))
-               (let ((snippet (yas/snippet-of-current-keymap))
-                     (done nil))
-                 (if snippet
-                     (do* ((groups (yas/snippet-groups snippet) (cdr groups))
-                           (group (car groups) (car groups)))
-                         ((or (null groups)
-                              done))
-                       (setq field-overlay (yas/field-overlay
-                                            (yas/group-primary-field group)))
-                       (when (and (= (overlay-start field-overlay)
-                                     (overlay-end field-overlay))
-                                  (= beg
-                                     (overlay-start field-overlay)))
-                         (move-overlay field-overlay beg end)
-                         (yas/synchronize-fields group)
-                         (setq done t)))))))))))
+(defun yas/overlay-insert-behind-hook (overlay after? beg end &optional length)
+  "Hook for snippet overlay when text is inserted just behind a snippet field."
+  (let ((current-field-overlay (yas/current-field-overlay beg)))
+    (when (and after?
+	       (or (null current-field-overlay) ; not inside another field
+		   (< (overlay-get current-field-overlay 'priority)
+		      (overlay-get overlay 'priority))))
+      (move-overlay overlay
+		    (overlay-start overlay)
+		    end)
+      (yas/synchronize-fields (overlay-get overlay 'yas/group)))))
+
+;; (defun yas/overlay-maybe-insert-behind-hook (overlay after? beg end &optional length)
+;;   "Insert behind hook sometimes doesn't get called. I don't know why.
+;; So I add modification hook in the big overlay and try to detect `insert-behind'
+;; event manually."
+;;   (when after?
+;;     (cond ((and (= beg end)
+;;                 (> length 0)
+;;                 (= (overlay-start overlay)
+;;                    (overlay-end overlay)))
+;;            (yas/exit-snippet (overlay-get overlay 'yas/snippet-reference)))
+;;           ((and (= length 0)
+;;                 (> end beg)
+;;                 (null (yas/current-field-overlay beg))
+;;                 (not (bobp)))
+;;            (let ((field-overlay (yas/current-field-overlay (1- beg))))
+;;              (if field-overlay
+;;                  (when (= beg (overlay-end field-overlay))
+;;                    (move-overlay field-overlay
+;;                                  (overlay-start field-overlay)
+;;                                  end)
+;;                    (yas/synchronize-fields (overlay-get field-overlay 'yas/group)))
+;;                (let ((snippet (yas/snippet-of-current-keymap))
+;;                      (done nil))
+;;                  (if snippet
+;;                      (do* ((groups (yas/snippet-groups snippet) (cdr groups))
+;;                            (group (car groups) (car groups)))
+;;                          ((or (null groups)
+;;                               done))
+;;                        (setq field-overlay (yas/field-overlay
+;;                                             (yas/group-primary-field group)))
+;;                        (when (and (= (overlay-start field-overlay)
+;;                                      (overlay-end field-overlay))
+;;                                   (= beg
+;;                                      (overlay-start field-overlay)))
+;;                          (move-overlay field-overlay beg end)
+;;                          (yas/synchronize-fields group)
+;;                          (setq done t)))))))))))
 
 (defun yas/remove-recent-undo-from-history ()
   (let ((undo (car buffer-undo-list)))
@@ -744,13 +787,17 @@ will be deleted before inserting template."
                                      nil
                                      nil
                                      t)))
-          (overlay-put overlay
-                       'modification-hooks
-                       yas/keymap-overlay-modification-hooks)
-          (overlay-put overlay
-                       'insert-behind-hooks
-                       yas/keymap-overlay-modification-hooks)
+          ;; XXX: DEBUG: Got rid of this workaround. Hope I can find
+          ;; some other one.
+	  ;;
+	  ;; (overlay-put overlay
+          ;;              'modification-hooks
+          ;;              yas/keymap-overlay-modification-hooks)
+          ;; (overlay-put overlay
+          ;;              'insert-behind-hooks
+          ;;              yas/keymap-overlay-modification-hooks)
           (overlay-put overlay 'keymap yas/keymap)
+	  (overlay-put overlay 'priority 10) ;; FIXME: hardcoded value here!
           (overlay-put overlay 'yas/snippet-reference snippet)
           (setf (yas/snippet-overlay snippet) overlay)
           (setf (yas/snippet-end-marker snippet) (overlay-end overlay)))
@@ -778,6 +825,7 @@ will be deleted before inserting template."
             (overlay-put overlay 'yas/modified? nil)
             (overlay-put overlay 'modification-hooks yas/overlay-modification-hooks)
             (overlay-put overlay 'insert-in-front-hooks yas/overlay-insert-in-front-hooks)
+	    (overlay-put overlay 'insert-behind-hooks yas/overlay-insert-behind-hooks)
             (overlay-put overlay
                          'face (intern (format "yas/field-highlight-face-%d"
                                                     (overlay-get overlay 'priority))))
@@ -849,13 +897,21 @@ Allows nested placeholder in the style of Textmate."
   ;; d) Otherwise a placeholder field for `number' is added to the
   ;;    snippet with `value' and `transform'.
   ;;
-  ;; e) Then, still, buffer is temporarily narrowed down to `value'
-  ;;    and `yas/field-parse-create' is called again recursively
-  ;;    with the recently created field as `parent-field'. That
-  ;;    might actually add more fields.
+  ;; e) Correct overlay priority is set to increment by one the
+  ;;    priority of `parent-field' if that is passed, effectively
+  ;;    describing the current recursion level.
   ;;
-  ;; f) In any case, point is moved to just after the closing bracket
-  ;;    after `value' and the search starts again from a).
+  ;; f) The enclosing "${<`number'>:" and closing bracket regions are
+  ;;    delete.
+  ;;
+  ;; g) Then, still, buffer is temporarily narrowed down to `value'
+  ;;    and `yas/field-parse-create' is called again recursively with
+  ;;    the recently created field as `parent-field'. That might
+  ;;    actually add more fields.
+  ;;
+  ;; h) Update `value' of the newly created field to adjust for some
+  ;;    possible pruning that happened in the subcalls to
+  ;;    `yas/field-parse-create'
   ;;
   ;;
   (while (re-search-forward yas/field-regexp nil t)
@@ -884,7 +940,8 @@ Allows nested placeholder in the style of Textmate."
             (replace-match "")
             (setf (yas/snippet-exit-marker snippet)
                   (copy-marker (point) t)))
-        ;; d) add field
+        ;; d) add a brand new field, linking it to the possible parent
+        ;; field and adding it to the parent field's subfield list.
         (setq brand-new-field
               (yas/snippet-add-field
                snippet
@@ -895,6 +952,9 @@ Allows nested placeholder in the style of Textmate."
                 value
                 transform
                 parent-field)))
+	(when parent-field
+	  (setf (yas/field-subfields parent-field)
+		(push brand-new-field (yas/field-subfields parent-field))))
         ;; e) set correct overlay priority
         (overlay-put (yas/field-overlay brand-new-field) 'priority
                      (if parent-field
@@ -912,7 +972,10 @@ Allows nested placeholder in the style of Textmate."
             (save-restriction
               (narrow-to-region value-start value-end)
               (goto-char (point-min))
-              (yas/field-parse-create snippet brand-new-field))))))))
+              (yas/field-parse-create snippet brand-new-field)))
+	  ;; h) 
+	  (setf (yas/field-value brand-new-field)
+		(buffer-substring-no-properties value-start value-end)))))))
 
 (defun yas/field-bracket-end ()
   "Calculates position of the field's closing bracket if any.
@@ -933,24 +996,30 @@ placeholders."
     bracket-end))
 
 
-(defun yas/current-snippet-overlay (&optional point)
-  "Get the most proper overlay which is belongs to a snippet."
-  (let ((point (or point (point)))
-        (snippet-overlay nil))
-    (dolist (overlay (overlays-at point))
-      ;; appending and removing-duplicates fixes a bug when overlays
-      ;; are not recognized because point is really at the end
-      (when (overlay-get overlay 'yas/snippet)
-        (if (null snippet-overlay)
-            (setq snippet-overlay overlay)
-          (when (> (yas/snippet-id (overlay-get overlay 'yas/snippet))
-                   (yas/snippet-id (overlay-get snippet-overlay 'yas/snippet)))
-            (setq snippet-overlay overlay)))))
-    snippet-overlay))
+(defun yas/current-field-overlay (&optional point)
+  "Return the most ."
+  (let ((point (or point (point))))
+    (car (sort (delete-if-not #'(lambda (overlay)
+				  (overlay-get overlay 'yas/snippet))
+			      (overlays-at point))
+	       #'(lambda (overlay1 overlay2)
+		   (let ((id-1 (yas/snippet-id (overlay-get overlay1 'yas/snippet)))
+			 (id-2 (yas/snippet-id (overlay-get overlay2 'yas/snippet)))
+ 			 (prio-1 (overlay-get overlay1 'priority))
+			 (prio-2 (overlay-get overlay2 'priority)))
+		     (cond ((> id-1 id-2)
+			    t)
+			   ((< id-1 id-2)
+			    nil)
+			   ((> prio-1 prio-2)
+			    t)
+			   (t
+			    nil))))))))
 
 (defun yas/snippet-of-current-keymap (&optional point)
-  "Get the snippet holding the snippet keymap under POINT."
-  (let ((point (or point (point)))
+  "Return the most recently inserted snippet holding covering
+POINT."
+  (let ((point (or point (point))) 
         (keymap-snippet nil)
         (snippet nil))
     (dolist (overlay (overlays-at point))
@@ -964,21 +1033,30 @@ placeholders."
     keymap-snippet))
 
 (defun yas/current-overlay-for-navigation ()
-  "Get current overlay for navigation. Might be overlay at current or previous point."
-  (let ((overlay1 (yas/current-snippet-overlay))
-        (overlay2 (if (bobp)
-                      nil
-                    (yas/current-snippet-overlay (- (point) 1)))))
-    (if (null overlay1)
-        overlay2
-      (if (or (null overlay2)
-              (eq (overlay-get overlay1 'yas/snippet)
-                  (overlay-get overlay2 'yas/snippet)))
-          overlay1
-        (if (> (yas/snippet-id (overlay-get overlay2 'yas/snippet))
-               (yas/snippet-id (overlay-get overlay1 'yas/snippet)))
-            overlay2
-          overlay1)))))
+  "Get current overlay for navigation.
+
+
+XXX: FIXME: investigate why: Might be overlay at current or previous point."
+  (yas/current-field-overlay))
+
+  
+;;XXX: DEBUG removed 
+  
+  
+  ;; (let ((overlay1 (yas/current-field-overlay))
+  ;;       (overlay2 (if (bobp)
+  ;;                     nil
+  ;;                   (yas/current-field-overlay (- (point) 1)))))
+  ;;   (if (null overlay1)
+  ;;       overlay2
+  ;;     (if (or (null overlay2)
+  ;;             (eq (overlay-get overlay1 'yas/snippet)
+  ;;                 (overlay-get overlay2 'yas/snippet)))
+  ;;         overlay1
+  ;;       (if (> (yas/snippet-id (overlay-get overlay2 'yas/snippet))
+  ;;              (yas/snippet-id (overlay-get overlay1 'yas/snippet)))
+  ;;           overlay2
+  ;;         overlay1)))))
 
 (defun yas/navigate-group (group next?)
   "Go to next of previous field group. Exit snippet if none."
@@ -1592,8 +1670,8 @@ information is added to `buffer-undo-list'
 
 This function is added to the `post-command-hook' and should
 be a part of that list while registered snippets last."
-  (let* ((overlay (or (yas/current-snippet-overlay)
-                      (yas/current-snippet-overlay (1- (point)))))
+  (let* ((overlay (or (yas/current-field-overlay)
+                      (yas/current-field-overlay (1- (point)))))
          (group (when overlay
                   (overlay-get overlay 'yas/group))))
     (when group
@@ -1657,31 +1735,50 @@ be a part of that list while registered snippets last."
            (princ "  No registered snippets\n"))
           (t
            (maphash #'(lambda (key snippet)
-                        (princ (format "\t key %s for snippet %s with %s  groups\n"
+                        (princ (format "\t key %s for snippet %s" 
                                        key
-                                       (yas/snippet-id snippet)
-                                       (length (yas/snippet-groups snippet))))
+                                       (yas/snippet-id snippet)))
+
+
+			(princ (format "\t   Big priority %s overlay %s\n\n"
+				       (overlay-get (yas/snippet-overlay snippet) 'priority)
+				       (yas/snippet-overlay snippet)))
+
+
+			
                         (dolist (group (yas/snippet-groups snippet))
-                          (princ (format "\t   group $%s with %s fields.  Primary field is value is \"%s\"\n"
+                          (princ (format "\t   group $%s with %s fields.\n"
                                          (yas/group-number group)
-                                         (length (yas/group-fields group))
-                                         (yas/field-value (yas/group-primary-field group))))))
+                                         (length (yas/group-fields group))))
+			  (dolist (field (yas/group-fields group))
+			    (let ((overlay (yas/field-overlay field)))
+			      (princ (format "\t      %s field. Saved (%s) . "
+					     (if (eq field (yas/group-primary-field group))
+						 "Primary" "Mirror")
+					     (yas/field-value (yas/group-primary-field group))))
+			      (if (and (overlayp overlay)
+				       (overlay-buffer overlay))
+				  (princ (format "Priority %d overlay (%d:%d:%s)\n"
+						 (overlay-get overlay 'priority)
+						 (overlay-start overlay)
+						 (overlay-end overlay)
+						 (buffer-substring (overlay-start overlay) (overlay-end overlay))))
+				(princ "NO OVERLAY\n"))))))
                     yas/registered-snippets)))
 
     (princ (format "\nPost command hook: %s\n" post-command-hook))
     (princ (format "\nPre  command hook: %s\n" pre-command-hook))
 
-    (princ (format "\nUndo is %s. Undolist has %s elements. First 10 elements follow:\n"
-                   (if (eq buffer-undo-list t)
-                       "DISABLED"
-                     "ENABLED")
-                   (length buffer-undo-list)))
-    (let ((undo-list buffer-undo-list))
-      (dotimes (i 10)
-        (when undo-list
-          (princ (format "%s:  %s\n" i (car-safe undo-list)))
-          (setq undo-list (cdr undo-list)))))))
-
+    ;; (princ (format "\nUndo is %s."
+    ;;                (if (eq buffer-undo-list t)
+    ;;                    "DISABLED"
+    ;;                  "ENABLED")))
+    ;; (unless (eq buffer-undo-list t)
+    ;;   (princ (format "Undolist has %s elements. First 3 elements follow:\n" (length buffer-undo-list)))
+    ;;   (let ((first-ten (subseq buffer-undo-list 0 2)))
+    ;; 	(dolist (undo-elem first-ten)
+    ;; 	  (princ (format "%s:  %s\n" (position undo-elem first-ten) undo-elem)))))
+))
 
 (provide 'yasnippet)
 
