@@ -340,7 +340,9 @@ TODO: describe the rest of the fields"
   (fields (list primary-field))
   (next nil)
   (prev nil)
-  snippet)
+  snippet
+  deleted
+  modified)
 (defstruct (yas/field
             (:constructor yas/make-field (overlay number value transform parent-field)))
   "A field in a snippet."
@@ -604,21 +606,33 @@ of the primary field."
 
 (defun yas/overlay-insert-in-front-hook (overlay after? beg end &optional length)
   "Hook for snippet overlay when text is inserted in front of a snippet field."
-  (when after?
-    (let ((field-group (overlay-get overlay 'yas/group))
-          (inhibit-modification-hooks t))
-      (when (not (overlay-get overlay 'yas/modified?))
-        (overlay-put overlay 'yas/modified? t)
-        (when (> (overlay-end overlay) end)
-          (save-excursion
-            (goto-char end)
-            (delete-char (- (overlay-end overlay) end)))))
-      (yas/synchronize-fields field-group))))
+  (let ((group (overlay-get overlay 'yas/group)))
+    (when (and after?
+	       group
+	       (not (yas/group-deleted group)))
+      (let ((inhibit-modification-hooks t))
+	;; If the group hasn't ever been modified, delete it
+	;; completely.
+	(when (not (yas/group-modified group))
+	  (setf (yas/group-modified group) t)
+	  (when (> (overlay-end overlay) end)
+	    (save-excursion
+	      (goto-char end)
+	      (delete-char (- (overlay-end overlay) end))))
+	  ;; Mark subgroups as `yas/group-deleted', so insert-in-front
+	  ;; and behind hooks won't be run by them.
+	  (mapcar #'(lambda (group)
+		      (setf (yas/group-deleted group) t))
+		  (mapcar #'yas/field-group (yas/field-subfields (yas/group-primary-field group)))))
+	;; in any case, synchronize mirror fields
+	(yas/synchronize-fields group)))))
 
 (defun yas/overlay-insert-behind-hook (overlay after? beg end &optional length)
   "Hook for snippet overlay when text is inserted just behind a snippet field."
-  (let ((current-field-overlay (yas/current-field-overlay beg)))
+  (let ((current-field-overlay (yas/current-field-overlay beg))
+	(group (overlay-get overlay 'yas/group)))
     (when (and after?
+	       (not (yas/group-deleted group))
 	       (or (null current-field-overlay) ; not inside another field
 		   (< (overlay-get current-field-overlay 'priority)
 		      (overlay-get overlay 'priority))))
@@ -787,8 +801,9 @@ will be deleted before inserting template."
                                      nil
                                      nil
                                      t)))
-          ;; XXX: DEBUG: Got rid of this workaround. Hope I can find
-          ;; some other one.
+          ;; XXX: DEBUG: Got rid of this workaround and used old
+          ;; `yas/overlay-insert-behind-hook' . Hope I can find some
+          ;; other one.
 	  ;;
 	  ;; (overlay-put overlay
           ;;              'modification-hooks
@@ -822,7 +837,6 @@ will be deleted before inserting template."
                           (yas/group-primary-field group))))
             (overlay-put overlay 'yas/snippet snippet)
             (overlay-put overlay 'yas/group group)
-            (overlay-put overlay 'yas/modified? nil)
             (overlay-put overlay 'modification-hooks yas/overlay-modification-hooks)
             (overlay-put overlay 'insert-in-front-hooks yas/overlay-insert-in-front-hooks)
 	    (overlay-put overlay 'insert-behind-hooks yas/overlay-insert-behind-hooks)
@@ -995,7 +1009,6 @@ placeholders."
                            (message "Invalid snippet template!")))))
     bracket-end))
 
-
 (defun yas/current-field-overlay (&optional point)
   "Return the most ."
   (let ((point (or point (point))))
@@ -1031,43 +1044,6 @@ POINT."
                    (yas/snippet-id keymap-snippet))
             (setq keymap-snippet snippet)))))
     keymap-snippet))
-
-(defun yas/current-overlay-for-navigation ()
-  "Get current overlay for navigation.
-
-
-XXX: FIXME: investigate why: Might be overlay at current or previous point."
-  (yas/current-field-overlay))
-
-  
-;;XXX: DEBUG removed 
-  
-  
-  ;; (let ((overlay1 (yas/current-field-overlay))
-  ;;       (overlay2 (if (bobp)
-  ;;                     nil
-  ;;                   (yas/current-field-overlay (- (point) 1)))))
-  ;;   (if (null overlay1)
-  ;;       overlay2
-  ;;     (if (or (null overlay2)
-  ;;             (eq (overlay-get overlay1 'yas/snippet)
-  ;;                 (overlay-get overlay2 'yas/snippet)))
-  ;;         overlay1
-  ;;       (if (> (yas/snippet-id (overlay-get overlay2 'yas/snippet))
-  ;;              (yas/snippet-id (overlay-get overlay1 'yas/snippet)))
-  ;;           overlay2
-  ;;         overlay1)))))
-
-(defun yas/navigate-group (group next?)
-  "Go to next of previous field group. Exit snippet if none."
-  (let ((target (if next?
-                    (yas/group-next group)
-                  (yas/group-prev group))))
-    (if target
-        (goto-char (overlay-start
-                    (yas/field-overlay
-                     (yas/group-primary-field target))))
-      (yas/exit-snippet (yas/group-snippet group)))))
 
 (defun yas/parse-template (&optional file-name)
   "Parse the template in the current buffer.
@@ -1430,7 +1406,7 @@ when the condition evaluated to non-nil."
                   (if template
                       (progn (yas/expand-snippet start end template)
                              'expanded) ; expanded successfully
-                    'interruptted))     ; interrupted by user
+                    'interrupted))     ; interrupted by user
               (if (eq yas/fallback-behavior 'return-nil)
                   nil                   ; return nil
                 (let* ((yas/minor-mode nil)
@@ -1438,59 +1414,40 @@ when the condition evaluated to non-nil."
                   (when (commandp command)
                     (call-interactively command))))))))))
 
-(defun yas/next-field-group ()
+(defun yas/current-field-overlay-for-navigation ()
+  ;; FIXME: has big bug
+  (or (yas/current-field-overlay (1- (point)))
+      (yas/current-field-overlay)))
+
+(defun yas/next-field-group (&optional arg)
   "Navigate to next field group.  If there's none, exit the snippet."
   (interactive)
-  (let ((overlay (yas/current-overlay-for-navigation)))
-    (if overlay
-        (yas/navigate-group (overlay-get overlay 'yas/group) t)
-      (let ((snippet (yas/snippet-of-current-keymap))
-            (done nil))
-        (if snippet
-            (do* ((groups (yas/snippet-groups snippet) (cdr groups))
-                  (group (car groups) (car groups)))
-                ((or (null groups)
-                     done)
-                 (unless done
-                   (let* ((overlay (yas/snippet-overlay snippet))
-                          (keymap (overlay-get overlay 'keymap))
-                          (command nil))
-                     (overlay-put overlay 'keymap nil)
-                     (overlay-put overlay 'yas/snippet-reference nil)
-                     (setq command (key-binding yas/next-field-key))
-                     (when (commandp command)
-                       (call-interactively command))
-                     (overlay-put overlay 'keymap keymap)
-                     (overlay-put overlay 'yas/snippet-reference snippet))))
-              (when (= (point)
-                       (overlay-start
-                        (yas/field-overlay
-                         (yas/group-primary-field group))))
-                (setq done t)
-                (yas/navigate-group group t))))))))
+  (let* ((arg (or arg
+		  1))
+	 (overlay (yas/current-field-overlay-for-navigation))
+	 (number (and overlay
+		      (+ arg
+			 (yas/group-number (overlay-get overlay 'yas/group)))))
+	 (snippet (yas/snippet-of-current-keymap))
+	 (target-group (and number
+			    snippet
+			    (find-if #'(lambda (group)
+					 (= number (yas/group-number group)))
+				     (yas/snippet-groups snippet)))))
+    (unless (< number 1)
+      (if target-group
+	  (goto-char (overlay-start
+		      (yas/field-overlay
+		       (yas/group-primary-field target-group))))
+	(when snippet
+	  (yas/exit-snippet snippet))))))
 
 (defun yas/prev-field-group ()
   "Navigate to prev field group.  If there's none, exit the snippet."
   (interactive)
-  (let ((overlay (yas/current-overlay-for-navigation)))
-    (if overlay
-        (yas/navigate-group (overlay-get overlay 'yas/group) nil)
-      (let ((snippet (yas/snippet-of-current-keymap))
-            (done nil))
-        (if snippet
-            (do* ((groups (yas/snippet-groups snippet) (cdr groups))
-                  (group (car groups) (car groups)))
-                ((or (null groups)
-                     done)
-                 (unless done (message "Not in a snippet field.")))
-              (when (= (point)
-                       (overlay-start
-                        (yas/field-overlay
-                         (yas/group-primary-field group))))
-                (setq done t)
-                (yas/navigate-group group nil)))
-          (message "Not in a snippet field."))))))
-
+  
+  (yas/next-field-group -1))
+  
 (defun yas/exit-snippet (snippet)
   "Goto exit-marker of SNIPPET and cleanup the snippe.  Cleaning
 up the snippet does not delete it!"
@@ -1604,7 +1561,7 @@ registered snippets last."
                                    (<= (point) (overlay-end primary-overlay)))))
                         (yas/snippet-groups snippet)))
            (yas/cleanup-snippet snippet))
-          ( ;;
+          (;;
            ;; Snippet at point, and point inside a snippet field,
            ;; everything is normal
            ;;
