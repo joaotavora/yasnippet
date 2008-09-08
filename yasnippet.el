@@ -91,14 +91,31 @@ mode will be listed under the menu \"yasnippet\".")
 (defvar yas/trigger-symbol " =>"
   "The text that will be used in menu to represent the trigger.")
 
-(defface yas/field-highlight-face
-  '((((class color) (background light)) (:background "DarkSeaGreen2"))
-    (t (:background "DimGrey")))
-  "The face used to highlight a field of snippet.")
-(defface yas/mirror-highlight-face
-  '((((class color) (background light)) (:background "LightYellow2"))
-    (t (:background "gray22")))
-  "The face used to highlight mirror fields of a snippet.")
+
+(defun yas/define-multiple-faces (prefix background-color-pairs &optional doc)
+  "TODO: describe this rebuscated function"
+  (mapcar #'(lambda (color-pair)
+              (let* ((depth (position color-pair background-color-pairs)))
+                (when depth
+                  (eval `(defface ,(intern (format "%s-%d" prefix depth))
+                           '((((class color) (background light)) (:background ,(first color-pair)))
+                             (t (:background ,(second color-pair))))
+                           ,(when doc
+                              (format "%s %d." doc depth)))))))
+          background-color-pairs))
+
+;; Define multiple faces up to nested field (and mirror) depth 4
+(eval-when-compile
+  (yas/define-multiple-faces "yas/field-highlight-face" `(("DarkSeaGreen1"   "DimGrey")
+                                                 ("DarkSeaGreen3"   "SlateGrey")
+                                                 ("DarkOliveGreen2" "LightSlateGrey")
+                                                 ("DarkOliveGreen4" "Gray"))
+                             "The face used to highlight a field of a snippet with depth ")
+  (yas/define-multiple-faces "yas/mirror-highlight-face" `(("LightYellow1"   "gray22")
+                                                           ("LightYellow3"   "grey32")
+                                                           ("khaki2" "grey42")
+                                                           ("khaki4" "grey52"))
+                             "The face used to highlight mirror fields of a snippet with depth "))
 
 (defvar yas/window-system-popup-function #'yas/dropdown-list-popup-for-template
   "When there's multiple candidate for a snippet key. This function
@@ -318,12 +335,13 @@ TODO: describe the rest of the fields"
   (prev nil)
   snippet)
 (defstruct (yas/field
-            (:constructor yas/make-field (overlay number value transform)))
+            (:constructor yas/make-field (overlay number value transform parent-field)))
   "A field in a snippet."
   overlay
   number
   transform
-  value)
+  value
+  parent-field)
 (defstruct (yas/snippet-table (:constructor yas/make-snippet-table ()))
   "A table to store snippets for a perticular mode."
   (hash (make-hash-table :test 'equal))
@@ -336,7 +354,10 @@ TODO: describe the rest of the fields"
        (not (null (overlay-start (yas/snippet-overlay snippet))))))
 
 (defun yas/snippet-add-field (snippet field)
-  "Add FIELD to SNIPPET."
+  "Add FIELD to the correct group of SNIPPET.
+
+If no group is found, create one using `yas/make-group'. Return
+FIELD."
   (let ((group (find field
                      (yas/snippet-groups snippet)
                      :test
@@ -348,7 +369,8 @@ TODO: describe the rest of the fields"
     (if group
         (yas/group-add-field group field)
       (push (yas/make-group field snippet)
-            (yas/snippet-groups snippet)))))
+            (yas/snippet-groups snippet)))
+    field))
 
 (defun yas/group-value (group)
   "Get the default value of the field group."
@@ -620,21 +642,33 @@ redo-ed."
                     start))
     (insert key)))
 
-(defun yas/replace-fields-with-value (fields text)
-  "In all of the fields of the snippet group GROUP fields, delete
-whatever value (string) existed and insert TEXT instead.
+(defun yas/replace-fields-with-value (fields &optional rep)
+;; TODO: revise need for this rebuscatedeness
+;;   "For all FIELDS, delete characters outside the field's value
+;; in field's overlay region.
 
-The string to insert is calculated according to
-`yas/calculate-field-value', which might insert different text
-for each field."
+;; This default behaviour ensures other overlays covered by the same
+;; region are not innapropriately displaced.
+
+;; With optional parameter REP, replace the field with delete whatever value (string)
+;; existed and insert the field's text instead instead.
+
+;; In both cases, to enable producing different replacements for
+;; each field, the replacement is calculated according to
+;; `yas/calculate-field-value', which is passed the field itself,
+;; and, as the second paramenter ,the value of `yas/field-value' or
+;; REP if it is non-nil"
   (dolist (field fields)
     (let* ((overlay (yas/field-overlay field))
            (start (overlay-start overlay))
            (end (overlay-end overlay))
-           (length (- end start)))
-      (goto-char start)
-      (insert (yas/calculate-field-value field text))
-      (delete-char length))))
+           (length (- end start))
+           (text (yas/calculate-field-value field (or rep
+                                                      (yas/field-value field)))))
+      (when text
+        (goto-char start)
+        (insert text)
+        (delete-char length)))))
 
 (defun yas/expand-snippet (start end template)
   "Expand snippet at current point. Text between START and END
@@ -688,27 +722,7 @@ will be deleted before inserting template."
       ;; `yas/registered-snippets' var. Create fields.
       (let ((snippet (yas/register-snippet (yas/make-snippet))))
         (goto-char (point-min))
-        (while (re-search-forward yas/field-regexp nil t)
-          (let ((number (or (match-string-no-properties 1)
-                            (match-string-no-properties 2)))
-                (transform nil)
-                (value (match-string-no-properties 3)))
-            (when (eq (elt value 0) ?\$)
-              (setq transform (substring value 1))
-              (setq value nil))
-            (if (and number
-                     (string= "0" number))
-                (progn
-                  (replace-match "")
-                  (setf (yas/snippet-exit-marker snippet)
-                        (copy-marker (point) t)))
-              (yas/snippet-add-field
-               snippet
-               (yas/make-field
-                (make-overlay (match-beginning 0) (match-end 0))
-                (and number (string-to-number number))
-                value
-                transform)))))
+        (yas/field-parse-create snippet)
 
         ;; Step 6: Sort and link each field group
         (setf (yas/snippet-groups snippet)
@@ -741,10 +755,14 @@ will be deleted before inserting template."
           (setf (yas/snippet-overlay snippet) overlay)
           (setf (yas/snippet-end-marker snippet) (overlay-end overlay)))
 
-        ;; Step 8: Replace fields with default values
+        ;; Step 8: Replace mirror field values with primary group's
+        ;; value
         (dolist (group (yas/snippet-groups snippet))
-          (yas/replace-fields-with-value (yas/group-fields group)
-                                         (yas/group-value group)))
+          (yas/replace-fields-with-value
+           (remove-if #'(lambda (field)
+                          (eq (yas/group-primary-field group) field))
+                      (yas/group-fields group))
+           (yas/group-value group)))
 
         ;; Step 9: restore all escape characters
         (yas/replace-all yas/escape-dollar "$")
@@ -760,12 +778,13 @@ will be deleted before inserting template."
             (overlay-put overlay 'yas/modified? nil)
             (overlay-put overlay 'modification-hooks yas/overlay-modification-hooks)
             (overlay-put overlay 'insert-in-front-hooks yas/overlay-insert-in-front-hooks)
-            (overlay-put overlay 'face 'yas/field-highlight-face)
+            (overlay-put overlay
+                         'face (intern (format "yas/field-highlight-face-%d"
+                                                    (overlay-get overlay 'priority))))
             (dolist (field (yas/group-fields group))
               (unless (equal overlay (yas/field-overlay field))
                 (overlay-put (yas/field-overlay field)
-                             'face
-                             'yas/mirror-highlight-face)))))
+                             'face (intern (format "yas/mirror-highlight-face-%d" (overlay-get overlay 'priority))))))))
 
         ;; Step 11: move to end and make sure exit-marker exist
         (goto-char (point-max))
@@ -805,6 +824,114 @@ will be deleted before inserting template."
           (while (re-search-forward "$>" nil t)
             (replace-match "")
             (indent-according-to-mode)))))))
+
+(defun yas/field-parse-create (snippet &optional parent-field)
+  "Parse a recently inserted snippet template, creating all
+necessary fields.
+
+Allows nested placeholder in the style of Textmate."
+  ;; 5. Search from current point for yas/field-regexp
+  ;;
+  ;; a) That is, look for "$<`number'>" or
+  ;;    "${<`number'>:<`value'>}". A few special cases.
+  ;;
+  ;; b) When `value' starts with $, assume the rest is a lisp
+  ;;    expression returning string. assign that to `transform'
+  ;;
+  ;;    A transformation is signalled when `value' starts with the
+  ;;    character "$" as the first value after the ":". The rest of
+  ;;    `value' is not allowed to have any other nested snippet
+  ;;    definitions. Don't know if Textmate allows this...
+  ;;
+  ;; c) If `number' is 0 (zero) the string found is deleted and
+  ;;    that special place is the snippet's exit marker...
+  ;;
+  ;; d) Otherwise a placeholder field for `number' is added to the
+  ;;    snippet with `value' and `transform'.
+  ;;
+  ;; e) Then, still, buffer is temporarily narrowed down to `value'
+  ;;    and `yas/field-parse-create' is called again recursively
+  ;;    with the recently created field as `parent-field'. That
+  ;;    might actually add more fields.
+  ;;
+  ;; f) In any case, point is moved to just after the closing bracket
+  ;;    after `value' and the search starts again from a).
+  ;;
+  ;;
+  (while (re-search-forward yas/field-regexp nil t)
+    (let* ((number (or (match-string-no-properties 1)
+                       (match-string-no-properties 2)))
+           (transform nil)
+           (bracket-end (set-marker (make-marker)
+                                    (yas/field-bracket-end)))
+           (value-start (set-marker (make-marker) (match-beginning 3)))
+           (value-end (set-marker (make-marker)
+                                  (or (and (marker-position bracket-end)
+                                           (1- bracket-end))
+                                      (match-end 3))))
+           (value (when (and (marker-position value-start)
+                             (marker-position value-end))
+                    (buffer-substring-no-properties value-start value-end)))
+           brand-new-field)
+      ;; b) look for a transformation
+      (when (eq (elt value 0) ?\$)
+        (setq transform (substring value 1))
+        (setq value nil))
+      (if (and number
+               (string= "0" number))
+          ;; c) set exit marker and forget
+          (progn
+            (replace-match "")
+            (setf (yas/snippet-exit-marker snippet)
+                  (copy-marker (point) t)))
+        ;; d) add field
+        (setq brand-new-field
+              (yas/snippet-add-field
+               snippet
+               (yas/make-field
+                (make-overlay (match-beginning 0) (or (marker-position bracket-end)
+                                                      (match-end 0)))
+                (and number (string-to-number number))
+                value
+                transform
+                parent-field)))
+        ;; e) set correct overlay priority
+        (overlay-put (yas/field-overlay brand-new-field) 'priority
+                     (if parent-field
+                         (1+ (overlay-get (yas/field-overlay parent-field)
+                                          'priority))
+                       0))
+        (when value
+          ;; f) delete useless regions, move to correct spot for more
+          ;; search...
+          (when (marker-position bracket-end)
+            (delete-region value-end bracket-end))
+          (delete-region (match-beginning 0) value-start)
+          ;; g) investigate nested placeholders
+          (save-excursion
+            (save-restriction
+              (narrow-to-region value-start value-end)
+              (goto-char (point-min))
+              (yas/field-parse-create snippet brand-new-field))))))))
+
+(defun yas/field-bracket-end ()
+  "Calculates position of the field's closing bracket if any.
+
+Assumes a regexp search for `yas/field-regexp' matched
+recently. Return Nil if no field value subexpression was found,
+or throws error if the snippet has malformed nested
+placeholders."
+  (let ((bracket-or-number-start (1+ (match-beginning 0)))
+        bracket-end)
+    (when (eq ?\{ (char-after bracket-or-number-start))
+      (setq bracket-end (condition-case oops
+                            (scan-sexps bracket-or-number-start 1)
+                          ;; TODO: Later should throw another error with
+                          ;; information about failed syntax!
+                          (error
+                           (message "Invalid snippet template!")))))
+    bracket-end))
+
 
 (defun yas/current-snippet-overlay (&optional point)
   "Get the most proper overlay which is belongs to a snippet."
@@ -1356,17 +1483,23 @@ current buffer."
   "Cleanup SNIPPET, but leave point as it is.  This renders the
 snippet as ordinary text"
   (let* ((overlay (yas/snippet-overlay snippet))
-         (yas/snippet-beg (overlay-start overlay))
-         (yas/snippet-end (overlay-end overlay)))
+         yas/snippet-beg yas/snippet-end)
     ;; save the end of the moribund snippet in case we need to undo
     ;; its original expansion.  This is used by `yas/undo-expand-snippet'
     (when (and overlay
                (overlay-buffer overlay))
+      (setq yas/snippet-beg (overlay-start overlay))
+      (setq yas/snippet-end (overlay-end overlay))
       (setf (yas/snippet-end-marker snippet) yas/snippet-end)
       (delete-overlay overlay))
     (dolist (group (yas/snippet-groups snippet))
       (dolist (field (yas/group-fields group))
         (delete-overlay (yas/field-overlay field))))
+    ;; XXX: `yas/after-exit-snippet-hook' should be run with
+    ;; `yas/snippet-beg' and `yas/snippet-end' bound. That might not
+    ;; be the case if the main overlay had somehow already
+    ;; disappeared, which sometimes happens when the snippet's messed
+    ;; up...
     (run-hooks 'yas/after-exit-snippet-hook))
   (yas/unregister-snippet snippet)
   (setq buffer-undo-list (yas/snippet-saved-buffer-undo-list snippet)))
@@ -1446,9 +1579,10 @@ is pushed into this variable and it then replaces
 should not trigger any undo-recording action")
 
 (defun yas/field-undo-before-hook ()
-  "Saves the field-level undo history, `buffer-undo-list' into a global
-`yas/field-undo-history' variable just before a command is
-performed.  It will come in handy in case the command is to be undone"
+  "Saves the field-level undo history, `buffer-undo-list' into a
+global `yas/field-undo-history' variable just before a command is
+performed.  That variable will come in handy in case the command
+is to be undone"
   (setq yas/field-undo-history buffer-undo-list))
 
 (defun yas/field-undo-after-hook ()
@@ -1482,7 +1616,7 @@ be a part of that list while registered snippets last."
           ;; there first. Have no clue why sometimes one is and one
           ;; isn't.
           ;;
-          (unless (null (car yas/field-undo-history))
+          (unless (null (car-safe yas/field-undo-history))
             (push nil yas/field-undo-history))
           (push `(apply yas/field-undo-group-text-change
                         ,group
@@ -1517,7 +1651,9 @@ be a part of that list while registered snippets last."
   (with-output-to-temp-buffer "*YASnippet trace*"
     (princ "Interesting YASnippet vars: \n\n")
     (princ (format "Register hash-table: %s\n\n" yas/registered-snippets))
-    (cond ((eq (hash-table-count yas/registered-snippets) 0)
+    (cond ((not yas/registered-snippets)
+           (princ "  No snippet hash table!"))
+          ((eq (hash-table-count yas/registered-snippets) 0)
            (princ "  No registered snippets\n"))
           (t
            (maphash #'(lambda (key snippet)
@@ -1526,7 +1662,8 @@ be a part of that list while registered snippets last."
                                        (yas/snippet-id snippet)
                                        (length (yas/snippet-groups snippet))))
                         (dolist (group (yas/snippet-groups snippet))
-                          (princ (format "\t   group with %s fields.  Primary field is value is \"%s\"\n"
+                          (princ (format "\t   group $%s with %s fields.  Primary field is value is \"%s\"\n"
+                                         (yas/group-number group)
                                          (length (yas/group-fields group))
                                          (yas/field-value (yas/group-primary-field group))))))
                     yas/registered-snippets)))
@@ -1542,7 +1679,7 @@ be a part of that list while registered snippets last."
     (let ((undo-list buffer-undo-list))
       (dotimes (i 10)
         (when undo-list
-          (princ (format "%s:  %s\n" i (car undo-list)))
+          (princ (format "%s:  %s\n" i (car-safe undo-list)))
           (setq undo-list (cdr undo-list)))))))
 
 
