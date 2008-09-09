@@ -331,7 +331,6 @@ TODO: describe the rest of the fields"
   (exit-marker nil)
   (id (yas/snippet-next-id) :read-only t)
   (overlay nil)
-  (saved-buffer-undo-list nil)
   (active-group nil)
   (end-marker nil))
 
@@ -722,11 +721,13 @@ redo-ed."
            (end (overlay-end overlay))
            (length (- end start))
            (text (yas/calculate-field-value field (or rep
-                                                      (yas/field-value field)))))
+                                                      (yas/field-value field))))
+	   (inhibit-modification-hooks t))
       (when text
         (goto-char start)
         (insert text)
-        (delete-char length)))))
+        (delete-char length)
+	(move-overlay overlay (overlay-start overlay) (point))))))
 
 (defun yas/expand-snippet (start end template)
   "Expand snippet at current point. Text between START and END
@@ -866,8 +867,7 @@ will be deleted before inserting template."
         (widen)
         (delete-char length)
 
-        ;; Step 14: Restore undo information, and also save it for future use.
-        (setf (yas/snippet-saved-buffer-undo-list snippet) original-undo-list)
+        ;; Step 14: Restore undo information
         (setq buffer-undo-list original-undo-list)
 
         ;; Step 15: place the cursor at a proper place
@@ -1581,112 +1581,18 @@ registered snippets last."
 ;;
 ;; XXX: Commentary on this section by joaot.
 ;;
-;; "Field-level undo" means undoing for bits of snippet fields that have
-;; already been filled out.  Because this is kind of experimental, I
-;; have called it "field-undo", to distinguish it from regular undo
-;; like the one used by `yas/undo-expand-snippet' to undo the original
-;; snippet expansion.
-;;
-;; Field level undo allows no redos.  Also, field level undo undoes any
-;; change, even if it is only one character long.  This might be
-;; implemented in the future.
-;;
-;; Field level undo cooperates with normal undo and seems transparet
-;; to the `undo' command.  The basic idea is the same as with snippet
-;; registration/unregistration.  The undo history is saved in
-;; `yas/field-undo-original-history' before each command and rewritten
-;; if appropriate at the end.
-;;
-;; This is done by registering `yas/field-undo-before-hook' and
-;; `yas/field-undo-after-hook' in the `pre-command-hook' and
-;; `post-command-hook', respectively.
-;;
-;; Also, the `value' slot of the primary field of each group is used
-;; to keep track of the most recently inserted text of that snippet
-;; field.  This could be seen as a hack, but that slot wasn't being
-;; used anyway and its new meaning is actually quite reasonable.
-;;
-;; Another detail is that undo informatino shoulnd't be recorded for
-;; some commands, most notably `undo' itself.  Therefore, a variable
-;; `yas/field-undo-forbidden-commands' has been introduced, to be
-;; tested agains `this-command'.
-;;
-
-(defvar yas/field-undo-history nil
-  "Saves the value of `buffer-undo-list' when undo information is
-to be recorded by `yas/field-undo-after-hook'.  A new piece of undo
-is pushed into this variable and it then replaces
-`buffer-undo-list' if appropriate.")
-
-(defvar yas/field-undo-forbidden-commands '(undo aquamacs-undo redo aquamacs-redo)
-  "A list of commands executed while a snippet is active that
-should not trigger any undo-recording action")
-
+;; ...
 (defun yas/field-undo-before-hook ()
-  "Saves the field-level undo history, `buffer-undo-list' into a
-global `yas/field-undo-history' variable just before a command is
-performed.  That variable will come in handy in case the command
-is to be undone"
-  (setq yas/field-undo-history buffer-undo-list))
+  "..."
+  )
 
 (defun yas/field-undo-after-hook ()
-  "Compares the value (a string) of the currently active snippet
-group with a previously saved one.  If these are different, undo
-information is added to `buffer-undo-list'
+  "..."
+  )
 
-This function is added to the `post-command-hook' and should
-be a part of that list while registered snippets last."
-  (let* ((overlay (or (yas/current-field-overlay)
-                      (yas/current-field-overlay (1- (point)))))
-         (group (when overlay
-                  (overlay-get overlay 'yas/group))))
-    (when group
-      (let ((new-text (yas/current-field-text (yas/group-primary-field group)))
-            (old-text (yas/field-value (yas/group-primary-field group))))
-        ;;
-        ;; Unless extended undo forbids `this-command', or the old and
-        ;; new field strings are the same, rewrite the undo history
-        ;; with a call to `yas/field-undo-group-text-change'
-        ;; instead of whatever was placed there by the currently
-        ;; finishing `this-command' command. This call receives the id
-        ;; of the currently active snippet, the group to be undone and
-        ;; the old text.
-        ;;
-        (unless (or (memq this-command yas/field-undo-forbidden-commands)
-                    (string= new-text
-                             old-text))
-          ;;
-          ;; Push a separator onto the history list, if one wasn't
-          ;; there first. Have no clue why sometimes one is and one
-          ;; isn't.
-          ;;
-          (unless (null (car-safe yas/field-undo-history))
-            (push nil yas/field-undo-history))
-          (push `(apply yas/field-undo-group-text-change
-                        ,group
-                        ,old-text)
-                yas/field-undo-history)
-          (setq buffer-undo-list yas/field-undo-history))
-        ;;
-        ;; Then, in any case, save the new text into the value slot of
-        ;; the primary this is because some "forbidden" commands might
-        ;; really have changed the field value, most notably `undo'
-        ;; itself! This was a hard bug to track down!
-        ;;
-        (setf (yas/field-value (yas/group-primary-field group)) new-text)))))
-
-(defun yas/field-undo-group-text-change (group old-text)
-  "Undoes one step of field-level undo history, in the snippet
-  field group GROUP, replacing its text with OLD-TEXT, but
-  respecting any transforms."
-  (yas/remove-recent-undo-from-history)
-  (let ((inhibit-modification-hooks t)  ; otherwise an additional
-                                        ; `yas/replace-fields-with-value'
-                                        ; is called
-        (buffer-undo-list t))
-    (yas/replace-fields-with-value
-     (yas/group-fields group)
-     old-text)))
+(defun yas/field-restore-overlay-position (snippet)
+  "..."
+  )
 
 ;; Debug functions.  Use (or change) at will whenever needed.
 
