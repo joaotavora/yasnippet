@@ -332,6 +332,7 @@ TODO: describe the rest of the fields"
   (id (yas/snippet-next-id) :read-only t)
   (overlay nil)
   (saved-buffer-undo-list nil)
+  (active-group nil)
   (end-marker nil))
 
 (defstruct (yas/group (:constructor yas/make-group (primary-field snippet)))
@@ -341,8 +342,8 @@ TODO: describe the rest of the fields"
   (next nil)
   (prev nil)
   snippet
-  deleted
-  modified)
+  (deleted nil)
+  (modified nil))
 (defstruct (yas/field
             (:constructor yas/make-field (overlay number value transform parent-field)))
   "A field in a snippet."
@@ -870,13 +871,14 @@ will be deleted before inserting template."
         (setq buffer-undo-list original-undo-list)
 
         ;; Step 15: place the cursor at a proper place
-        (let ((groups (yas/snippet-groups snippet))
-              (exit-marker (yas/snippet-exit-marker snippet)))
+        (let* ((groups (yas/snippet-groups snippet))
+	       (exit-marker (yas/snippet-exit-marker snippet))
+	       (first-group (setf (yas/snippet-active-group snippet) (car groups))))
           (if groups
               (goto-char (overlay-start
                           (yas/field-overlay
                            (yas/group-primary-field
-                            (car groups)))))
+                            first-group))))
             ;; no need to call exit-snippet, since no overlay created.
             (yas/exit-snippet snippet)))
 
@@ -975,21 +977,24 @@ Allows nested placeholder in the style of Textmate."
                          (1+ (overlay-get (yas/field-overlay parent-field)
                                           'priority))
                        0))
+	;; f) delete useless regions, move to correct spot for more
+	;; search...
+	(delete-region (match-beginning 0) (or (marker-position value-start)
+					       (point)))
         (when value
-          ;; f) delete useless regions, move to correct spot for more
-          ;; search...
-          (when (marker-position bracket-end)
-            (delete-region value-end bracket-end))
-          (delete-region (match-beginning 0) value-start)
-          ;; g) investigate nested placeholders
-          (save-excursion
-            (save-restriction
-              (narrow-to-region value-start value-end)
-              (goto-char (point-min))
-              (yas/field-parse-create snippet brand-new-field)))
-	  ;; h) 
+	  (when (marker-position bracket-end)
+	    (delete-region value-end bracket-end))
+	       
+	  ;; g) investigate nested placeholders
+	  (save-excursion
+	    (save-restriction
+	      (narrow-to-region value-start value-end)
+	      (goto-char (point-min))
+	      (yas/field-parse-create snippet brand-new-field)))
+	  ;; h)
 	  (setf (yas/field-value brand-new-field)
-		(buffer-substring-no-properties value-start value-end)))))))
+		(buffer-substring-no-properties value-start value-end))
+	  )))))
 
 (defun yas/field-bracket-end ()
   "Calculates position of the field's closing bracket if any.
@@ -1414,33 +1419,37 @@ when the condition evaluated to non-nil."
                   (when (commandp command)
                     (call-interactively command))))))))))
 
-(defun yas/current-field-overlay-for-navigation ()
-  ;; FIXME: has big bug
-  (or (yas/current-field-overlay (1- (point)))
-      (yas/current-field-overlay)))
+(defun yas/current-group-for-navigation (&optional snippet)
+  (or (and snippet
+	   (yas/snippet-active-group snippet))
+      (overlay-get (or (yas/current-field-overlay (1- (point)))
+		       (yas/current-field-overlay)) 'yas/group))) 
 
 (defun yas/next-field-group (&optional arg)
   "Navigate to next field group.  If there's none, exit the snippet."
   (interactive)
   (let* ((arg (or arg
 		  1))
-	 (overlay (yas/current-field-overlay-for-navigation))
-	 (number (and overlay
-		      (+ arg
-			 (yas/group-number (overlay-get overlay 'yas/group)))))
 	 (snippet (yas/snippet-of-current-keymap))
+	 (number (and snippet
+		      (+ arg
+			 (yas/group-number (yas/current-group-for-navigation snippet)))))
 	 (target-group (and number
-			    snippet
+			    (> number 0)
 			    (find-if #'(lambda (group)
-					 (= number (yas/group-number group)))
+					 (and (not (yas/group-deleted group))
+					      (= number (yas/group-number group))))
 				     (yas/snippet-groups snippet)))))
-    (unless (< number 1)
-      (if target-group
-	  (goto-char (overlay-start
-		      (yas/field-overlay
-		       (yas/group-primary-field target-group))))
-	(when snippet
-	  (yas/exit-snippet snippet))))))
+    (cond ((and number
+		(> number (length (remove-if #'yas/group-deleted (yas/snippet-groups snippet)))))
+	   (yas/exit-snippet snippet))
+	  (target-group
+	   (goto-char (overlay-start
+		       (yas/field-overlay
+			(yas/group-primary-field target-group))))
+	   (setf (yas/snippet-active-group snippet) target-group))
+	  (t
+	   nil))))
 
 (defun yas/prev-field-group ()
   "Navigate to prev field group.  If there's none, exit the snippet."
@@ -1753,263 +1762,3 @@ handle the end-of-buffer error fired in it by calling
   (condition-case err
       ad-do-it
     (error (message (error-message-string err)))))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Contents of dropdown-list.el
-;;
-;; dropdown-list.el is used by yasnippet to select multiple
-;; candidate snippets.
-;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; dropdown-list.el --- Drop-down menu interface
-;;
-;; Filename: dropdown-list.el
-;; Description: Drop-down menu interface
-;; Author: Jaeyoun Chung [jay.chung@gmail.com]
-;; Maintainer:
-;; Copyright (C) 2008 Jaeyoun Chung
-;; Created: Sun Mar 16 11:20:45 2008 (Pacific Daylight Time)
-;; Version:
-;; Last-Updated: Sun Mar 16 12:19:49 2008 (Pacific Daylight Time)
-;;           By: dradams
-;;     Update #: 43
-;; URL: http://www.emacswiki.org/cgi-bin/wiki/dropdown-list.el
-;; Keywords: convenience menu
-;; Compatibility: GNU Emacs 21.x, GNU Emacs 22.x
-;;
-;; Features that might be required by this library:
-;;
-;;   `cl'.
-;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-;;; Commentary:
-;;
-;;  According to Jaeyoun Chung, "overlay code stolen from company-mode.el."
-;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-;;; Change log:
-;;
-;; 2008/03/16 dadams
-;;     Clean-up - e.g. use char-to-string for control chars removed by email posting.
-;;     Moved example usage code (define-key*, command-selector) inside the library.
-;;     Require cl.el at byte-compile time.
-;;     Added GPL statement.
-;; 2008/01/06 Jaeyoun Chung
-;;     Posted to gnu-emacs-sources@gnu.org at 9:10 p.m.
-;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-;; This program is free software; you can redistribute it and/or
-;; modify it under the terms of the GNU General Public License as
-;; published by the Free Software Foundation; either version 3, or
-;; (at your option) any later version.
-;;
-;; This program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-;; General Public License for more details.
-;;
-;; You should have received a copy of the GNU General Public License
-;; along with this program; see the file COPYING.  If not, write to
-;; the Free Software Foundation, Inc., 51 Franklin Street, Fifth
-;; Floor, Boston, MA 02110-1301, USA.
-;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-;;; Code:
-
-(eval-when-compile (require 'cl)) ;; decf, fourth, incf, loop, mapcar*
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defface dropdown-list-face
-  '((t :inherit default :background "lightyellow" :foreground "black"))
-  "*Bla." :group 'dropdown-list)
-
-(defface dropdown-list-selection-face
-  '((t :inherit dropdown-list-face :background "purple"))
-  "*Bla." :group 'dropdown-list)
-
-(defvar dropdown-list-overlays nil)
-
-(defun dropdown-list-hide ()
-  (while dropdown-list-overlays
-    (delete-overlay (pop dropdown-list-overlays))))
-
-(defun dropdown-list-put-overlay (beg end &optional prop value prop2 value2)
-  (let ((ov (make-overlay beg end)))
-    (overlay-put ov 'window t)
-    (when prop
-      (overlay-put ov prop value)
-      (when prop2 (overlay-put ov prop2 value2)))
-    ov))
-
-(defun dropdown-list-line (start replacement &optional no-insert)
-  ;; start might be in the middle of a tab, which means we need to hide the
-  ;; tab and add spaces
-  (let ((end (+ start (length replacement)))
-        beg-point end-point
-        before-string after-string)
-    (goto-char (point-at-eol))
-    (if (< (current-column) start)
-        (progn (setq before-string (make-string (- start (current-column)) ? ))
-               (setq beg-point (point)))
-      (goto-char (point-at-bol)) ;; Emacs bug, move-to-column is wrong otherwise
-      (move-to-column start)
-      (setq beg-point (point))
-      (when (> (current-column) start)
-        (goto-char (1- (point)))
-        (setq beg-point (point))
-        (setq before-string (make-string (- start (current-column)) ? ))))
-    (move-to-column end)
-    (setq end-point (point))
-    (let ((end-offset (- (current-column) end)))
-      (when (> end-offset 0) (setq after-string (make-string end-offset ?b))))
-    (when no-insert
-      ;; prevent inheriting of faces
-      (setq before-string (when before-string (propertize before-string 'face 'default)))
-      (setq after-string (when after-string (propertize after-string 'face 'default))))
-    (let ((string (concat before-string replacement after-string)))
-      (if no-insert
-          string
-        (push (dropdown-list-put-overlay beg-point end-point 'invisible t
-                                         'after-string string)
-              dropdown-list-overlays)))))
-
-(defun dropdown-list-start-column (display-width)
-  (let ((column (mod (current-column) (window-width)))
-        (width (window-width)))
-    (cond ((<= (+ column display-width) width) column)
-          ((> column display-width) (- column display-width))
-          ((>= width display-width) (- width display-width))
-          (t nil))))
-
-(defun dropdown-list-move-to-start-line (candidate-count)
-  (decf candidate-count)
-  (let ((above-line-count (save-excursion (- (vertical-motion (- candidate-count)))))
-        (below-line-count (save-excursion (vertical-motion candidate-count))))
-    (cond ((= below-line-count candidate-count)
-           t)
-          ((= above-line-count candidate-count)
-           (vertical-motion (- candidate-count))
-           t)
-          ((>= (+ below-line-count above-line-count) candidate-count)
-           (vertical-motion (- (- candidate-count below-line-count)))
-           t)
-          (t nil))))
-
-(defun dropdown-list-at-point (candidates &optional selidx)
-  (dropdown-list-hide)
-  (let* ((lengths (mapcar #'length candidates))
-         (max-length (apply #'max lengths))
-         (start (dropdown-list-start-column (+ max-length 3)))
-         (i -1)
-         (candidates (mapcar* (lambda (candidate length)
-                                (let ((diff (- max-length length)))
-                                  (propertize
-                                   (concat (if (> diff 0)
-                                               (concat candidate (make-string diff ? ))
-                                             (substring candidate 0 max-length))
-                                           (format "%3d" (+ 2 i)))
-                                   'face (if (eql (incf i) selidx)
-                                             'dropdown-list-selection-face
-                                           'dropdown-list-face))))
-                              candidates
-                              lengths)))
-    (save-excursion
-      (and start
-           (dropdown-list-move-to-start-line (length candidates))
-           (loop initially (vertical-motion 0)
-                 for candidate in candidates
-                 do (dropdown-list-line (+ (current-column) start) candidate)
-                 while (/= (vertical-motion 1) 0)
-                 finally return t)))))
-
-(defun dropdown-list (candidates)
-  (let ((selection)
-        (temp-buffer))
-    (save-window-excursion
-      (unwind-protect
-          (let ((candidate-count (length candidates))
-                done key selidx)
-            (while (not done)
-              (unless (dropdown-list-at-point candidates selidx)
-                (switch-to-buffer (setq temp-buffer (get-buffer-create "*selection*"))
-                                  'norecord)
-                (delete-other-windows)
-                (delete-region (point-min) (point-max))
-                (insert (make-string (length candidates) ?\n))
-                (goto-char (point-min))
-                (dropdown-list-at-point candidates selidx))
-              (setq key (read-key-sequence ""))
-              (cond ((and (stringp key)
-                          (>= (aref key 0) ?1)
-                          (<= (aref key 0) (+ ?0 (min 9 candidate-count))))
-                     (setq selection (- (aref key 0) ?1)
-                           done      t))
-                    ((member key `(,(char-to-string ?\C-p) [up]))
-                     (setq selidx (mod (+ candidate-count (1- (or selidx 0)))
-                                       candidate-count)))
-                    ((member key `(,(char-to-string ?\C-n) [down]))
-                     (setq selidx (mod (1+ (or selidx -1)) candidate-count)))
-                    ((member key `(,(char-to-string ?\f))))
-                    ((member key `(,(char-to-string ?\r) [return]))
-                     (setq selection selidx
-                           done      t))
-                    (t (setq done t)))))
-        (dropdown-list-hide)
-        (and temp-buffer (kill-buffer temp-buffer)))
-      ;;     (when selection
-      ;;       (message "your selection => %d: %s" selection (nth selection candidates))
-      ;;       (sit-for 1))
-      selection)))
-
-(defun define-key* (keymap key command)
-  "Add COMMAND to the multiple-command binding of KEY in KEYMAP.
-Use multiple times to bind different COMMANDs to the same KEY."
-  (define-key keymap key (combine-command command (lookup-key keymap key))))
-
-(defun combine-command (command defs)
-  "$$$$$ FIXME - no doc string"
-  (cond ((null defs) command)
-        ((and (listp defs)
-              (eq 'lambda (car defs))
-              (= (length defs) 4)
-              (listp (fourth defs))
-              (eq 'command-selector (car (fourth defs))))
-         (unless (member `',command (cdr (fourth defs)))
-           (setcdr (fourth defs) (nconc (cdr (fourth defs)) `(',command))))
-         defs)
-        (t
-         `(lambda () (interactive) (command-selector ',defs ',command)))))
-
-(defvar command-selector-last-command nil "$$$$$ FIXME - no doc string")
-
-(defun command-selector (&rest candidates)
-  "$$$$$ FIXME - no doc string"
-  (if (and (eq last-command this-command) command-selector-last-command)
-      (call-interactively command-selector-last-command)
-    (let* ((candidate-strings
-            (mapcar (lambda (candidate)
-                      (format "%s" (if (symbolp candidate)
-                                       candidate
-                                     (let ((s (format "%s" candidate)))
-                                       (if (>= (length s) 7)
-                                           (concat (substring s 0 7) "...")
-                                         s)))))
-                    candidates))
-           (selection (dropdown-list candidate-strings)))
-      (when selection
-        (let ((cmd (nth selection candidates)))
-          (call-interactively cmd)
-          (setq command-selector-last-command cmd))))))
-
-;;;;;;;;;;;;;;;;;;;;
-
-(provide 'dropdown-list)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; dropdown-list.el ends here
