@@ -35,7 +35,7 @@
 ;; For more information and detailed usage, refer to the project page:
 ;;      http://code.google.com/p/yasnippet/
 
-(require 'cl)
+(eval-when-compile (require 'cl))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; User customizable variables
@@ -174,6 +174,8 @@ Here's an example:
                     '(if (python-in-string/comment)
                          '(require-snippet-condition . force-in-comment)
                        t))))")
+(eval-when-compile
+  (make-variable-buffer-local 'yas/buffer-local-condition))
 
 (defvar yas/fallback-behavior 'call-other-command
   "The fall back behavior of YASnippet when it can't find a snippet
@@ -1225,7 +1227,7 @@ when the condition evaluated to non-nil."
                   (if template
                       (progn (yas/expand-snippet start end template)
                              'expanded) ; expanded successfully
-                    'interruptted))     ; interrupted by user
+                    'interrupted))      ; interrupted by user
               (if (eq yas/fallback-behavior 'return-nil)
                   nil                   ; return nil
                 (let* ((yas/minor-mode nil)
