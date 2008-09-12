@@ -292,24 +292,13 @@ set to t."
 (defstruct (yas/snippet (:constructor yas/make-snippet ()))
   "A snippet.
 
-Description of some fields:
-
-`yas/snippet-saved-buffer-undo-list' saves the value of
-`buffer-undo-list' just after the snippet has been expanded. This
-is to be restored when the snippet is cleaned up. Thus the
-snippet expansion can still be undone after
-`yas/cleanup-snippet', even if field-level undo steps were
-recorded.
-
-`yas/snippet-end-marker' saves the actual end position of the
-snippets main overlay, at the time the snippet was cleaned
-up. Thus `yas/undo-expand-snippet' can clean it up properly.
-
-TODO: describe the rest of the fields"
+..."
   (groups nil)
   (exit-marker nil)
   (id (yas/snippet-next-id) :read-only t)
   (control-overlay nil)
+  (active-field-overlay nil)
+  field-undo-saved-boundaries
   (active-group nil)
   (end-marker nil))
 
@@ -323,7 +312,7 @@ TODO: describe the rest of the fields"
   (deleted nil)
   (modified nil))
 (defstruct (yas/field
-            (:constructor yas/make-field (start-marker end-marker number value transform parent-field)))
+            (:constructor yas/make-field (start end number value transform parent-field)))
   "A field in a snippet."
   start
   end
@@ -579,45 +568,52 @@ of the primary field."
 			 (t
 			  "STH UNKNOWN"))
 		   overlay))
-  (when (and after? (not undo-in-progress))
+  (when after?
+    ;; (and after? (not undo-in-progress))
     (yas/synchronize-fields (overlay-get overlay 'yas/group))))
 
 (defun yas/overlay-insert-in-front-hook (overlay after? beg end &optional length)
   "Hook for snippet overlay when text is inserted in front of a snippet field."
   (let ((group (overlay-get overlay 'yas/group)))
     (when (and after?
-	       group
-	       (not (yas/group-deleted group)))
+	       group)
       (let ((inhibit-modification-hooks t))
-	;; If the group hasn't ever been modified, delete it
+	;;
+	;; If the group hasn't ever been modified, delete its contents
 	;; completely.
+	;; 
 	(when (not (yas/group-modified group))
 	  (setf (yas/group-modified group) t)
 	  (when (> (overlay-end overlay) end)
 	    (save-excursion
 	      (goto-char end)
 	      (delete-char (- (overlay-end overlay) end))))
-	  ;; Mark subgroups as `yas/group-deleted', so insert-in-front
-	  ;; and behind hooks won't be run by them.
+	  ;;
+	  ;; Mark subgroups as `yas/group-deleted', so we're no longer
+	  ;; able to move them. XXX:UNDO:TODO: This action has to be undoable!
+	  ;; 
 	  (mapcar #'(lambda (group)
 		      (setf (yas/group-deleted group) t))
 		  (mapcar #'yas/field-group (yas/field-subfields (yas/group-primary-field group)))))
 	;; in any case, synchronize mirror fields
 	(yas/synchronize-fields group)))))
 
+(defun yas/move-overlay-and-field (overlay field start end)
+  (move-overlay overlay
+		start
+		end)
+  (move-marker (yas/field-start field) start)
+  (move-marker (yas/field-end field) end))
+
 (defun yas/overlay-insert-behind-hook (overlay after? beg end &optional length)
-  "Hook for snippet overlay when text is inserted just behind a snippet field."
-  (let ((current-field-overlay (yas/current-field-overlay beg))
-	(group (overlay-get overlay 'yas/group)))
+  "Hook for snippet overlay when text is inserted just behind the currently active field overlay."
+  (let* ((group (overlay-get overlay 'yas/group))
+	 (field (and group
+		     (yas/group-primary-field group)))) 
     (when (and after?
-	       (not (yas/group-deleted group))
-	       (or (null current-field-overlay) ; not inside another field
-		   (< (overlay-get current-field-overlay 'priority)
-		      (overlay-get overlay 'priority))))
-      (move-overlay overlay
-		    (overlay-start overlay)
-		    end)
-      (yas/synchronize-fields (overlay-get overlay 'yas/group)))))
+	       field)
+      (yas/move-overlay-and-field overlay field (overlay-start overlay) end)
+      (yas/synchronize-fields group))))
 
 (defun yas/remove-recent-undo-from-history ()
   (let ((undo (car buffer-undo-list)))
@@ -669,7 +665,7 @@ will be deleted before inserting template."
     (save-restriction
       (narrow-to-region start start)
 
-      (setq buffer-undo-list t) ;; disable undo for a short while
+      ;; (setq buffer-undo-list t) ;; disable undo for a short while
       (insert template)
 
       ;; Step 1: do necessary indent
@@ -752,38 +748,30 @@ will be deleted before inserting template."
         (unless (yas/snippet-exit-marker snippet)
           (setf (yas/snippet-exit-marker snippet) (copy-marker (point) t)))
 
-        ;; Step 12: Construct undo information
-        (unless (eq original-undo-list t)
-          (add-to-list 'original-undo-list
-                       `(apply yas/undo-expand-snippet
-                               ,(point-min)
-                               ,key
-                               ,snippet)))
+        ;; ;; Step 12: Construct undo information
+	;;         (unless (eq original-undo-list t)
+	;;           (add-to-list 'original-undo-list
+	;;                        `(apply yas/undo-expand-snippet
+	;;                                ,(point-min)
+	;;                                ,key
+	;;                                ,snippet)))
 
         ;; Step 13: remove the trigger key
         (widen)
         (delete-char length)
 
-        ;; Step 14: Restore undo information
-        (setq buffer-undo-list original-undo-list)
+        ;; ;; Step 14: Restore undo information
+        ;; (setq buffer-undo-list original-undo-list)
 
         ;; Step 15: place the cursor at a proper place
-        (let ((first-group (car (yas/snippet-groups snippet)))
-	      (first-field (and first-group
-				(yas/group-primary-field first-group)))
+        (let* ((first-group (car (yas/snippet-groups snippet)))
+	       (first-field (and first-group
+				 (yas/group-primary-field first-group)))
 	      overlay)
 	  (cond (first-field
-		 (setf (yas/snippet-active-group snippet) first-group)
-		 (goto-char (yas/field-start first-field))
-		 ;; Step 10: Set up properties of the wandering active field
-		 ;; overlay.
-		 (setq overlay (make-overlay (yas/field-start first-field) (yas/field-end first-field)))
-		 (overlay-put overlay 'yas/group group)
-		 (overlay-put overlay 'modification-hooks yas/overlay-modification-hooks)
-		 (overlay-put overlay 'insert-in-front-hooks yas/overlay-insert-in-front-hooks)
-		 (overlay-put overlay 'insert-behind-hooks yas/overlay-insert-behind-hooks)
-		 (overlay-put overlay 'face 'yas/field-highlight-face)
-		 (setf (yas/snippet-active-field-overlay snippet) overlay))
+		 ;; Step 10: Move to the new group, setting up
+		 ;; properties of the wandering active field overlay.
+		 (yas/move-to-group snippet first-group))
 		(t
 		 ;; no need to call exit-snippet, since no overlay created.
 		 (yas/exit-snippet snippet))))
@@ -911,26 +899,6 @@ placeholders."
                            (message "Invalid snippet template!")))))
     bracket-end))
 
-(defun yas/current-field-overlay (&optional point)
-  "Return the most ."
-  (let ((point (or point (point))))
-    (car (sort (delete-if-not #'(lambda (overlay)
-				  (overlay-get overlay 'yas/snippet))
-			      (overlays-at point))
-	       #'(lambda (overlay1 overlay2)
-		   (let ((id-1 (yas/snippet-id (overlay-get overlay1 'yas/snippet)))
-			 (id-2 (yas/snippet-id (overlay-get overlay2 'yas/snippet)))
- 			 (prio-1 (overlay-get overlay1 'priority))
-			 (prio-2 (overlay-get overlay2 'priority)))
-		     (cond ((> id-1 id-2)
-			    t)
-			   ((< id-1 id-2)
-			    nil)
-			   ((> prio-1 prio-2)
-			    t)
-			   (t
-			    nil))))))))
-
 (defun yas/snippet-of-current-keymap (&optional point)
   "Return the most recently inserted snippet holding covering
 POINT."
@@ -946,6 +914,9 @@ POINT."
                    (yas/snippet-id keymap-snippet))
             (setq keymap-snippet snippet)))))
     keymap-snippet))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Template-related and snippet loading functions
 
 (defun yas/parse-template (&optional file-name)
   "Parse the template in the current buffer.
@@ -1317,10 +1288,8 @@ when the condition evaluated to non-nil."
                     (call-interactively command))))))))))
 
 (defun yas/current-group-for-navigation (&optional snippet)
-  (or (and snippet
-	   (yas/snippet-active-group snippet))
-      (overlay-get (or (yas/current-field-overlay (1- (point)))
-		       (yas/current-field-overlay)) 'yas/group))) 
+  (and snippet
+       (yas/snippet-active-group snippet))) 
 
 (defun yas/next-field-group (&optional arg)
   "Navigate to next field group.  If there's none, exit the snippet."
@@ -1346,20 +1315,33 @@ when the condition evaluated to non-nil."
 	   nil))))
 
 (defun yas/move-to-group (snippet group)
-  (let ((field (yas/group-primary-field target-group)))
+  "Update SNIPPET to move to group GROUP."
+  (let ((field (yas/group-primary-field group))
+	(overlay (yas/snippet-active-field-overlay snippet)))
     (goto-char (yas/field-start field))
-    (setf (yas/snippet-active-group snippet) target-group)
-    (move-overlay (yas/snippet-active-field-overlay snippet) (yas/field-start field)
-		  (yas/field-end field))))
+    (setf (yas/snippet-active-group snippet) group)
+    (cond ((and overlay
+		(overlay-buffer overlay))
+	   (move-overlay overlay (yas/field-start field)
+			 (yas/field-end field)))
+	  (t
+	   (setq overlay (make-overlay (yas/field-start first-field) (yas/field-end first-field)))
+	   (overlay-put overlay 'modification-hooks yas/overlay-modification-hooks)
+	   (overlay-put overlay 'insert-in-front-hooks yas/overlay-insert-in-front-hooks)
+	   (overlay-put overlay 'insert-behind-hooks yas/overlay-insert-behind-hooks)
+	   (overlay-put overlay 'face 'yas/field-highlight-face)
+	   (setf (yas/snippet-active-field-overlay snippet) overlay)))
+    (overlay-put overlay 'yas/group group)
+    (overlay-put overlay 'yas/field field)))
+
 
 (defun yas/prev-field-group ()
   "Navigate to prev field group.  If there's none, exit the snippet."
   (interactive)
-  
   (yas/next-field-group -1))
   
 (defun yas/exit-snippet (snippet)
-  "Goto exit-marker of SNIPPET and cleanup the snippe.  Cleaning
+  "Goto exit-marker of SNIPPET and cleanup the snippet.  Cleaning
 up the snippet does not delete it!"
   (interactive)
   (goto-char (yas/snippet-exit-marker snippet))
@@ -1403,6 +1385,8 @@ registered snippet exists in the current buffer.  Return snippet"
   (add-hook 'pre-command-hook  'yas/field-undo-before-hook            'append 'local)
   (add-hook 'post-command-hook 'yas/check-cleanup-snippet        'append 'local)
   (add-hook 'post-command-hook 'yas/field-undo-after-hook             'append 'local)
+  ;; DEBUG
+  (add-hook 'post-command-hook 'yas/debug-some-vars             'append 'local)
   snippet)
 
 (defun yas/unregister-snippet (snippet)
@@ -1415,14 +1399,22 @@ current buffer."
             (hash-table-count yas/registered-snippets))
     (remove-hook 'pre-command-hook  'yas/field-undo-before-hook     'local)
     (remove-hook 'post-command-hook 'yas/field-undo-after-hook      'local)
-    (remove-hook 'post-command-hook 'yas/check-cleanup-snippet 'local)))
+    (remove-hook 'post-command-hook 'yas/check-cleanup-snippet 'local)
+    ;; DEBUG
+    (remove-hook 'post-command-hook 'yas/debug-some-vars             ' 'local)
+
+    ))
 
 (defun yas/exterminate-snippets ()
   "Remove all locally registered snippets and remove
   `yas/check-cleanup-snippet' from the `post-command-hook'"
   (interactive)
-  (maphash #'(lambda (key snippet) (yas/cleanup-snippet snippet))
-           yas/registered-snippets))
+  (maphash #'(lambda (key snippet)
+	       (when (yas/snippet-p snippet) (yas/cleanup-snippet snippet)))
+           yas/registered-snippets)
+  (unless (eq 0 (hash-table-count yas/registered-snippets))
+    (setq yas/registered-snippets (make-hash-table :test 'eq))
+    (message "Warning: yas/snippet hash-table not fully clean. Forcing NIL.")))
 
 (defun yas/cleanup-snippet (snippet)
   "Cleanup SNIPPET, but leave point as it is.  This renders the
@@ -1430,60 +1422,67 @@ snippet as ordinary text"
   (let* ((control-overlay (yas/snippet-control-overlay snippet))
 	 (field-overlay (yas/snippet-active-field-overlay snippet))
          yas/snippet-beg yas/snippet-end)
-    ;; save the end of the moribund snippet in case we need to undo
+    ;;
+    ;; Save the end of the moribund snippet in case we need to undo
     ;; its original expansion.  This is used by `yas/undo-expand-snippet'
+    ;; 
     (when (and control-overlay
                (overlay-buffer control-overlay))
       (setq yas/snippet-beg (overlay-start control-overlay))
       (setq yas/snippet-end (overlay-end control-overlay))
       (setf (yas/snippet-end-marker snippet) yas/snippet-end)
       (delete-overlay control-overlay))
+    ;;
     ;; Delete the currently active field overlay if any
+    ;; 
     (when (and field-overlay
 	       (overlay-buffer field-overlay))
       (delete-overlay field-overlay))
+    ;;
+    ;; Iterate every group, and in it, every field.
     ;; 
-    
-
-    
     (dolist (group (yas/snippet-groups snippet))
       (dolist (field (yas/group-fields group))
 	(let ((start-marker (yas/field-start field))
 	      (end-marker (yas/field-end field)))
-	  (setf (yas/field-start field) (marker-position start-marker))
-	  (setf (yas/field-end field) (marker-position end-marker))
-	  (set-marker start-marker nil)
-	  (set-marker end-marker nil))))
+	  ;;
+	  ;; convert markers into points, before losing the reference.
+	  ;; 
+	  (when (markerp start-marker)
+	    (setf (yas/field-start field) (marker-position start-marker))
+	    (set-marker start-marker nil))
+	  (when (markerp end-marker)
+	    (setf (yas/field-end field) (marker-position end-marker))
+	    (set-marker end-marker nil)))))
+    ;;
     ;; XXX: `yas/after-exit-snippet-hook' should be run with
     ;; `yas/snippet-beg' and `yas/snippet-end' bound. That might not
     ;; be the case if the main overlay had somehow already
     ;; disappeared, which sometimes happens when the snippet's messed
     ;; up...
+    ;; 
     (run-hooks 'yas/after-exit-snippet-hook))
-  (yas/unregister-snippet snippet)
-  (setq buffer-undo-list (yas/snippet-saved-buffer-undo-list snippet)))
+  (yas/unregister-snippet snippet))
 
 (defun yas/check-cleanup-snippet ()
-  "Checks if point exited any of the fields of the snippet, if so
-clean it up.
+  "Checks if point exited the currently active field of the
+snippet, if so cleans up the whole snippet up.
 
 This function is part of `post-command-hook' while
 registered snippets last."
-  (let ((snippet (yas/snippet-of-current-keymap)))
+  (let* ((snippet (yas/snippet-of-current-keymap))
+	 (field-overlay (and snippet
+			     (yas/snippet-active-field-overlay snippet))))
     (cond ( ;;
            ;; No snippet at point, cleanup *all* snippets
            ;;
            (null snippet)
            (yas/exterminate-snippets))
-          ( ;;
-           ;; A snippet exits at point, but point is out of any
-           ;; primary snippet field.
-           (and snippet
-                (notany #'(lambda (group)
-                            (let ((primary-overlay (yas/field-overlay (yas/group-primary-field group))))
-                              (and (>= (point) (overlay-start primary-overlay))
-                                   (<= (point) (overlay-end primary-overlay)))))
-                        (yas/snippet-groups snippet)))
+          ( ;; A snippet exits at point, but point left the currently
+           ;; active field overlay
+           (and field-overlay
+		(or (> (point) (overlay-end field-overlay))
+		    (< (point) (overlay-start field-overlay))))
            (yas/cleanup-snippet snippet))
           (;;
            ;; Snippet at point, and point inside a snippet field,
@@ -1497,17 +1496,83 @@ registered snippets last."
 ;; XXX: Commentary on this section by joaot.
 ;;
 ;; ...
+
 (defun yas/field-undo-before-hook ()
   "..."
-  )
+  (let* ((snippet (yas/snippet-of-current-keymap))
+	 (field-overlay (and snippet
+			     (yas/snippet-active-field-overlay snippet))))
+    (when (and field-overlay
+	       (overlay-buffer field-overlay))
+      (setf (yas/snippet-field-undo-saved-boundaries snippet)
+	    (cons (overlay-start field-overlay)
+		  (overlay-end field-overlay))))))
 
 (defun yas/field-undo-after-hook ()
   "..."
-  )
+  (let* ((snippet (yas/snippet-of-current-keymap))
+	 (saved-boundaries (and snippet
+				(yas/snippet-field-undo-saved-boundaries snippet))))
+    (unless (null saved-boundaries)
+      (yas/push-undo-action-maybe (list 'yas/field-undo-restore-boundaries
+					(car saved-boundaries)
+					(cdr saved-boundaries))))
+    (unless (null snippet)
+      (yas/push-undo-action-maybe (list 'yas/restore-active-group nil)))))
+      
 
-(defun yas/field-restore-overlay-position (snippet)
+
+(defun yas/restore-active-group (snippet)
   "..."
-  )
+  (message "Would be restoring the active group, but how????"))
+
+
+(defun yas/push-undo-action-maybe (apply-args)
+  "..."
+  (let ((undo-list buffer-undo-list)
+	(target-separator nil)
+	done)
+    (unless (eq t buffer-undo-list)                           
+      ;;
+      ;; Discard possibly existing/missing start separator
+      ;;
+      (when (null (car undo-list))
+	(setq undo-list (cdr undo-list)))
+      ;;
+      ;; Find the target separator keeping `undo-list' as a reference to
+      ;; the list starting before that.
+      ;;
+      (while (not done)
+	(cond ((eq (first apply-args)
+		   (condition-case opps
+		       (second (car undo-list))
+		     (error nil)))
+	       (setq done 'return))
+	      ((null (cadr undo-list))
+	       (setq done 'try-insert))
+	      (t
+	       (setq undo-list (cdr undo-list)))))
+      (unless (eq done 'return)
+	;;
+	;; Push a the apply-args action there
+	;;
+	(setq target-separator (cdr undo-list))
+	(setf (cdr undo-list)
+	      (cons (cons 'apply
+			  apply-args)
+		    target-separator))))))
+
+
+(defun yas/field-undo-restore-boundaries (start end)
+  "..."
+  (let* ((snippet (yas/snippet-of-current-keymap))
+	 (field-overlay (and snippet
+			     (yas/snippet-active-field-overlay snippet)))
+	 (group (and snippet
+		     (yas/snippet-active-group snippet)))
+	 (field (and group
+		     (yas/group-primary-field group))))
+    (yas/move-overlay-and-field field-overlay field start end)))
 
 ;; Debug functions.  Use (or change) at will whenever needed.
 
@@ -1527,45 +1592,54 @@ registered snippets last."
                                        (yas/snippet-id snippet)))
 
 
-			(princ (format "\t   Big priority %s overlay %s\n\n"
-				       (overlay-get (yas/snippet-control-overlay snippet) 'priority)
+			(princ (format "\t   Big overlay %s\n"
 				       (yas/snippet-control-overlay snippet)))
 
+			(if (yas/snippet-active-field-overlay snippet)
+			    (princ (format "\t    Field overlay %s\n "
+					   (yas/snippet-active-field-overlay snippet)))
+			  (princ "No active field overlay!!\m"))
 
-			
-                        (dolist (group (yas/snippet-groups snippet))
-                          (princ (format "\t   group $%s with %s fields.\n"
-                                         (yas/group-number group)
-                                         (length (yas/group-fields group))))
+
+			(dolist (group (yas/snippet-groups snippet))
+			  (princ (format "\t  Group $%s with %s fields is %s and %s"
+					 (yas/group-number group)
+                                         (length (yas/group-fields group))
+					 (if (yas/group-deleted group)
+					     "DELETED"
+					   "alive")
+					 (if (eq group (yas/snippet-active-group snippet))
+					     "ACTIVE!\n"
+					   "NOT ACTIVE!\n")))
 			  (dolist (field (yas/group-fields group))
-			    (let ((overlay (yas/field-overlay field)))
-			      (princ (format "\t      %s field. Saved (%s) . "
-					     (if (eq field (yas/group-primary-field group))
-						 "Primary" "Mirror")
-					     (yas/field-value (yas/group-primary-field group))))
-			      (if (and (overlayp overlay)
-				       (overlay-buffer overlay))
-				  (princ (format "Priority %d overlay (%d:%d:%s)\n"
-						 (overlay-get overlay 'priority)
-						 (overlay-start overlay)
-						 (overlay-end overlay)
-						 (buffer-substring (overlay-start overlay) (overlay-end overlay))))
-				(princ "NO OVERLAY\n"))))))
-                    yas/registered-snippets)))
+			    (princ (format "\t\t* %s field. Current value (%s) .\n"
+					   (if (eq field (yas/group-primary-field group))
+					       "Primary" "Mirror")
+					   (yas/current-field-text field)))
+			    (princ (format "\t\t  From %s to %s\n"
+					   (yas/field-start field)
+					   (yas/field-end field)))
+			    ))) yas/registered-snippets)))
 
     (princ (format "\nPost command hook: %s\n" post-command-hook))
     (princ (format "\nPre  command hook: %s\n" pre-command-hook))
 
-    ;; (princ (format "\nUndo is %s."
-    ;;                (if (eq buffer-undo-list t)
-    ;;                    "DISABLED"
-    ;;                  "ENABLED")))
-    ;; (unless (eq buffer-undo-list t)
-    ;;   (princ (format "Undolist has %s elements. First 3 elements follow:\n" (length buffer-undo-list)))
-    ;;   (let ((first-ten (subseq buffer-undo-list 0 2)))
-    ;; 	(dolist (undo-elem first-ten)
-    ;; 	  (princ (format "%s:  %s\n" (position undo-elem first-ten) undo-elem)))))
-))
+    (princ (format "\nUndo is %s."
+                   (if (eq buffer-undo-list t)
+                       "DISABLED"
+                     "ENABLED")))
+    (unless (eq buffer-undo-list t)
+      (princ (format "Undolist has %s elements. First 10 elements follow:\n" (length buffer-undo-list)))
+      (let ((first-ten (subseq buffer-undo-list 0 19)))
+    	(dolist (undo-elem first-ten)
+    	  (princ (format "%s:  %s\n" (position undo-elem first-ten) undo-elem)))))))
+
+(defun yas/exterminate-package ()
+  (interactive)
+  (yas/minor-mode -1)
+  (mapatoms #'(lambda (atom)
+                (when (string-match "yas/" (symbol-name atom))
+                  (unintern atom)))))
 
 (provide 'yasnippet)
 
