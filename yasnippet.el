@@ -298,7 +298,7 @@ set to t."
   (id (yas/snippet-next-id) :read-only t)
   (control-overlay nil)
   (active-field-overlay nil)
-  field-undo-saved-boundaries
+  undo-saved-boundaries
   (active-group nil)
   (end-marker nil))
 
@@ -1382,9 +1382,9 @@ up the snippet does not delete it!"
 `post-command-hook' that should exist while at least one
 registered snippet exists in the current buffer.  Return snippet"
   (puthash (yas/snippet-id snippet) snippet yas/registered-snippets)
-  (add-hook 'pre-command-hook  'yas/field-undo-before-hook            'append 'local)
+  (add-hook 'pre-command-hook  'yas/undo-before-hook            'append 'local)
   (add-hook 'post-command-hook 'yas/check-cleanup-snippet        'append 'local)
-  (add-hook 'post-command-hook 'yas/field-undo-after-hook             'append 'local)
+  (add-hook 'post-command-hook 'yas/undo-after-hook             'append 'local)
   ;; DEBUG
   (add-hook 'post-command-hook 'yas/debug-some-vars             'append 'local)
   snippet)
@@ -1397,8 +1397,8 @@ current buffer."
   (remhash (yas/snippet-id snippet) yas/registered-snippets)
   (when (eq 0
             (hash-table-count yas/registered-snippets))
-    (remove-hook 'pre-command-hook  'yas/field-undo-before-hook     'local)
-    (remove-hook 'post-command-hook 'yas/field-undo-after-hook      'local)
+    (remove-hook 'pre-command-hook  'yas/undo-before-hook     'local)
+    (remove-hook 'post-command-hook 'yas/undo-after-hook      'local)
     (remove-hook 'post-command-hook 'yas/check-cleanup-snippet 'local)
     ;; DEBUG
     (remove-hook 'post-command-hook 'yas/debug-some-vars             ' 'local)
@@ -1497,34 +1497,41 @@ registered snippets last."
 ;;
 ;; ...
 
-(defun yas/field-undo-before-hook ()
+(defun yas/undo-before-hook ()
   "..."
   (let* ((snippet (yas/snippet-of-current-keymap))
 	 (field-overlay (and snippet
 			     (yas/snippet-active-field-overlay snippet))))
     (when (and field-overlay
 	       (overlay-buffer field-overlay))
-      (setf (yas/snippet-field-undo-saved-boundaries snippet)
+      (setf (yas/snippet-undo-saved-boundaries snippet)
 	    (cons (overlay-start field-overlay)
 		  (overlay-end field-overlay))))))
 
-(defun yas/field-undo-after-hook ()
+(defun yas/undo-after-hook ()
   "..."
   (let* ((snippet (yas/snippet-of-current-keymap))
 	 (saved-boundaries (and snippet
-				(yas/snippet-field-undo-saved-boundaries snippet))))
-    (unless (null saved-boundaries)
-      (yas/push-undo-action-maybe (list 'yas/field-undo-restore-boundaries
-					(car saved-boundaries)
-					(cdr saved-boundaries))))
+				(yas/snippet-undo-saved-boundaries snippet))))
     (unless (null snippet)
-      (yas/push-undo-action-maybe (list 'yas/restore-active-group nil)))))
+      (yas/push-undo-action-maybe (list 'yas/undo-restore-active-group nil)))
+    (unless (null saved-boundaries)
+      (yas/push-undo-action-maybe (list 'yas/undo-restore-boundaries
+					(car saved-boundaries)
+					(cdr saved-boundaries))))))
       
 
 
-(defun yas/restore-active-group (snippet)
+(defun yas/undo-restore-active-group (&optional point)
   "..."
-  (message "Would be restoring the active group, but how????"))
+  (let* ((point (or point
+		   (point)))
+	 (snippet (yas/snippet-of-current-keymap point)))
+    (message "Would restoring group point %s and %s"
+	     point
+	     (if snippet
+		 (format "snippet id %d" (yas/snippet-id snippet))
+	       "NO SNIPPET!!!"))))
 
 
 (defun yas/push-undo-action-maybe (apply-args)
@@ -1563,7 +1570,7 @@ registered snippets last."
 		    target-separator))))))
 
 
-(defun yas/field-undo-restore-boundaries (start end)
+(defun yas/undo-restore-boundaries (start end)
   "..."
   (let* ((snippet (yas/snippet-of-current-keymap))
 	 (field-overlay (and snippet
