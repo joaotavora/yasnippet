@@ -298,9 +298,9 @@ set to t."
   (id (yas/snippet-next-id) :read-only t)
   (control-overlay nil)
   (active-field-overlay nil)
-  undo-saved-info
   (active-group nil)
-  (end-marker nil))
+  (end-marker nil)
+  saved-active-group)
 
 (defstruct (yas/group (:constructor yas/make-group (primary-field snippet)))
   "A group contains a list of field with the same number."
@@ -309,7 +309,8 @@ set to t."
   (next nil)
   (prev nil)
   snippet
-  (modified nil))
+  (modified nil)
+  saved-boundaries)
 (defstruct (yas/field
             (:constructor yas/make-field (start end number value transform parent-field)))
   "A field in a snippet."
@@ -593,7 +594,7 @@ of the primary field."
           ;; ;;
 ;;           ;; Mark subgroups as `yas/group-deleted', so we're no longer
 ;;           ;; able to move them. This action is undoable as long as
-;;           ;; `yas/undo-before-hook' exists in the `pre-command-hook'
+;;           ;; `yas/save-active-group-boundaries' exists in the `pre-command-hook'
 ;;           ;; in the proper place.
 ;;           ;;
 ;;           (mapcar #'(lambda (group)
@@ -905,8 +906,7 @@ placeholders."
     bracket-end))
 
 (defun yas/snippet-of-current-keymap (&optional point)
-  "Return the most recently inserted snippet holding covering
-POINT."
+  "Return the most recently inserted snippet covering POINT."
   (let ((point (or point (point)))
         (keymap-snippet nil)
         (snippet nil))
@@ -1392,8 +1392,8 @@ up the snippet does not delete it!"
 `post-command-hook' that should exist while at least one
 registered snippet exists in the current buffer.  Return snippet"
   (puthash (yas/snippet-id snippet) snippet yas/registered-snippets)
-  (add-hook 'pre-command-hook  'yas/undo-before-hook            'append 'local)
-  (add-hook 'post-command-hook 'yas/undo-after-hook             'append 'local)
+  (add-hook 'pre-command-hook  'yas/save-active-group-boundaries            'append 'local)
+  (add-hook 'post-command-hook 'yas/save-active-group-boundaries-after             'append 'local)
   (add-hook 'post-command-hook 'yas/check-cleanup-snippet       'append 'local)
   ;; DEBUG
   (add-hook 'post-command-hook 'yas/debug-some-vars             'append 'local)
@@ -1407,8 +1407,8 @@ current buffer."
   (remhash (yas/snippet-id snippet) yas/registered-snippets)
   (when (eq 0
             (hash-table-count yas/registered-snippets))
-    (remove-hook 'pre-command-hook  'yas/undo-before-hook      'local)
-    (remove-hook 'post-command-hook 'yas/undo-after-hook       'local)
+    (remove-hook 'pre-command-hook  'yas/save-active-group-boundaries      'local)
+    (remove-hook 'post-command-hook 'yas/save-active-group-boundaries-after       'local)
     (remove-hook 'post-command-hook 'yas/check-cleanup-snippet 'local)
     ;; DEBUG
     (remove-hook 'post-command-hook 'yas/debug-some-vars       'local)))
@@ -1505,43 +1505,58 @@ registered snippets last."
 ;;
 ;; ...
 
-(defun yas/undo-before-hook ()
-  "..."
-  (let* ((snippet (yas/snippet-of-current-keymap))
-         (field-overlay (and snippet
-                             (yas/snippet-active-field-overlay snippet))))
-    (when (and field-overlay
-               (overlay-buffer field-overlay))
-      (setf (yas/snippet-undo-saved-info snippet)
-            (list
-             ;;
-             ;; Save boundaries of current field
-             ;;
-             (cons (overlay-start field-overlay)
-                   (overlay-end field-overlay))
-             ;;
-             ;; Save a reference to current group
-             ;;
-             (yas/snippet-active-group snippet))))))
+(defun yas/save-active-group-boundaries ()
+  "While snippet is active, save the active group and the active group's boundaries.
 
-(defun yas/undo-after-hook ()
-  "..."
-  (let* ((snippet (yas/snippet-of-current-keymap))
-         (saved-info (and snippet
-                          (yas/snippet-undo-saved-info snippet))))
-    (unless (null saved-info)
-      (yas/push-undo-action-maybe (list 'yas/undo-restore-active-group
-                                        (second saved-info)
-                                        (car (first saved-info))
-                                        (cdr (first saved-info)))))))
+This is stored in the `yas/group' itself.
 
-(defun yas/undo-restore-active-group (group start end)
+Intended to be placed in `pre-command-hook'."
+  (let* ((snippet (yas/snippet-of-current-keymap))
+	 (group (yas/snippet-active-group snippet))
+	 (field-overlay (yas/snippet-active-field-overlay snippet)))
+    ;;
+    ;; Save a reference to current group
+    ;;
+    (setf (yas/snippet-saved-active-group snippet)
+	  group)
+    ;;
+    ;; Save boundaries of current field
+    ;;
+    (setf (yas/group-saved-boundaries group)  
+	  (cons (overlay-start field-overlay)
+		(overlay-end field-overlay)))))
+
+(defun yas/save-active-group-boundaries-after ()
   "..."
   (let* ((snippet (yas/snippet-of-current-keymap))
-         (field-overlay (yas/snippet-active-field-overlay snippet))
-         (field (yas/group-primary-field group))
+         (saved-group (yas/snippet-saved-active-group snippet))
+	 (saved-boundaries (yas/group-saved-boundaries saved-group)))
+    ;;
+    ;; Push an action to restore the active group
+    ;; 
+    (yas/push-undo-action-maybe (list 'yas/restore-active-group
+				      saved-group))
+    ;;
+    ;; Push an action after that to restore the active group's
+    ;; boundaries
+    ;;
+    (yas/push-undo-action-maybe (list 'yas/restore-active-group-boundaries
+				      (car saved-boundaries)
+				      (cdr saved-boundaries)))))
+
+(defun yas/restore-active-group (group)
+  "..."
+  (let* ((snippet (yas/snippet-of-current-keymap))
          (inhibit-modification-hooks t))
-    (yas/move-to-group snippet group 'dontmove)
+    (yas/move-to-group snippet group 'dontmove)))
+
+(defun yas/restore-active-group-boundaries (group)
+  ",,,"
+  (let* ((snippet (yas/snippet-of-current-keymap))
+	 (group (yas/snippet-active-group snippet))
+	 (field-overlay (yas/snippet-active-field-overlay snippet))
+         (field (yas/group-primary-field group))
+	 (inhibit-modification-hooks t))
     (yas/move-overlay-and-field field-overlay field start end)
     (yas/update-mirrors group)))
 
