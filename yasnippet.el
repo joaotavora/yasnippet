@@ -752,13 +752,14 @@ will be deleted before inserting template."
         (unless (yas/snippet-exit-marker snippet)
           (setf (yas/snippet-exit-marker snippet) (copy-marker (point) t)))
 
-        ;; ;; Step 12: Construct undo information
-        ;;         (unless (eq original-undo-list t)
-        ;;           (add-to-list 'original-undo-list
-        ;;                        `(apply yas/undo-expand-snippet
-        ;;                                ,(point-min)
-        ;;                                ,key
-        ;;                                ,snippet)))
+        ;; Step 12: Construct undo information
+	(setq yas/pending-undo-actions (list
+					(list 'before-first-action
+					      `(apply yas/cleanup-snippet
+						      ,snippet
+						      after-first-action)
+					      'jump-first-separator)))
+
 
         ;; Step 13: remove the trigger key
         (widen)
@@ -1375,6 +1376,14 @@ up the snippet does not delete it!"
 (eval-when-compile
   (make-variable-buffer-local 'yas/registered-snippets))
 
+(defvar yas/temporary-pre-command-hooks (list 'yas/clear-pending-undo-actions
+					      'yas/save-active-group-boundaries))
+
+(defvar yas/temporary-post-command-hooks (list 'yas/check-cleanup-snippet
+					       'yas/push-pending-undo-actions
+					       'yas/debug-some-vars))
+  
+
 (defun yas/add-remove-many-hooks (hook-var fn-list &optional remove)
   (mapcar (if remove
               #'(lambda (fn) (remove-hook hook-var fn 'local))
@@ -1391,18 +1400,10 @@ registered snippet exists in the current buffer.  Return snippet"
   ;;
   (puthash (yas/snippet-id snippet) snippet yas/registered-snippets)
   ;;
-  ;; setup the `pre-command-hook'
+  ;; setup the `pre-command-hook' and `post-command-hook'
   ;;
-  (yas/add-remove-many-hooks 'pre-command-hook
-                             (list 'yas/clear-pending-undo-actions
-                                   'yas/save-active-group-boundaries))
-  ;;
-  ;; setup the `post-command-hook'
-  ;;
-  (yas/add-remove-many-hooks 'post-command-hook
-                             (list 'yas/check-cleanup-snippet
-                                   'yas/correct-undo-list
-                                   'yas/debug-some-vars))
+  (yas/add-remove-many-hooks 'pre-command-hook yas/temporary-pre-command-hooks)
+  (yas/add-remove-many-hooks 'post-command-hook yas/temporary-post-command-hooks)
   snippet)
 
 (defun yas/unregister-snippet (snippet)
@@ -1410,23 +1411,30 @@ registered snippet exists in the current buffer.  Return snippet"
 table.  Remove `yas/check-cleanup-snippet' from the buffer-local
 `post-command-hook' if no more snippets registered in the
 current buffer."
+  ;;
+  ;;
+  ;;
   (remhash (yas/snippet-id snippet) yas/registered-snippets)
+  ;;
+  ;;
+  ;;
   (when (eq 0
             (hash-table-count yas/registered-snippets))
-    (yas/add-remove-many-hooks 'pre-command-hook
-                               (list 'yas/clear-pending-undo-actions
-                                     'yas/save-active-group-boundaries)
-                               'remove)
-    (yas/add-remove-many-hooks 'post-command-hook
-                               (list 'yas/correct-undo-list
-                                     'yas/check-cleanup-snippet
-                                     'yas/debug-some-vars)
-                               'remove)))
+    (yas/add-remove-many-hooks 'pre-command-hook yas/temporary-pre-command-hooks 'remove)
+    (yas/add-remove-many-hooks 'post-command-hook yas/temporary-post-command-hooks 'remove)
+    (when yas/pending-undo-actions
+      (add-hook 'post-command-hook 'yas/push-pending-undo-actions-once 'append 'local))))
+
 
 (defun yas/exterminate-snippets ()
   "Remove all locally registered snippets and remove
   `yas/check-cleanup-snippet' from the `post-command-hook'"
   (interactive)
+  (setq yas/pending-undo-actions nil)
+  (setq buffer-undo-list nil)
+  (yas/cleanup-all-snippets))
+
+(defun yas/cleanup-all-snippets ()
   (maphash #'(lambda (key snippet)
                (when (yas/snippet-p snippet) (yas/cleanup-snippet snippet)))
            yas/registered-snippets)
@@ -1434,7 +1442,7 @@ current buffer."
     (setq yas/registered-snippets (make-hash-table :test 'eq))
     (message "Warning: yas/snippet hash-table not fully clean. Forcing NIL.")))
 
-(defun yas/cleanup-snippet (snippet)
+(defun yas/cleanup-snippet (snippet &optional undo-action-method)
   "Cleanup SNIPPET, but leave point as it is.  This renders the
 snippet as ordinary text"
   (let* ((control-overlay (yas/snippet-control-overlay snippet))
@@ -1477,12 +1485,15 @@ snippet as ordinary text"
     ;; forget all other pending undo actions and push a undo/redo
     ;; action for snippet revival
     ;;
-    (setq yas/pending-undo-actions (list
-                                    (list 'above-all
-                                          `(yas/revive-snippet ,snippet
-                                                               ,yas/snippet-beg
-                                                               ,yas/snippet-end
-                                                               ,(yas/snippet-active-group snippet)))))
+    (unless (eq 'this-command 'yas/exterminate-snippets)
+      (setq yas/pending-undo-actions (list
+				      (list (or undo-action-method 'before-first-action)
+					    `(apply yas/revive-snippet
+						    ,snippet
+						    ,yas/snippet-beg
+						    ,yas/snippet-end
+						    ,(yas/snippet-active-group snippet))
+					    'jump-first-separator))))
     ;;
     ;; XXX: `yas/after-exit-snippet-hook' should be run with
     ;; `yas/snippet-beg' and `yas/snippet-end' bound. That might not
@@ -1507,7 +1518,7 @@ registered snippets last."
            ;; No snippet at point, cleanup *all* snippets
            ;;
            (null snippet)
-           (yas/exterminate-snippets))
+           (yas/cleanup-all-snippets))
           (;; A snippet exits at point, but point left the currently
            ;; active field overlay
            (or (not group)
@@ -1521,13 +1532,13 @@ registered snippets last."
            t
            nil))))
 
-;; Field-level undo functionality
 ;;
-;; XXX: Commentary on this section by joaot.
+;; Undo functionality
 ;;
-;; ...
 
 (defvar yas/pending-undo-actions nil)
+(eval-when-compile
+  (make-variable-buffer-local 'yas/pending-undo-actions))
 
 (defun yas/clear-pending-undo-actions ()
   (setq yas/pending-undo-actions nil))
@@ -1550,41 +1561,45 @@ performed in `yas/correct-undo-list', which is placed in the
     ;; Save boundaries of current field
     ;;
     (push (list 'after-first-action
-                (list 'yas/restore-group-boundaries
-                      group
-                      snippet
-                      (overlay-start field-overlay)
-                      (overlay-end field-overlay)))
+		`(apply yas/restore-group-boundaries
+			,group
+			,snippet
+			,(overlay-start field-overlay)
+			,(overlay-end field-overlay)))
           yas/pending-undo-actions)
     ;;
     ;; Save a reference to current group
     ;;
     (push (list 'after-first-action
-                (list 'yas/restore-active-group
-                      group
-                      snippet))
+                `(apply yas/restore-active-group ,group ,snippet))
           yas/pending-undo-actions)))
 
 (defun yas/revive-snippet (snippet snippet-start snippet-end active-group)
-  ;;
-  ;; Revive the control overlay
-  ;;
-  (setf (yas/snippet-control-overlay snippet) (yas/make-control-overlay snippet-start snippet-end))
-  ;;
-  ;; Revive each group
-  ;;
-  (dolist (group (yas/snippet-groups snippet))
-    (yas/restore-group-boundaries group snippet
-                                  (yas/field-start (yas/group-primary-field group))
-                                  (yas/field-end (yas/group-primary-field group))))
-  ;;
-  ;; Move to the previously active group
-  ;;
-  (yas/restore-active-group active-group snippet)
-  ;;
-  ;; Reregister this snippet
-  ;;
-  (yas/register-snippet snippet))
+  (let ((inhibit-modification-hooks t)
+	(buffer-undo-list t))
+    ;;
+    ;; Revive the control overlay
+    ;;
+    (setf (yas/snippet-control-overlay snippet) (yas/make-control-overlay snippet-start snippet-end))
+    ;;
+    ;; Revive each group
+    ;;
+    (dolist (group (yas/snippet-groups snippet))
+      (yas/restore-group-boundaries group snippet
+				    (yas/field-start (yas/group-primary-field group))
+				    (yas/field-end (yas/group-primary-field group))))
+    ;;
+    ;; Move to the previously active group
+    ;;
+    (yas/move-to-group snippet active-group)
+    ;;
+    ;; Reregister this snippet
+    ;;
+    (yas/register-snippet snippet)
+    ;;
+    ;; Erase any pending undo actions. 
+    ;;
+    (setq yas/pending-undo-actions nil)))
 
 (defun yas/restore-active-group (group snippet)
   "..."
@@ -1596,7 +1611,7 @@ performed in `yas/correct-undo-list', which is placed in the
   (let* ((field-overlay (yas/snippet-active-field-overlay snippet))
          (field (yas/group-primary-field group))
          (inhibit-modification-hooks t))
-    (yas/move-overlay-and-field field-overlay field start end)
+    (setf (yas/snippet-active-field-overlay snippet) (yas/move-overlay-and-field field-overlay field start end))
     (yas/update-mirrors group)))
 
 (defun yas/point-in-field-p (field &optional point)
@@ -1606,46 +1621,48 @@ performed in `yas/correct-undo-list', which is placed in the
     (and (>= point (yas/field-start field))
          (<= point (yas/field-end field)))))
 
-(defun yas/correct-undo-list ()
+(defun yas/push-pending-undo-actions ()
   (mapcar #'(lambda (args)
               (apply #'yas/push-undo-action-maybe args))
           yas/pending-undo-actions))
 
-(defun yas/push-undo-action-maybe (how apply-args &optional jump-first-separator)
+(defun yas/push-pending-undo-actions-once ()
+  (yas/push-pending-undo-actions)
+  (remove-hook 'post-command-hook 'yas/push-pending-undo-actions-once 'local))
+
+(defun yas/push-undo-action-maybe (how entry &optional jump-first-separator)
   "..."
-  (let ((undo-list buffer-undo-list)
-        (target-separator nil)
-        done)
-    (unless (eq t buffer-undo-list)
-      (cond ((eq how 'after-first-action)
-             ;;
-             ;; Discard possibly existing/missing start separator
-             ;;
-             (when (null (car undo-list))
-               (setq undo-list (cdr undo-list)))
-             ;;
-             ;; Find the target separator keeping `undo-list' as a reference to
-             ;; the list starting before that.
-             ;;
-             (while (not done)
-               (cond ((eq (first apply-args)
-                          (condition-case opps
-                              (second (car undo-list))
-                            (error nil)))
-                      (setq done 'return))
-                     ((null (cadr undo-list))
-                      (setq done 'try-insert))
-                     (t
-                      (setq undo-list (cdr undo-list)))))
-             (unless (eq done 'return)
-               ;;
-               ;; Push a the apply-args action there
-               ;;
-               (setq target-separator (cdr undo-list))
-               (setf (cdr undo-list)
-                     (cons (cons 'apply
-                                 apply-args)
-                           target-separator))))))))
+  (unless (eq t buffer-undo-list)
+    (cond (;;
+	   ;;
+	   ;;
+	   (eq 'after-first-action how)
+	   (let ((undo-list buffer-undo-list)
+		 done)
+	     (when (and jump-first-separator
+			(null (car undo-list)))
+	       (setq undo-list (cdr undo-list)))
+	     (while (not done)
+	       (cond ((condition-case oops
+			  (and (eq 'apply (first entry))
+			       (eq (second entry)
+				   (second (car undo-list))))
+			(error nil))
+		      (setq done 'return))
+		     ((null (cadr undo-list))
+		      (setq done 'try-insert))
+		     (t
+		      (setq undo-list (cdr undo-list)))))
+	     (unless (eq done 'return)
+	       (push entry (cdr undo-list)))))
+	  (;;
+	   ;;
+	   ;;
+	   (eq 'before-first-action how)
+	   (if (and jump-first-separator
+		    (null (car buffer-undo-list)))
+	       (push entry (cdr buffer-undo-list))
+	     (push entry buffer-undo-list))))))
 
 (defun yas/sanitize-undo-redo ()
   (let ((undo-list buffer-undo-list)
@@ -1725,7 +1742,7 @@ performed in `yas/correct-undo-list', which is placed in the
       (princ (format "Undolist has %s elements. First 10 elements follow:\n" (length buffer-undo-list)))
       (let ((first-ten (subseq buffer-undo-list 0 19)))
         (dolist (undo-elem first-ten)
-          (princ (format "%s:  %s\n" (position undo-elem first-ten) (truncate-string-to-width (format "%s" undo-elem) 50))))))))
+          (princ (format "%2s:  %s\n" (position undo-elem first-ten) (truncate-string-to-width (format "%s" undo-elem) 70))))))))
 
 (defun yas/exterminate-package ()
   (interactive)
