@@ -803,10 +803,12 @@ will be deleted before inserting template."
 
         ;; Step 16: Do necessary indenting
         (save-excursion
-          (goto-char (overlay-start (yas/snippet-overlay snippet)))
-          (while (re-search-forward "$>" nil t)
-            (replace-match "")
-            (indent-according-to-mode)))))))
+          (let ((ovst (overlay-start (yas/snippet-overlay snippet))))
+            (when ovst
+              (goto-char ovst)
+              (while (re-search-forward "$>" nil t)
+                (replace-match "")
+                (indent-according-to-mode)))))))))
 
 (defun yas/current-snippet-overlay (&optional point)
   "Get the most proper overlay which is belongs to a snippet."
