@@ -1,0 +1,2 @@
+# --
+llGetTextureScale(integer side)

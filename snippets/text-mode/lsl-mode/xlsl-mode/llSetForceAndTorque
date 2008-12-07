@@ -1,0 +1,2 @@
+# --
+llSetForceAndTorque(vector force, vector torque, integer local)

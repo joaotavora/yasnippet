@@ -1,0 +1,2 @@
+# --
+llGiveInventoryList(key destination, string category, list inventory)

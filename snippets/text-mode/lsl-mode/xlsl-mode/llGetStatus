@@ -1,0 +1,2 @@
+# --
+llGetStatus(integer status)

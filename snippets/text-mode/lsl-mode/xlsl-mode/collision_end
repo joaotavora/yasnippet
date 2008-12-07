@@ -1,0 +1,5 @@
+# --
+collision_end(integer num_detected)
+{
+$0
+}

@@ -1,0 +1,2 @@
+# --
+llRezObject(string inventory, vector pos, vector vel, rotation rot, integer param)

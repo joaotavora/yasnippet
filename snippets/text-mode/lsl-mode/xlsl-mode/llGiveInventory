@@ -1,0 +1,2 @@
+# --
+llGiveInventory(key destination, string inventory)

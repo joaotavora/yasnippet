@@ -1,0 +1,2 @@
+# --
+llGetNotecardLine(string name, integer line)

@@ -1,0 +1,2 @@
+# --
+llMessageLinked(integer linknum, integer num, string str, key id)

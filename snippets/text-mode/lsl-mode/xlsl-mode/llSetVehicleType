@@ -1,0 +1,2 @@
+# --
+llSetVehicleType(integer type)

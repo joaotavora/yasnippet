@@ -1,0 +1,5 @@
+# --
+land_collision_end(vector pos)
+{
+$0
+}

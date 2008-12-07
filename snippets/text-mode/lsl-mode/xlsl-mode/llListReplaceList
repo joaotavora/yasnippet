@@ -1,0 +1,2 @@
+# --
+llListReplaceList(list dest, list src, integer start, integer end)

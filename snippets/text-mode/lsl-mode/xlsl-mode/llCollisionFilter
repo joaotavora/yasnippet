@@ -1,0 +1,2 @@
+# --
+llCollisionFilter(string name, key id, integer accept)

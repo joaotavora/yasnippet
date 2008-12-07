@@ -1,0 +1,5 @@
+# --
+on_rez(integer start_param)
+{
+$0
+}

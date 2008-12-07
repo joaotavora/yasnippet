@@ -1,0 +1,2 @@
+# --
+llSay(integer channel, string text)

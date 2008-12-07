@@ -1,0 +1,2 @@
+# --
+llSetDamage(float damage)

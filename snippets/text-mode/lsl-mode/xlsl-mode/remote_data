@@ -1,0 +1,5 @@
+# --
+remote_data(integer event_type, key channel, key message_id, string sender, integer idata, string sdata)
+{
+$0
+}

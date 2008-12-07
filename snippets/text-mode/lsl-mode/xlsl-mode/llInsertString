@@ -1,0 +1,2 @@
+# --
+llInsertString(string dst, integer position, string src)

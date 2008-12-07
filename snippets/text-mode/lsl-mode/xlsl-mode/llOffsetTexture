@@ -1,0 +1,2 @@
+# --
+llOffsetTexture(float horizontal, float vertical, integer side)

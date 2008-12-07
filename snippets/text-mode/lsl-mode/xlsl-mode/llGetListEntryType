@@ -1,0 +1,2 @@
+# --
+llGetListEntryType(list src, integer index)

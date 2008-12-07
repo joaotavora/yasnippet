@@ -1,0 +1,5 @@
+# --
+money(key id, integer amount)
+{
+$0
+}

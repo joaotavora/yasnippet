@@ -1,0 +1,2 @@
+# --
+llRequestPermissions(key agent, integer perm)

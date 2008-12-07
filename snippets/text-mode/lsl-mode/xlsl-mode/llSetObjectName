@@ -1,0 +1,2 @@
+# --
+llSetObjectName(string name)

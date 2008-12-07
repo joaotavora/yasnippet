@@ -1,0 +1,2 @@
+# --
+llTriggerSoundLimited(string sound, float volume, vector tne, vector bsw)

@@ -1,0 +1,2 @@
+# --
+llMakeSmoke(integer particles, float scale, float velocity, float lifetime, float arc, string texture, vector offset)

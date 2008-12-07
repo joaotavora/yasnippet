@@ -1,0 +1,5 @@
+# --
+run_time_permissions(integer perm)
+{
+$0
+}

@@ -1,0 +1,2 @@
+# --
+llApplyRotationalImpulse(vector force, integer local)

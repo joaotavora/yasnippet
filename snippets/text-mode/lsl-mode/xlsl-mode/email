@@ -1,0 +1,5 @@
+# --
+email(string time, string address, string subj, string message, integer num_left)
+{
+$0
+}

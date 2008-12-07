@@ -1,0 +1,2 @@
+# --
+llSetText(string text, vector color, float alpha)

@@ -1,0 +1,2 @@
+# --
+llSetVehicleFlags(integer flag)

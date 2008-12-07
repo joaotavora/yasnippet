@@ -1,0 +1,2 @@
+# --
+llDeleteSubList(list src, integer start, integer end)

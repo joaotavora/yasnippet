@@ -1,0 +1,2 @@
+# --
+llDialog(key id, string message, list buttons, integer chat_channel)

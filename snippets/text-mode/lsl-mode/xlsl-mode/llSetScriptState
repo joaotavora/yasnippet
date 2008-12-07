@@ -1,0 +1,2 @@
+# --
+llSetScriptState(string name, integer run)

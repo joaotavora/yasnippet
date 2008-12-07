@@ -1,0 +1,2 @@
+# --
+llAddToLandBanList(key agent, float hours)

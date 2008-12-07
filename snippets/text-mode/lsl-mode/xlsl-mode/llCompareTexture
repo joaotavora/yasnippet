@@ -1,0 +1,2 @@
+# --
+llCompareTexture(integer side, key src)

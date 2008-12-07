@@ -1,0 +1,2 @@
+# --
+llLookAt(vector target, F32 strength, F32 damping)

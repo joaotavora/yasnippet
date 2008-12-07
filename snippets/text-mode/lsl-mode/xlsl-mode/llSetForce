@@ -1,0 +1,2 @@
+# --
+llSetForce(vector force, integer local)

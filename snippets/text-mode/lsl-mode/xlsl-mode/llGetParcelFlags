@@ -1,0 +1,2 @@
+# --
+llGetParcelFlags(vector pos)
