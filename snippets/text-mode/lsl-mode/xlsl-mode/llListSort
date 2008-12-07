@@ -1,2 +1,0 @@
-# --
-llListSort(list src, integer stride, integer ascending)

@@ -1,2 +1,0 @@
-# --
-llGetInventoryName(integer type, integer number)

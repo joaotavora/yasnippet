@@ -1,2 +1,0 @@
-# --
-llRotLookAt(rotation target, float strength, float damping)

@@ -1,2 +1,0 @@
-# --
-llSetLinkAlpha(integer linknumber, float alpha, integer face)

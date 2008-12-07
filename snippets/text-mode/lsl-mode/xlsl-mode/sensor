@@ -1,5 +1,0 @@
-# --
-sensor(integer num_detected)
-{
-$0
-}

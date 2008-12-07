@@ -1,2 +1,0 @@
-# --
-llGetInventoryPermMask(string item, integer mask)

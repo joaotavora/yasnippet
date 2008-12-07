@@ -1,2 +1,0 @@
-# --
-llSetStatus(integer status, integer value)

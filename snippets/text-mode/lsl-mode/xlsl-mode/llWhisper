@@ -1,2 +1,0 @@
-# --
-llWhisper(integer channel, string text)

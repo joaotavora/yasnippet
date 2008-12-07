@@ -1,5 +1,0 @@
-# --
-touch(integer num_detected)
-{
-$0
-}

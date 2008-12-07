@@ -1,5 +1,0 @@
-# --
-at_target(integer tnum, vector targetpos, vector ourpos)
-{
-$0
-}

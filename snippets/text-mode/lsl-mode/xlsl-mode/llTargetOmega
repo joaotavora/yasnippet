@@ -1,2 +1,0 @@
-# --
-llTargetOmega(vector axis, float spinrate, float gain)

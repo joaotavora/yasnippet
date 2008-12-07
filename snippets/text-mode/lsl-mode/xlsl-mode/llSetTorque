@@ -1,2 +1,0 @@
-# --
-llSetTorque(vector torque, integer local)

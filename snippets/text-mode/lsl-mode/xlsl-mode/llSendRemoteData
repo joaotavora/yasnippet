@@ -1,2 +1,0 @@
-# --
-llSendRemoteData(key channel, string dest, integer idata, string sdata)

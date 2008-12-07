@@ -1,5 +1,0 @@
-# --
-land_collision_start(vector pos)
-{
-$0
-}

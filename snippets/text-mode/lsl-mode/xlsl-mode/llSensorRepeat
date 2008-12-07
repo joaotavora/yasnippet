@@ -1,2 +1,0 @@
-# --
-llSensorRepeat(string name, key id, integer type, float range, float arc, float rate)

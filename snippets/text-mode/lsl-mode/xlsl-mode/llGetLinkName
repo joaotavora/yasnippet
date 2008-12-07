@@ -1,2 +1,0 @@
-# --
-llGetLinkName(integer linknum)

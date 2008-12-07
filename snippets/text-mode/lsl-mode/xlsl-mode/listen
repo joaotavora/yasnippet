@@ -1,5 +1,0 @@
-# --
-listen(integer channel, string name, key id, string message)
-{
-$0
-}

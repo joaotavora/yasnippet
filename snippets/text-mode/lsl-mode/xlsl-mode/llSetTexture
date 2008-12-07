@@ -1,2 +1,0 @@
-# --
-llSetTexture(string texture, integer side)

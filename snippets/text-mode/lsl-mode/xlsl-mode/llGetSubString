@@ -1,2 +1,0 @@
-# --
-llGetSubString(string src, integer start, integer end)

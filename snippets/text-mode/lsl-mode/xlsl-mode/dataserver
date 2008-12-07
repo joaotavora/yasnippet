@@ -1,5 +1,0 @@
-# --
-dataserver(key queryid, string data)
-{
-$0
-}
