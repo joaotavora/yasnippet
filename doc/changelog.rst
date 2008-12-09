@@ -6,9 +6,16 @@ ChangeLog
 :Contact: pluskid@gmail.com
 :Date: 2008-03-22
 
-0.5.7 /
-=================
+0.5.7 / 2008-12-03
+==================
 
+* Fixed `Issue 28
+  <http://code.google.com/p/yasnippet/issues/detail?id=28>`_ of
+  properly clean up snippet (by joaotavora).
+* Added a new section "Field-level undo functionality" to correct
+  `Issue 33 <http://code.google.com/p/yasnippet/issues/detail?id=33>`_
+  (by joaotavora).
+* Added some snippets from users for sql, erlang, scala, html, xml, latex, etc.
 * Fixed `Issue 16
   <http://code.google.com/p/yasnippet/issues/detail?id=16>`_ by adding
   ``$>`` support. Here's the `doc for $> indenting

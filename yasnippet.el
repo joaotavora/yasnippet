@@ -3,7 +3,7 @@
 ;; Copyright 2008 pluskid
 ;;
 ;; Author: pluskid <pluskid@gmail.com>
-;; Version: 0.5.6
+;; Version: 0.5.7
 ;; X-URL: http://code.google.com/p/yasnippet/
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -188,7 +188,7 @@ to expand.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defvar yas/version "0.5.6")
+(defvar yas/version "0.5.7")
 
 (defvar yas/snippet-tables (make-hash-table)
   "A hash table of snippet tables corresponding to each major-mode.")
@@ -886,7 +886,7 @@ Here's a list of currently recognized variables:
 # --
 #include \"$1\""
   (goto-char (point-min))
-  (let ((name file-name) template bound condition)
+  (let ((name file-name) template bound condition key)
     (if (re-search-forward "^# --\n" nil t)
         (progn (setq template
                      (buffer-substring-no-properties (point)
@@ -897,10 +897,12 @@ Here's a list of currently recognized variables:
                  (when (string= "name" (match-string-no-properties 1))
                    (setq name (match-string-no-properties 2)))
                  (when (string= "condition" (match-string-no-properties 1))
-                   (setq condition (read (match-string-no-properties 2))))))
+                   (setq condition (read (match-string-no-properties 2))))
+                 (when (string= "key" (match-string-no-properties 1))
+                   (setq key (match-string-no-properties 2)))))
       (setq template
             (buffer-substring-no-properties (point-min) (point-max))))
-    (list template name condition)))
+    (list key template name condition)))
 
 (defun yas/directory-files (directory file?)
   "Return directory files or subdirectories in full path."
@@ -989,10 +991,11 @@ hierarchy."
       (dolist (file (yas/directory-files directory t))
         (when (file-readable-p file)
           (insert-file-contents file nil nil nil t)
-          (let ((snippet-file-name (file-name-nondirectory file)))
-            (push (cons snippet-file-name
-                        (yas/parse-template snippet-file-name))
-                  snippets)))))
+          (let* ((snip (yas/parse-template))
+                 (key (or (car snip)
+                          (file-name-nondirectory file)))
+                 (snip (cdr snip)))
+            (push (cons key snip) snippets)))))
     (yas/define-snippets mode-sym
                          snippets
                          parent)
