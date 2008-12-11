@@ -134,10 +134,10 @@ proper values:
 
 (defvar yas/buffer-local-condition
   '(if (and (not (bobp))
-            (or (equal "font-lock-comment-face"
+            (or (equal 'font-lock-comment-face
                        (get-char-property (1- (point))
                                           'face))
-                (equal "font-lock-string-face"
+                (equal 'font-lock-string-face
                        (get-char-property (1- (point))
                                           'face))))
        '(require-snippet-condition . force-in-comment)
