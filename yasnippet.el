@@ -782,15 +782,24 @@ will be deleted before inserting template."
                                ,key
                                ,snippet)))
 
-        ;; Step 13: remove the trigger key
+        ;; Step 13: Do necessary indenting
+        (save-excursion
+          (let ((ovst (overlay-start (yas/snippet-overlay snippet))))
+            (when ovst
+              (goto-char ovst)
+              (while (re-search-forward "$>" nil t)
+                (replace-match "")
+                (indent-according-to-mode)))))
+
+        ;; Step 14: remove the trigger key
         (widen)
         (delete-char length)
 
-        ;; Step 14: Restore undo information, and also save it for future use.
+        ;; Step 15: Restore undo information, and also save it for future use.
         (setf (yas/snippet-saved-buffer-undo-list snippet) original-undo-list)
         (setq buffer-undo-list original-undo-list)
 
-        ;; Step 15: place the cursor at a proper place
+        ;; Step 16: place the cursor at a proper place
         (let ((groups (yas/snippet-groups snippet))
               (exit-marker (yas/snippet-exit-marker snippet)))
           (if groups
@@ -801,14 +810,7 @@ will be deleted before inserting template."
             ;; no need to call exit-snippet, since no overlay created.
             (yas/exit-snippet snippet)))
 
-        ;; Step 16: Do necessary indenting
-        (save-excursion
-          (let ((ovst (overlay-start (yas/snippet-overlay snippet))))
-            (when ovst
-              (goto-char ovst)
-              (while (re-search-forward "$>" nil t)
-                (replace-match "")
-                (indent-according-to-mode)))))))))
+        ))))
 
 (defun yas/current-snippet-overlay (&optional point)
   "Get the most proper overlay which is belongs to a snippet."
