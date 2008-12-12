@@ -185,6 +185,20 @@ to expand.
     YASnippet and call other command bound to `yas/trigger-key'.
  * 'return-nil means return nil.")
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Utility functions for transformations
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun yas/substr (str pattern &optional group)
+  "Search PATTERN in STR. If found, the content of group
+  GROUP (default 0) is returned, or else the original STR will be
+  returned."
+  (let ((grp (or group 0)))
+    (save-match-data
+      (if (string-match pattern str)
+          (match-string-no-properties grp str)
+        str))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
