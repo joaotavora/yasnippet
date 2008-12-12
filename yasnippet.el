@@ -274,9 +274,8 @@ You can customize the key through `yas/trigger-key'."
   ;; The indicator for the mode line.
   " yas"
   :group 'editing
-  (define-key yas/minor-mode-map yas/trigger-key 'yas/expand)
+  (define-key yas/minor-mode-map yas/trigger-key 'yas/expand))
 
-  (set 'yas/registered-snippets (make-hash-table :test 'eq)))
 
 (defun yas/minor-mode-auto-on ()
   "Turn on YASnippet minor mode unless `yas/dont-activate' is
@@ -1346,16 +1345,21 @@ up the snippet does not delete it!"
   "A hash table holding all active snippets")
 (eval-when-compile
   (make-variable-buffer-local 'yas/registered-snippets))
+(defun yas/get-registered-snippets ()
+  (when (null yas/registered-snippets)
+    (setq yas/registered-snippets
+	  (make-hash-table :test 'eq)))
+  yas/registered-snippets)
 
 (defun yas/register-snippet (snippet)
   "Register SNIPPET in the `yas/registered-snippets' table.  Add a
 `yas/check-cleanup-snippet' function to the buffer-local
 `post-command-hook' that should exist while at least one
 registered snippet exists in the current buffer.  Return snippet"
-  (puthash (yas/snippet-id snippet) snippet yas/registered-snippets)
-  (add-hook 'pre-command-hook  'yas/field-undo-before-hook            'append 'local)
-  (add-hook 'post-command-hook 'yas/check-cleanup-snippet        'append 'local)
-  (add-hook 'post-command-hook 'yas/field-undo-after-hook             'append 'local)
+  (puthash (yas/snippet-id snippet) snippet (yas/get-registered-snippets))
+  (add-hook 'pre-command-hook  'yas/field-undo-before-hook 'append 'local)
+  (add-hook 'post-command-hook 'yas/check-cleanup-snippet 'append 'local)
+  (add-hook 'post-command-hook 'yas/field-undo-after-hook 'append 'local)
   snippet)
 
 (defun yas/unregister-snippet (snippet)
@@ -1363,11 +1367,11 @@ registered snippet exists in the current buffer.  Return snippet"
 table.  Remove `yas/check-cleanup-snippet' from the buffer-local
 `post-command-hook' if no more snippets registered in the
 current buffer."
-  (remhash (yas/snippet-id snippet) yas/registered-snippets)
+  (remhash (yas/snippet-id snippet) (yas/get-registered-snippets))
   (when (eq 0
-            (hash-table-count yas/registered-snippets))
-    (remove-hook 'pre-command-hook  'yas/field-undo-before-hook     'local)
-    (remove-hook 'post-command-hook 'yas/field-undo-after-hook      'local)
+            (hash-table-count (yas/get-registered-snippets)))
+    (remove-hook 'pre-command-hook  'yas/field-undo-before-hook 'local)
+    (remove-hook 'post-command-hook 'yas/field-undo-after-hook 'local)
     (remove-hook 'post-command-hook 'yas/check-cleanup-snippet 'local)))
 
 (defun yas/exterminate-snippets ()
@@ -1375,7 +1379,7 @@ current buffer."
   `yas/check-cleanup-snippet' from the `post-command-hook'"
   (interactive)
   (maphash #'(lambda (key snippet) (yas/cleanup-snippet snippet))
-           yas/registered-snippets))
+           (yas/get-registered-snippets)))
 
 (defun yas/cleanup-snippet (snippet)
   "Cleanup SNIPPET, but leave point as it is.  This renders the
@@ -1541,8 +1545,8 @@ be a part of that list while registered snippets last."
   (interactive)
   (with-output-to-temp-buffer "*YASnippet trace*"
     (princ "Interesting YASnippet vars: \n\n")
-    (princ (format "Register hash-table: %s\n\n" yas/registered-snippets))
-    (cond ((eq (hash-table-count yas/registered-snippets) 0)
+    (princ (format "Register hash-table: %s\n\n" (yas/get-registered-snippets)))
+    (cond ((eq (hash-table-count (yas/get-registered-snippets)) 0)
            (princ "  No registered snippets\n"))
           (t
            (maphash #'(lambda (key snippet)
@@ -1554,7 +1558,7 @@ be a part of that list while registered snippets last."
                           (princ (format "\t   group with %s fields.  Primary field is value is \"%s\"\n"
                                          (length (yas/group-fields group))
                                          (yas/field-value (yas/group-primary-field group))))))
-                    yas/registered-snippets)))
+                    (yas/get-registered-snippets))))
 
     (princ (format "\nPost command hook: %s\n" post-command-hook))
     (princ (format "\nPre  command hook: %s\n" pre-command-hook))
