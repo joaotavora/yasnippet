@@ -782,18 +782,20 @@ will be deleted before inserting template."
                                ,key
                                ,snippet)))
 
-        ;; Step 13: Do necessary indenting
-        (save-excursion
-          (let ((ovst (overlay-start (yas/snippet-overlay snippet))))
-            (when ovst
-              (goto-char ovst)
-              (while (re-search-forward "$>" nil t)
-                (replace-match "")
-                (indent-according-to-mode)))))
-
-        ;; Step 14: remove the trigger key
+        ;; Step 13: remove the trigger key
         (widen)
         (delete-char length)
+
+        ;; Step 14: Do necessary indenting
+        (save-excursion
+          (let ((ovst (overlay-start (yas/snippet-overlay snippet)))
+                (oven (copy-marker
+                       (1+ (overlay-end (yas/snippet-overlay snippet))))))
+            (when (and ovst oven)
+              (goto-char ovst)
+              (while (re-search-forward "$>" oven t)
+                (replace-match "")
+                (indent-according-to-mode)))))
 
         ;; Step 15: Restore undo information, and also save it for future use.
         (setf (yas/snippet-saved-buffer-undo-list snippet) original-undo-list)
