@@ -1594,6 +1594,13 @@ handle the end-of-buffer error fired in it by calling
       ad-do-it
     (error (message (error-message-string err)))))
 
+;; disable c-electric-* serial command in YAS fields
+(add-hook 'c-mode-common-hook
+          '(lambda ()
+             (make-variable-buffer-local 'yas/minor-mode-map)
+             (dolist (k '(":" ">" "}" "{" ";"))
+               (define-key yas/minor-mode-map
+                 k 'self-insert-command))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Contents of dropdown-list.el
