@@ -650,7 +650,7 @@ for each field."
       (goto-char start)
       (insert (yas/calculate-field-value field text))
       (if (eq length 0)
-	  (move-overlay overlay start (+ start (length text))))
+	  (move-overlay overlay start (point)))
       (delete-char length))))
 
 (defun yas/expand-snippet (start end template)
