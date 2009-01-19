@@ -1598,7 +1598,7 @@ handle the end-of-buffer error fired in it by calling
 (add-hook 'c-mode-common-hook
           '(lambda ()
              (make-variable-buffer-local 'yas/minor-mode-map)
-             (dolist (k '(":" ">" "}" "{" ";"))
+             (dolist (k '(":" ">"))
                (define-key yas/minor-mode-map
                  k 'self-insert-command))))
 
