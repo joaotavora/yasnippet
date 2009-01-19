@@ -1597,9 +1597,9 @@ handle the end-of-buffer error fired in it by calling
 ;; disable c-electric-* serial command in YAS fields
 (add-hook 'c-mode-common-hook
           '(lambda ()
-             (make-variable-buffer-local 'yas/minor-mode-map)
-             (dolist (k '(":" ">"))
-               (define-key yas/minor-mode-map
+	     (make-variable-buffer-local 'yas/keymap)
+             (dolist (k '(":" ">" ";" "<" "{" "}"))
+               (define-key yas/keymap
                  k 'self-insert-command))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
