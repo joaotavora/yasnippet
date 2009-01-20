@@ -6,6 +6,29 @@ ChangeLog
 :Contact: pluskid@gmail.com
 :Date: 2008-03-22
 
+0.5.8 / 2009-01-15
+==================
+
+* Added a ``key`` property in snippet definition for snippet names
+  that are not valid path name.
+* Fixed some bugs of indenting (`Issue 44
+  <http://code.google.com/p/yasnippet/issues/detail?id=44>`_, `Issue
+  46 <http://code.google.com/p/yasnippet/issues/detail?id=46>`_).
+* Fixed `Issue 45
+  <http://code.google.com/p/yasnippet/issues/detail?id=45>`_ by
+  providing a proper default value for ``yas/buffer-local-condition``.
+* Added helper function ``yas/substr`` for convenient mirror
+  transformation.
+* Make variable ``yas/registered-snippet`` properly initialized.
+* Fixed the overlay error when overlay becomes empty (`Issue 49
+  <http://code.google.com/p/yasnippet/issues/detail?id=49>`_ and
+  `Issue 48
+  <http://code.google.com/p/yasnippet/issues/detail?id=48>`_). This
+  bug has occurred and been fixed earlier, and should not have
+  happened if we have proper regression test.
+* Added a workaround for ``c-electric-`` serial commands (`Issue 27
+  <http://code.google.com/p/yasnippet/issues/detail?id=27>`_).
+	
 0.5.7 / 2008-12-03
 ==================
 
