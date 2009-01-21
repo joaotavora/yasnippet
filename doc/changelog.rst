@@ -6,6 +6,11 @@ ChangeLog
 :Contact: pluskid@gmail.com
 :Date: 2008-03-22
 
+0.5.9 / 2009-01-21
+==================
+
+* Fixed the bug of disabling the auto-indenting of ``cc-mode``.
+
 0.5.8 / 2009-01-15
 ==================
 
