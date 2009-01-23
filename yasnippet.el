@@ -1552,7 +1552,7 @@ eventually be pushed into the `buffer-undo-list' variable. This
 function is intended to be placed in `pre-command-hook'.
 
 The actual pushing of actions into the `buffer-undo-list' is
-performed in `yas/correct-undo-list', which is placed in the
+performed in `yas/push-pending-undo-actions', which is placed in the
 `post-command-hook'."
   (let* ((snippet (yas/snippet-of-current-keymap))
          (group (yas/snippet-active-group snippet))
@@ -1626,6 +1626,9 @@ performed in `yas/correct-undo-list', which is placed in the
               (apply #'yas/push-undo-action-maybe args))
           yas/pending-undo-actions))
 
+;;
+;; TODO: get rid of this "once" thing
+;;
 (defun yas/push-pending-undo-actions-once ()
   (yas/push-pending-undo-actions)
   (remove-hook 'post-command-hook 'yas/push-pending-undo-actions-once 'local))
@@ -1711,27 +1714,29 @@ performed in `yas/correct-undo-list', which is placed in the
 
 
                         (dolist (group (yas/snippet-groups snippet))
-                          (princ (format "\t  Group $%s with %s fields is %s and %s"
-                                         (yas/group-number group)
-                                         (length (yas/group-fields group))
-                                         (if (yas/group-probably-deleted-p group)
-                                             "DELETED"
-                                           "alive")
-                                         (if (eq group (yas/snippet-active-group snippet))
-                                             "ACTIVE!\n"
-                                           "NOT ACTIVE!\n")))
-                          (dolist (field (yas/group-fields group))
-                            (princ (format "\t\t* %s field. Current value (%s) .\n"
-                                           (if (eq field (yas/group-primary-field group))
-                                               "Primary" "Mirror")
-                                           (yas/current-field-text field)))
-                            (princ (format "\t\t  From %s to %s\n"
-                                           (yas/field-start field)
-                                           (yas/field-end field)))
-                            ))) yas/registered-snippets)))
+                          ;; (princ (format "\t  Group $%s with %s fields is %s and %s"
+;;                                          (yas/group-number group)
+;;                                          (length (yas/group-fields group))
+;;                                          (if (yas/group-probably-deleted-p group)
+;;                                              "DELETED"
+;;                                            "alive")
+;;                                          (if (eq group (yas/snippet-active-group snippet))
+;;                                              "LIVE!\n"
+;;                                            "SLEEPY!\n")))
+;;                           (dolist (field (yas/group-fields group))
+;;                             (princ (format "\t\t* %s field. Current value (%s) .\n"
+;;                                            (if (eq field (yas/group-primary-field group))
+;;                                                "Primary" "Mirror")
+;;                                            (yas/current-field-text field)))
+;;                             (princ (format "\t\t  From %s to %s\n"
+;;                                            (yas/field-start field)
+;;                                            (yas/field-end field)))
+;;                             )
+)) yas/registered-snippets)))
 
-    (princ (format "\nPost command hook: %s\n" post-command-hook))
-    (princ (format "\nPre  command hook: %s\n" pre-command-hook))
+    (princ (format "\nPRE-  command hook: %s\n" pre-command-hook))
+    (princ (format "\nPOST- command hook: %s\n" post-command-hook))
+
 
     (princ (format "\nUndo is %s and point-max is %s.\n"
                    (if (eq buffer-undo-list t)
@@ -1742,7 +1747,37 @@ performed in `yas/correct-undo-list', which is placed in the
       (princ (format "Undolist has %s elements. First 10 elements follow:\n" (length buffer-undo-list)))
       (let ((first-ten (subseq buffer-undo-list 0 19)))
         (dolist (undo-elem first-ten)
-          (princ (format "%2s:  %s\n" (position undo-elem first-ten) (truncate-string-to-width (format "%s" undo-elem) 70))))))))
+	  (princ (format "%2s:  %s\n"
+			 (position undo-elem first-ten)
+			 (cond ((null undo-elem)
+				"--- (separator) ---")
+			       (t
+				(truncate-string-to-width (format "%s" undo-elem) 70))))))))))
+
+
+(defun yas/debug-pprint-group (group)
+  (cond ((yas/group-p group)
+	 (format "[%sgrp $%s with %s flds %s]"
+		 (if (eq group (yas/snippet-active-group (yas/group-snippet field-group)))
+		     "LIVE "
+		   "")
+		 (yas/group-number group)
+		 (length (yas/group-fields group))
+		 (mapconcat #'yas/debug-pprint-field (yas/group-fields group) " "))
+	 (t
+	  "(not a group!"))))
+
+(defun yas/debug-pprint-field (field)
+  (cond ((yas/field-p field)
+	 (format "[%s: (%s) %s->%s]"
+		 (if (eq field (yas/group-primary-field (yas/field-group field)))
+		     "primary"
+		   "mirror")
+		 (yas/current-field-text field)
+		 (yas/field-start field)
+		 (yas/field-end field)))))
+		 
+    
 
 (defun yas/exterminate-package ()
   (interactive)
