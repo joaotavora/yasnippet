@@ -43,142 +43,83 @@
 	  <div class="contents topic" id="contents">
 <p class="topic-title first">Contents</p>
 <ul class="simple">
-<li><a class="reference internal" href="#getting-started" id="id5">Getting Started</a><ul>
-<li><a class="reference internal" href="#for-the-busy-or-impatient-people" id="id6">For the busy or impatient people</a></li>
-<li><a class="reference internal" href="#for-lazy-poeple-or-beginners" id="id7">For lazy poeple or beginners</a></li>
-<li><a class="reference internal" href="#for-you" id="id8">For you</a></li>
-<li><a class="reference internal" href="#for-geeks" id="id9">For geeks</a></li>
+<li><a class="reference internal" href="#video-demo" id="id1">Video Demo</a></li>
+<li><a class="reference internal" href="#brief-install-instruction" id="id2">Brief Install Instruction</a><ul>
+<li><a class="reference internal" href="#bundle-install" id="id3">Bundle Install</a></li>
+<li><a class="reference internal" href="#normal-install" id="id4">Normal Install</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#how-to-contribute" id="id10">How to contribute ?</a><ul>
-<li><a class="reference internal" href="#issues" id="id11">Issues</a></li>
-<li><a class="reference internal" href="#suggestion-feature-request" id="id12">Suggestion, Feature Request</a></li>
-<li><a class="reference internal" href="#snippets" id="id13">Snippets</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#detailed-documentation" id="id14">Detailed Documentation</a></li>
+<li><a class="reference internal" href="#bugs-contribution-and-support" id="id5">Bugs, Contribution and Support</a></li>
 </ul>
 </div>
-<p>YASnippet is a re-design and re-write of my original extension
+<p>Yasnippet is a template system for emacs. It allows you to type a
+abbrevation and automatically expand the abbreviation into function
+templates.</p>
+<p>Bundled language templates includes: C, C++, C#, Perl, Python, Ruby,
+SQL, LaTeX, HTML, CSS and more.</p>
+<p>Yasnippet system is inspired from TextMate's template system. You can
+use a tool to import any TextMate template you have to Yasnippet. It
+is a re-design and re-write of my original extension
 <a class="reference external" href="http://code.google.com/p/smart-snippet/">smart-snippet</a>. It is much cleaner and more powerful than
 smart-snippet.</p>
-<div class="section" id="getting-started">
-<h1><a class="toc-backref" href="#id5">Getting Started</a></h1>
-<div class="section" id="for-the-busy-or-impatient-people">
-<h2><a class="toc-backref" href="#id6">For the busy or impatient people</a></h2>
-<p>Watch the <a class="reference external" href="http://www.youtube.com/watch?v=vOj7btx3ATg">screencast at YouTube</a> or download <a class="reference external" href="http://yasnippet.googlecode.com/files/yasnippet.avi">the one
-with a higher resolution</a>.</p>
+<div class="section" id="video-demo">
+<h1><a class="toc-backref" href="#id1">Video Demo</a></h1>
+<p>Watch the <a class="reference external" href="http://www.youtube.com/watch?v=vOj7btx3ATg">demo at YouTube</a> (download a higher
+resolution version: <a class="reference external" href="http://yasnippet.googlecode.com/files/yasnippet.avi">yasnippet.avi</a>).</p>
 </div>
-<div class="section" id="for-lazy-poeple-or-beginners">
-<h2><a class="toc-backref" href="#id7">For lazy poeple or beginners</a></h2>
-<ol class="arabic">
-<li><p class="first">Download the latest bundle release <a class="footnote-reference" href="#id3" id="id1">[1]</a> from the <a class="reference external" href="http://code.google.com/p/yasnippet/downloads/list">downloads page</a>.</p>
-</li>
-<li><p class="first">Create a directory <tt class="docutils literal"><span class="pre">~/emacs/plugins</span></tt>.</p>
-</li>
-<li><p class="first">Unpack the downloaded bundle to that directory.</p>
-</li>
-<li><p class="first">Add the following code to your <tt class="docutils literal"><span class="pre">~/.emacs</span></tt> file:</p>
+<div class="section" id="brief-install-instruction">
+<h1><a class="toc-backref" href="#id2">Brief Install Instruction</a></h1>
+<p>There are two archives of YASnippet. One is a single file compiled
+“bundle”, and the other is normal. If all you need is to use the
+builtin templates, download the bundle one. If you want to add your
+own templates, download the normal one.</p>
+<div class="section" id="bundle-install">
+<h2><a class="toc-backref" href="#id3">Bundle Install</a></h2>
+<ul class="simple">
+<li>Download the latest <tt class="docutils literal"><span class="pre">yasnippet-bundle-x.y.z.el.tgz</span></tt> and unpack it.</li>
+<li>Open the file, and type <tt class="docutils literal"><span class="pre">Alt+x</span> <span class="pre">eval-buffer</span></tt>.</li>
+</ul>
+<p>That's it. Now open any one of your language file, you'll see a menu
+YASnippet. you can pull the menu to insert a template. Or, you can
+type the pre-defined abbrev and press <tt class="docutils literal"><span class="pre">TAB</span></tt> to expand it.</p>
+<p>To have emacs load YASnippet automatically when it starts, put the
+following in your <tt class="docutils literal"><span class="pre">.emacs</span></tt> file:</p>
+<blockquote>
 <div class="highlight"><pre>(<span style="color: #19177C">add-to-list</span> <span style="color: #19177C">&#39;load-path</span>
-              <span style="color: #BA2121">&quot;~/emacs/plugins&quot;</span>)
+              <span style="color: #BA2121">&quot;/path/to/dir/containing/bundle/file&quot;</span>)
 (<span style="color: #008000">require</span> <span style="color: #19177C">&#39;yasnippet-bundle</span>)
 </pre></div>
-</li>
-</ol>
+</blockquote>
 </div>
-<div class="section" id="for-you">
-<h2><a class="toc-backref" href="#id8">For you</a></h2>
-<ol class="arabic">
-<li><p class="first">Download the latest YASnippet release package <a class="footnote-reference" href="#id4" id="id2">[2]</a> from the
-<a class="reference external" href="http://code.google.com/p/yasnippet/downloads/list">downloads page</a>.</p>
-</li>
-<li><p class="first">Unpack it to a directory and add that directory to your
-<tt class="docutils literal"><span class="pre">load-path</span></tt>.</p>
-</li>
-<li><p class="first">Add the following code to your <tt class="docutils literal"><span class="pre">~/.emacs</span></tt> file:</p>
+<div class="section" id="normal-install">
+<h2><a class="toc-backref" href="#id4">Normal Install</a></h2>
+<p>For full install of the normal archive, just download and unpack the
+latest <tt class="docutils literal"><span class="pre">yasnippet-x.y.z.tar.bz2</span></tt>, put it in your <tt class="docutils literal"><span class="pre">load-path</span></tt> and
+add the following in your <tt class="docutils literal"><span class="pre">.emacs</span></tt> file:</p>
+<blockquote>
 <div class="highlight"><pre>(<span style="color: #008000">require</span> <span style="color: #19177C">&#39;yasnippet</span>) <span style="color: #408080; font-style: italic">;; not yasnippet-bundle</span>
 (<span style="color: #19177C">yas/initialize</span>)
 (<span style="color: #19177C">yas/load-directory</span> <span style="color: #BA2121">&quot;/path/to/the/snippets/directory/&quot;</span>)
 </pre></div>
-</li>
-<li><p class="first">You can inspect into the <tt class="docutils literal"><span class="pre">snippets</span></tt> directory for adding your own
-snippets.</p>
-</li>
-<li><p class="first">Detailed document can be found at the <tt class="docutils literal"><span class="pre">doc</span></tt> directory.</p>
-</li>
-</ol>
-</div>
-<div class="section" id="for-geeks">
-<h2><a class="toc-backref" href="#id9">For geeks</a></h2>
-<p>If you want to always follow the latest code. You can check out it
-from the svn repository:</p>
-<div class="highlight"><pre>svn checkout http://yasnippet.googlecode.com/svn/trunk/ yasnippet
-</pre></div>
-<p>However, I try to release a new version as soon as I made some changes
-that will affect the normal use or added some new features. So there's
-usually no need to follow the svn repository. Except that you might
-find <tt class="docutils literal"><span class="pre">svn</span> <span class="pre">up</span></tt> is more convenient than downloading and unpacking the
-release package. :D</p>
+</blockquote>
+<p>Please refer to the documentation for full customization.</p>
 </div>
 </div>
-<div class="section" id="how-to-contribute">
-<h1><a class="toc-backref" href="#id10">How to contribute ?</a></h1>
-<p>If you like YASnippet, you can recommendate it to your friends.</p>
-<div class="section" id="issues">
-<h2><a class="toc-backref" href="#id11">Issues</a></h2>
-<p>If you find a bug you can create a new issue at the <a class="reference external" href="http://code.google.com/p/yasnippet/issues/list">issue list</a>. Please describe
-the problem as clear as possible.</p>
-</div>
-<div class="section" id="suggestion-feature-request">
-<h2><a class="toc-backref" href="#id12">Suggestion, Feature Request</a></h2>
-<p>There's a <a class="reference external" href="http://groups.google.com/group/smart-snippet">discussion group</a> for both smart-snippet and yasnippet. If
-you have any suggesion, you can post to there and discuss with other
-members.</p>
-<p>Especially, there's a <a class="reference external" href="http://code.google.com/p/yasnippet/wiki/WishList">wish list</a> wiki page. I'll collect ideas from
-the <a class="reference external" href="http://groups.google.com/group/smart-snippet">discussion group</a> to the <a class="reference external" href="http://code.google.com/p/yasnippet/wiki/WishList">wish list</a>. So you might want to look
-at the <a class="reference external" href="http://code.google.com/p/yasnippet/wiki/WishList">wish list</a> before you post something.</p>
-</div>
-<div class="section" id="snippets">
-<h2><a class="toc-backref" href="#id13">Snippets</a></h2>
-<p>YASnippet comes with some default snippet definitions. However, they
-are far from complete. So I'm calling users to share their
-snippets. If you have some good snippet definitions, you can post them
-to the <a class="reference external" href="http://groups.google.com/group/smart-snippet">discussion group</a>. You can specify the <tt class="docutils literal"><span class="pre">contributor</span></tt>
-property of the snippet like:</p>
-<div class="highlight"><pre>#contributor : pluskid &lt;pluskid@gmail.com&gt;
-#name : __...__
-# --
-__${init}__
-</pre></div>
-<p>I'll incorporate (some of) them in the release if suitable. However,
-if you have <em>many</em> snippets (especially when they need to be
-maintained and updated constantly), it is not suitable to put them in
-the YASnippet release package. A better way is to make your snippets
-publicly available and tell me the URL. I'll try to keep a list of
-them on the wiki page.</p>
-</div>
-</div>
-<div class="section" id="detailed-documentation">
-<h1><a class="toc-backref" href="#id14">Detailed Documentation</a></h1>
+<div class="section" id="bugs-contribution-and-support">
+<h1><a class="toc-backref" href="#id5">Bugs, Contribution and Support</a></h1>
 <ul class="simple">
-<li>See <a class="reference external" href="define_snippet.html">this page</a> on how to define a snippet by
-yourself.</li>
-<li>Here's the <a class="reference external" href="faq.html">FAQ</a> page.</li>
-<li>Here's the <a class="reference external" href="changelog.html">ChangeLog</a>.</li>
+<li>If you find a bug, please report it at <a class="reference external" href="http://code.google.com/p/yasnippet/issues/list">Issue List</a>.</li>
+<li>If you have problem using YASnippet, or have some new ideas, please
+post to the <a class="reference external" href="http://groups.google.com/group/smart-snippet">discussion group</a>. Especially, there's a <a class="reference external" href="http://code.google.com/p/yasnippet/wiki/WishList">wish list</a>
+wiki page. I'll collect ideas from the <a class="reference external" href="http://groups.google.com/group/smart-snippet">discussion group</a> to the
+<a class="reference external" href="http://code.google.com/p/yasnippet/wiki/WishList">wish list</a>. So you might want to look at the <a class="reference external" href="http://code.google.com/p/yasnippet/wiki/WishList">wish list</a> before
+you post something.</li>
+<li>If you want to contribute some snippets, you can also post them to
+the <a class="reference external" href="http://groups.google.com/group/smart-snippet">discussion group</a>. Some common snippets may be added to
+YASnippet, while others will be collected at the
+<a class="reference external" href="http://code.google.com/p/yasnippet/wiki/UserContributedSnippets">UserContributedSnippets wiki page</a>.</li>
 </ul>
-<table class="docutils footnote" frame="void" id="id3" rules="none">
-<colgroup><col class="label" /><col /></colgroup>
-<tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>They usually named like <tt class="docutils literal"><span class="pre">yasnippet-bundle-x.y.z.el.tgz</span></tt> where
-<tt class="docutils literal"><span class="pre">x.y.z</span></tt> is the version number.</td></tr>
-</tbody>
-</table>
-<table class="docutils footnote" frame="void" id="id4" rules="none">
-<colgroup><col class="label" /><col /></colgroup>
-<tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id2">[2]</a></td><td>They usually named like <tt class="docutils literal"><span class="pre">yasnippet.x.y.z.tar.bz2</span></tt>.</td></tr>
-</tbody>
-</table>
+<p>Thank you very much for using YASnippet!</p>
 </div>
 	  </div>
 	</div>
