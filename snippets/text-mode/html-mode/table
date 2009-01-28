@@ -1,5 +1,6 @@
 #contributor : Jimmy Wu <frozenthrone88@gmail.com>
 #name : <table ...>...</table>
+#group : table
 # --
 <table width="$1" cellspacing="$2" cellpadding="$3" border="$4">
   $0

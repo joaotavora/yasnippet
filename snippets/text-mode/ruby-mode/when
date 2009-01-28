@@ -1,6 +1,6 @@
-#name : if ... end
+#name : when ... end
 #group : control structure
 # --
-if ${1:condition}
+when ${condition}
   $0
 end

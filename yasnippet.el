@@ -900,12 +900,14 @@ Here's a list of currently recognized variables:
  * name
  * contributor
  * condition
+ * key
+ * group
 
 #name: #include \"...\"
 # --
 #include \"$1\""
   (goto-char (point-min))
-  (let ((name file-name) template bound condition key)
+  (let ((name file-name) template bound condition key group)
     (if (re-search-forward "^# --\n" nil t)
         (progn (setq template
                      (buffer-substring-no-properties (point)
@@ -917,11 +919,13 @@ Here's a list of currently recognized variables:
                    (setq name (match-string-no-properties 2)))
                  (when (string= "condition" (match-string-no-properties 1))
                    (setq condition (read (match-string-no-properties 2))))
+                 (when (string= "group" (match-string-no-properties 1))
+                   (setq group (match-string-no-properties 2)))
                  (when (string= "key" (match-string-no-properties 1))
                    (setq key (match-string-no-properties 2)))))
       (setq template
             (buffer-substring-no-properties (point-min) (point-max))))
-    (list key template name condition)))
+    (list key template name condition group)))
 
 (defun yas/directory-files (directory file?)
   "Return directory files or subdirectories in full path."
@@ -1074,14 +1078,18 @@ all the parameters:
                   (insert "  ("
                           (yas/quote-string (car snippet))
                           " "
-                          (yas/quote-string (cadr snippet))
+                          (yas/quote-string (nth 1 snippet))
                           " "
-                          (if (caddr snippet)
-                              (yas/quote-string (caddr snippet))
+                          (if (nth 2 snippet)
+                              (yas/quote-string (nth 2 snippet))
                             "nil")
                           " "
                           (if (nth 3 snippet)
                               (format "'%s" (nth 3 snippet))
+                            "nil")
+                          " "
+                          (if (nth 4 snippet)
+                              (yas/quote-string (nth 4 snippet))
                             "nil")
                           ")\n"))
                 (insert "  )\n")
@@ -1154,9 +1162,9 @@ content of the file is the template."
   "Define snippets for MODE.  SNIPPETS is a list of
 snippet definition, of the following form:
 
- (KEY TEMPLATE NAME CONDITION)
+ (KEY TEMPLATE NAME CONDITION GROUP)
 
-or the NAME and CONDITION may be omitted.  The optional 3rd
+or the NAME, CONDITION or GROUP may be omitted.  The optional 3rd
 parameter can be used to specify the parent mode of MODE.  That
 is, when looking a snippet in MODE failed, it can refer to its
 parent mode.  The PARENT-MODE may not need to be a real mode."
@@ -1181,9 +1189,10 @@ parent mode.  The PARENT-MODE may not need to be a real mode."
     (dolist (snippet snippets)
       (let* ((full-key (car snippet))
              (key (file-name-sans-extension full-key))
-             (name (or (caddr snippet) (file-name-extension full-key)))
+             (name (or (nth 2 snippet) (file-name-extension full-key)))
              (condition (nth 3 snippet))
-             (template (yas/make-template (cadr snippet)
+             (group (nth 4 snippet))
+             (template (yas/make-template (nth 1 snippet)
                                           (or name key)
                                           condition)))
         (yas/snippet-table-store snippet-table
@@ -1191,10 +1200,24 @@ parent mode.  The PARENT-MODE may not need to be a real mode."
                                  key
                                  template)
         (when yas/use-menu
-          (define-key keymap (vector (make-symbol full-key))
-            `(menu-item ,(yas/template-name template)
-                        ,(yas/make-menu-binding (yas/template-content template))
-                        :keys ,(concat key yas/trigger-symbol))))))))
+          (let ((group-keymap keymap))
+            (when (and (not (null group))
+                       (not (string= "" group)))
+              (dolist (subgroup (mapcar #'make-symbol
+                                        (split-string group "\\.")))
+                (let ((subgroup-keymap (lookup-key group-keymap 
+                                                   (vector subgroup))))
+                  (when (null subgroup-keymap)
+                    (setq subgroup-keymap (make-sparse-keymap))
+                    (define-key group-keymap (vector subgroup)
+                      `(menu-item ,(symbol-name subgroup)
+                                  ,subgroup-keymap)))
+                  (setq group-keymap subgroup-keymap))))
+            (define-key group-keymap (vector (make-symbol full-key))
+              `(menu-item ,(yas/template-name template)
+                          ,(yas/make-menu-binding (yas/template-content 
+                                                   template))
+                          :keys ,(concat key yas/trigger-symbol)))))))))
 
 (defun yas/set-mode-parent (mode parent)
   "Set parent mode of MODE to PARENT."
@@ -1206,7 +1229,7 @@ parent mode.  The PARENT-MODE may not need to be a real mode."
       `(menu-item "parent mode"
                   ,(yas/menu-keymap-for-mode parent)))))
 
-(defun yas/define (mode key template &optional name condition)
+(defun yas/define (mode key template &optional name condition group)
   "Define a snippet.  Expanding KEY into TEMPLATE.
 NAME is a description to this template.  Also update
 the menu if `yas/use-menu' is `t'.  CONDITION is the
@@ -1214,7 +1237,7 @@ condition attached to this snippet.  If you attach a
 condition to a snippet, then it will only be expanded
 when the condition evaluated to non-nil."
   (yas/define-snippets mode
-                       (list (list key template name condition))))
+                       (list (list key template name condition group))))
 
 
 (defun yas/hippie-try-expand (first-time?)

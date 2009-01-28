@@ -1,3 +1,4 @@
 #name : require File.join(File.dirname(__FILE__), ...)
+#group : general
 # --
 require File.join(File.dirname(__FILE__), $0)
