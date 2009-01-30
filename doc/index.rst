@@ -16,10 +16,11 @@ Bundled language templates includes: C, C++, C#, Perl, Python, Ruby,
 SQL, LaTeX, HTML, CSS and more.
 
 Yasnippet system is inspired from TextMate's template system. You can
-use a tool to import any TextMate template you have to Yasnippet. It
-is a re-design and re-write of my original extension
-`smart-snippet`_. It is much cleaner and more powerful than
-smart-snippet.
+use `a tool
+<https://groups.google.com/group/smart-snippet/browse_thread/thread/691fbdd33412d86e?pli=1>`_
+to import any TextMate template you have to Yasnippet. It is a
+re-design and re-write of my original extension `smart-snippet`_. It
+is much cleaner and more powerful than smart-snippet.
 
 .. _smart-snippet: http://code.google.com/p/smart-snippet/
 
@@ -43,34 +44,39 @@ own templates, download the normal one.
 Bundle Install
 --------------
 
-* Download the latest ``yasnippet-bundle-x.y.z.el.tgz`` and unpack it.
-* Open the file, and type ``Alt+x eval-buffer``.
+1. Download the latest ``yasnippet-bundle-x.y.z.el.tgz`` and unpack it.
+2. You'll get a file named ``yasnippet-bundle.el``, put it under
+   ``~/.emacs.d/plugins/`` (create the directory if not exists).
+3. Open the file in Emacs, and type ``Alt+x eval-buffer``.
 
 That's it. Now open any one of your language file, you'll see a menu
 YASnippet. you can pull the menu to insert a template. Or, you can
 type the pre-defined abbrev and press ``TAB`` to expand it.
 
 To have emacs load YASnippet automatically when it starts, put the
-following in your ``.emacs`` file:
+following in your ``~/.emacs`` file:
 
    .. sourcecode:: common-lisp
 
      (add-to-list 'load-path
-                   "/path/to/dir/containing/bundle/file")
+                   "~/.emacs.d/plugins")
      (require 'yasnippet-bundle)
 
 Normal Install
 --------------
 
 For full install of the normal archive, just download and unpack the
-latest ``yasnippet-x.y.z.tar.bz2``, put it in your ``load-path`` and
-add the following in your ``.emacs`` file:
+latest ``yasnippet-x.y.z.tar.bz2``. You'll get a directory named
+``yasnippet``, put it in your ``~/.emacs.d/plugins`` and add the
+following in your ``.emacs`` file:
 
    .. sourcecode:: common-lisp
 
+     (add-to-list 'load-path
+                   "~/.emacs.d/plugins")
      (require 'yasnippet) ;; not yasnippet-bundle
      (yas/initialize)
-     (yas/load-directory "/path/to/the/snippets/directory/")
+     (yas/load-directory "~/.emacs.d/plugins/yasnippet/snippets")
 
 Please refer to the documentation for full customization.
 

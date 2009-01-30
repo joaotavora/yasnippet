@@ -58,10 +58,10 @@ templates.</p>
 <p>Bundled language templates includes: C, C++, C#, Perl, Python, Ruby,
 SQL, LaTeX, HTML, CSS and more.</p>
 <p>Yasnippet system is inspired from TextMate's template system. You can
-use a tool to import any TextMate template you have to Yasnippet. It
-is a re-design and re-write of my original extension
-<a class="reference external" href="http://code.google.com/p/smart-snippet/">smart-snippet</a>. It is much cleaner and more powerful than
-smart-snippet.</p>
+use <a class="reference external" href="https://groups.google.com/group/smart-snippet/browse_thread/thread/691fbdd33412d86e?pli=1">a tool</a>
+to import any TextMate template you have to Yasnippet. It is a
+re-design and re-write of my original extension <a class="reference external" href="http://code.google.com/p/smart-snippet/">smart-snippet</a>. It
+is much cleaner and more powerful than smart-snippet.</p>
 <div class="section" id="video-demo">
 <h1><a class="toc-backref" href="#id1">Video Demo</a></h1>
 <p>Watch the <a class="reference external" href="http://www.youtube.com/watch?v=vOj7btx3ATg">demo at YouTube</a> (download a higher
@@ -75,18 +75,20 @@ builtin templates, download the bundle one. If you want to add your
 own templates, download the normal one.</p>
 <div class="section" id="bundle-install">
 <h2><a class="toc-backref" href="#id3">Bundle Install</a></h2>
-<ul class="simple">
+<ol class="arabic simple">
 <li>Download the latest <tt class="docutils literal"><span class="pre">yasnippet-bundle-x.y.z.el.tgz</span></tt> and unpack it.</li>
-<li>Open the file, and type <tt class="docutils literal"><span class="pre">Alt+x</span> <span class="pre">eval-buffer</span></tt>.</li>
-</ul>
+<li>You'll get a file named <tt class="docutils literal"><span class="pre">yasnippet-bundle.el</span></tt>, put it under
+<tt class="docutils literal"><span class="pre">~/.emacs.d/plugins/</span></tt> (create the directory if not exists).</li>
+<li>Open the file in Emacs, and type <tt class="docutils literal"><span class="pre">Alt+x</span> <span class="pre">eval-buffer</span></tt>.</li>
+</ol>
 <p>That's it. Now open any one of your language file, you'll see a menu
 YASnippet. you can pull the menu to insert a template. Or, you can
 type the pre-defined abbrev and press <tt class="docutils literal"><span class="pre">TAB</span></tt> to expand it.</p>
 <p>To have emacs load YASnippet automatically when it starts, put the
-following in your <tt class="docutils literal"><span class="pre">.emacs</span></tt> file:</p>
+following in your <tt class="docutils literal"><span class="pre">~/.emacs</span></tt> file:</p>
 <blockquote>
 <div class="highlight"><pre>(<span style="color: #19177C">add-to-list</span> <span style="color: #19177C">&#39;load-path</span>
-              <span style="color: #BA2121">&quot;/path/to/dir/containing/bundle/file&quot;</span>)
+              <span style="color: #BA2121">&quot;~/.emacs.d/plugins&quot;</span>)
 (<span style="color: #008000">require</span> <span style="color: #19177C">&#39;yasnippet-bundle</span>)
 </pre></div>
 </blockquote>
@@ -94,12 +96,15 @@ following in your <tt class="docutils literal"><span class="pre">.emacs</span></
 <div class="section" id="normal-install">
 <h2><a class="toc-backref" href="#id4">Normal Install</a></h2>
 <p>For full install of the normal archive, just download and unpack the
-latest <tt class="docutils literal"><span class="pre">yasnippet-x.y.z.tar.bz2</span></tt>, put it in your <tt class="docutils literal"><span class="pre">load-path</span></tt> and
-add the following in your <tt class="docutils literal"><span class="pre">.emacs</span></tt> file:</p>
+latest <tt class="docutils literal"><span class="pre">yasnippet-x.y.z.tar.bz2</span></tt>. You'll get a directory named
+<tt class="docutils literal"><span class="pre">yasnippet</span></tt>, put it in your <tt class="docutils literal"><span class="pre">~/.emacs.d/plugins</span></tt> and add the
+following in your <tt class="docutils literal"><span class="pre">.emacs</span></tt> file:</p>
 <blockquote>
-<div class="highlight"><pre>(<span style="color: #008000">require</span> <span style="color: #19177C">&#39;yasnippet</span>) <span style="color: #408080; font-style: italic">;; not yasnippet-bundle</span>
+<div class="highlight"><pre>(<span style="color: #19177C">add-to-list</span> <span style="color: #19177C">&#39;load-path</span>
+              <span style="color: #BA2121">&quot;~/.emacs.d/plugins&quot;</span>)
+(<span style="color: #008000">require</span> <span style="color: #19177C">&#39;yasnippet</span>) <span style="color: #408080; font-style: italic">;; not yasnippet-bundle</span>
 (<span style="color: #19177C">yas/initialize</span>)
-(<span style="color: #19177C">yas/load-directory</span> <span style="color: #BA2121">&quot;/path/to/the/snippets/directory/&quot;</span>)
+(<span style="color: #19177C">yas/load-directory</span> <span style="color: #BA2121">&quot;~/.emacs.d/plugins/yasnippet/snippets&quot;</span>)
 </pre></div>
 </blockquote>
 <p>Please refer to the documentation for full customization.</p>
