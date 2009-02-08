@@ -44,7 +44,7 @@
   "If set to t, don't activate yas/minor-mode automatically.")
 (make-variable-buffer-local 'yas/dont-activate)
 
-(defvar yas/key-syntaxes (list "w" "w_" "w_." "^ ")
+(defvar yas/key-syntaxes (list "w" "w_" "w_." "w_.\\" "^ ")
   "A list of syntax of a key. This list is tried in the order
 to try to find a key. For example, if the list is '(\"w\" \"w_\").
 And in emacs-lisp-mode, where \"-\" has the syntax of \"_\":
@@ -914,7 +914,7 @@ Here's a list of currently recognized variables:
                                                      (point-max)))
                (setq bound (point))
                (goto-char (point-min))
-               (while (re-search-forward "^#\\([^ ]+\\) *: *\\(.*\\)$" bound t)
+               (while (re-search-forward "^#\\([^ ]+?\\) *: *\\(.*\\)$" bound t)
                  (when (string= "name" (match-string-no-properties 1))
                    (setq name (match-string-no-properties 2)))
                  (when (string= "condition" (match-string-no-properties 1))
