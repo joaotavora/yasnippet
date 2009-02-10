@@ -1,10 +1,13 @@
 ;;; yasnippet.el --- Yet another snippet extension for Emacs.
 
 ;; Copyright 2008 pluskid
-;;
+
 ;; Author: pluskid <pluskid@gmail.com>
+;; Created: 02 Mar 2008
 ;; Version: 0.5.9
-;; X-URL: http://code.google.com/p/yasnippet/
+;; Keywords: snippet, textmate
+;; URL: http://code.google.com/p/yasnippet/
+;; EmacsWiki: YaSnippetMode
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -34,6 +37,8 @@
 ;;
 ;; For more information and detailed usage, refer to the project page:
 ;;      http://code.google.com/p/yasnippet/
+
+;;; Code:
 
 (eval-when-compile (require 'cl))
 
@@ -1035,6 +1040,17 @@ foo\"bar\\! -> \"foo\\\"bar\\\\!\""
                                     t)
           "\""))
 
+(defun yas/compile-bundle-for-elpa
+  (&optional yasnippet yasnippet-bundle snippet-roots code)
+  "Compile bundle for ELPA, add autoloads so that ELPA can
+generate code to load and activate YASnippet."
+  (yas/compile-bundle
+   yasnippet yasnippet-bundle snippet-roots
+   (concat (or code "")
+           "\n(yas/initialize-bundle)"
+           "\n;;;###autoload"               ; break through so that won't
+           "(require 'yasnippet-bundle)"))) ; be treated as magic comment
+
 (defun yas/compile-bundle
   (&optional yasnippet yasnippet-bundle snippet-roots code)
   "Compile snippets in SNIPPET-ROOTS to a single bundle file.
@@ -1055,19 +1071,23 @@ all the parameters:
   (when (null snippet-roots)
     (setq snippet-roots '("snippets")))
   (when (null code)
-    (setq code "(yas/initialize)"))
+    (setq code "(yas/initialize-bundle)"))
 
   (let ((dirs (or (and (listp snippet-roots) snippet-roots)
                   (list snippet-roots)))
         (bundle-buffer nil))
     (with-temp-buffer
       (setq bundle-buffer (current-buffer))
+      (insert ";;; yasnippet-bundle.el --- "
+              "Yet another snippet extension (Auto compiled bundle)\n")
       (insert-file-contents yasnippet)
       (goto-char (point-max))
       (insert ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;\n")
       (insert ";;;;      Auto-generated code         ;;;;\n")
       (insert ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;\n")
-      (insert code "\n")
+      (insert "(defun yas/initialize-bundle ()\n"
+              "  \"Initialize YASnippet and load snippets in the bundle.\""
+              "  (yas/initialize)\n")
       (flet ((yas/define-snippets
               (mode snippets &optional parent)
               (with-current-buffer bundle-buffer
@@ -1100,11 +1120,16 @@ all the parameters:
         (dolist (dir dirs)
           (dolist (subdir (yas/directory-files dir nil))
             (yas/load-directory-1 subdir nil))))
+
+      (insert ")\n\n" code "\n")
       (insert "(provide '"
               (file-name-nondirectory
                (file-name-sans-extension
                 yasnippet-bundle))
               ")\n")
+      (insert ";;; "
+              (file-name-nondirectory yasnippet-bundle)
+              " ends here\n")
       (setq buffer-file-name yasnippet-bundle)
       (save-buffer))))
 
@@ -1883,3 +1908,5 @@ Use multiple times to bind different COMMANDs to the same KEY."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; dropdown-list.el ends here
+
+;;; yasnippet.el ends here
