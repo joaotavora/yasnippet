@@ -1040,17 +1040,6 @@ foo\"bar\\! -> \"foo\\\"bar\\\\!\""
                                     t)
           "\""))
 
-(defun yas/compile-bundle-for-elpa
-  (&optional yasnippet yasnippet-bundle snippet-roots code)
-  "Compile bundle for ELPA, add autoloads so that ELPA can
-generate code to load and activate YASnippet."
-  (yas/compile-bundle
-   yasnippet yasnippet-bundle snippet-roots
-   (concat (or code "")
-           "\n(yas/initialize-bundle)"
-           "\n;;;###autoload"               ; break through so that won't
-           "(require 'yasnippet-bundle)"))) ; be treated as magic comment
-
 (defun yas/compile-bundle
   (&optional yasnippet yasnippet-bundle snippet-roots code)
   "Compile snippets in SNIPPET-ROOTS to a single bundle file.
@@ -1071,7 +1060,9 @@ all the parameters:
   (when (null snippet-roots)
     (setq snippet-roots '("snippets")))
   (when (null code)
-    (setq code "(yas/initialize-bundle)"))
+    (setq code (concat "(yas/initialize-bundle)"
+           "\n;;;###autoload"               ; break through so that won't
+           "(require 'yasnippet-bundle)"))) ; be treated as magic comment
 
   (let ((dirs (or (and (listp snippet-roots) snippet-roots)
                   (list snippet-roots)))
