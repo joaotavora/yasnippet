@@ -38,7 +38,9 @@ task :release => [:bundle, :package, 'doc:archive'] do
   sh "googlecode_upload.py -s \"YASnippet Document #{$version}\"" +
     " -p yasnippet -l \"Featured,Type-Docs,OpSys-All\"" +
     " pkg/yasnippet-doc-#{$version}.tar.bz2"
-
+  FileUtils.cp "yasnippet-bundle.el", "pkg/yasnippet-bundle-#{$version}.el"
+  sh "echo for ELPA | mutt -a pkg/yasnippet-bundle-#{$version}.el -s " +
+     "'YASnippet bundle v#{$version}' elpa@tromey.com"
 end
 
 rule '.html' => '.rst' do |t|

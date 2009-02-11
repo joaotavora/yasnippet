@@ -4,7 +4,7 @@
 
 ;; Author: pluskid <pluskid@gmail.com>
 ;; Created: 02 Mar 2008
-;; Version: 0.5.9
+;; Version: 0.5.10
 ;; Keywords: snippet, textmate
 ;; URL: http://code.google.com/p/yasnippet/
 ;; EmacsWiki: YaSnippetMode
@@ -207,7 +207,7 @@ to expand.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defvar yas/version "0.5.9")
+(defvar yas/version "0.5.10")
 
 (defvar yas/snippet-tables (make-hash-table)
   "A hash table of snippet tables corresponding to each major-mode.")

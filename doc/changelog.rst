@@ -6,6 +6,14 @@ ChangeLog
 :Contact: pluskid@gmail.com
 :Date: 2008-03-22
 
+0.5.10 / 2009-02-11
+===================
+
+* Added *grouping* support so that the snippets in the menu can be
+  groupped together.
+* Make the bundle `ELPA <http://tromey.com/elpa/index.html>`_
+  compatible.
+
 0.5.9 / 2009-01-21
 ==================
 
