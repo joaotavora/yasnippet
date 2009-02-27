@@ -1820,7 +1820,7 @@ handle the end-of-buffer error fired in it by calling
     (save-window-excursion
       (unwind-protect
           (let ((candidate-count (length candidates))
-                done key selidx)
+                done key (selidx 0))
             (while (not done)
               (unless (dropdown-list-at-point candidates selidx)
                 (switch-to-buffer (setq temp-buffer (get-buffer-create "*selection*"))
