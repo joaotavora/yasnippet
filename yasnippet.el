@@ -187,7 +187,7 @@ to expand.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defvar yas/version "0.5.6")
+(defvar yas/version "0.5.6-nested-placeholders")
 
 (defvar yas/snippet-tables (make-hash-table)
   "A hash table of snippet tables corresponding to each major-mode.")
@@ -214,12 +214,17 @@ to expand.
 (defconst yas/escape-backquote
   (concat "YASESCAPE" "BACKQUOTE" "PROTECTGUARD"))
 
-;; (defconst yas/field-regexp
-;;   (concat "$\\([0-9]+\\)" "\\|"
-;;           "${\\(?:\\([0-9]+\\):\\)?\\([^}]*\\)}"))
 (defconst yas/field-regexp
-  (concat "$\\([0-9]+\\)" "\\|"
-          "${\\(?:\\([0-9]+\\):\\)?\\(.*\\)}"))
+  "${\\([0-9]+:\\)?\\([^}]*\\)}"
+  "A regexp to *almost* recognize a field")
+
+(defconst yas/transform-mirror-regexp
+  "${\\(?:\\([0-9]+\\):\\)?$\\([^}]*\\)"
+  "A regexp to *almost* recognize a mirror with a transform")
+
+(defconst yas/simple-mirror-regexp
+  "$\\([0-9]+\\)"
+  "A regexp to recognize a simple mirror")
 
 (defvar yas/snippet-id-seed 0
   "Contains the next id for a snippet.")
@@ -303,7 +308,7 @@ set to t."
   (transform nil)
   (modified nil))
 
-(defstruct (yas/mirror (:constructor yas/make-mirror (overlay)))
+(defstruct (yas/mirror (:constructor yas/make-mirror (overlay transform)))
   "A mirror."
   overlay
   (transform nil))
@@ -427,7 +432,12 @@ a list of modes like this to help the judgement."
 (defun yas/apply-transform (field-or-mirror field)
   "Calculate the value of the field. If there's a transform
 for this field, apply it. Otherwise, the value is returned
-unmodified."
+unmodified.
+
+TODO: I really dont think field transforms are easily done, but oh
+well
+
+"
   (let ((text (yas/field-text-for-display field))
         (transform (if (yas/mirror-p field-or-mirror)  
 		       (yas/mirror-transform field-or-mirror)
@@ -485,23 +495,22 @@ the template of a snippet in the current snippet-table."
           start
           end)))
 
-(defun yas/field-text-for-display (field &optional field-number)
+(defun yas/field-text-for-display (field)
   "Return the propertized display text for field FIELD.  "
+
   (let ((text (yas/current-field-text field)))
     (when text
-      (while (and (string-match yas/field-regexp text)
-		  (match-beginning 3))
-	(setq text
-	      (concat
-	       (substring text 0 (match-beginning 0))
-	       (if (and field-number
-			(match-beginning 2)
-			(= field-number
-			   (string-to-number (substring text (match-beginning 2)))))
-		   (propertize (substring text (match-beginning 3) (match-end 3)) 'face 'yas/field-highlight-face)
-		 (substring text (match-beginning 3) (match-end 3)))
-	       (substring text (match-end 0)))))
-      text)))
+      (while (string-match yas/field-regexp text)
+	(let ((real-match-end-0 (scan-sexps (1+ (match-beginning 0)) 1)))
+	  (setq text
+		(concat
+		 (substring text
+			    0
+			    (match-beginning 0))
+		 (substring text
+			    (match-beginning 2)
+			    (1- (length text))))))))
+    text))
 
 (defun yas/current-field-text (field)
   (buffer-substring-no-properties (yas/field-start field)
@@ -529,8 +538,6 @@ the template of a snippet in the current snippet-table."
 		     (yas/mirror-update-display mirror field))))
 	     yas/registered-snippets)))
 
-(defun yas/on-hidden-overlay-modification (overlay after? beg end &optional length)
-  
 
 (defun yas/overlay-insert-in-front-hook (overlay after? beg end &optional length)
   "To be written"
@@ -592,7 +599,7 @@ will be deleted before inserting template."
       ;; `yas/registered-snippets' var. Create fields.
       (let ((snippet (yas/register-snippet (yas/make-snippet))))
         (goto-char (point-min))
-        (yas/field-parse-create snippet)
+        (yas/snippet-parse-create snippet)
 
         ;; Step XX: Sort and link each field
         (setf (yas/snippet-fields snippet)
@@ -614,6 +621,7 @@ will be deleted before inserting template."
 			   (cons 'invisible t))
 		prop-list)
 	  (push (cons 'evaporate t) prop-list)
+	  (push (cons 'read-only t) prop-list) ;; what i really wanted is read-only
 	  (dolist (prop prop-list)
 	    (dolist (field (yas/snippet-fields snippet))
 	      (overlay-put (car (yas/field-overlay-pair field)) (car prop) (cdr prop))
@@ -659,37 +667,66 @@ will be deleted before inserting template."
             (replace-match "")
             (indent-according-to-mode)))))))
 
-(defun yas/field-parse-create (snippet &optional parent-field)
+(defun yas/snippet-parse-create (snippet)
   "Parse a recently inserted snippet template, creating all
 necessary fields.
 
 Allows nested placeholder in the style of Textmate."
-  (while (re-search-forward yas/field-regexp nil t)
-    (let ((number (or (match-string-no-properties 1)
-		      (match-string-no-properties 2))))
-      (cond ((and number
-		  (string= "0" number))
-	     (setf (yas/snippet-exit snippet)
-		   (make-overlay (match-beginning 0) (match-end 0))))
-	    ((match-beginning 3)
-	     (let ((brand-new-field (yas/make-field (and number (string-to-number number))
-						    (cons (make-overlay (match-beginning 0)
-									(match-beginning 3))
-							  (make-overlay (match-end 3)
-									(match-end 0)))
-						    parent-field)))
-	       (push brand-new-field (yas/snippet-fields snippet))
-	       (save-excursion
-		 (save-restriction
-		   (narrow-to-region (match-beginning 3) (match-end 3))
-		   (goto-char (point-min))
-		   (yas/field-parse-create snippet brand-new-field)))))
-	    (t
-	     (let ((field (yas/snippet-find-field snippet (and number (string-to-number number)))))
-	       (when field
-		 (push (yas/make-mirror (make-overlay (match-beginning 0)
-						      (match-end 0)))
-		       (yas/field-mirrors field)))))))))
+  (let ((parse-start (point)))
+    (yas/field-parse-create snippet)
+    (goto-char parse-start)
+    (yas/transform-mirror-parse-create snippet)
+    (goto-char parse-start)
+    (yas/simple-mirror-parse-create snippet)))
+
+(defun yas/field-parse-create (snippet &optional parent-field)
+    (while (re-search-forward yas/field-regexp nil t)
+      (let* ((real-match-end-0 (scan-sexps (1+ (match-beginning 0)) 1))
+	     (number (string-to-number (match-string-no-properties 1)))
+	     (brand-new-field (and real-match-end-0
+				   (save-match-data (not (string-match "$(" (match-string-no-properties 2)))) 
+				   number
+				   (not (zerop number))
+				   (yas/make-field number
+						   (cons (make-overlay (match-beginning 0)
+								       (match-beginning 2))
+							 (make-overlay (1- real-match-end-0)
+								       real-match-end-0))
+						   parent-field))))
+	(when brand-new-field
+	  (push brand-new-field (yas/snippet-fields snippet))
+	  (save-excursion
+	    (save-restriction
+	      (narrow-to-region (match-beginning 2) (1- real-match-end-0))
+	      (goto-char (point-min))
+	      (yas/field-parse-create snippet brand-new-field)))))))
+
+(defun yas/transform-mirror-parse-create (snippet)
+  (while (re-search-forward yas/transform-mirror-regexp nil t)
+    (let* ((real-match-end-0 (scan-sexps (1+ (match-beginning 0)) 1))
+	  (number (string-to-number (match-string-no-properties 1)))
+	  (field (and number
+		      (not (zerop number))
+		      (yas/snippet-find-field snippet number))))
+      (when (and real-match-end-0 field) 
+	(push (yas/make-mirror (make-overlay (match-beginning 0)
+					     real-match-end-0)
+			       (buffer-substring-no-properties (match-beginning 2)
+							       (1- real-match-end-0)))
+	      (yas/field-mirrors field))))))
+
+(defun yas/simple-mirror-parse-create (snippet)
+  (while (re-search-forward yas/simple-mirror-regexp nil t)
+    (let ((number (string-to-number (match-string-no-properties 1))))
+      (if (zerop number)
+	  (setf (yas/snippet-exit snippet)
+		(make-overlay (match-beginning 0) (match-end 0)))
+	(let ((field (yas/snippet-find-field snippet number)))
+	  (when field
+	    (push (yas/make-mirror (make-overlay (match-beginning 0)
+						 (match-end 0))
+				   nil)
+		  (yas/field-mirrors field))))))))
 
 (defun yas/mirror-update-display (mirror field)
   (overlay-put (yas/mirror-overlay mirror) 'after-string (yas/apply-transform mirror field)))
@@ -1357,8 +1394,8 @@ registered snippets last."
   (yas/exterminate-snippets)
   (erase-buffer)
   (setq buffer-undo-list nil)
-  (insert "dov")
-  (html-mode)
+  (insert "prop")
+  (objc-mode)
   (when verbose
     (add-hook (make-local-variable 'post-command-hook) 'yas/debug-some-vars))
   (yas/expand))
