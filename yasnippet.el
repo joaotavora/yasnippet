@@ -502,25 +502,21 @@ the template of a snippet in the current snippet-table."
           start
           end)))
 
-;; "${\\(?:\\([0-9]+\\):\\)?$\\([^}]*\\)"
-
 (defun yas/field-text-for-display (field)
   "Return the propertized display text for field FIELD.  "
-
-  (let ((text (yas/current-field-text field)))
-    (when text
-      (while (string-match "${\\([0-9]+:\\)?\\(.*\\)}.*" text)
-	(setq text
-	      (concat
-	       (substring text
-			  0
-			  (match-beginning 0))
-	       (substring text
-			  (match-beginning 2)
-			  (match-end 2))
-	       (substring text
-			  (1+ (match-end 2))
-			  (match-end 0))))))
+  (let ((hidden-overlays (remove-if-not #'(lambda (ov)
+					       (overlay-get ov 'yas/hidden))
+					   (overlays-in (yas/field-start field) (yas/field-end field))))
+	(text))
+    (when hidden-overlays
+      (reduce #'(lambda (ov1 ov2)
+		  (setq text (concat text
+				     (buffer-substring (overlay-end ov1) (overlay-start ov2))
+				     (overlay-get ov1 'after-string)))
+		  ov2)
+	    (sort hidden-overlays
+	    	  #'(lambda (ov1 ov2)
+	    	      (> (overlay-start ov2) (overlay-start ov1))))))
     text))
 
 (defun yas/current-field-text (field)
@@ -544,18 +540,17 @@ the template of a snippet in the current snippet-table."
   (when (and after?
 	     yas/registered-snippets)
     (maphash #'(lambda (key snippet)
-		 (dolist (field (yas/snippet-fields snippet))
-		   (dolist (mirror (yas/field-mirrors field))
-		     (yas/mirror-update-display mirror field))))
+		 (yas/update-mirrors snippet))
 	     yas/registered-snippets)))
 
+(add-to-list 'debug-ignored-errors "^Exit the snippet first$")
 (defun yas/on-hidden-overlay-modification (overlay after? beg end &optional length)
   (unless (or after?
 	      (null (overlay-buffer overlay)))
-    (save-excursion
-      (yas/exit-snippet (overlay-get overlay 'yas/snippet)))
-    (call-interactively this-command)
-    (signal 'shit '("Aborted my friend"))))
+    ;; (save-excursion
+    ;;   (yas/exit-snippet (overlay-get overlay 'yas/snippet)))
+    ;; (call-interactively this-command)
+    (error "Exit the snippet first")))
 
 (defun yas/overlay-insert-in-front-hook (overlay after? beg end &optional length)
   "To be written"
@@ -632,6 +627,7 @@ will be deleted before inserting template."
 		(cons 'invisible t))
 	      prop-list)
 	(push (cons 'evaporate t) prop-list)
+	(push (cons 'yas/hidden t) prop-list)
 	(push (cons 'yas/snippet snippet) prop-list)
 	(push (cons 'modification-hooks '(yas/on-hidden-overlay-modification)) prop-list) ;; what i really wanted is 'read-only
 	(dolist (prop prop-list)
@@ -639,10 +635,12 @@ will be deleted before inserting template."
 	    (overlay-put (car (yas/field-overlay-pair field)) (car prop) (cdr prop))
 	    (overlay-put (cdr (yas/field-overlay-pair field)) (car prop) (cdr prop))
 	    (dolist (mirror (yas/field-mirrors field))
-	      (overlay-put (yas/mirror-overlay mirror) (car prop) (cdr prop))
-	      (yas/mirror-update-display mirror field)))
+	      (overlay-put (yas/mirror-overlay mirror) (car prop) (cdr prop))))
 	  (when (overlayp (yas/snippet-exit snippet))
 	    (overlay-put (yas/snippet-exit snippet) (car prop) (cdr prop)))))
+
+      ;; Update the mirrors
+      (yas/update-mirrors snippet)
 
       ;; Create keymap overlay for snippet
       (setf (yas/snippet-control-overlay snippet) (yas/make-control-overlay (point-min) (point-max)))
@@ -719,29 +717,20 @@ Allows nested placeholder in the style of Textmate."
 		(make-overlay (match-beginning 0) (match-end 0)))
 	(let ((field (yas/snippet-find-field snippet number)))
 	  (when field
-	    (push (yas/make-mirror (make-overlay (match-beginning 0)
-						 (match-end 0))
-				   nil)
-		  (yas/field-mirrors field))))))))
+	    (let ((ov (make-overlay (match-beginning 0)
+				    (match-end 0))))
+	      (overlay-put ov 'yas/mirrorp t)
+	      (push (yas/make-mirror ov nil)
+		    (yas/field-mirrors field)))))))))
+
+(defun yas/update-mirrors (snippet)
+  (dolist (field (yas/snippet-fields snippet))
+    (dolist (mirror (yas/field-mirrors field))
+      (yas/mirror-update-display mirror field))))
 
 (defun yas/mirror-update-display (mirror field)
   (overlay-put (yas/mirror-overlay mirror) 'after-string
 	       (propertize (yas/apply-transform mirror field) 'face 'yas/mirror-highlight-face)))
-  
-(defun yas/snippet-of-current-keymap (&optional point)
-  "Return the most recently inserted snippet covering POINT."
-  (let ((point (or point (point)))
-        (keymap-snippet nil)
-        (snippet nil))
-    (dolist (overlay (overlays-at point))
-      (setq snippet (overlay-get overlay 'yas/snippet-reference))
-      (when snippet
-        (if (null keymap-snippet)
-            (setq keymap-snippet snippet)
-          (when (> (yas/snippet-id snippet)
-                   (yas/snippet-id keymap-snippet))
-            (setq keymap-snippet snippet)))))
-    keymap-snippet))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Template-related and snippet loading functions
@@ -1403,7 +1392,11 @@ registered snippets last."
   (yas/exterminate-snippets)
   (erase-buffer)
   (setq buffer-undo-list nil)
-  (insert "prip")
+  (let ((abbrev))
+    (if (require 'ido nil t)
+	(setq abbrev (ido-completing-read "Snippet abbrev: " '("crazy" "prop")))
+      (setq abbrev "crazy"))
+    (insert abbrev))
   (objc-mode)
   (when verbose
     (add-hook (make-local-variable 'post-command-hook) 'yas/debug-some-vars))
