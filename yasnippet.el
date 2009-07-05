@@ -66,10 +66,13 @@ current column if this variable is non-`nil'.")
   "The key to bind as a trigger of snippet.")
 (defvar yas/next-field-key (kbd "<tab>")
   "The key to navigate to next field.")
+(defvar yas/clear-field-key (kbd "C-d")
+  "The key to clear the currently active field.")
 
 (defvar yas/keymap (make-sparse-keymap)
   "The keymap of snippet.")
 (define-key yas/keymap yas/next-field-key 'yas/next-field)
+(define-key yas/keymap yas/clear-field-key 'yas/clear-field)
 (define-key yas/keymap (kbd "S-TAB") 'yas/prev-field)
 (define-key yas/keymap (kbd "<S-iso-lefttab>") 'yas/prev-field)
 (define-key yas/keymap (kbd "<S-tab>") 'yas/prev-field)
@@ -298,7 +301,11 @@ set to t."
 (defvar yas/active-field-overlay nil
   "Overlays the currently active field")
 
+(defvar yas/field-protection-overlays nil
+  "Two overlays protect the current active field ")
+
 (make-variable-buffer-local 'yas/active-field-overlay)
+(make-variable-buffer-local 'yas/field-protection-overlays)
 
 (defstruct (yas/snippet (:constructor yas/make-snippet ()))
   "A snippet.
@@ -522,30 +529,36 @@ the template of a snippet in the current snippet-table."
     (overlay-put overlay 'evaporate t)
     overlay))
 
+(defun yas/clear-field (&optional field)
+  (interactive)
+  (let ((field (or field
+		   (and yas/active-field-overlay
+			(overlay-buffer yas/active-field-overlay)
+			(overlay-get yas/active-field-overlay 'yas/field)))))
+    (delete-region (yas/field-start field) (yas/field-end field))))
+
 (defun yas/on-field-overlay-modification (overlay after? beg end &optional length)
   "To be written"
   (cond ((and after?
 	      (not (yas/undo-in-progress)))
 	 (mapcar #'yas/update-mirrors (yas/snippets-at-point)))
-	;; ((not (or after? (yas/undo-in-progress)))
-;; 	 (let ((field (overlay-get overlay 'yas/field)))
-;; 	   (unless (yas/field-modified-p field)
-;; 	     (let ((inhibit-modification-hooks t))
-;; 	       (reduce #'(lambda (ov1 ov2)
-;; 			   (delete-region (overlay-end ov1) (overlay-start ov2))
-;; 			   ov2)
-;; 		       (yas/hidden-overlays-in (yas/field-start field) (yas/field-end field))))
-;; 	     (setf (yas/field-modified-p field) t))))
 	(t
-	 nil)))
+	 (let ((field (overlay-get yas/active-field-overlay 'yas/field)))
+	   (when (and field
+		      (not (or after? (yas/undo-in-progress)))
+		      (not (yas/field-modified-p field)))
+	     (setf (yas/field-modified-p field) t)
+	     (yas/clear-field field))))))
 
-(defun yas/overlay-insert-in-front-hook (overlay after? beg end &optional length)
+(defun yas/on-protection-overlay-modification (overlay after? beg end &optional length)
   "To be written"
-  )
-
-(defun yas/overlay-insert-behind-hook (overlay after? beg end &optional length)
-  "To be written"
-  )
+  (cond ((not (or after?
+		  (yas/undo-in-progress)))
+	 (let ((snippet (car (yas/snippets-at-point))))
+	   (when snippet
+	     (yas/commit-snippet snippet)
+	     (call-interactively this-command)
+	     (error "Snippet exited"))))))
 
 (defun yas/expand-snippet (start end template)
   "Expand snippet at current point. Text between START and END
@@ -569,13 +582,19 @@ will be deleted before inserting template."
 	    buffer-undo-list))))
 
 (defun yas/take-care-of-redo (beg end snippet)
+  (let ((inhibit-modification-hooks t))
+    (when yas/active-field-overlay
+      (delete-overlay yas/active-field-overlay))
+    (when yas/field-protection-overlays
+	(mapcar #'delete-overlay yas/field-protection-overlays)))
   (push `(apply yas/snippet-revive ,beg ,end ,snippet)
 	buffer-undo-list))
 
 (defun yas/snippet-revive (beg end snippet)
   (setf (yas/snippet-control-overlay snippet) (yas/make-control-overlay beg end))
   (overlay-put (yas/snippet-control-overlay snippet) 'yas/snippet snippet)
-  (yas/move-to-field snippet (car (yas/snippet-fields snippet)))
+  (yas/move-to-field snippet (or (yas/snippet-active-field snippet)
+				 (car (yas/snippet-fields snippet))))
   (push `(apply yas/take-care-of-redo ,beg ,end ,snippet)
 	buffer-undo-list))
 
@@ -1100,10 +1119,7 @@ when the condition evaluated to non-nil."
           (t
            nil))))
 
-(defun yas/move-to-field (snippet field)
-  "Update SNIPPET to move to field FIELD."
-  (goto-char (yas/field-start field))
-  (setf (yas/snippet-active-field snippet) field)
+(defun yas/make-move-active-field-overlay (snippet field)
   (if (and yas/active-field-overlay
 	   (overlay-buffer yas/active-field-overlay))
       (move-overlay yas/active-field-overlay
@@ -1114,10 +1130,36 @@ when the condition evaluated to non-nil."
 			(yas/field-end field)
 			nil nil t))
     (overlay-put yas/active-field-overlay 'face 'yas/field-highlight-face)
-    (overlay-put yas/active-field-overlay 'evaporate t)
+    ;;(overlay-put yas/active-field-overlay 'evaporate t)
     (overlay-put yas/active-field-overlay 'modification-hooks '(yas/on-field-overlay-modification))
     (overlay-put yas/active-field-overlay 'insert-in-front-hooks '(yas/on-field-overlay-modification))
-    (overlay-put yas/active-field-overlay 'insert-behind-hooks '(yas/on-field-overlay-modification)))
+    (overlay-put yas/active-field-overlay 'insert-behind-hooks '(yas/on-field-overlay-modification))))
+
+(defun yas/make-move-field-protection-overlays (snippet field)
+  (cond ((and yas/field-protection-overlays
+	      (every #'overlay-buffer yas/field-protection-overlays))
+	 (move-overlay (first yas/field-protection-overlays) (1- (yas/field-start field)) (yas/field-start field))
+	 (move-overlay (second yas/field-protection-overlays) (yas/field-end field) (1+ (yas/field-end field))))
+	(t
+	 (setq yas/field-protection-overlays
+	       (list (make-overlay (1- (yas/field-start field)) (yas/field-start field) nil t nil)
+		     (make-overlay (yas/field-end field) (1+ (yas/field-end field)) nil t nil)))
+	 (dolist (ov yas/field-protection-overlays)
+	   (overlay-put ov 'face 'yas/field-debug-face)
+	   ;; (overlay-put ov 'evaporate t)
+	   (overlay-put ov 'modification-hooks '(yas/on-protection-overlay-modification))
+	   (overlay-put ov 'insert-in-front-hooks '(yas/on-protection-overlay-modification))
+	   (overlay-put ov 'insert-behind-hooks '(yas/on-protection-overlay-modification))))))
+
+
+(defun yas/move-to-field (snippet field)
+  "Update SNIPPET to move to field FIELD.
+
+Also create some protection overlays"
+  (goto-char (yas/field-start field))
+  (setf (yas/snippet-active-field snippet) field)
+  (yas/make-move-active-field-overlay snippet field)
+  (yas/make-move-field-protection-overlays snippet field)
   (overlay-put yas/active-field-overlay 'yas/field field))
 
 (defun yas/prev-field ()
@@ -1129,7 +1171,9 @@ when the condition evaluated to non-nil."
   "Goto exit-marker of SNIPPET and commit the snippet.  Cleaning
 up the snippet does not delete it!"
   (interactive)
-  (goto-char (yas/commit-snippet snippet)))
+  (goto-char (if (yas/snippet-exit snippet)
+		 (yas/snippet-exit snippet)
+	       (overlay-end (yas/snippet-control-overlay snippet)))))
 
 (defun yas/exterminate-snippets ()
   "Remove all snippets in buffer"
@@ -1149,8 +1193,7 @@ Return a buffer position where the point should be placed if
 exiting the snippet."
   (let ((control-overlay (yas/snippet-control-overlay snippet))
          yas/snippet-beg
-         yas/snippet-end
-	 exit (point))
+         yas/snippet-end)
     ;;
     ;; Save the end of the moribund snippet in case we need to revive it
     ;; its original expansion.
@@ -1159,43 +1202,18 @@ exiting the snippet."
                (overlay-buffer control-overlay))
       (setq yas/snippet-beg (overlay-start control-overlay))
       (setq yas/snippet-end (overlay-end control-overlay))
-      (delete-overlay control-overlay)
-      (narrow-to-region yas/snippet-beg yas/snippet-end))
+      (delete-overlay control-overlay))
+
+    (let ((inhibit-modification-hooks t))
+      (when yas/active-field-overlay
+	(delete-overlay yas/active-field-overlay))
+      (when yas/field-protection-overlays
+	(mapcar #'delete-overlay yas/field-protection-overlays)))
 
     ;; Push an action for snippet revival
     ;;
     (push `(apply yas/snippet-revive ,yas/snippet-beg ,yas/snippet-end ,snippet)
 	  buffer-undo-list)
-
-    ;; Trash those overlays!
-    ;;
-    (let ((inhibit-modification-hooks t))
-      (when yas/active-field-overlay
-	(delete-overlay yas/active-field-overlay))
-      ;; Delete all the text under the overlays
-      (dolist (field (yas/snippet-fields snippet))
-	(dolist (mirror (yas/field-mirrors field))
-	  (let ((mirror-overlay (yas/mirror-overlay mirror)))
-	    (when (and mirror-overlay
-		       (overlay-buffer mirror-overlay))
-	      (goto-char (overlay-start mirror-overlay))
-	      (yas/delete-overlay-region mirror-overlay)
-	      (insert (yas/apply-transform mirror field)))))
-	(let* ((overlay-pair (yas/field-overlay-pair field))
-	       (before (car overlay-pair))
-	       (after (cdr overlay-pair)))
-	  (dolist (ov (list before after))
-	    (when (and ov
-		       (overlay-buffer ov))
-	      (yas/delete-overlay-region ov)))))
-      ;; Take care of the exit marker
-      ;;
-      (cond ((and (yas/snippet-exit snippet)
-		  (overlay-buffer (yas/snippet-exit snippet)))
-	     (setq exit (overlay-start (yas/snippet-exit snippet)))
-	     (yas/delete-overlay-region (yas/snippet-exit snippet)))
-	    (t
-	     (setq exit (point-max)))))
     
     ;; XXX: `yas/after-exit-snippet-hook' should be run with
     ;; `yas/snippet-beg' and `yas/snippet-end' bound. That might not
@@ -1203,33 +1221,32 @@ exiting the snippet."
     ;; disappeared, which sometimes happens when the snippet's messed
     ;; up...
     ;;
-    (run-hooks 'yas/after-exit-snippet-hook)
-    (widen)
-    exit))
+    (run-hooks 'yas/after-exit-snippet-hook)))
 
 (defun yas/check-commit-snippet ()
   "Checks if point exited the currently active field of the
 snippet, if so cleans up the whole snippet up."
-  (unless (yas/undo-in-progress) 
-    (let* ((snippet (first (yas/snippets-at-point))))
-      (cond ((null snippet)
+  (let* ((snippet (first (yas/snippets-at-point))))
+    (cond ((null snippet)
+	   ;;
+	   ;; No snippet at point, cleanup *all* snippets
+	   ;;
+	   (yas/exterminate-snippets))
+	  ((let ((beg (overlay-start yas/active-field-overlay))
+		 (end (overlay-end yas/active-field-overlay)))
+	     (or (not end)
+		 (not beg)
+		 (> (point) end)
+		 (< (point) beg)))
+	   ;; A snippet exitss at point, but point left the currently
+	   ;; active field overlay
+	   (yas/commit-snippet snippet))
+	  ( ;;
+	   ;; Snippet at point, and point inside a snippet field,
+	   ;; everything is normal
 	     ;;
-	     ;; No snippet at point, cleanup *all* snippets
-	     ;;
-	     (yas/exterminate-snippets))
-	    ((let ((beg (overlay-start yas/active-field-overlay))
-		   (end (overlay-end yas/active-field-overlay)))
-	       (or (> (point) end)
-		   (< (point) beg)))
-	     ;; A snippet exitss at point, but point left the currently
-	     ;; active field overlay
-	     (save-excursion (yas/commit-snippet snippet)))
-	    ( ;;
-	     ;; Snippet at point, and point inside a snippet field,
-	     ;; everything is normal
-	     ;;
-	     t
-	     nil)))))
+	   t
+	   nil))))
 
 ;;
 ;; Pre and post command handlers
@@ -1243,9 +1260,8 @@ snippet, if so cleans up the whole snippet up."
 	   (when snippet
 	     (yas/move-to-field snippet (or (yas/snippet-active-field snippet)
 					    (car (yas/snippet-fields snippet)))))))
-	(t
-	 ;; (yas/check-commit-snippet)
-	 )))
+	((not (yas/undo-in-progress))
+	 (yas/check-commit-snippet))))
 
 ;; Debug functions.  Use (or change) at will whenever needed.
 
@@ -1263,7 +1279,7 @@ snippet, if so cleans up the whole snippet up."
                      "ENABLED")
                    (point-max)))
     (unless (eq buffer-undo-list t)
-      (princ (format "Undolist has %s elements. First 10 elements follow:\n" (length buffer-undo-list)))
+      (princ (format "Undpolist has %s elements. First 10 elements follow:\n" (length buffer-undo-list)))
       (let ((first-ten (subseq buffer-undo-list 0 19)))
         (dolist (undo-elem first-ten)
           (princ (format "%2s:  %s\n" (position undo-elem first-ten) (truncate-string-to-width (format "%s" undo-elem) 70))))))))
