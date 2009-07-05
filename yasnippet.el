@@ -74,6 +74,9 @@ current column if this variable is non-`nil'.")
 (define-key yas/keymap yas/next-field-key 'yas/next-field)
 (define-key yas/keymap yas/clear-field-key 'yas/clear-field)
 (define-key yas/keymap (kbd "S-TAB") 'yas/prev-field)
+(define-key yas/keymap (kbd "<DEL>") 'yas/prev-field)
+(define-key yas/keymap (kbd "DEL") 'yas/prev-field)
+(define-key yas/keymap (kbd "<deletechar>") 'yas/prev-field)
 (define-key yas/keymap (kbd "<S-iso-lefttab>") 'yas/prev-field)
 (define-key yas/keymap (kbd "<S-tab>") 'yas/prev-field)
 (define-key yas/keymap (kbd "<backtab>") 'yas/prev-field)
@@ -535,7 +538,8 @@ the template of a snippet in the current snippet-table."
 		   (and yas/active-field-overlay
 			(overlay-buffer yas/active-field-overlay)
 			(overlay-get yas/active-field-overlay 'yas/field)))))
-    (delete-region (yas/field-start field) (yas/field-end field))))
+    (let ((inhibit-modification-hooks t))
+      (delete-region (yas/field-start field) (yas/field-end field)))))
 
 (defun yas/on-field-overlay-modification (overlay after? beg end &optional length)
   "To be written"
@@ -1147,9 +1151,7 @@ when the condition evaluated to non-nil."
 	 (dolist (ov yas/field-protection-overlays)
 	   (overlay-put ov 'face 'yas/field-debug-face)
 	   ;; (overlay-put ov 'evaporate t)
-	   (overlay-put ov 'modification-hooks '(yas/on-protection-overlay-modification))
-	   (overlay-put ov 'insert-in-front-hooks '(yas/on-protection-overlay-modification))
-	   (overlay-put ov 'insert-behind-hooks '(yas/on-protection-overlay-modification))))))
+	   (overlay-put ov 'modification-hooks '(yas/on-protection-overlay-modification))))))
 
 
 (defun yas/move-to-field (snippet field)
