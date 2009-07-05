@@ -307,12 +307,13 @@ set to t."
   (fields '())
   (exit nil)
   (id (yas/snippet-next-id) :read-only t)
-  (control-overlay nil))
+  (control-overlay nil)
+  active-field)
 
-(defstruct (yas/field (:constructor yas/make-field (number overlay-pair parent-field)))
+(defstruct (yas/field (:constructor yas/make-field (number start end parent-field)))
   "A field."
   number
-  overlay-pair
+  start end
   parent-field
   (mirrors '())
   (next nil)
@@ -320,16 +321,10 @@ set to t."
   (transform nil)
   (modified-p nil))
 
-(defstruct (yas/mirror (:constructor yas/make-mirror (overlay transform)))
+(defstruct (yas/mirror (:constructor yas/make-mirror (start end transform)))
   "A mirror."
-  overlay
+  start end
   (transform nil))
-
-(defun yas/field-start (field) (overlay-start (car (yas/field-overlay-pair field))))
-(defun yas/field-end (field) (overlay-end (cdr (yas/field-overlay-pair field))))
-
-(defun yas/mirror-start (mirror) (overlay-start (yas/mirror-overlay mirror)))
-(defun yas/mirror-end (mirror) (overlay-end (yas/mirror-overlay mirror)))
 
 (defstruct (yas/snippet-table (:constructor yas/make-snippet-table ()))
   "A table to store snippets for a perticular mode."
@@ -507,31 +502,9 @@ the template of a snippet in the current snippet-table."
           start
           end)))
 
-(defun yas/hidden-overlays-in (beg end)
-  "A sorted list of hidden yas overlays overlapping the region
-  between BEG and END"
-  (sort (remove-if-not #'(lambda (ov)
-			   (overlay-get ov 'yas/hidden))
-		       (overlays-in beg end))
-	#'(lambda (ov1 ov2)
-	    (> (overlay-start ov2) (overlay-start ov1)))))
-
 (defun yas/field-text-for-display (field)
   "Return the propertized display text for field FIELD.  "
-  (let ((hidden-overlays (yas/hidden-overlays-in (yas/field-start field) (yas/field-end field)))
-	(text))
-    (when hidden-overlays
-      (reduce #'(lambda (ov1 ov2)
-		  (setq text (concat text
-				     (buffer-substring (overlay-end ov1) (overlay-start ov2))
-				     (overlay-get ov1 'after-string)))
-		  ov2)
-	      hidden-overlays))
-    text))
-
-(defun yas/current-field-text (field)
-  (buffer-substring-no-properties (yas/field-start field)
-                                  (yas/field-end field)))
+  (buffer-substring (yas/field-start field) (yas/field-end field)))
 
 (defun yas/undo-in-progress ()
   (or undo-in-progress
@@ -551,30 +524,20 @@ the template of a snippet in the current snippet-table."
 
 (defun yas/on-field-overlay-modification (overlay after? beg end &optional length)
   "To be written"
-  (cond (after?
+  (cond ((and after?
+	      (not (yas/undo-in-progress)))
 	 (mapcar #'yas/update-mirrors (yas/snippets-at-point)))
-	((not (or after? (yas/undo-in-progress)))
-	 (let ((field (overlay-get overlay 'yas/field)))
-	   (unless (yas/field-modified-p field)
-	     (let ((inhibit-modification-hooks t))
-	       (reduce #'(lambda (ov1 ov2)
-			   (delete-region (overlay-end ov1) (overlay-start ov2))
-			   ov2)
-		       (yas/hidden-overlays-in (yas/field-start field) (yas/field-end field))))
-	     (setf (yas/field-modified-p field) t))))
+	;; ((not (or after? (yas/undo-in-progress)))
+;; 	 (let ((field (overlay-get overlay 'yas/field)))
+;; 	   (unless (yas/field-modified-p field)
+;; 	     (let ((inhibit-modification-hooks t))
+;; 	       (reduce #'(lambda (ov1 ov2)
+;; 			   (delete-region (overlay-end ov1) (overlay-start ov2))
+;; 			   ov2)
+;; 		       (yas/hidden-overlays-in (yas/field-start field) (yas/field-end field))))
+;; 	     (setf (yas/field-modified-p field) t))))
 	(t
 	 nil)))
-
-(add-to-list 'debug-ignored-errors "^Exit the snippet first$")
-(defun yas/on-hidden-overlay-modification (overlay after? beg end &optional length)
-  (unless (yas/undo-in-progress)
-    (unless (or after?
-		(null (overlay-buffer overlay)))
-      ;; (save-excursion
-      ;;   (yas/exit-snippet (overlay-get overlay 'yas/snippet)))
-      ;; (call-interactively this-command)
-      (goto-char beg)
-      (error "Exit the snippet first"))))
 
 (defun yas/overlay-insert-in-front-hook (overlay after? beg end &optional length)
   "To be written"
@@ -592,103 +555,70 @@ will be deleted before inserting template."
 
   (let* ((key (buffer-substring-no-properties start end))
 	 (length (- end start))
-	 (column (current-column)))
+	 (column (current-column))
+	 snippet)
+    (delete-char length)
     (save-restriction
-      (narrow-to-region start start)
+      (let ((buffer-undo-list t))
+	(narrow-to-region start start)
+	(insert template)
+	(setq snippet (yas/snippet-create (point-min) (point-max))))
+      (push (cons (point-min) (point-max)) buffer-undo-list)
+      ;; Push an undo action
+      (push `(apply yas/take-care-of-redo ,(point-min) ,(point-max) ,snippet)
+	    buffer-undo-list))))
 
-      (insert template)
+(defun yas/take-care-of-redo (beg end snippet)
+  (push `(apply yas/snippet-revive ,beg ,end ,snippet)
+	buffer-undo-list))
 
-      ;; Step XX: do necessary indent
-      (when yas/indent-line
-        (let* ((indent (if indent-tabs-mode
-                           (concat (make-string (/ column tab-width) ?\t)
-                                   (make-string (% column tab-width) ?\ ))
-                         (make-string column ?\ ))))
-          (goto-char (point-min))
-          (while (and (zerop (forward-line))
-                      (= (current-column) 0))
-            (insert indent))))
-
-      (let ((template-beg (point-min))
-	    (template-end (point-max)))
-	(widen)
-	(goto-char template-end)
-	(delete-char length)
-	(let ((snippet (yas/snippet-create template-beg template-end)))
-	  ;; Do more indenting
-	  (save-excursion
-	    (goto-char (overlay-start (yas/snippet-control-overlay snippet)))
-	    (while (re-search-forward "$>" nil t)
-	      (replace-match "")
-	      (indent-according-to-mode)))
-	  ;; Push an undo action
-	  (push `(apply yas/take-care-of-redo ,template-beg ,template-end)
-		buffer-undo-list))))))
-
-(defun yas/take-care-of-redo (beg end)
-  (message "taking care of undo between %s and %s" beg end)
-  (push `(apply yas/snippet-create ,beg ,end)
+(defun yas/snippet-revive (beg end snippet)
+  (setf (yas/snippet-control-overlay snippet) (yas/make-control-overlay beg end))
+  (overlay-put (yas/snippet-control-overlay snippet) 'yas/snippet snippet)
+  (yas/move-to-field snippet (car (yas/snippet-fields snippet)))
+  (push `(apply yas/take-care-of-redo ,beg ,end ,snippet)
 	buffer-undo-list))
 
 (defun yas/snippet-create (begin end)
-  (narrow-to-region begin end)
   (let ((snippet (yas/make-snippet)))
-      (goto-char (point-min))
-      (yas/snippet-parse-create snippet)
+    (goto-char begin)
+    (yas/snippet-parse-create snippet)
 
-      ;; Sort and link each field
-      (setf (yas/snippet-fields snippet)
-	    (sort (yas/snippet-fields snippet)
-		  '(lambda (field1 field2)
-		     (yas/snippet-field-compare field1 field2))))
-	
-      (let ((prev nil))
-	(dolist (field (yas/snippet-fields snippet))
-	  (setf (yas/field-prev field) prev)
-	  (when prev
-	    (setf (yas/field-next prev) field))
-	  (setq prev field)))
+    ;; Sort and link each field
+    (yas/snippet-sort-link-fields snippet)
+    
+    ;; Update the mirrors for the first time
+    (yas/update-mirrors snippet)
 
-      ;; Hide (or highlight for debugging) all hidden overlays
-      (let ((prop-list))
-	(push (if (member 'yas/debug-some-vars post-command-hook)
-		  (cons 'face 'yas/field-debug-face)
-		(cons 'invisible t))
-	      prop-list)
-	(push (cons 'evaporate t) prop-list)
-	(push (cons 'yas/hidden t) prop-list)
-	(push (cons 'yas/snippet snippet) prop-list)
-	(push (cons 'modification-hooks '(yas/on-hidden-overlay-modification)) prop-list) ;; what i really wanted is 'read-only
-	(dolist (prop prop-list)
-	  (dolist (field (yas/snippet-fields snippet))
-	    (overlay-put (car (yas/field-overlay-pair field)) (car prop) (cdr prop))
-	    (overlay-put (cdr (yas/field-overlay-pair field)) (car prop) (cdr prop))
-	    (dolist (mirror (yas/field-mirrors field))
-	      (overlay-put (yas/mirror-overlay mirror) (car prop) (cdr prop))))
-	  (when (overlayp (yas/snippet-exit snippet))
-	    (overlay-put (yas/snippet-exit snippet) (car prop) (cdr prop)))))
+    ;; Create keymap overlay for snippet
+    (setf (yas/snippet-control-overlay snippet) (yas/make-control-overlay (point-min) (point-max)))
 
-      ;; Update the mirrors
-      (yas/update-mirrors snippet)
+    ;; Move to end
+    (goto-char (point-max))
 
-      ;; Create keymap overlay for snippet
-      (setf (yas/snippet-control-overlay snippet) (yas/make-control-overlay (point-min) (point-max)))
+    ;; Place the cursor at a proper place
+    (let* ((first-field (car (yas/snippet-fields snippet)))
+	   overlay)
+      (cond (first-field
+	     ;; Move to the new field, setting up properties of the
+	     ;; wandering active field overlay.
+	     (yas/move-to-field snippet first-field))
+	    (t
+	     ;; No fields, quite a simple snippet I suppose
+	     (yas/exit-snippet snippet))))
+    snippet))
 
-      ;; Move to end
-      (goto-char (point-max))
-
-      ;; Place the cursor at a proper place
-      (let* ((first-field (car (yas/snippet-fields snippet)))
-	     overlay)
-	(cond (first-field
-	       ;; Move to the new field, setting up properties of the
-	       ;; wandering active field overlay.
-	       (yas/move-to-field snippet first-field))
-	      (t
-	       ;; No fields, quite a simple snippet I suppose
-	       (yas/exit-snippet snippet))))
-      (widen)
-      snippet))
+(defun yas/snippet-sort-link-fields (snippet)
+  (setf (yas/snippet-fields snippet)
+	(sort (yas/snippet-fields snippet)
+	      '(lambda (field1 field2)
+		 (yas/snippet-field-compare field1 field2))))
+  (let ((prev nil))
+    (dolist (field (yas/snippet-fields snippet))
+      (setf (yas/field-prev field) prev)
+      (when prev
+	(setf (yas/field-next prev) field))
+      (setq prev field))))
 
 (defun yas/snippet-parse-create (snippet)
   "Parse a recently inserted snippet template, creating all
@@ -711,16 +641,16 @@ Allows nested placeholder in the style of Textmate."
 				   number
 				   (not (zerop number))
 				   (yas/make-field number
-						   (cons (make-overlay (match-beginning 0)
-								       (match-beginning 2) nil t nil)
-							 (make-overlay (1- real-match-end-0)
-								       real-match-end-0 nil t nil))
+						   (set-marker (make-marker) (match-beginning 2))
+						   (set-marker (make-marker) (1- real-match-end-0))
 						   parent-field))))
 	(when brand-new-field
+	  (delete-region (1- real-match-end-0) real-match-end-0)
+	  (delete-region (match-beginning 0) (match-beginning 2))
 	  (push brand-new-field (yas/snippet-fields snippet))
 	  (save-excursion
 	    (save-restriction
-	      (narrow-to-region (match-beginning 2) (1- real-match-end-0))
+	      (narrow-to-region (yas/field-start brand-new-field) (yas/field-end brand-new-field))
 	      (goto-char (point-min))
 	      (yas/field-parse-create snippet brand-new-field)))))))
 
@@ -732,34 +662,40 @@ Allows nested placeholder in the style of Textmate."
 		      (not (zerop number))
 		      (yas/snippet-find-field snippet number))))
       (when (and real-match-end-0 field) 
-	(push (yas/make-mirror (make-overlay (match-beginning 0)
-					     real-match-end-0 nil t nil)
+	(push (yas/make-mirror (set-marker (make-marker) (match-beginning 0))
+			       (set-marker (make-marker) (match-beginning 0))
 			       (buffer-substring-no-properties (match-beginning 2)
 							       (1- real-match-end-0)))
-	      (yas/field-mirrors field))))))
+	      (yas/field-mirrors field))
+	(delete-region (match-beginning 0) real-match-end-0)))))
 
 (defun yas/simple-mirror-parse-create (snippet)
   (while (re-search-forward yas/simple-mirror-regexp nil t)
     (let ((number (string-to-number (match-string-no-properties 1))))
-      (if (zerop number)
-	  (setf (yas/snippet-exit snippet)
-		(make-overlay (match-beginning 0) (match-end 0) nil t nil))
-	(let ((field (yas/snippet-find-field snippet number)))
-	  (when field
-	    (let ((ov (make-overlay (match-beginning 0)
-				    (match-end 0) nil t nil)))
-	      (overlay-put ov 'yas/mirrorp t)
-	      (push (yas/make-mirror ov nil)
-		    (yas/field-mirrors field)))))))))
+      (cond ((zerop number)
+	     (setf (yas/snippet-exit snippet)
+		(set-marker (make-marker) (match-beginning 0)))
+	     (delete-region (match-beginning 0) (match-end 0)))
+	    (t
+	     (let ((field (yas/snippet-find-field snippet number)))
+	       (when field
+		 (push (yas/make-mirror (set-marker (make-marker) (match-beginning 0))
+					(set-marker (make-marker) (match-beginning 0))
+					nil)
+		       (yas/field-mirrors field))
+		 (delete-region (match-beginning 0) (match-end 0)))))))))
 
 (defun yas/update-mirrors (snippet)
+  (save-excursion
   (dolist (field (yas/snippet-fields snippet))
     (dolist (mirror (yas/field-mirrors field))
-      (yas/mirror-update-display mirror field))))
+      (yas/mirror-update-display mirror field)))))
 
 (defun yas/mirror-update-display (mirror field)
-  (overlay-put (yas/mirror-overlay mirror) 'after-string
-	       (propertize (yas/apply-transform mirror field) 'face 'yas/mirror-highlight-face)))
+  (goto-char (yas/mirror-start mirror))
+  (delete-region (yas/mirror-start mirror) (yas/mirror-end mirror))
+  (insert (yas/apply-transform mirror field))
+  (set-marker (yas/mirror-end mirror) (point)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Template-related and snippet loading functions
@@ -1166,19 +1102,19 @@ when the condition evaluated to non-nil."
 
 (defun yas/move-to-field (snippet field)
   "Update SNIPPET to move to field FIELD."
-  (goto-char (overlay-end (car (yas/field-overlay-pair field))))
+  (goto-char (yas/field-start field))
+  (setf (yas/snippet-active-field snippet) field)
   (if (and yas/active-field-overlay
 	   (overlay-buffer yas/active-field-overlay))
       (move-overlay yas/active-field-overlay
-		    (overlay-end (car (yas/field-overlay-pair field)))
-		    (overlay-start (cdr (yas/field-overlay-pair field))))
-    ;; create a new overlay, this is the only yas overlay that
-    ;; shouldn't evaporate
+		    (yas/field-start field)
+		    (yas/field-end field))
     (setq yas/active-field-overlay
-	  (make-overlay (overlay-end (car (yas/field-overlay-pair field)))
-			(overlay-start (cdr (yas/field-overlay-pair field)))
+	  (make-overlay (yas/field-start field)
+			(yas/field-end field)
 			nil nil t))
     (overlay-put yas/active-field-overlay 'face 'yas/field-highlight-face)
+    (overlay-put yas/active-field-overlay 'evaporate t)
     (overlay-put yas/active-field-overlay 'modification-hooks '(yas/on-field-overlay-modification))
     (overlay-put yas/active-field-overlay 'insert-in-front-hooks '(yas/on-field-overlay-modification))
     (overlay-put yas/active-field-overlay 'insert-behind-hooks '(yas/on-field-overlay-modification)))
@@ -1228,7 +1164,7 @@ exiting the snippet."
 
     ;; Push an action for snippet revival
     ;;
-    (push `(apply yas/snippet-create ,yas/snippet-beg ,yas/snippet-end)
+    (push `(apply yas/snippet-revive ,yas/snippet-beg ,yas/snippet-end ,snippet)
 	  buffer-undo-list)
 
     ;; Trash those overlays!
@@ -1302,16 +1238,16 @@ snippet, if so cleans up the whole snippet up."
   )
 
 (defun yas/post-command-handler ()
-  (yas/check-commit-snippet))
+  (cond ((eq 'undo this-command)
+	 (let ((snippet (car (yas/snippets-at-point))))
+	   (when snippet
+	     (yas/move-to-field snippet (or (yas/snippet-active-field snippet)
+					    (car (yas/snippet-fields snippet)))))))
+	(t
+	 ;; (yas/check-commit-snippet)
+	 )))
 
 ;; Debug functions.  Use (or change) at will whenever needed.
-
-(defun yas/toggle-hidden-overlays ()
-  (interactive)
-  (mapcar #'(lambda (ov)
-	      (when (overlay-get ov 'yas/hidden)
-		(overlay-put ov 'invisible (not (overlay-get ov 'invisible)))))
-	  (overlays-in (point-min) (point-max))))
 
 (defun yas/debug-some-vars ()
   (interactive)
