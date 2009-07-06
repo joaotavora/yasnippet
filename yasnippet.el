@@ -1059,20 +1059,20 @@ snippet, if so cleans up the whole snippet up."
     (dolist (snippet snippets)
       ;; TODO: handle nested field exceptions, smaller, more nested
       ;; find should come up earlier as `containing-field's
-      (let ((containing-field (find-if #'yas/field-contains-point-p (reverse (yas/snippet-fields snippet))))) 
-	(cond ((not containing-field)
+      (let ((active-field (yas/snippet-active-field snippet))) 
+	(cond ((not (and active-field (yas/field-contains-point-p active-field)))
 	       (yas/commit-snippet snippet))
-	      ((and containing-field
+	      ((and active-field
 		    (or (not yas/active-field-overlay)
 			(not (overlay-buffer yas/active-field-overlay))))
 	       (save-excursion
-		 (yas/move-to-field snippet containing-field)))
+		 (yas/move-to-field snippet active-field)))
 	      (t
 	       nil))))))
 
 (defun yas/field-contains-point-p (field)
   (and (>= (point) (yas/field-start field))
-       (< (point) (yas/field-end field))))
+       (<= (point) (yas/field-end field))))
 
 (defun yas/pre-command-handler ()
   )
@@ -1327,8 +1327,8 @@ Allows nested placeholder in the style of Textmate."
   (set-marker (yas/mirror-end mirror) (point)))
 
 
-
 ;; Debug functions.  Use (or change) at will whenever needed.
+;; 
 
 (defun yas/debug-some-vars ()
   (interactive)
@@ -1362,7 +1362,6 @@ Allows nested placeholder in the style of Textmate."
   (yas/load-directory "~/Source/yasnippet/snippets/")
   ;;(kill-buffer (get-buffer "*YAS TEST*"))
   (set-buffer (switch-to-buffer "*YAS TEST*"))
-  (yas/exterminate-snippets)
   (erase-buffer)
   (setq buffer-undo-list nil)
   (html-mode)

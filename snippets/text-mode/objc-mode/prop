@@ -1,8 +1,9 @@
 #name : foo { ... } ; setFoo { ... }
 # --
-- (${1:id})${2:foo}
+- ${1:id}     ${2:foo and its ${3:nested} shit}
 {
     return $2;
+    // dont forget we have $3
 }
 
 - (void)set${2:$(capitalize text)}:($1)aValue
