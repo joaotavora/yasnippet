@@ -826,7 +826,8 @@ when the condition evaluated to non-nil."
   (exit nil)
   (id (yas/snippet-next-id) :read-only t)
   (control-overlay nil)
-  active-field)
+  active-field
+  previous-active-field)
 
 (defstruct (yas/field (:constructor yas/make-field (number start end parent-field)))
   "A field."
@@ -1037,10 +1038,17 @@ exiting the snippet."
       (when yas/field-protection-overlays
 	(mapcar #'delete-overlay yas/field-protection-overlays)))
 
-    ;; (if yas/allow-buggy-redo (yas/points-to-markers snippet))
+    ;; For stacked expansion: if the original expansion took place
+    ;; from a field, make sure we advance it here at least to
+    ;; `yas/snippet-end'...
+    ;;
+    (let ((previous-field (yas/snippet-previous-active-field snippet)))
+      (when previous-field
+	(yas/advance-field-and-parents-maybe previous-field yas/snippet-end)))
 
     ;; Push an action for snippet revival
     ;;
+    ;; (if yas/allow-buggy-redo (yas/points-to-markers snippet))
     (push `(apply yas/snippet-revive ,yas/snippet-beg ,yas/snippet-end ,snippet)
 	  buffer-undo-list)
     
@@ -1057,16 +1065,19 @@ exiting the snippet."
 snippet, if so cleans up the whole snippet up."
   (let* ((snippets (yas/snippets-at-point 'all-snippets)))
     (dolist (snippet snippets)
-      ;; TODO: handle nested field exceptions, smaller, more nested
-      ;; find should come up earlier as `containing-field's
       (let ((active-field (yas/snippet-active-field snippet))) 
 	(cond ((not (and active-field (yas/field-contains-point-p active-field)))
 	       (yas/commit-snippet snippet))
 	      ((and active-field
 		    (or (not yas/active-field-overlay)
 			(not (overlay-buffer yas/active-field-overlay))))
+	       ;;
+	       ;; this case is mainly for recent snippet exits that
+	       ;; place us back int the field of another snippet
+	       ;;
 	       (save-excursion
-		 (yas/move-to-field snippet active-field)))
+		 (yas/move-to-field snippet active-field)
+		 (yas/update-mirrors snippet)))
 	      (t
 	       nil))))))
 
@@ -1142,7 +1153,7 @@ progress."
     (let ((field (overlay-get yas/active-field-overlay 'yas/field)))
       (cond (after?
 	     (yas/advance-field-and-parents-maybe field (overlay-end overlay))
-	     (mapcar #'yas/update-mirrors (yas/snippets-at-point)))
+	     (yas/update-mirrors (car (yas/snippets-at-point))))
 	    (field
 	     (when (and (not after?)
 			(not (yas/field-modified-p field))
@@ -1168,26 +1179,32 @@ will be deleted before inserting template."
   (run-hooks 'yas/before-expand-snippet-hook)
   (goto-char start)
 
-  (let* ((key (buffer-substring-no-properties start end))
-	 (length (- end start))
-	 (column (current-column))
-	 (inhibit-modification-hooks t)
-	 snippet)
+  (let ((key (buffer-substring-no-properties start end))
+	(inhibit-modification-hooks t)
+	(column (current-column))
+	snippet)
     ;; Narrow the region down to the template, shoosh the
-    ;; buffer-undo-list, then come out as if all that happened was a
-    ;; normal, undo-recorded, insertion.
+    ;; buffer-undo-list and any modification hooks, then come out as
+    ;; if all that happened was a normal, undo-recorded, insertion.
     ;; 
     (save-restriction
       (let ((buffer-undo-list t)
-	    (template-start (+ start length)))
+	    (template-start end))
 	(narrow-to-region template-start template-start)
 	(insert template)
-	(setq snippet (yas/snippet-create (point-min) (point-max))))
-      (push (cons (point-min) (point-max)) buffer-undo-list))
-    ;; Delete the trigger key
+	(setq snippet (yas/snippet-create (point-min) (point-max)))))
+    ;; Delete the trigger key, this should trigger modification hooks
     ;;
-    (goto-char start)
-    (delete-char length)
+    (delete-region start end)
+    ;; This checks for stacked expansion
+    ;;
+    (let ((existing-field (and yas/active-field-overlay
+			       (overlay-buffer yas/active-field-overlay)
+			       (overlay-get yas/active-field-overlay 'yas/field))))
+      (when existing-field
+	(setf (yas/snippet-previous-active-field snippet) existing-field)
+	(yas/advance-field-and-parents-maybe existing-field (overlay-end yas/active-field-overlay))))
+    
     ;; Move to the first of fields, or exit the snippet to its exit
     ;; point
     ;; 
@@ -1199,11 +1216,9 @@ will be deleted before inserting template."
     ;; Push an undo action
     (let ((start (overlay-start (yas/snippet-control-overlay snippet)))
 	  (end (overlay-end (yas/snippet-control-overlay snippet))))
+      (push (cons start end) buffer-undo-list)
       (push `(apply yas/take-care-of-redo ,start ,end ,snippet)
-	    buffer-undo-list))
-
-    ;; if this is a stacked expansion update the other snippets at point
-    (mapcar #'yas/update-mirrors (rest (yas/snippets-at-point)))))
+	    buffer-undo-list))))
 
 (defun yas/take-care-of-redo (beg end snippet)
   (yas/commit-snippet snippet))
@@ -1318,7 +1333,8 @@ Allows nested placeholder in the style of Textmate."
   (save-excursion
     (dolist (field (yas/snippet-fields snippet))
       (dolist (mirror (yas/field-mirrors field))
-	(yas/mirror-update-display mirror field)))))
+	(let ((inhibit-modification-hooks t))
+	  (yas/mirror-update-display mirror field))))))
 
 (defun yas/mirror-update-display (mirror field)
   (goto-char (yas/mirror-start mirror))
