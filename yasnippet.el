@@ -377,6 +377,8 @@ a list of modes like this to help the judgement."
   (or (fboundp mode)
       (find mode yas/known-modes)))
 
+;; TODO: This is a possible optimization point, the expression could
+;; be stored in cons format instead of string, 
 (defun yas/eval-string (string)
   "Evaluate STRING and convert the result to string."
   (condition-case err
@@ -953,44 +955,44 @@ up the snippet does not delete it!"
 (defun yas/delete-overlay-region (overlay)
   (delete-region (overlay-start overlay) (overlay-end overlay)))
 
-;; Markers to points: This can be useful for performance reasons, so
-;; that an excessive number of live markers arent kept aroung in the
-;; `buffer-undo-list'. However in `markers-to-points', the set-to-nil
-;; markers can't simply be discarded and replaced with fresh ones in
-;; `points-to-markers'. The original set-to-nil marker has to be
-;; reused.
+;;; Apropos markers-to-points: This can be useful for performance reasons, so
+;;; that an excessive number of live markers arent kept aroung in the
+;;; `buffer-undo-list'. However in `markers-to-points', the set-to-nil
+;;; markers can't simply be discarded and replaced with fresh ones in
+;;; `points-to-markers'. The original set-to-nil marker has to be
+;;; reused.
+;;;
+;;; (defun yas/markers-to-points (snippet)
+;;;   "Convert all markers in SNIPPET to simple integer buffer positions."
+;;;   (dolist (field (yas/snippet-fields snippet))
+;;;	(let ((start (marker-position (yas/field-start field)))
+;;;	  (end (marker-position (yas/field-end field))))
+;;;	  (set-marker (yas/field-start field) nil)
+;;;	  (set-marker (yas/field-end field) nil)
+;;;	  (setf (yas/field-start field) start)
+;;;	  (setf (yas/field-end field) end))
+;;;	(dolist (mirror (yas/field-mirrors field))
+;;;	  (let ((start (marker-position (yas/mirror-start mirror)))
+;;;	    (end (marker-position (yas/mirror-end mirror))))
+;;;	(set-marker (yas/mirror-start mirror) nil)
+;;;	(set-marker (yas/mirror-end mirror) nil)
+;;;	(setf (yas/mirror-start mirror) start)
+;;;	(setf (yas/mirror-end mirror) end))))
+;;;   (when (yas/snippet-exit snippet)
+;;;	(let ((exit (marker-position (yas/snippet-exit snippet))))
+;;;	  (set-marker (yas/snippet-exit snippet) nil)
+;;;	  (setf (yas/snippet-exit snippet) exit))))
 ;;
-;; (defun yas/markers-to-points (snippet)
-;;   "Convert all markers in SNIPPET to simple integer buffer positions."
-;;   (dolist (field (yas/snippet-fields snippet))
-;;     (let ((start (marker-position (yas/field-start field)))
-;; 	  (end (marker-position (yas/field-end field))))
-;;       (set-marker (yas/field-start field) nil)
-;;       (set-marker (yas/field-end field) nil)
-;;       (setf (yas/field-start field) start)
-;;       (setf (yas/field-end field) end))
-;;     (dolist (mirror (yas/field-mirrors field))
-;;       (let ((start (marker-position (yas/mirror-start mirror)))
-;; 	    (end (marker-position (yas/mirror-end mirror))))
-;; 	(set-marker (yas/mirror-start mirror) nil)
-;; 	(set-marker (yas/mirror-end mirror) nil)
-;; 	(setf (yas/mirror-start mirror) start)
-;; 	(setf (yas/mirror-end mirror) end))))
-;;   (when (yas/snippet-exit snippet)
-;;     (let ((exit (marker-position (yas/snippet-exit snippet))))
-;;       (set-marker (yas/snippet-exit snippet) nil)
-;;       (setf (yas/snippet-exit snippet) exit))))
-
-;; (defun yas/points-to-markers (snippet)
-;;   "Convert all simple integer buffer positions in SNIPPET to markers"
-;;   (dolist (field (yas/snippet-fields snippet))
-;;     (setf (yas/field-start field) (set-marker (make-marker) (yas/field-start field)))
-;;     (setf (yas/field-end field) (set-marker (make-marker) (yas/field-end field)))
-;;     (dolist (mirror (yas/field-mirrors field))
-;;       (setf (yas/mirror-start mirror) (set-marker (make-marker) (yas/mirror-start mirror)))
-;;       (setf (yas/mirror-end mirror) (set-marker (make-marker) (yas/mirror-end mirror)))))
-;;   (when (yas/snippet-exit snippet)
-;;     (setf (yas/snippet-exit snippet) (set-marker (make-marker) (yas/snippet-exit snippet)))))
+;;; (defun yas/points-to-markers (snippet)
+;;;   "Convert all simple integer buffer positions in SNIPPET to markers"
+;;;   (dolist (field (yas/snippet-fields snippet))
+;;;	(setf (yas/field-start field) (set-marker (make-marker) (yas/field-start field)))
+;;;	(setf (yas/field-end field) (set-marker (make-marker) (yas/field-end field)))
+;;;	(dolist (mirror (yas/field-mirrors field))
+;;;	  (setf (yas/mirror-start mirror) (set-marker (make-marker) (yas/mirror-start mirror)))
+;;;	  (setf (yas/mirror-end mirror) (set-marker (make-marker) (yas/mirror-end mirror)))))
+;;;   (when (yas/snippet-exit snippet)
+;;;	(setf (yas/snippet-exit snippet) (set-marker (make-marker) (yas/snippet-exit snippet)))))
 
 (defun yas/commit-snippet (snippet &optional no-hooks)
   "Commit SNIPPET, but leave point as it is.  This renders the
@@ -1162,16 +1164,18 @@ progress."
 	       (yas/clear-field field))
 	     (setf (yas/field-modified-p field) t))))))
 
-;; Apropos "protection overlays:"... These exist for nasty users who
-;; will try to delete parts of the snippet outside the active
-;; field. Actual protection happens in
-;; `yas/on-protection-overlay-modification'.
-;;
-;; Currently, this commits the snippet before actually calling
-;; `this-command' interactively, and then signals an eror, which is
-;; ignored. but blocks all other million modification hooks. I might
-;; decide to not let the command be executed at all...
-;;
+;;;
+;;; Apropos protection overlays:...
+;;;
+;;; These exist for nasty users who will try to delete parts of the
+;;; snippet outside the active field. Actual protection happens in
+;;; `yas/on-protection-overlay-modification'.
+;;;
+;;; Currently, this commits the snippet before actually calling
+;;; `this-command' interactively, and then signals an eror, which is
+;;; ignored. but blocks all other million modification hooks. I might
+;;; decide to not let the command be executed at all...
+;;;
 (defun yas/make-move-field-protection-overlays (snippet field)
   "Place protection overlays surrounding SNIPPET's FIELD.
 
@@ -1200,7 +1204,7 @@ Move the overlays, or create them if they do not exit."
 	     (error "Snippet exited"))))))
 
 ;;;
-;;; Apropos "stacked expansion:"...
+;;; Apropos stacked expansion:...
 ;;;
 ;;; the parent snippet does not run its fields modification hooks
 ;;; (`yas/on-field-overlay-modification' and
