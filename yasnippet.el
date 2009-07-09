@@ -227,9 +227,13 @@ to expand.
   "${\\([0-9]+:\\)?\\([^}]*\\)}"
   "A regexp to *almost* recognize a field")
 
-(defconst yas/expression-regexp
+(defconst yas/dollar-lisp-expression-regexp
   "$\\(([^)]*)\\)"
   "A regexp to *almost* recognize a \"$(...)\" expression")
+
+(defconst yas/backquote-lisp-expression-regexp
+  "`\\([^`]*\\)`"
+  "A regexp to recognize a \"`(...)`\" expression")
 
 (defconst yas/transform-mirror-regexp
   "${\\(?:\\([0-9]+\\):\\)?$\\([^}]*\\)"
@@ -944,7 +948,7 @@ Also create some protection overlays"
   (yas/make-move-field-protection-overlays snippet field)
   (overlay-put yas/active-field-overlay 'yas/field field)
   (unless (yas/field-modified-p field)
-    (if (yas/update-field field snippet)
+    (if (yas/field-update-display field snippet)
 	(let ((inhibit-modification-hooks t))
 	  (yas/update-mirrors snippet))
       (setf (yas/field-modified-p field) nil))))
@@ -967,42 +971,48 @@ up the snippet does not delete it!"
 
 ;;; Apropos markers-to-points: This can be useful for performance reasons, so
 ;;; that an excessive number of live markers arent kept aroung in the
-;;; `buffer-undo-list'. However in `markers-to-points', the set-to-nil
+;;; `buffer-undo-list'. In `markers-to-points', the set-to-nil
 ;;; markers can't simply be discarded and replaced with fresh ones in
-;;; `points-to-markers'. The original set-to-nil marker has to be
+;;; `points-to-markers'. The original marker that was just set to nilhas to be
 ;;; reused.
 ;;;
-;;; (defun yas/markers-to-points (snippet)
-;;;   "Convert all markers in SNIPPET to simple integer buffer positions."
-;;;   (dolist (field (yas/snippet-fields snippet))
-;;;	(let ((start (marker-position (yas/field-start field)))
-;;;	  (end (marker-position (yas/field-end field))))
-;;;	  (set-marker (yas/field-start field) nil)
-;;;	  (set-marker (yas/field-end field) nil)
-;;;	  (setf (yas/field-start field) start)
-;;;	  (setf (yas/field-end field) end))
-;;;	(dolist (mirror (yas/field-mirrors field))
-;;;	  (let ((start (marker-position (yas/mirror-start mirror)))
-;;;	    (end (marker-position (yas/mirror-end mirror))))
-;;;	(set-marker (yas/mirror-start mirror) nil)
-;;;	(set-marker (yas/mirror-end mirror) nil)
-;;;	(setf (yas/mirror-start mirror) start)
-;;;	(setf (yas/mirror-end mirror) end))))
-;;;   (when (yas/snippet-exit snippet)
-;;;	(let ((exit (marker-position (yas/snippet-exit snippet))))
-;;;	  (set-marker (yas/snippet-exit snippet) nil)
-;;;	  (setf (yas/snippet-exit snippet) exit))))
-;;
-;;; (defun yas/points-to-markers (snippet)
-;;;   "Convert all simple integer buffer positions in SNIPPET to markers"
-;;;   (dolist (field (yas/snippet-fields snippet))
-;;;	(setf (yas/field-start field) (set-marker (make-marker) (yas/field-start field)))
-;;;	(setf (yas/field-end field) (set-marker (make-marker) (yas/field-end field)))
-;;;	(dolist (mirror (yas/field-mirrors field))
-;;;	  (setf (yas/mirror-start mirror) (set-marker (make-marker) (yas/mirror-start mirror)))
-;;;	  (setf (yas/mirror-end mirror) (set-marker (make-marker) (yas/mirror-end mirror)))))
-;;;   (when (yas/snippet-exit snippet)
-;;;	(setf (yas/snippet-exit snippet) (set-marker (make-marker) (yas/snippet-exit snippet)))))
+;;; This shouldn't bring horrible problems with undo/redo, but it
+;;; would be one of the the first thing I'd remove if I was debugging that...
+;;;
+(defun yas/markers-to-points (snippet)
+  "Convert all markers in SNIPPET to a cons (POINT . MARKER)
+where POINT is the original position of the marker and MARKER is
+the original marker object with the position set to nil."
+  (dolist (field (yas/snippet-fields snippet))
+    (let ((start (marker-position (yas/field-start field)))
+	  (end (marker-position (yas/field-end field))))
+      (set-marker (yas/field-start field) nil)
+      (set-marker (yas/field-end field) nil)
+      (setf (yas/field-start field) (cons start (yas/field-start field)))
+      (setf (yas/field-end field) (cons end (yas/field-end field))))
+    (dolist (mirror (yas/field-mirrors field))
+      (let ((start (marker-position (yas/mirror-start mirror)))
+	    (end (marker-position (yas/mirror-end mirror))))
+	(set-marker (yas/mirror-start mirror) nil)
+	(set-marker (yas/mirror-end mirror) nil)
+	(setf (yas/mirror-start mirror) (cons start (yas/mirror-start mirror)))
+	(setf (yas/mirror-end mirror) (cons end (yas/mirror-end mirror))))))
+  (when (yas/snippet-exit snippet)
+    (let ((exit (marker-position (yas/snippet-exit snippet))))
+      (set-marker (yas/snippet-exit snippet) nil)
+      (setf (yas/snippet-exit snippet) (cons exit (yas/snippet-exit snippet))))))
+
+(defun yas/points-to-markers (snippet)
+  "Convert all cons (POINT . MARKER) in SNIPPET to markers. This
+is done by setting MARKER to POINT with `set-marker'."
+  (dolist (field (yas/snippet-fields snippet))
+    (setf (yas/field-start field) (set-marker (cdr (yas/field-start field)) (car (yas/field-start field))))
+    (setf (yas/field-end field) (set-marker (cdr (yas/field-end field)) (car (yas/field-end field))))
+    (dolist (mirror (yas/field-mirrors field))
+      (setf (yas/mirror-start mirror) (set-marker (cdr (yas/mirror-start mirror)) (car (yas/mirror-start mirror))))
+      (setf (yas/mirror-end mirror) (set-marker (cdr (yas/mirror-end mirror)) (car (yas/mirror-end mirror))))))
+  (when (yas/snippet-exit snippet)
+    (setf (yas/snippet-exit snippet) (set-marker (cdr (yas/snippet-exit snippet)) (car (yas/snippet-exit snippet))))))
 
 (defun yas/commit-snippet (snippet &optional no-hooks)
   "Commit SNIPPET, but leave point as it is.  This renders the
@@ -1037,9 +1047,12 @@ exiting the snippet."
       (when previous-field
 	(yas/advance-field-and-parents-maybe previous-field yas/snippet-end)))
 
+    ;; Convert all markers to points, 
+    ;;
+    (yas/markers-to-points snippet)
+
     ;; Push an action for snippet revival
     ;;
-    ;; (if yas/allow-buggy-redo (yas/points-to-markers snippet))
     (push `(apply yas/snippet-revive ,yas/snippet-beg ,yas/snippet-end ,snippet)
 	  buffer-undo-list)
     
@@ -1182,7 +1195,7 @@ progress."
     (let ((field (overlay-get yas/active-field-overlay 'yas/field)))
       (cond (after?
 	     (yas/advance-field-and-parents-maybe field (overlay-end overlay))
-	     (yas/update-field field (car (yas/snippets-at-point)))
+	     (yas/field-update-display field (car (yas/snippets-at-point)))
 	     (yas/update-mirrors (car (yas/snippets-at-point))))
 	    (field
 	     (when (and (not after?)
@@ -1193,17 +1206,21 @@ progress."
 	       (yas/clear-field field))
 	     (setf (yas/field-modified-p field) t))))))
 
-(defun yas/update-field (field snippet)
+(defun yas/field-update-display (field snippet)
+  "Much like `yas/mirror-update-display', but for fields"
   (when (yas/field-transform field)
     (let ((inhibit-modification-hooks t)
 	  (transformed (yas/apply-transform field field 'nil-on-empty))
 	  (point (point)))
-      (when transformed
-	(yas/clear-field field)
+      (when (and transformed
+		 (not (string= transformed (buffer-substring-no-properties (yas/field-start field) (yas/field-end field)))))
+	(goto-char (yas/field-start field))
 	(insert transformed)
-	(yas/advance-field-and-parents-maybe field (point))
-	(when (yas/field-contains-point-p field point)
-	  (goto-char point))))))
+	(if (> (yas/field-end field) (point))
+	    (delete-region (point) (yas/field-end field))
+	  (set-marker (yas/field-end field) (point)))
+	t))))
+
 ;;;
 ;;; Apropos protection overlays:...
 ;;;
@@ -1350,11 +1367,14 @@ to their correct locations *at the time the snippet is revived*.
 
 After revival, push the `yas/take-care-of-redo' in the
 `buffer-undo-list'"
+  ;; Reconvert all the points to markers
+  ;;
+  (yas/points-to-markers snippet)
+  
   (setf (yas/snippet-control-overlay snippet) (yas/make-control-overlay beg end))
   (overlay-put (yas/snippet-control-overlay snippet) 'yas/snippet snippet)
   (yas/move-to-field snippet (or (yas/snippet-active-field snippet)
 				 (car (yas/snippet-fields snippet))))
-  ;; (if yas/allow-buggy-redo (yas/points-to-markers snippet))
 
   (push `(apply yas/take-care-of-redo ,beg ,end ,snippet)
 	buffer-undo-list))
@@ -1402,6 +1422,10 @@ Meant to be called in a narrowed buffer, does various passes"
     ;; protect escapes
     ;; 
     (yas/protect-escapes)
+    ;; replace all backquoted expressions
+    ;;
+    (goto-char parse-start)
+    (yas/replace-backquotes)
     ;; parse fields
     ;; 
     (goto-char parse-start)
@@ -1418,19 +1442,40 @@ Meant to be called in a narrowed buffer, does various passes"
     ;;
     (yas/restore-escapes)))
 
+(defun yas/escape-string (escaped)
+  (concat "YASESCAPE" (format "%d" escaped) "PROTECTGUARD"))
+
 (defun yas/protect-escapes ()
-  "Protect all escaped characters with their numeric ASCII value.")
+  "Protect all escaped characters with their numeric ASCII value."
+  (mapc #'(lambda (escaped)
+	    (yas/replace-all (concat "\\" (char-to-string escaped))
+			     (yas/escape-string escaped)))
+	'(?\\ ?` ?$ ?} )))
+
 (defun yas/restore-escapes ()
-  "Restore all escaped characters from their numeric ASCII value.")
+  "Restore all escaped characters from their numeric ASCII value."
+  (mapc #'(lambda (escaped)
+	    (yas/replace-all (concat "YASESCAPE" (format "%d" escaped) "PROTECTGUARD")
+			     (char-to-string escaped)))
+	'(?\\ ?` ?$ ?} )))
+
+(defun yas/replace-backquotes ()
+  "Replace all the \"`(lisp-expression)`\"-style expression
+  with their evaluated value"
+  (while (re-search-forward yas/backquote-lisp-expression-regexp nil t)
+    (let ((transformed (yas/eval-string (match-string 1))))
+      (goto-char (match-end 0))
+      (insert transformed)
+      (delete-region (match-beginning 0) (match-end 0)))))
 
 (defun yas/field-parse-create (snippet &optional parent-field)
   "Parse the \"${n: }\" or \"$(lisp-expression)\" expressions, in
 two separate passes.
 
-For \"$(lisp-expression)\" expressions \"lisp-expression\" is set to:
+For \"$(lisp-expression)\" expressions \"lisp-expression\" is:
 
-   * The snippets exit-hook if PARENT-FIELD is nil;
-   * PARENT-FIELD's transform, otherwise.
+   * Replaced in-place with its value;
+   * set PARENT-FIELD's transform, otherwise.
 
 When multiple such expressions are found, only the last one counts."
   (save-excursion
@@ -1456,13 +1501,16 @@ When multiple such expressions are found, only the last one counts."
 	      (goto-char (point-min))
 	      (yas/field-parse-create snippet brand-new-field)))))))
   (save-excursion
-    (while (re-search-forward yas/expression-regexp nil t)
+    (while (re-search-forward yas/dollar-lisp-expression-regexp nil t)
       (let* ((real-match-end-0 (scan-sexps (1+ (match-beginning 0)) 1)))
 	(when real-match-end-0
+	  (let ((lisp-expression-string (buffer-substring-no-properties (match-beginning 1) real-match-end-0))) 
 	  (if parent-field
-	      (setf (yas/field-transform parent-field) (buffer-substring-no-properties (match-beginning 1) real-match-end-0))
-	    (setf (yas/snippet-exit-hook snippet) (buffer-substring-no-properties (match-beginning 1) real-match-end-0)))
-	  (delete-region (match-beginning 0) real-match-end-0))))))
+	      (setf (yas/field-transform parent-field) lisp-expression-string)
+	    (let ((transformed (yas/eval-string lisp-expression-string)))
+	      (goto-char real-match-end-0)
+	      (insert transformed)))
+	  (delete-region (match-beginning 0) real-match-end-0)))))))
 
 (defun yas/transform-mirror-parse-create (snippet)
   "Parse the \"${n:(lisp-expression)}\" mirror transformations."
@@ -1511,11 +1559,13 @@ When multiple such expressions are found, only the last one counts."
 
 (defun yas/mirror-update-display (mirror field)
   "Update MIRROR according to FIELD (and mirror transform)."
-  (goto-char (yas/mirror-start mirror))
-  (delete-region (yas/mirror-start mirror) (yas/mirror-end mirror))
-  (insert (yas/apply-transform mirror field))
-  (set-marker (yas/mirror-end mirror) (point)))
-
+  (let ((transformed (yas/apply-transform mirror field)))
+    (when (not (string= transformed (buffer-substring-no-properties (yas/mirror-start mirror) (yas/mirror-end mirror))))
+      (goto-char (yas/mirror-start mirror))
+      (insert transformed)
+      (if (> (yas/mirror-end mirror) (point))
+	  (delete-region (point) (yas/mirror-end mirror))
+	(set-marker (yas/mirror-end mirror) (point))))))
 
 ;; Debug functions.  Use (or change) at will whenever needed.
 ;; 
@@ -1562,6 +1612,7 @@ When multiple such expressions are found, only the last one counts."
   (yas/load-directory "~/Source/yasnippet/snippets/")
   ;;(kill-buffer (get-buffer "*YAS TEST*"))
   (set-buffer (switch-to-buffer "*YAS TEST*"))
+  (mapcar #'yas/commit-snippet (yas/snippets-at-point 'all-snippets))
   (erase-buffer)
   (setq buffer-undo-list nil)
   (html-mode)
