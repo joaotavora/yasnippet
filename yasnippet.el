@@ -216,12 +216,10 @@ to expand.
 (defvar yas/known-modes
   '(ruby-mode rst-mode markdown-mode)
   "A list of mode which is well known but not part of emacs.")
-(defconst yas/escape-backslash
-  (concat "YASESCAPE" "BACKSLASH" "PROTECTGUARD"))
-(defconst yas/escape-dollar
-  (concat "YASESCAPE" "DOLLAR" "PROTECTGUARD"))
-(defconst yas/escape-backquote
-  (concat "YASESCAPE" "BACKQUOTE" "PROTECTGUARD"))
+(defvar yas/escaped-characters
+  '(?\\ ?` ?$ ?} )
+  "A list of characters which *might* need to be escaped in
+snippet templates")
 
 (defconst yas/field-regexp
   "${\\([0-9]+:\\)?\\([^}]*\\)}"
@@ -236,7 +234,7 @@ to expand.
   "A regexp to recognize a \"`(...)`\" expression")
 
 (defconst yas/transform-mirror-regexp
-  "${\\(?:\\([0-9]+\\):\\)?$\\([^}]*\\)"
+  "${\\(?:\\([0-9]+\\):\\)?\\([^}]*\\)"
   "A regexp to *almost* recognize a mirror with a transform")
 
 (defconst yas/simple-mirror-regexp
@@ -1450,14 +1448,14 @@ Meant to be called in a narrowed buffer, does various passes"
   (mapc #'(lambda (escaped)
 	    (yas/replace-all (concat "\\" (char-to-string escaped))
 			     (yas/escape-string escaped)))
-	'(?\\ ?` ?$ ?} )))
+	yas/escaped-characters))
 
 (defun yas/restore-escapes ()
   "Restore all escaped characters from their numeric ASCII value."
   (mapc #'(lambda (escaped)
-	    (yas/replace-all (concat "YASESCAPE" (format "%d" escaped) "PROTECTGUARD")
+	    (yas/replace-all (yas/escape-string escaped)
 			     (char-to-string escaped)))
-	'(?\\ ?` ?$ ?} )))
+	yas/escaped-characters))
 
 (defun yas/replace-backquotes ()
   "Replace all the \"`(lisp-expression)`\"-style expression
@@ -1483,8 +1481,7 @@ When multiple such expressions are found, only the last one counts."
       (let* ((real-match-end-0 (scan-sexps (1+ (match-beginning 0)) 1))
 	     (number (string-to-number (match-string-no-properties 1)))
 	     (brand-new-field (and real-match-end-0
-				   ;; (save-match-data (not (string-match "$(" (match-string-no-properties 2))))
-				   ;;   .. shit... don't know why I added this line anymore
+				   (not (eq ?\( (aref (match-string-no-properties 2) 0)))
 				   number
 				   (not (zerop number))
 				   (yas/make-field number
