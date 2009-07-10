@@ -95,6 +95,10 @@ mode will be listed under the menu \"yasnippet\".")
 (defvar yas/trigger-symbol " =>"
   "The text that will be used in menu to represent the trigger.")
 
+(defvar yas/good-grace nil
+  "If non-nil, don't raise errors in inline elisp evaluation,
+return the error string instead.")
+
 (defface yas/field-highlight-face
   '((((class color) (background light)) (:background "DarkSeaGreen1"))
     (t (:background "DimGrey")))
@@ -272,13 +276,7 @@ You can customize the key through `yas/trigger-key'."
   ;; The indicator for the mode line.
   " yas"
   :group 'editing
-  (define-key yas/minor-mode-map yas/trigger-key 'yas/expand)
-  (if yas/minor-mode
-      (progn
-	(add-hook 'post-command-hook 'yas/post-command-handler nil t)
-	(add-hook 'pre-command-hook 'yas/pre-command-handler t t))
-    (remove-hook 'post-command-hook 'yas/post-command-handler)
-    (remove-hook 'pre-command-hook 'yas/pre-command-handler)))
+  (define-key yas/minor-mode-map yas/trigger-key 'yas/expand))
 
 (defun yas/minor-mode-auto-on ()
   "Turn on YASnippet minor mode unless `yas/dont-activate' is
@@ -383,8 +381,10 @@ a list of modes like this to help the judgement."
   (or (fboundp mode)
       (find mode yas/known-modes)))
 
+
+
 ;; TODO: This is a possible optimization point, the expression could
-;; be stored in cons format instead of string, 
+;; be stored in cons format instead of string,
 (defun yas/eval-string (string)
   "Evaluate STRING and convert the result to string."
   (condition-case err
@@ -395,8 +395,11 @@ a list of modes like this to help the judgement."
 	    (let ((result (eval (read string))))
 	      (when result
 		(format "%s" result))))))
-    (error (format "(error in elisp evaluation: %s)"
-                   (error-message-string err)))))
+    (error (if yas/good-grace
+	       (format "(yasnippet: error in elisp evaluation: %s)"
+		       (error-message-string err))
+	     (error (format "(yassnippet: error in elisp evaluation: %s)"
+			    (error-message-string err)))))))
 
 (defun yas/snippet-table (mode)
   "Get the snippet table corresponding to MODE."
@@ -862,8 +865,10 @@ when the condition evaluated to non-nil."
   "Calculate the value of the field/mirror. If there's a transform
 for this field, apply it. Otherwise, the value is returned
 unmodified."
-  (let* ((text (yas/field-text-for-display field))
-	 (modified-p (yas/field-modified-p field))
+  (let* ((yas/text (yas/field-text-for-display field))
+	 (text yas/text)
+	 (yas/modified-p (yas/field-modified-p field))
+	 (yas/moving-away nil)
 	 (transform (if (yas/mirror-p field-or-mirror)  
 			(yas/mirror-transform field-or-mirror)
 		      (yas/field-transform field-or-mirror)))
@@ -908,11 +913,11 @@ have, compare through the field's start point"
   "Return a sorted list of snippets at point, most recently
 inserted first."
   (sort
-   (remove nil (mapcar #'(lambda (ov)
-			   (overlay-get ov 'yas/snippet))
-		       (if all-snippets
-			   (overlays-in (point-min) (point-max))
-			 (overlays-at (point)))))
+   (remove nil (remove-duplicates (mapcar #'(lambda (ov)
+					      (overlay-get ov 'yas/snippet))
+					  (if all-snippets
+					      (overlays-in (point-min) (point-max))
+					    (overlays-at (point))))))
    #'(lambda (s1 s2)
        (<= (yas/snippet-id s2) (yas/snippet-id s1)))))
 
@@ -928,6 +933,16 @@ inserted first."
                          (yas/field-number active-field))))
          (live-fields (remove-if #'yas/field-probably-deleted-p (yas/snippet-fields snippet)))
          (target-field (yas/snippet-find-field snippet number)))
+    ;; First check if we're moving out of a field
+    ;; 
+    (when (and active-field
+	       (yas/field-transform active-field))
+      (let* ((yas/moving-away t)
+	     (yas/text (yas/field-text-for-display active-field))
+	     (text yas/text)
+	     (yas/modified-p (yas/field-modified-p active-field)))
+	(yas/eval-string (yas/field-transform active-field))))
+    ;; Now actually move...
     (cond ((and number
                 (> number (length live-fields)))
            (yas/exit-snippet snippet))
@@ -963,9 +978,6 @@ up the snippet does not delete it!"
   (goto-char (if (yas/snippet-exit snippet)
 		 (yas/snippet-exit snippet)
 	       (overlay-end (yas/snippet-control-overlay snippet)))))
-
-(defun yas/delete-overlay-region (overlay)
-  (delete-region (overlay-start overlay) (overlay-end overlay)))
 
 ;;; Apropos markers-to-points: This can be useful for performance reasons, so
 ;;; that an excessive number of live markers arent kept aroung in the
@@ -1065,11 +1077,13 @@ exiting the snippet."
 (defun yas/check-commit-snippet ()
   "Checks if point exited the currently active field of the
 snippet, if so cleans up the whole snippet up."
-  (let* ((snippets (yas/snippets-at-point 'all-snippets)))
+  (let* ((snippets (yas/snippets-at-point 'all-snippets))
+	 (snippets-left snippets))
     (dolist (snippet snippets)
       (let ((active-field (yas/snippet-active-field snippet))) 
 	(cond ((not (and active-field (yas/field-contains-point-p active-field)))
-	       (yas/commit-snippet snippet))
+	       (yas/commit-snippet snippet)
+	       (setq snippets-left (delete snippet snippets-left)))
 	      ((and active-field
 		    (or (not yas/active-field-overlay)
 			(not (overlay-buffer yas/active-field-overlay))))
@@ -1082,7 +1096,10 @@ snippet, if so cleans up the whole snippet up."
 		 (yas/move-to-field snippet active-field)
 		 (yas/update-mirrors snippet)))
 	      (t
-	       nil))))))
+	       nil))))
+    (unless snippets-left
+      (remove-hook 'post-command-hook 'yas/post-command-handler 'local)
+      (remove-hook 'pre-command-hook 'yas/pre-command-handler 'local))))
 
 (defun yas/field-contains-point-p (field &optional point)
   (let ((point (or point
@@ -1204,21 +1221,6 @@ progress."
 	       (yas/clear-field field))
 	     (setf (yas/field-modified-p field) t))))))
 
-(defun yas/field-update-display (field snippet)
-  "Much like `yas/mirror-update-display', but for fields"
-  (when (yas/field-transform field)
-    (let ((inhibit-modification-hooks t)
-	  (transformed (yas/apply-transform field field 'nil-on-empty))
-	  (point (point)))
-      (when (and transformed
-		 (not (string= transformed (buffer-substring-no-properties (yas/field-start field) (yas/field-end field)))))
-	(goto-char (yas/field-start field))
-	(insert transformed)
-	(if (> (yas/field-end field) (point))
-	    (delete-region (point) (yas/field-end field))
-	  (set-marker (yas/field-end field) (point)))
-	t))))
-
 ;;;
 ;;; Apropos protection overlays:...
 ;;;
@@ -1240,19 +1242,31 @@ progress."
 (defun yas/make-move-field-protection-overlays (snippet field)
   "Place protection overlays surrounding SNIPPET's FIELD.
 
-Move the overlays, or create them if they do not exit." 
-  (cond ((and yas/field-protection-overlays
-	      (every #'overlay-buffer yas/field-protection-overlays))
-	 (move-overlay (first yas/field-protection-overlays) (1- (yas/field-start field)) (yas/field-start field))
-	 (move-overlay (second yas/field-protection-overlays) (yas/field-end field) (1+ (yas/field-end field))))
-	(t
-	 (setq yas/field-protection-overlays
-	       (list (make-overlay (1- (yas/field-start field)) (yas/field-start field) nil t nil)
-		     (make-overlay (yas/field-end field) (1+ (yas/field-end field)) nil t nil)))
-	 (dolist (ov yas/field-protection-overlays)
-	   (overlay-put ov 'face 'yas/field-debug-face)
-	   ;; (overlay-put ov 'evaporate t)
-	   (overlay-put ov 'modification-hooks '(yas/on-protection-overlay-modification))))))
+Move the overlays, or create them if they do not exit."
+  (let ((start (yas/field-start field))
+	(end (yas/field-end field)))
+    ;; First check if the (1+ end) is contained in the buffer,
+    ;; otherwise we'll have to do a bit of cheating and silently
+    ;; insert a newline.
+    (when (< (point-max) (1+ end))
+	(save-excursion
+	  (let ((inhibit-modification-hooks t))
+	    (goto-char (point-max))
+	    (newline))))
+    ;; go on to normal overlay creation/moving
+    (cond ((and yas/field-protection-overlays
+		(every #'overlay-buffer yas/field-protection-overlays))
+	   (move-overlay (first yas/field-protection-overlays) (1- start) start)
+	   (move-overlay (second yas/field-protection-overlays) end (1+ end)))
+	  (t
+	   (setq yas/field-protection-overlays
+		 (list (make-overlay (1- start) start nil t nil)
+		       (make-overlay end (1+ end) nil t nil)))
+	   (dolist (ov yas/field-protection-overlays)
+	     (overlay-put ov 'face 'yas/field-debug-face)
+	     (overlay-put ov 'yas/snippet snippet)
+	     ;; (overlay-put ov 'evaporate t)
+	     (overlay-put ov 'modification-hooks '(yas/on-protection-overlay-modification)))))))
 
 (defvar yas/protection-violation nil
   "When non-nil, signals attempts to erronesly exit or modify the snippet.
@@ -1374,6 +1388,9 @@ After revival, push the `yas/take-care-of-redo' in the
   (yas/move-to-field snippet (or (yas/snippet-active-field snippet)
 				 (car (yas/snippet-fields snippet))))
 
+  (add-hook 'post-command-hook 'yas/post-command-handler nil t)
+  (add-hook 'pre-command-hook 'yas/pre-command-handler t t)
+  
   (push `(apply yas/take-care-of-redo ,beg ,end ,snippet)
 	buffer-undo-list))
 
@@ -1396,6 +1413,10 @@ Returns the newly created snippet."
 
     ;; Move to end
     (goto-char (point-max))
+
+    ;; Setup hooks
+    (add-hook 'post-command-hook 'yas/post-command-handler nil t)
+    (add-hook 'pre-command-hook 'yas/pre-command-handler t t)
     
     snippet))
 
@@ -1438,7 +1459,14 @@ Meant to be called in a narrowed buffer, does various passes"
     (yas/simple-mirror-parse-create snippet)
     ;; restore escapes
     ;;
-    (yas/restore-escapes)))
+    (goto-char parse-start)
+    (yas/restore-escapes)
+    ;; indent the best we can
+    ;;
+    
+
+
+    ))
 
 (defun yas/escape-string (escaped)
   (concat "YASESCAPE" (format "%d" escaped) "PROTECTGUARD"))
@@ -1556,13 +1584,40 @@ When multiple such expressions are found, only the last one counts."
 
 (defun yas/mirror-update-display (mirror field)
   "Update MIRROR according to FIELD (and mirror transform)."
-  (let ((transformed (yas/apply-transform mirror field)))
-    (when (not (string= transformed (buffer-substring-no-properties (yas/mirror-start mirror) (yas/mirror-end mirror))))
+  (let ((transformed (yas/apply-transform mirror field 'nil-on-empty)))
+    (when (and transformed
+	       (not (string= transformed (buffer-substring-no-properties (yas/mirror-start mirror) (yas/mirror-end mirror)))))
       (goto-char (yas/mirror-start mirror))
       (insert transformed)
       (if (> (yas/mirror-end mirror) (point))
 	  (delete-region (point) (yas/mirror-end mirror))
 	(set-marker (yas/mirror-end mirror) (point))))))
+
+(defun yas/field-update-display (field snippet)
+  "Much like `yas/mirror-update-display', but for fields"
+  (when (yas/field-transform field)
+    (let ((inhibit-modification-hooks t)
+	  (transformed (yas/apply-transform field field 'nil-on-empty))
+	  (point (point)))
+      (when (and transformed
+		 (not (string= transformed (buffer-substring-no-properties (yas/field-start field) (yas/field-end field)))))
+	(setf (yas/field-modified-p field) t)
+	(goto-char (yas/field-start field))
+	(insert transformed)
+	(if (> (yas/field-end field) (point))
+	    (delete-region (point) (yas/field-end field))
+	  (set-marker (yas/field-end field) (point)))
+	t))))
+
+;; User convenience functions
+
+(defun yas/choose (&rest possibilities)
+  (ido-completing-read "Choose: " possibilities nil nil nil nil (car possibilities)))
+
+(defun yas/restrict (&rest possibilities)
+  (when (notany #'(lambda (pos) (string= pos yas/text)) possibilities)
+    (error "hey don't move away just now")))
+  
 
 ;; Debug functions.  Use (or change) at will whenever needed.
 ;; 
