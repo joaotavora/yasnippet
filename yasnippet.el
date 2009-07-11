@@ -229,7 +229,7 @@ snippet templates")
   "${\\([0-9]+:\\)?\\([^}]*\\)}"
   "A regexp to *almost* recognize a field")
 
-(defconst yas/dollar-lisp-expression-regexp
+(defconst yas/multi-dollar-lisp-expression-regexp
   "$\\(([^)]*)\\)"
   "A regexp to *almost* recognize a \"$(...)\" expression")
 
@@ -238,7 +238,7 @@ snippet templates")
   "A regexp to recognize a \"`(...)`\" expression")
 
 (defconst yas/transform-mirror-regexp
-  "${\\(?:\\([0-9]+\\):\\)?\\([^}]*\\)"
+  "${\\(?:\\([0-9]+\\):\\)?$\\([^}]*\\)"
   "A regexp to *almost* recognize a mirror with a transform")
 
 (defconst yas/simple-mirror-regexp
@@ -494,9 +494,12 @@ Here's a list of currently recognized variables:
   (lexical-let ((template template))
     (lambda ()
       (interactive)
-      (yas/expand-snippet (point)
-                          (point)
-                          template))))
+      (let ((where (if mark-active
+		       (cons (region-beginning) (region-end))
+		     (cons (point) (point)))))
+	(yas/expand-snippet (car where)
+			    (cdr where)
+			    template)))))
 
 (defun yas/modify-alist (alist key value)
   "Modify ALIST to map KEY to VALUE. return the new alist."
@@ -826,8 +829,12 @@ when the condition evaluated to non-nil."
 (defvar yas/field-protection-overlays nil
   "Two overlays protect the current active field ")
 
+(defvar yas/deleted-text nil
+  "The text deleted in the last snippet expansion")
+
 (make-variable-buffer-local 'yas/active-field-overlay)
 (make-variable-buffer-local 'yas/field-protection-overlays)
+(make-variable-buffer-local 'yas/deleted-text)
 
 (defstruct (yas/snippet (:constructor yas/make-snippet ()))
   "A snippet.
@@ -1117,8 +1124,10 @@ snippet, if so cleans up the whole snippet up."
 	 ;;
 	 (let* ((snippet (car (yas/snippets-at-point)))
 		(target-field (and snippet
-				  (find-if-not #'yas/field-probably-deleted-p (cons (yas/snippet-active-field snippet)
-										    (yas/snippet-fields snippet))))))
+				  (find-if-not #'yas/field-probably-deleted-p
+					       (remove nil
+						       (cons (yas/snippet-active-field snippet)
+							     (yas/snippet-fields snippet)))))))
 	   (when target-field
 	     (yas/move-to-field snippet target-field))))
 	((not (yas/undo-in-progress))
@@ -1333,10 +1342,12 @@ will be deleted before inserting template."
 	    ;; them mostly to make the undo information
 	    ;; 
 	    (insert template)
+	    (setq yas/deleted-text key)
 	    (setq snippet (yas/snippet-create (point-min) (point-max))))
 	(error
 	 (push (cons (point-min) (point-max)) buffer-undo-list)
-	 (error (error-message-string err)))))
+	 (signal (car err) (cadr err)))))
+
     ;; Delete the trigger key, this *does* get undo-recorded.
     ;;
     (delete-region start end)
@@ -1388,17 +1399,22 @@ After revival, push the `yas/take-care-of-redo' in the
   ;; Reconvert all the points to markers
   ;;
   (yas/points-to-markers snippet)
-  
-  (setf (yas/snippet-control-overlay snippet) (yas/make-control-overlay beg end))
-  (overlay-put (yas/snippet-control-overlay snippet) 'yas/snippet snippet)
-  (yas/move-to-field snippet (or (yas/snippet-active-field snippet)
-				 (car (yas/snippet-fields snippet))))
+  ;; When at least one editable field existed in the zombie snippet,
+  ;; try to revive the whole thing...
+  ;;
+  (let ((target-field (or (yas/snippet-active-field snippet)
+			  (car (yas/snippet-fields snippet)))))
+    (when target-field
+      (setf (yas/snippet-control-overlay snippet) (yas/make-control-overlay beg end))
+      (overlay-put (yas/snippet-control-overlay snippet) 'yas/snippet snippet)
+   
+      (yas/move-to-field snippet target-field)
 
-  (add-hook 'post-command-hook 'yas/post-command-handler nil t)
-  (add-hook 'pre-command-hook 'yas/pre-command-handler t t)
+      (add-hook 'post-command-hook 'yas/post-command-handler nil t)
+      (add-hook 'pre-command-hook 'yas/pre-command-handler t t)
   
-  (push `(apply yas/take-care-of-redo ,beg ,end ,snippet)
-	buffer-undo-list))
+      (push `(apply yas/take-care-of-redo ,beg ,end ,snippet)
+	    buffer-undo-list))))
 
 (defun yas/snippet-create (begin end)
   "Creates a snippet from an template inserted between BEGIN and END.
@@ -1515,7 +1531,8 @@ When multiple such expressions are found, only the last one counts."
       (let* ((real-match-end-0 (scan-sexps (1+ (match-beginning 0)) 1))
 	     (number (string-to-number (match-string-no-properties 1)))
 	     (brand-new-field (and real-match-end-0
-				   (not (eq ?\( (aref (match-string-no-properties 2) 0)))
+				   (not (save-match-data
+					  (eq (string-match "$(" (match-string-no-properties 2)) 0)))
 				   number
 				   (not (zerop number))
 				   (yas/make-field number
@@ -1531,27 +1548,25 @@ When multiple such expressions are found, only the last one counts."
 	      (narrow-to-region (yas/field-start brand-new-field) (yas/field-end brand-new-field))
 	      (goto-char (point-min))
 	      (yas/field-parse-create snippet brand-new-field)))))))
-  (save-excursion
-    (while (re-search-forward yas/dollar-lisp-expression-regexp nil t)
-      (let* ((real-match-end-0 (scan-sexps (1+ (match-beginning 0)) 1)))
-	(when real-match-end-0
-	  (let ((lisp-expression-string (buffer-substring-no-properties (match-beginning 1) real-match-end-0))) 
-	  (if parent-field
-	      (setf (yas/field-transform parent-field) lisp-expression-string)
-	    (let ((transformed (yas/eval-string lisp-expression-string)))
-	      (goto-char real-match-end-0)
-	      (insert transformed)))
-	  (delete-region (match-beginning 0) real-match-end-0)))))))
+  (when parent-field
+    (save-excursion
+      (while (re-search-forward yas/multi-dollar-lisp-expression-regexp nil t)
+	(let* ((real-match-end-0 (scan-sexps (1+ (match-beginning 0)) 1)))
+	  (when real-match-end-0
+	    (let ((lisp-expression-string (buffer-substring-no-properties (match-beginning 1) real-match-end-0))) 
+	      (setf (yas/field-transform parent-field) lisp-expression-string))
+	    (delete-region (match-beginning 0) real-match-end-0)))))))
 
 (defun yas/transform-mirror-parse-create (snippet)
-  "Parse the \"${n:(lisp-expression)}\" mirror transformations."
+  "Parse the \"${n:$(lisp-expression)}\" mirror transformations."
   (while (re-search-forward yas/transform-mirror-regexp nil t)
     (let* ((real-match-end-0 (scan-sexps (1+ (match-beginning 0)) 1))
 	  (number (string-to-number (match-string-no-properties 1)))
 	  (field (and number
 		      (not (zerop number))
 		      (yas/snippet-find-field snippet number))))
-      (when (and real-match-end-0 field) 
+      (when (and real-match-end-0
+		 field) 
 	(push (yas/make-mirror (set-marker (make-marker) (match-beginning 0))
 			       (set-marker (make-marker) (match-beginning 0))
 			       (buffer-substring-no-properties (match-beginning 2)
@@ -1569,12 +1584,17 @@ When multiple such expressions are found, only the last one counts."
 	     (delete-region (match-beginning 0) (match-end 0)))
 	    (t
 	     (let ((field (yas/snippet-find-field snippet number)))
-	       (when field
-		 (push (yas/make-mirror (set-marker (make-marker) (match-beginning 0))
-					(set-marker (make-marker) (match-beginning 0))
-					nil)
-		       (yas/field-mirrors field))
-		 (delete-region (match-beginning 0) (match-end 0)))))))))
+	       (if field
+		   (push (yas/make-mirror (set-marker (make-marker) (match-beginning 0))
+					  (set-marker (make-marker) (match-beginning 0))
+					  nil)
+			 (yas/field-mirrors field))
+		 (push (yas/make-field number
+				       (set-marker (make-marker) (match-beginning 0))
+				       (set-marker (make-marker) (match-beginning 0))
+				       nil)
+		       (yas/snippet-fields snippet))))
+	     (delete-region (match-beginning 0) (match-end 0)))))))
 
 (defun yas/update-mirrors (snippet)
   "Updates all the mirrors of SNIPPET."
@@ -1674,15 +1694,16 @@ When multiple such expressions are found, only the last one counts."
   (mapcar #'yas/commit-snippet (yas/snippets-at-point 'all-snippets))
   (erase-buffer)
   (setq buffer-undo-list nil)
-  (text-mode)
-  (yas/minor-mode)
+  (c-mode)
+  (yas/initialize)
+  (yas/minor-mode 1)
   (let ((abbrev))
     ;; (if (require 'ido nil t)
     ;; 	(setq abbrev (ido-completing-read "Snippet abbrev: " '("crazy" "prip" "prop")))
     ;;   (setq abbrev "prop"))
     (setq abbrev "bosta")
     (insert abbrev))
-  (unless quiet
+  (when quiet
     (add-hook 'post-command-hook 'yas/debug-some-vars 't 'local))
   )
   
