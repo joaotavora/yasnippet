@@ -114,11 +114,11 @@ return the error string instead.")
     (t (:background "tomato")))
   "The face used for debugging")
 
-(defvar yas/window-system-popup-function #'yas/dropdown-list-popup-for-template
+(defvar yas/window-system-popup-function #'yas/x-popup-menu-for-template
   "When there's multiple candidate for a snippet key. This function
 is called to let user select one of them. `yas/text-popup-function'
 is used instead when not in a window system.")
-(defvar yas/text-popup-function #'yas/dropdown-list-popup-for-template
+(defvar yas/text-popup-function #'yas/x-popup-menu-for-template
   "When there's multiple candidate for a snippet key. If not in a
 window system, this function is called to let user select one of
 them. `yas/window-system-popup-function' is used instead when in
@@ -1325,11 +1325,18 @@ will be deleted before inserting template."
     ;; at the end of this function.
     ;; 
     (save-restriction
-      (let ((buffer-undo-list t)
-	    (template-start end))
-	(narrow-to-region template-start template-start)
-	(insert template)
-	(setq snippet (yas/snippet-create (point-min) (point-max)))))
+      (narrow-to-region end end)
+      (condition-case err
+	  (let ((buffer-undo-list t))
+	    ;; snippet creation might evaluate users elisp, which
+	    ;; might generate errors, so we have to be ready to catch
+	    ;; them mostly to make the undo information
+	    ;; 
+	    (insert template)
+	    (setq snippet (yas/snippet-create (point-min) (point-max))))
+	(error
+	 (push (cons (point-min) (point-max)) buffer-undo-list)
+	 (error (error-message-string err)))))
     ;; Delete the trigger key, this *does* get undo-recorded.
     ;;
     (delete-region start end)
