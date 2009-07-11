@@ -381,8 +381,6 @@ a list of modes like this to help the judgement."
   (or (fboundp mode)
       (find mode yas/known-modes)))
 
-
-
 ;; TODO: This is a possible optimization point, the expression could
 ;; be stored in cons format instead of string,
 (defun yas/eval-string (string)
@@ -398,7 +396,7 @@ a list of modes like this to help the judgement."
     (error (if yas/good-grace
 	       (format "(yasnippet: error in elisp evaluation: %s)"
 		       (error-message-string err))
-	     (error (format "(yassnippet: error in elisp evaluation: %s)"
+	     (error (format "(yasnippet: error in elisp evaluation: %s)"
 			    (error-message-string err)))))))
 
 (defun yas/snippet-table (mode)
@@ -861,10 +859,9 @@ when the condition evaluated to non-nil."
   start end
   (transform nil))
 
-(defun yas/apply-transform (field-or-mirror field &optional nil-on-empty)
+(defun yas/apply-transform (field-or-mirror field)
   "Calculate the value of the field/mirror. If there's a transform
-for this field, apply it. Otherwise, the value is returned
-unmodified."
+for this field, apply it. Otherwise, returned nil."
   (let* ((yas/text (yas/field-text-for-display field))
 	 (text yas/text)
 	 (yas/modified-p (yas/field-modified-p field))
@@ -874,8 +871,7 @@ unmodified."
 		      (yas/field-transform field-or-mirror)))
 	 (transformed (and transform
 			  (yas/eval-string transform))))
-    (or transformed
-	(unless nil-on-empty text))))
+    transformed))
 
 
 (defsubst yas/replace-all (from to)
@@ -1145,7 +1141,7 @@ holds the keymap."
   (let ((overlay (make-overlay start
                                end
                                nil
-                               t 
+                               nil 
                                t)))
     (overlay-put overlay 'keymap yas/keymap)
     (overlay-put overlay 'yas/snippet snippet)
@@ -1247,13 +1243,16 @@ Move the overlays, or create them if they do not exit."
 	(end (yas/field-end field)))
     ;; First check if the (1+ end) is contained in the buffer,
     ;; otherwise we'll have to do a bit of cheating and silently
-    ;; insert a newline.
-    (when (< (point-max) (1+ end))
+    ;; insert a newline. the `(1+ (buffer-size))' should prevent this
+    ;; when using stacked expansion
+    ;; 
+    (when (< (1+ (buffer-size)) (1+ end))
 	(save-excursion
 	  (let ((inhibit-modification-hooks t))
 	    (goto-char (point-max))
 	    (newline))))
     ;; go on to normal overlay creation/moving
+    ;; 
     (cond ((and yas/field-protection-overlays
 		(every #'overlay-buffer yas/field-protection-overlays))
 	   (move-overlay (first yas/field-protection-overlays) (1- start) start)
@@ -1584,11 +1583,12 @@ When multiple such expressions are found, only the last one counts."
 
 (defun yas/mirror-update-display (mirror field)
   "Update MIRROR according to FIELD (and mirror transform)."
-  (let ((transformed (yas/apply-transform mirror field 'nil-on-empty)))
-    (when (and transformed
-	       (not (string= transformed (buffer-substring-no-properties (yas/mirror-start mirror) (yas/mirror-end mirror)))))
+  (let ((reflection (or (yas/apply-transform mirror field)
+			 (yas/field-text-for-display field))))
+    (when (and reflection
+	       (not (string= reflection (buffer-substring-no-properties (yas/mirror-start mirror) (yas/mirror-end mirror)))))
       (goto-char (yas/mirror-start mirror))
-      (insert transformed)
+      (insert reflection)
       (if (> (yas/mirror-end mirror) (point))
 	  (delete-region (point) (yas/mirror-end mirror))
 	(set-marker (yas/mirror-end mirror) (point))))))
@@ -1597,7 +1597,7 @@ When multiple such expressions are found, only the last one counts."
   "Much like `yas/mirror-update-display', but for fields"
   (when (yas/field-transform field)
     (let ((inhibit-modification-hooks t)
-	  (transformed (yas/apply-transform field field 'nil-on-empty))
+	  (transformed (yas/apply-transform field field))
 	  (point (point)))
       (when (and transformed
 		 (not (string= transformed (buffer-substring-no-properties (yas/field-start field) (yas/field-end field)))))
@@ -1614,8 +1614,8 @@ When multiple such expressions are found, only the last one counts."
 (defun yas/choose (&rest possibilities)
   (ido-completing-read "Choose: " possibilities nil nil nil nil (car possibilities)))
 
-(defun yas/restrict (&rest possibilities)
-  (when (notany #'(lambda (pos) (string= pos yas/text)) possibilities)
+(defun yas/verify (&rest possibilities)
+  (when (and yas/moving-away (notany #'(lambda (pos) (string= pos yas/text)) possibilities))
     (error "hey don't move away just now")))
   
 
@@ -1667,7 +1667,7 @@ When multiple such expressions are found, only the last one counts."
   (mapcar #'yas/commit-snippet (yas/snippets-at-point 'all-snippets))
   (erase-buffer)
   (setq buffer-undo-list nil)
-  (html-mode)
+  (text-mode)
   (yas/minor-mode)
   (let ((abbrev))
     ;; (if (require 'ido nil t)
