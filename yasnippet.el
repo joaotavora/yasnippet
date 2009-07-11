@@ -350,6 +350,25 @@ fetch from parent if any."
                        (yas/snippet-table-parent table)
                        key)))
     templates))
+
+(defun yas/snippet-table-all-templates (table)
+  (when table
+    (let ((acc))
+      (maphash #'(lambda (key templates)
+		   (setq acc (append acc templates)))
+	       (yas/snippet-table-hash table))
+      (append acc
+	      (yas/snippet-table-all-templates (yas/snippet-table-parent table))))))
+
+(defun yas/snippet-table-all-keys (table)
+  (when table
+    (let ((acc))
+      (maphash #'(lambda (key templates)
+		   (push key acc))
+	       (yas/snippet-table-hash table))
+      (append acc
+	      (yas/snippet-table-all-templates (yas/snippet-table-parent table))))))
+
 (defun yas/snippet-table-store (table full-key key template)
   "Store a snippet template in the table."
   (puthash key
@@ -791,6 +810,19 @@ when the condition evaluated to non-nil."
                    (cadr (cadr buffer-undo-list))))
       (undo 1))
     nil))
+
+;; (defun yas/completing-expand ()
+;;   "Choose a snippet to expand, pop-up a list of choices according
+;;   to `yas/popup-function'"
+;;   (let ((keys)
+;; 	(choice)) 
+;;     (maphash #'(lambda (key val)
+;; 		 (push key keys)) (yas/current-snippet-table))
+;;     (let ((choice (and keys
+;; 		       (ido-completing-read "Choose: " keys nil nil nil nil (car possibilities))))
+;; 	  (template (and choice
+;; 			 (gethash choice (yas/current-snippet-table)))))
+
 
 (defun yas/expand ()
   "Expand a snippet."
