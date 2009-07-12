@@ -114,15 +114,13 @@ return the error string instead.")
     (t (:background "tomato")))
   "The face used for debugging")
 
-(defvar yas/window-system-popup-function #'yas/x-popup-menu-for-template
-  "When there's multiple candidate for a snippet key. This function
-is called to let user select one of them. `yas/text-popup-function'
-is used instead when not in a window system.")
-(defvar yas/text-popup-function #'yas/x-popup-menu-for-template
-  "When there's multiple candidate for a snippet key. If not in a
-window system, this function is called to let user select one of
-them. `yas/window-system-popup-function' is used instead when in
-a window system.")
+(defvar yas/popup-functions
+  '( yas/x-popup
+     yas/ido-popup
+     yas/dropdown-popup
+     yas/completing-popup
+     yas/no-popup ))
+     
 
 (defvar yas/extra-mode-hooks
   '()
@@ -327,23 +325,25 @@ set to t."
   (remove-if-not '(lambda (pair)
                     (let ((condition (yas/template-condition (cdr pair))))
                       (if (null condition)
-                          (if yas/require-template-condition
+                          (if (yas/require-template-condition)
                               nil
                             t)
                         (let ((result
                                (yas/template-condition-predicate condition)))
-                          (if yas/require-template-condition
-                              (if (eq yas/require-template-condition t)
+                          (if (yas/require-template-condition)
+                              (if (eq (yas/require-template-condition) t)
                                   result
-                                (eq result yas/require-template-condition))
+                                (eq result (yas/require-template-condition)))
                             result)))))
                  templates))
 
-(defun yas/snippet-table-fetch (table key)
+(defun yas/snippet-table-fetch (table key &optional no-condition)
   "Fetch a snippet binding to KEY from TABLE. If not found,
 fetch from parent if any."
-  (let ((templates (yas/filter-templates-by-condition
-                    (gethash key (yas/snippet-table-hash table)))))
+  (let* ((unfiltered (gethash key (yas/snippet-table-hash table)))
+	 (templates (or (and no-condition
+			     unfiltered)
+			(yas/filter-templates-by-condition unfiltered))))
     (when (and (null templates)
                (not (null (yas/snippet-table-parent table))))
       (setq templates (yas/snippet-table-fetch
@@ -357,17 +357,18 @@ fetch from parent if any."
       (maphash #'(lambda (key templates)
 		   (setq acc (append acc templates)))
 	       (yas/snippet-table-hash table))
-      (append acc
+      (append (yas/filter-templates-by-condition acc)
 	      (yas/snippet-table-all-templates (yas/snippet-table-parent table))))))
 
 (defun yas/snippet-table-all-keys (table)
   (when table
     (let ((acc))
       (maphash #'(lambda (key templates)
-		   (push key acc))
+		   (when (yas/filter-templates-by-condition templates)
+		     (push key acc)))
 	       (yas/snippet-table-hash table))
       (append acc
-	      (yas/snippet-table-all-templates (yas/snippet-table-parent table))))))
+	      (yas/snippet-table-all-keys (yas/snippet-table-parent table))))))
 
 (defun yas/snippet-table-store (table full-key key template)
   "Store a snippet template in the table."
@@ -400,9 +401,9 @@ a list of modes like this to help the judgement."
   (or (fboundp mode)
       (find mode yas/known-modes)))
 
-;; TODO: This is a possible optimization point, the expression could
-;; be stored in cons format instead of string,
 (defun yas/eval-string (string)
+  ;; TODO: This is a possible optimization point, the expression could
+  ;; be stored in cons format instead of string,
   "Evaluate STRING and convert the result to string."
   (condition-case err
       (save-excursion
@@ -413,9 +414,9 @@ a list of modes like this to help the judgement."
 	      (when result
 		(format "%s" result))))))
     (error (if yas/good-grace
-	       (format "(yasnippet: error in elisp evaluation: %s)"
+	       (format "([yas] elisp error: %s"
 		       (error-message-string err))
-	     (error (format "(yasnippet: error in elisp evaluation: %s)"
+	     (error (format "([yas] elisp error: %s"
 			    (error-message-string err)))))))
 
 (defun yas/snippet-table (mode)
@@ -529,59 +530,74 @@ Here's a list of currently recognized variables:
       (setcdr pair value)
       alist)))
 
-(defun yas/fake-keymap-for-popup (templates)
-  "Create a fake keymap for popup menu usage."
-  (cons 'keymap
-        (mapcar (lambda (pair)
-                  (let* ((template (cdr pair))
-                         (name (yas/template-name template))
-                         (content (yas/template-content template)))
-                    (list content 'menu-item name t)))
-                templates)))
+;; Popping up for keys and templates
+;; 
+(defun yas/popup-for-template-content (templates)
+  "Interactively choose a template's content from the list
+TEMPLATES."
+  (let ((template (some #'(lambda (fn)
+			    (funcall fn "Choose a snippet: " templates #'(lambda (template)
+									    (yas/template-name template))))
+			yas/popup-functions)))
+    (when template
+      (yas/template-content template))))
 
-(defun yas/point-to-coord (&optional point)
-  "Get the xoffset/yoffset information of POINT.
-If POINT is not given, default is to current point.
-If `posn-at-point' is not available (like in Emacs 21.3),
-t is returned simply."
-  (if (fboundp 'posn-at-point)
-      (let ((x-y (posn-x-y (posn-at-point (or point (point))))))
-        (list (list (+ (car x-y) 10)
-                    (+ (cdr x-y) 20))
-              (selected-window)))
-    t))
+(defun yas/popup-for-keys (keys)
+  "Interactively choose a template key from the list KEYS."
+  (some #'(lambda (fn)
+	    (funcall fn "Choose a snippet key: " keys))
+	yas/popup-functions))
 
-(defun yas/x-popup-menu-for-template (templates)
-  "Show a popup menu listing templates to let the user select one."
-  (car (x-popup-menu (yas/point-to-coord)
-                     (yas/fake-keymap-for-popup templates))))
+(defun yas/x-popup (prompt choices &optional display-fn)
+  (when window-system
+    (let ((keymap (cons 'keymap
+			(cons
+			 prompt
+			 (mapcar (lambda (choice)
+				   (list choice
+					 'menu-item
+					 (if display-fn
+					     (funcall display-fn choice)
+					   choice)
+					 t))
+				 choices)))))
+      (when (cdr keymap)
+	(car (x-popup-menu (if (fboundp 'posn-at-point)
+			       (let ((x-y (posn-x-y (posn-at-point (point)))))
+				 (list (list (+ (car x-y) 10)
+					     (+ (cdr x-y) 20))
+				       (selected-window)))
+			     t)
+			   keymap))))))
 
-(defun yas/text-popup-for-template (templates)
-  "Can't display popup menu in text mode. Just select the first one."
-  (yas/template-content (cdar templates)))
 
-(defun yas/dropdown-list-popup-for-template (templates)
-  "Use dropdown-list.el to popup for templates. Better than the
-default \"select first\" behavior of `yas/text-popup-for-template'.
-You can also use this in window-system.
+(defun yas/ido-popup (prompt choices &optional display-fn)
+  (when (featurep 'ido)
+    (let* ((formatted-choices (or (and display-fn
+				       (mapcar display-fn choices))
+				  choices))
+	   (chosen (and choices
+			(ido-completing-read prompt
+					     formatted-choices
+					     nil
+					     'require-match
+					     nil
+					     nil))))
+      (when chosen
+	(nth (position chosen formatted-choices) choices)))))
 
-NOTE: You need to download and install dropdown-list.el to use this."
-  (if (fboundp 'dropdown-list)
-      (let ((n (dropdown-list (mapcar (lambda (i)
-                                        (yas/template-name
-                                         (cdr i)))
-                                      templates))))
-        (if n
-            (yas/template-content
-             (cdr (nth n templates)))
-          nil))
-    (error "Please download and install dropdown-list.el to use this")))
+(defun yas/dropdown-popup (prompt choices &optional display-fn)
+  (when (featurep 'dropdown-list)
+    ))
 
-(defun yas/popup-for-template (templates)
-  (if window-system
-      (funcall yas/window-system-popup-function templates)
-    (funcall yas/text-popup-function templates)))
+(defun yas/completing-popup (prompt choices &optional display-fn)
+  )
 
+(defun yas/no-popup (prompt choices &optional display-fn)
+  )
+
+;; Loading snippets
+;; 
 (defun yas/load-directory-1 (directory &optional parent)
   "Really do the job of loading snippets from a directory
 hierarchy."
@@ -811,46 +827,55 @@ when the condition evaluated to non-nil."
       (undo 1))
     nil))
 
-;; (defun yas/completing-expand ()
-;;   "Choose a snippet to expand, pop-up a list of choices according
-;;   to `yas/popup-function'"
-;;   (let ((keys)
-;; 	(choice)) 
-;;     (maphash #'(lambda (key val)
-;; 		 (push key keys)) (yas/current-snippet-table))
-;;     (let ((choice (and keys
-;; 		       (ido-completing-read "Choose: " keys nil nil nil nil (car possibilities))))
-;; 	  (template (and choice
-;; 			 (gethash choice (yas/current-snippet-table)))))
-
+(defun yas/require-template-condition ()
+  (let ((local-condition (yas/template-condition-predicate
+                          yas/buffer-local-condition)))
+    (and local-condition
+	 (consp local-condition)
+	 (eq 'require-snippet-condition (car local-condition))
+	 (symbolp (cdr local-condition))
+	 (cdr local-condition))))
 
 (defun yas/expand ()
   "Expand a snippet."
   (interactive)
-  (let ((local-condition (yas/template-condition-predicate
-                          yas/buffer-local-condition)))
-    (if local-condition
-        (let ((yas/require-template-condition
-               (if (and (consp local-condition)
-                        (eq 'require-snippet-condition (car local-condition))
-                        (symbolp (cdr local-condition)))
-                   (cdr local-condition)
-                 nil)))
-          (multiple-value-bind (templates start end) (yas/current-key)
-            (if templates
-                (let ((template (if (null (cdr templates)) ; only 1 template
-                                    (yas/template-content (cdar templates))
-                                  (yas/popup-for-template templates))))
-                  (if template
-                      (progn (yas/expand-snippet start end template)
-                             'expanded) ; expanded successfully
-                    'interrupted))     ; interrupted by user
-              (if (eq yas/fallback-behavior 'return-nil)
-                  nil                   ; return nil
-                (let* ((yas/minor-mode nil)
-                       (command (key-binding yas/trigger-key)))
-                  (when (commandp command)
-                    (call-interactively command))))))))))
+  (multiple-value-bind (templates start end) (yas/current-key)
+    (if templates
+	(let ((template-content (yas/popup-for-template-content templates)))
+	  (when template-content
+	      (yas/expand-snippet start end template-content)))
+      (if (eq yas/fallback-behavior 'return-nil)
+	  nil				; return nil
+	(let* ((yas/minor-mode nil)
+	       (command (key-binding yas/trigger-key)))
+	  (when (commandp command)
+	    (call-interactively command)))))))
+
+(defvar yas/complete-for-keys t
+  "If non-nil, `yas/completing-expand' prompts for key, then for template.
+
+Otherwise 'yas/completing-expand' prompts for all possible
+templates and inserts the selected one.")
+
+(defun yas/completing-expand ()
+  "Choose a snippet to expand, pop-up a list of choices according
+to `yas/popup-function'."
+  (interactive)
+  (let* ((templates (mapcar #'cdr
+			    (if yas/complete-for-keys
+				(let ((key (yas/popup-for-keys (yas/snippet-table-all-keys (yas/current-snippet-table)))))
+				  (when key
+				    (yas/snippet-table-fetch (yas/current-snippet-table) key 'no-condition)))
+			      (yas/snippet-table-all-templates (yas/current-snippet-table)))))
+	 (template-content (and templates
+				(or (and (cdr templates)
+					 (yas/popup-for-template-content templates))
+				    (yas/template-content (car templates)))))
+	 (where (if mark-active
+		    (cons (region-beginning) (region-end))
+		  (cons (point) (point)))))
+    (when template-content
+      (yas/expand-snippet (car where) (cdr where) template-content))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Snippet expansion and field managment
@@ -859,7 +884,7 @@ when the condition evaluated to non-nil."
   "Overlays the currently active field")
 
 (defvar yas/field-protection-overlays nil
-  "Two overlays protect the current active field ")
+  "Two overlays protect the current actipve field ")
 
 (defvar yas/deleted-text nil
   "The text deleted in the last snippet expansion")
@@ -1378,7 +1403,7 @@ will be deleted before inserting template."
 	    (setq snippet (yas/snippet-create (point-min) (point-max))))
 	(error
 	 (push (cons (point-min) (point-max)) buffer-undo-list)
-	 (signal (car err) (cadr err)))))
+	 (error (cadr err)))))
 
     ;; Delete the trigger key, this *does* get undo-recorded.
     ;;
