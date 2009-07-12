@@ -989,6 +989,7 @@ inserted first."
          (snippet (first (yas/snippets-at-point)))
 	 (active-field (overlay-get yas/active-field-overlay 'yas/field))
          (number (and snippet
+		      (yas/field-number active-field)
                       (+ arg
                          (yas/field-number active-field))))
          (live-fields (remove-if #'yas/field-probably-deleted-p (yas/snippet-fields snippet)))
@@ -1574,24 +1575,24 @@ Meant to be called in a narrowed buffer, does various passes"
       (delete-region (match-beginning 0) (match-end 0)))))
 
 (defun yas/field-parse-create (snippet &optional parent-field)
-  "Parse the \"${n: }\" or \"$(lisp-expression)\" expressions, in
-two separate passes.
+  "Parse most field expression, except for the simple one \"$n\".
 
-For \"$(lisp-expression)\" expressions \"lisp-expression\" is:
+The following count as a field:
 
-   * Replaced in-place with its value;
-   * set PARENT-FIELD's transform, otherwise.
+* \"${n: text}\", for a numbered field with default text, as long as N is not 0;
+* \"${n: text$(expression)}, the same with a lisp expression;
+* the same as above but unnumbered, (no N:) and number is calculated automatically.
 
-When multiple such expressions are found, only the last one counts."
+When multiple expressions are found, only the last one counts."
   (save-excursion
     (while (re-search-forward yas/field-regexp nil t)
       (let* ((real-match-end-0 (scan-sexps (1+ (match-beginning 0)) 1))
-	     (number (string-to-number (match-string-no-properties 1)))
+	     (number (and (match-string-no-properties 1)
+			  (string-to-number (match-string-no-properties 1))))
 	     (brand-new-field (and real-match-end-0
 				   (not (save-match-data
 					  (eq (string-match "$(" (match-string-no-properties 2)) 0)))
-				   number
-				   (not (zerop number))
+				   (not (and number (zerop number)))
 				   (yas/make-field number
 						   (set-marker (make-marker) (match-beginning 2))
 						   (set-marker (make-marker) (1- real-match-end-0))
