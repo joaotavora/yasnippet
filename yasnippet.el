@@ -2,8 +2,8 @@
 
 ;; Copyright 2008 pluskid
 ;;
-;; Author: pluskid <pluskid@gmail.com>
-;; Version: 0.5.6 XXX: Change this
+;; Authors: pluskid <pluskid@gmail.com>, joaotavora <joaotavora@gmail.com>
+;; Version: 0.6.0 XXX: Change this
 ;; X-URL: http://code.google.com/p/yasnippet/
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -39,10 +39,179 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; User customizable variables
+;;
+
+(defgroup yasnippet nil
+  "Yet Another Snippet extension"
+  :group 'editing)
+
+(defcustom yas/root-directory nil
+  "The (list of) root directory that stores the snippets for each
+major mode."
+  :type '(string)
+  :group 'yasnippet)
+
+(defcustom yas/prompt-functions '(yas/x-prompt
+				  yas/ido-prompt
+				  yas/dropdown-prompt
+				  yas/completing-prompt
+				  yas/no-prompt)
+  "List of functions to prompt the user for keys, templates and
+other values interactively."
+  :type 'list
+  :group 'yasnippet)
+
+(defcustom yas/indent-line 'auto
+  "Controls indenting applied to a recent snippet expansion.
+
+The following values are possible:
+
+`nothing' Don't apply any indendation after expansion;
+
+`fixed' Indent the snippet to the current column;
+
+`auto' Indent each line of the snippet with `indent-according-to-mode'"
+  :type '(choice (const :tag "Nothing"  nothing)
+                 (const :tag "Fixed"    always)
+                 (const :tag "Auto"     auto))
+  :group 'yasnippet)
+
+(defcustom yas/snippet-revival t
+  "Non-nil means re-activate snippet fields after an when undoing
+an exit from an active snippet or redoing a snippet expansion"
+  :type 'boolean
+  :group 'yasnippet)
+
+(defcustom yas/trigger-key "<tab>"
+  "The key to bind as a trigger of snippet when `yas/minor-mode'
+is active.
+
+Value is a string that is converted to the internal Emacs key
+representation using `read-kbd-macro'. "
+  :type 'string
+  :group 'yasnippet)
+
+(defcustom yas/next-field-key "<tab>"
+  "The key to navigate to next field when a snippet is active.
+
+Value is a string that is converted to the internal Emacs key
+representation using `read-kbd-macro'. "
+  :type 'string
+  :group 'yasnippet)
+
+(defcustom yas/prev-field-key "S-<tab>"
+  "The key to navigate to previous field when a snippet is active.
+
+Value is a string that is converted to the internal Emacs key
+representation using `read-kbd-macro'. "
+  :type 'string
+  :group 'yasnippet)
+
+(defcustom yas/clear-field-key "C-d"
+  "The key to clear the currently active field.
+
+Value is a string that is converted to the internal Emacs key
+representation using `read-kbd-macro'. "
+  :type 'string
+  :group 'yasnippet)
+
+(defcustom yas/triggers-in-field t
+  "If non-nil, allow `yas/next-field-key' to trigger a stacked
+  snippet expansion.
+
+Otherwise, `yas/next-field-key' just tries to move on to the next field"
+  :type 'boolean
+  :group 'yasnippet)
+
+(defcustom yas/fallback-behavior 'call-other-command
+  "How to act when `yas/trigger-key' does *not* expand a snippet.
+
+The fall back behavior of YASnippet when it can't find a snippet
+to expand.
+
+`call-other-command' means try to temporarily disable
+    YASnippet and call other command bound to `yas/trigger-key'.
+
+`return-nil' means return do nothing."
+  :type '(choice (const :tag "Call previous command"  'call-other-command)
+                 (const :tag "Do nothing"    'return-nil))
+  :group 'yasnippet)
+
+(defcustom yas/choose-keys-first t
+  "If non-nil, `yas/choose-snippet' prompts for key, then for template.
+
+Otherwise `yas/choose-snippet' prompts for all possible
+templates and inserts the selected one."
+  :type 'boolean
+  :group 'yasnippet)
+
+(defcustom yas/use-menu t
+  "Display a YASnippet menu in the menu bar.
+
+If this is set to `t', all snippet template of the current
+mode will be listed under the menu \"yasnippet\"."
+  :type 'boolean
+  :group 'yasnippet)
+
+(defcustom yas/trigger-symbol " =>"
+  "The text that will be used in menu to represent the trigger."
+  :type 'string
+  :group 'yasnippet)
+
+(defcustom yas/show-all-modes-in-menu nil
+  "Display \"artificial\" major modes in menu bar as well.
+
+Currently, YASnippet only all \"real modes\" to menubar. For
+example, you define snippets for \"cc-mode\" and make it the
+parent of `c-mode', `c++-mode' and `java-mode'. There's really
+no such mode like \"cc-mode\". So we don't show it in the yasnippet
+menu to avoid the menu becoming too big with strange modes. The
+snippets defined for \"cc-mode\" can still be accessed from
+menu-bar->c-mode->parent (or c++-mode, java-mode, all are ok).
+However, if you really like to show all modes in the menu, set
+this variable to t."
+  :type 'boolean
+  :group 'yasnippet)
+
+(defcustom yas/wrap-around-region t
+  "If non-nil, wrap selected region in the snippet being
+  expanded.
+
+The wrapping occurs just before the snippet's exit marker. This
+can be overriden on a per-snippet basis."
+  :type 'boolean
+  :group 'yasnippet)
+
+(defcustom yas/good-grace nil
+  "If non-nil, don't raise errors in inline elisp evaluation.
+
+The erorr string is instead returned."
+  :type 'boolean
+  :group 'yasnippet)
+
+(defface yas/field-highlight-face
+  '((((class color) (background light)) (:background "DarkSeaGreen1"))
+    (t (:background "DimGrey")))
+  "The face used to highlight the currently active field of a snippet"
+  :group 'yasnippet)
+
+(defface yas/field-debug-face
+  '((((class color) (background light)) (:background "tomato"))
+    (t (:background "tomato")))
+  "The face used for debugging some overlays normally hidden"
+  :group 'yasnippet)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defvar yas/dont-activate nil
-  "If set to t, don't activate yas/minor-mode automatically.")
-(make-variable-buffer-local 'yas/dont-activate)
+;; User semi-customizable variables
+;;
+
+(defvar yas/keymap (make-sparse-keymap)
+  "The keymap of snippet.")
+
+(eval-when-compile
+  (define-key yas/keymap (read-kbd-macro yas/next-field-key) 'yas/next-field-or-maybe-expand)
+  (define-key yas/keymap (read-kbd-macro yas/prev-field-key) 'yas/prev-field)
+  (define-key yas/keymap (read-kbd-macro yas/clear-field-key) 'yas/clear-field-or-delete-char))
 
 (defvar yas/key-syntaxes (list "w" "w_" "w_." "^ ")
   "A list of syntax of a key. This list is tried in the order
@@ -53,96 +222,22 @@ foo-bar
 
 will first try \"bar\", if not found, then \"foo-bar\" is tried.")
 
-(defvar yas/root-directory nil
-  "The (list of) root directory that stores the snippets for each
-major modes.")
-
-(defvar yas/indent-line t
-  "Each (except the 1st) line of the snippet template is indented to
-current column if this variable is non-`nil'.")
-(make-variable-buffer-local 'yas/indent-line)
-
-(defvar yas/trigger-key (kbd "<tab>")
-  "The key to bind as a trigger of snippet.")
-(defvar yas/next-field-key (kbd "<tab>")
-  "The key to navigate to next field.")
-(defvar yas/clear-field-key (kbd "C-d")
-  "The key to clear the currently active field.")
-
-(defvar yas/keymap (make-sparse-keymap)
-  "The keymap of snippet.")
-(define-key yas/keymap yas/next-field-key 'yas/next-field)
-(define-key yas/keymap yas/clear-field-key 'yas/clear-field-or-delete-char)
-(define-key yas/keymap (kbd "S-TAB") 'yas/prev-field)
-(define-key yas/keymap (kbd "<deletechar>") 'yas/prev-field)
-(define-key yas/keymap (kbd "<S-iso-lefttab>") 'yas/prev-field)
-(define-key yas/keymap (kbd "<S-tab>") 'yas/prev-field)
-(define-key yas/keymap (kbd "<backtab>") 'yas/prev-field)
-
-(defvar yas/show-all-modes-in-menu nil
-  "Currently yasnippet only all \"real modes\" to menubar. For
-example, you define snippets for \"cc-mode\" and make it the
-parent of `c-mode', `c++-mode' and `java-mode'. There's really
-no such mode like \"cc-mode\". So we don't show it in the yasnippet
-menu to avoid the menu becoming too big with strange modes. The
-snippets defined for \"cc-mode\" can still be accessed from
-menu-bar->c-mode->parent (or c++-mode, java-mode, all are ok).
-However, if you really like to show all modes in the menu, set
-this variable to t.")
-(defvar yas/use-menu t
-  "If this is set to `t', all snippet template of the current
-mode will be listed under the menu \"yasnippet\".")
-(defvar yas/trigger-symbol " =>"
-  "The text that will be used in menu to represent the trigger.")
-
-(defvar yas/good-grace nil
-  "If non-nil, don't raise errors in inline elisp evaluation,
-return the error string instead.")
-
-(defface yas/field-highlight-face
-  '((((class color) (background light)) (:background "DarkSeaGreen1"))
-    (t (:background "DimGrey")))
-  "The face used to highlight the currently active field of a snippet")
-
-(defface yas/mirror-highlight-face
-  '((((class color) (background light)) (:background "Dodgerblue"))
-    (t (:background "DimGrey")))
-  "The face used to highlight a mirror of a snippet")
-
-(defface yas/field-debug-face
-  '((((class color) (background light)) (:background "tomato"))
-    (t (:background "tomato")))
-  "The face used for debugging")
-
-(defvar yas/popup-functions
-  '( yas/x-popup
-     yas/ido-popup
-     yas/dropdown-popup
-     yas/completing-popup
-     yas/no-popup ))
-     
-
-(defvar yas/extra-mode-hooks
-  '()
-  "A list of mode-hook that should be hooked to enable yas/minor-mode.
-Most modes need no special consideration.  Some mode (like `ruby-mode')
-doesn't call `after-change-major-mode-hook' need to be hooked explicitly.")
-(mapc '(lambda (x)
-         (add-to-list 'yas/extra-mode-hooks
-                      x))
-      '(ruby-mode-hook actionscript-mode-hook ox-mode-hook python-mode-hook))
-
 (defvar yas/after-exit-snippet-hook
   '()
   "Hooks to run after a snippet exited.
+
 The hooks will be run in an environment where some variables bound to
 proper values:
- * yas/snippet-beg : The beginning of the region of the snippet.
- * yas/snippet-end : Similar to beg.")
+
+`yas/snippet-beg' : The beginning of the region of the snippet.
+
+`yas/snippet-end' : Similar to beg.
+
+Attention: These hooks are not run when exiting nested/stackd snippet expansion!")
 
 (defvar yas/before-expand-snippet-hook
   '()
-  "Hooks to run after a before expanding a snippet.")
+  "Hooks to run just before expanding a snippet.")
 
 (defvar yas/buffer-local-condition
   '(if (and (not (bobp))
@@ -187,37 +282,38 @@ Here's an example:
                          '(require-snippet-condition . force-in-comment)
                        t))))")
 
-(defvar yas/fallback-behavior 'call-other-command
-  "The fall back behavior of YASnippet when it can't find a snippet
-to expand.
-
- * 'call-other-command means try to temporarily disable
-    YASnippet and call other command bound to `yas/trigger-key'.
- * 'return-nil means return nil.")
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 
+
 (defvar yas/version "0.5.6-nested-placeholders")
 
 (defvar yas/snippet-tables (make-hash-table)
   "A hash table of snippet tables corresponding to each major-mode.")
+
 (defvar yas/menu-table (make-hash-table)
   "A hash table of menus of corresponding major-mode.")
+
 (defvar yas/menu-keymap (make-sparse-keymap "YASnippet"))
 ;; empty menu will cause problems, so we insert some items
-(define-key yas/menu-keymap [yas/about]
-  '(menu-item "About" yas/about))
-(define-key yas/menu-keymap [yas/reload]
-  '(menu-item "Reload all snippets" yas/reload-all))
-(define-key yas/menu-keymap [yas/load]
-  '(menu-item "Load snippets..." yas/load-directory))
-(define-key yas/menu-keymap [yas/separator]
-  '(menu-item "--"))
+
+(eval-when-compile
+  (define-key yas/menu-keymap [yas/about]
+    '(menu-item "About" yas/about))
+
+  (define-key yas/menu-keymap [yas/reload]
+    '(menu-item "Reload all snippets" yas/reload-all))
+
+  (define-key yas/menu-keymap [yas/load]
+    '(menu-item "Load snippets..." yas/load-directory))
+
+  (define-key yas/menu-keymap [yas/separator]
+    '(menu-item "--")))
 
 (defvar yas/known-modes
   '(ruby-mode rst-mode markdown-mode)
   "A list of mode which is well known but not part of emacs.")
+
 (defvar yas/escaped-characters
   '(?\\ ?` ?$ ?} )
   "A list of characters which *might* need to be escaped in
@@ -245,6 +341,7 @@ snippet templates")
 
 (defvar yas/snippet-id-seed 0
   "Contains the next id for a snippet.")
+
 (defun yas/snippet-next-id ()
   (let ((id yas/snippet-id-seed))
     (incf yas/snippet-id-seed)
@@ -252,13 +349,11 @@ snippet templates")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; YASnippet minor mode
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+
 (defvar yas/minor-mode-map (make-sparse-keymap)
   "The keymap of yas/minor-mode")
-(defvar yas/minor-mode-on-hook nil
-  "Hook to call when yas/minor-mode is on.")
-(defvar yas/minor-mode-off-hook nil
-  "Hook to call when yas/minor-mode is off.")
+
 (define-minor-mode yas/minor-mode
   "Toggle YASnippet mode.
 With no argument, this command toggles the mode.
@@ -274,25 +369,22 @@ You can customize the key through `yas/trigger-key'."
   ;; The indicator for the mode line.
   " yas"
   :group 'editing
-  (define-key yas/minor-mode-map yas/trigger-key 'yas/expand))
+  (define-key yas/minor-mode-map (read-kbd-macro yas/trigger-key) 'yas/expand))
 
-(defun yas/minor-mode-auto-on ()
-  "Turn on YASnippet minor mode unless `yas/dont-activate' is
-set to t."
-  (unless yas/dont-activate
-    (yas/minor-mode-on)))
 (defun yas/minor-mode-on ()
   "Turn on YASnippet minor mode."
   (interactive)
   (yas/minor-mode 1))
+
 (defun yas/minor-mode-off ()
   "Turn off YASnippet minor mode."
   (interactive)
   (yas/minor-mode -1))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Internal Structs
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Internal structs for template management
+;; 
+
 (defstruct (yas/template (:constructor yas/make-template
                                        (content name condition)))
   "A template for a snippet."
@@ -381,7 +473,8 @@ fetch from parent if any."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal functions
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 
+
 (defun yas/ensure-minor-mode-priority ()
   "Ensure that the key binding of yas/minor-mode takes priority."
   (unless (eq 'yas/minor-mode
@@ -530,25 +623,26 @@ Here's a list of currently recognized variables:
       (setcdr pair value)
       alist)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Popping up for keys and templates
 ;; 
-(defun yas/popup-for-template-content (templates)
+(defun yas/prompt-for-template-content (templates)
   "Interactively choose a template's content from the list
 TEMPLATES."
   (let ((template (some #'(lambda (fn)
 			    (funcall fn "Choose a snippet: " templates #'(lambda (template)
 									    (yas/template-name template))))
-			yas/popup-functions)))
+			yas/prompt-functions)))
     (when template
       (yas/template-content template))))
 
-(defun yas/popup-for-keys (keys)
+(defun yas/prompt-for-keys (keys)
   "Interactively choose a template key from the list KEYS."
   (some #'(lambda (fn)
 	    (funcall fn "Choose a snippet key: " keys))
-	yas/popup-functions))
+	yas/prompt-functions))
 
-(defun yas/x-popup (prompt choices &optional display-fn)
+(defun yas/x-prompt (prompt choices &optional display-fn)
   (when window-system
     (let ((keymap (cons 'keymap
 			(cons
@@ -570,8 +664,7 @@ TEMPLATES."
 			     t)
 			   keymap))))))
 
-
-(defun yas/ido-popup (prompt choices &optional display-fn)
+(defun yas/ido-prompt (prompt choices &optional display-fn)
   (when (featurep 'ido)
     (let* ((formatted-choices (or (and display-fn
 				       (mapcar display-fn choices))
@@ -586,19 +679,21 @@ TEMPLATES."
       (when chosen
 	(nth (position chosen formatted-choices) choices)))))
 
-(defun yas/dropdown-popup (prompt choices &optional display-fn)
+(defun yas/dropdown-prompt (prompt choices &optional display-fn)
   (when (featurep 'dropdown-list)
     ))
 
-(defun yas/completing-popup (prompt choices &optional display-fn)
+(defun yas/completing-prompt (prompt choices &optional display-fn)
   )
 
-(defun yas/no-popup (prompt choices &optional display-fn)
+(defun yas/no-prompt (prompt choices &optional display-fn)
   )
 
-;; Loading snippets
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Loading snippets from files
 ;; 
 (defun yas/load-directory-1 (directory &optional parent)
+  
   "Really do the job of loading snippets from a directory
 hierarchy."
   (let ((mode-sym (intern (file-name-nondirectory directory)))
@@ -616,6 +711,32 @@ hierarchy."
                          parent)
     (dolist (subdir (yas/directory-files directory nil))
       (yas/load-directory-1 subdir mode-sym))))
+
+(defun yas/load-directory (directory)
+  "Load snippet definition from a directory hierarchy.
+Below the top-level directory, each directory is a mode
+name.  And under each subdirectory, each file is a definition
+of a snippet.  The file name is the trigger key and the
+content of the file is the template."
+  (interactive "DSelect the root directory: ")
+  (unless (file-directory-p directory)
+    (error "Error %s not a directory" directory))
+  (add-to-list 'yas/root-directory directory)
+  (dolist (dir (yas/directory-files directory nil))
+    (yas/load-directory-1 dir))
+  (when (interactive-p)
+    (message "done.")))
+
+(defun yas/reload-all ()
+  "Reload all snippets."
+  (interactive)
+  (if yas/root-directory
+      (if (listp yas/root-directory)
+          (dolist (directory yas/root-directory)
+            (yas/load-directory directory))
+        (yas/load-directory yas/root-directory))
+    (call-interactively 'yas/load-directory))
+  (message "done."))
 
 (defun yas/quote-string (string)
   "Escape and quote STRING.
@@ -698,6 +819,7 @@ all the parameters:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; User level functions
+;;; 
 
 (defun yas/about ()
   (interactive)
@@ -705,39 +827,8 @@ all the parameters:
                    yas/version
                    ") -- pluskid <pluskid@gmail.com>")))
 
-(defun yas/reload-all ()
-  "Reload all snippets."
-  (interactive)
-  (if yas/root-directory
-      (if (listp yas/root-directory)
-          (dolist (directory yas/root-directory)
-            (yas/load-directory directory))
-        (yas/load-directory yas/root-directory))
-    (call-interactively 'yas/load-directory))
-  (message "done."))
-
-(defun yas/load-directory (directory)
-  "Load snippet definition from a directory hierarchy.
-Below the top-level directory, each directory is a mode
-name.  And under each subdirectory, each file is a definition
-of a snippet.  The file name is the trigger key and the
-content of the file is the template."
-  (interactive "DSelect the root directory: ")
-  (unless (file-directory-p directory)
-    (error "Error %s not a directory" directory))
-  (add-to-list 'yas/root-directory directory)
-  (dolist (dir (yas/directory-files directory nil))
-    (yas/load-directory-1 dir))
-  (when (interactive-p)
-    (message "done.")))
-
 (defun yas/initialize ()
-  "Do necessary initialization."
-  (add-hook 'after-change-major-mode-hook
-            'yas/minor-mode-auto-on)
-  (dolist (hook yas/extra-mode-hooks)
-    (add-hook hook
-              'yas/minor-mode-auto-on))
+  "Do necessary initialization. When turning on `yas/minor-mode'"
   (add-hook 'yas/minor-mode-on-hook
             'yas/ensure-minor-mode-priority)
   (when yas/use-menu
@@ -841,7 +932,9 @@ when the condition evaluated to non-nil."
   (interactive)
   (multiple-value-bind (templates start end) (yas/current-key)
     (if templates
-	(let ((template-content (yas/popup-for-template-content templates)))
+	(let ((template-content (or (and (rest templates) ;; more than one
+					 (mapcar #'cdr (yas/prompt-for-template-content templates)))
+				    (yas/template-content (cdar templates)))))
 	  (when template-content
 	      (yas/expand-snippet start end template-content)))
       (if (eq yas/fallback-behavior 'return-nil)
@@ -851,25 +944,19 @@ when the condition evaluated to non-nil."
 	  (when (commandp command)
 	    (call-interactively command)))))))
 
-(defvar yas/complete-for-keys t
-  "If non-nil, `yas/completing-expand' prompts for key, then for template.
-
-Otherwise 'yas/completing-expand' prompts for all possible
-templates and inserts the selected one.")
-
-(defun yas/completing-expand ()
+(defun yas/choose-snippet ()
   "Choose a snippet to expand, pop-up a list of choices according
-to `yas/popup-function'."
+to `yas/prompt-function'."
   (interactive)
   (let* ((templates (mapcar #'cdr
-			    (if yas/complete-for-keys
-				(let ((key (yas/popup-for-keys (yas/snippet-table-all-keys (yas/current-snippet-table)))))
+			    (if yas/choose-keys-first
+				(let ((key (yas/prompt-for-keys (yas/snippet-table-all-keys (yas/current-snippet-table)))))
 				  (when key
 				    (yas/snippet-table-fetch (yas/current-snippet-table) key 'no-condition)))
 			      (yas/snippet-table-all-templates (yas/current-snippet-table)))))
 	 (template-content (and templates
-				(or (and (cdr templates)
-					 (yas/popup-for-template-content templates))
+				(or (and (rest templates) ;; more than one template for same key
+					 (yas/prompt-for-template-content templates))
 				    (yas/template-content (car templates)))))
 	 (where (if mark-active
 		    (cons (region-beginning) (region-end))
@@ -878,7 +965,27 @@ to `yas/popup-function'."
       (yas/expand-snippet (car where) (cdr where) template-content))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; Snippet expansion and field managment
+;;; User conveniente functions, for using in snippet definitions
+;;;
+
+(defun yas/choose-value (&rest possibilities)
+  (some #'(lambda (fn)
+	    (funcall fn "Choose: " possibilities))
+	yas/prompt-functions))
+
+(defun yas/verify-value (&rest possibilities)
+  (when (and yas/moving-away (notany #'(lambda (pos) (string= pos yas/text)) possibilities))
+    (error "field only allows " possibilities)))
+
+(defun yas/field-value (number)
+  (let ((snippet (car (yas/snippets-at-point)))
+	(field (and snippet
+		    (yas/snippet-find-field snippet number))))
+    (when field
+      (yas/field-text-for-display field))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Snippet expansion and field management
 
 (defvar yas/active-field-overlay nil
   "Overlays the currently active field")
@@ -889,9 +996,14 @@ to `yas/popup-function'."
 (defvar yas/deleted-text nil
   "The text deleted in the last snippet expansion")
 
-(make-variable-buffer-local 'yas/active-field-overlay)
-(make-variable-buffer-local 'yas/field-protection-overlays)
-(make-variable-buffer-local 'yas/deleted-text)
+(defvar yas/selection-text nil
+  "The previously selected region deleted in the last snippet
+  expansion")
+
+(eval-when-compile
+  (make-variable-buffer-local 'yas/active-field-overlay)
+  (make-variable-buffer-local 'yas/field-protection-overlays)
+  (make-variable-buffer-local 'yas/deleted-text))
 
 (defstruct (yas/snippet (:constructor yas/make-snippet ()))
   "A snippet.
@@ -937,7 +1049,6 @@ for this field, apply it. Otherwise, returned nil."
 			  (yas/eval-string transform))))
     transformed))
 
-
 (defsubst yas/replace-all (from to)
   "Replace all occurance from FROM to TO."
   (goto-char (point-min))
@@ -980,6 +1091,16 @@ inserted first."
 					    (overlays-at (point))))))
    #'(lambda (s1 s2)
        (<= (yas/snippet-id s2) (yas/snippet-id s1)))))
+
+(defun yas/next-field-or-maybe-expand ()
+  "Try to expand a snippet at a key before point, otherwise
+delegate to `yas/next-field'."
+  (interactive)
+  (if yas/triggers-in-field
+      (let ((yas/fallback-behavior 'return-nil))
+	(unless (yas/expand)
+	  (yas/next-field)))
+    (yas/next-field)))
 
 (defun yas/next-field (&optional arg)
   "Navigate to next field.  If there's none, exit the snippet."
@@ -1037,16 +1158,19 @@ up the snippet does not delete it!"
 		 (yas/snippet-exit snippet)
 	       (overlay-end (yas/snippet-control-overlay snippet)))))
 
-;;; Apropos markers-to-points: This can be useful for performance reasons, so
-;;; that an excessive number of live markers arent kept aroung in the
-;;; `buffer-undo-list'. In `markers-to-points', the set-to-nil
-;;; markers can't simply be discarded and replaced with fresh ones in
-;;; `points-to-markers'. The original marker that was just set to nilhas to be
-;;; reused.
+;;; Apropos markers-to-points:
+;;;
+;;; This was ground useful for performance
+;;; reasons, so that an excessive number of live markers arent kept
+;;; aroung in the `buffer-undo-list'. However, in `markers-to-points',
+;;; the set-to-nil markers can't simply be discarded and replaced with
+;;; fresh ones in `points-to-markers'. The original marker that was
+;;; just set to nilhas to be reused.
 ;;;
 ;;; This shouldn't bring horrible problems with undo/redo, but it
 ;;; would be one of the the first thing I'd remove if I was debugging that...
 ;;;
+
 (defun yas/markers-to-points (snippet)
   "Convert all markers in SNIPPET to a cons (POINT . MARKER)
 where POINT is the original position of the marker and MARKER is
@@ -1121,8 +1245,9 @@ exiting the snippet."
 
     ;; Push an action for snippet revival
     ;;
-    (push `(apply yas/snippet-revive ,yas/snippet-beg ,yas/snippet-end ,snippet)
-	  buffer-undo-list)
+    (when yas/snippet-revival
+      (push `(apply yas/snippet-revive ,yas/snippet-beg ,yas/snippet-end ,snippet)
+	    buffer-undo-list))
     
     ;; XXX: `yas/after-exit-snippet-hook' should be run with
     ;; `yas/snippet-beg' and `yas/snippet-end' bound. That might not
@@ -1130,7 +1255,9 @@ exiting the snippet."
     ;; disappeared, which sometimes happens when the snippet's messed
     ;; up...
     ;;
-    (unless no-hooks (run-hooks 'yas/after-exit-snippet-hook))))
+    (unless no-hooks (run-hooks 'yas/after-exit-snippet-hook)))
+  
+  (message "[yas] snippet exited."))
 
 (defun yas/check-commit-snippet ()
   "Checks if point exited the currently active field of the
@@ -1281,8 +1408,7 @@ progress."
 	       (yas/clear-field field))
 	     (setf (yas/field-modified-p field) t))))))
 
-;;;
-;;; Apropos protection overlays:...
+;;; Apropos protection overlays:
 ;;;
 ;;; These exist for nasty users who will try to delete parts of the
 ;;; snippet outside the active field. Actual protection happens in
@@ -1299,6 +1425,7 @@ progress."
 ;;; blocks all other million modification hooks. This presented some
 ;;; problems with stacked expansion.
 ;;;
+
 (defun yas/make-move-field-protection-overlays (snippet field)
   "Place protection overlays surrounding SNIPPET's FIELD.
 
@@ -1337,7 +1464,6 @@ Move the overlays, or create them if they do not exit."
 Functions in the `post-command-hook', for example
 `yas/post-command-handler' can check it and reset its value to nil. The variables value is the point where the violation originated")
 
-
 (defun yas/on-protection-overlay-modification (overlay after? beg end &optional length)
   "Signals a snippet violation, then issues error.
 
@@ -1346,10 +1472,10 @@ The error should be ignored in `debug-ignored-errors'"
 		  (yas/undo-in-progress)))
 	 (setq yas/protection-violation (point))
 	 (error "Exit the snippet first!"))))
+
 (add-to-list 'debug-ignored-errors "^Exit the snippet first!$")
 
-;;;
-;;; Apropos stacked expansion:...
+;;; Apropos stacked expansion:
 ;;;
 ;;; the parent snippet does not run its fields modification hooks
 ;;; (`yas/on-field-overlay-modification' and
@@ -1367,9 +1493,11 @@ The error should be ignored in `debug-ignored-errors'"
 ;;; maybe the correct implementation is to make the globals
 ;;; `yas/active-field-overlay' and `yas/field-protection-overlays' be
 ;;; snippet-local and be active even while the child snippet is
-;;; running. This is a whole lot of hooks running, but they should
-;;; account for all
-;;; 
+;;; running. This would mean a lot of overlay modification hooks
+;;; running, but if managed correctly (including overlay priorities)
+;;; they should account for all situations...
+;;;
+
 (defun yas/expand-snippet (start end template)
   "Expand snippet at current point. Text between START and END
 will be deleted before inserting template."
@@ -1398,6 +1526,7 @@ will be deleted before inserting template."
 	    ;; 
 	    (insert template)
 	    (setq yas/deleted-text key)
+	    (setq yas/selected-text (if mark-active key ""))
 	    (setq snippet (yas/snippet-create (point-min) (point-max))))
 	(error
 	 (push (cons (point-min) (point-max)) buffer-undo-list)
@@ -1432,7 +1561,8 @@ will be deleted before inserting template."
 	  (end (overlay-end (yas/snippet-control-overlay snippet))))
       (push (cons start end) buffer-undo-list)
       (push `(apply yas/take-care-of-redo ,start ,end ,snippet)
-	    buffer-undo-list))))
+	    buffer-undo-list)))
+  (message "[yas] snippet expanded."))
 
 (defun yas/take-care-of-redo (beg end snippet)
   "Commits SNIPPET, which in turn pushes an undo action for
@@ -1515,13 +1645,18 @@ necessary fields, mirrors and exit points.
 
 Meant to be called in a narrowed buffer, does various passes"
   (let ((parse-start (point)))
-    ;; protect escapes
+    ;; protect backquote escapes
     ;; 
-    (yas/protect-escapes)
+    (yas/protect-escapes '(?`))
     ;; replace all backquoted expressions
     ;;
     (goto-char parse-start)
     (yas/replace-backquotes)
+    ;; protect escapes again since previous stepds might have
+    ;; generated more characters needing escapinge
+    ;;
+    (goto-char parse-start)
+    (yas/protect-escapes)
     ;; parse fields
     ;; 
     (goto-char parse-start)
@@ -1540,7 +1675,6 @@ Meant to be called in a narrowed buffer, does various passes"
     (yas/restore-escapes)
     ;; indent the best we can
     ;;
-    
 
 
     ))
@@ -1548,12 +1682,12 @@ Meant to be called in a narrowed buffer, does various passes"
 (defun yas/escape-string (escaped)
   (concat "YASESCAPE" (format "%d" escaped) "PROTECTGUARD"))
 
-(defun yas/protect-escapes ()
+(defun yas/protect-escapes (&optional escaped)
   "Protect all escaped characters with their numeric ASCII value."
   (mapc #'(lambda (escaped)
 	    (yas/replace-all (concat "\\" (char-to-string escaped))
 			     (yas/escape-string escaped)))
-	yas/escaped-characters))
+	(or escaped yas/escaped-characters)))
 
 (defun yas/restore-escapes ()
   "Restore all escaped characters from their numeric ASCII value."
@@ -1691,18 +1825,9 @@ When multiple expressions are found, only the last one counts."
 	  (set-marker (yas/field-end field) (point)))
 	t))))
 
-;; User convenience functions
-
-(defun yas/choose (&rest possibilities)
-  (ido-completing-read "Choose: " possibilities nil nil nil nil (car possibilities)))
-
-(defun yas/verify (&rest possibilities)
-  (when (and yas/moving-away (notany #'(lambda (pos) (string= pos yas/text)) possibilities))
-    (error "hey don't move away just now")))
-  
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Debug functions.  Use (or change) at will whenever needed.
-;; 
+;;
 
 (defun yas/debug-some-vars ()
   (interactive)
@@ -1733,7 +1858,6 @@ When multiple expressions are found, only the last one counts."
         (dolist (undo-elem first-ten)
           (princ (format "%2s:  %s\n" (position undo-elem first-ten) (truncate-string-to-width (format "%s" undo-elem) 70))))))))
 
-
 (defun yas/exterminate-package ()
   (interactive)
   (yas/minor-mode -1)
@@ -1761,7 +1885,6 @@ When multiple expressions are found, only the last one counts."
   (when quiet
     (add-hook 'post-command-hook 'yas/debug-some-vars 't 'local))
   )
-  
 
 (provide 'yasnippet)
 
