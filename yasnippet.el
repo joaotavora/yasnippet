@@ -988,13 +988,11 @@ inserted first."
                   1))
          (snippet (first (yas/snippets-at-point)))
 	 (active-field (overlay-get yas/active-field-overlay 'yas/field))
-         (number (and snippet
-		      (yas/field-number active-field)
-                      (+ arg
-                         (yas/field-number active-field))))
          (live-fields (remove-if #'yas/field-probably-deleted-p (yas/snippet-fields snippet)))
-         (target-field (yas/snippet-find-field snippet number)))
-    ;; First check if we're moving out of a field
+	 (active-field-pos (position active-field live-fields))
+	 (target-pos (+ arg active-field-pos))
+	 (target-field (nth target-pos live-fields)))
+    ;; First check if we're moving out of a field with a transform
     ;; 
     (when (and active-field
 	       (yas/field-transform active-field))
@@ -1004,8 +1002,7 @@ inserted first."
 	     (yas/modified-p (yas/field-modified-p active-field)))
 	(yas/eval-string (yas/field-transform active-field))))
     ;; Now actually move...
-    (cond ((and number
-                (> number (length live-fields)))
+    (cond ((>= target-pos (length live-fields))
            (yas/exit-snippet snippet))
           (target-field
            (yas/move-to-field snippet target-field))
