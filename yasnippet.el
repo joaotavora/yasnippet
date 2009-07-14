@@ -3,7 +3,7 @@
 ;; Copyright 2008 pluskid
 ;;
 ;; Authors: pluskid <pluskid@gmail.com>, joaotavora <joaotavora@gmail.com>
-;; Version: 0.6.0 XXX: Change this
+;; Version: 0.6.0
 ;; X-URL: http://code.google.com/p/yasnippet/
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -355,19 +355,20 @@ snippet templates")
 
 (define-minor-mode yas/minor-mode
   "Toggle YASnippet mode.
+
+When YASnippet mode is enabled, the `tas/trigger-key' key expands
+snippets of code depending on the mode.
+
 With no argument, this command toggles the mode.
 positive prefix argument turns on the mode.
 Negative prefix argument turns off the mode.
-
-When YASnippet mode is enabled, the TAB key
-expands snippets of code depending on the mode.
 
 You can customize the key through `yas/trigger-key'."
   ;; The initial value.
   nil
   ;; The indicator for the mode line.
   " yas"
-  :group 'editing
+  :group 'yasnippet
   (define-key yas/minor-mode-map (read-kbd-macro yas/trigger-key) 'yas/expand))
 
 (defun yas/minor-mode-on ()
@@ -379,6 +380,9 @@ You can customize the key through `yas/trigger-key'."
   "Turn off YASnippet minor mode."
   (interactive)
   (yas/minor-mode -1))
+
+(define-globalized-minor-mode yas/global-mode yas/minor-mode yas/minor-mode-on
+  :group 'yasnippet) 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal structs for template management
@@ -1016,8 +1020,8 @@ to `yas/prompt-function'."
   (id (yas/snippet-next-id) :read-only t)
   (control-overlay nil)
   active-field
-  ;; stacked expansion: this slot saves the active field where the
-  ;; child expansion took place
+  ;; stacked expansion: the `previous-active-field' slot saves the
+  ;; active field where the child expansion took place
   previous-active-field
   exit-hook)
 
@@ -1213,7 +1217,10 @@ is done by setting MARKER to POINT with `set-marker'."
 snippet as ordinary text.
 
 Return a buffer position where the point should be placed if
-exiting the snippet."
+exiting the snippet.
+
+NO-HOOKS means don't run the `yas/after-exit-snippet-hook' hooks."
+
   (let ((control-overlay (yas/snippet-control-overlay snippet))
          yas/snippet-beg
          yas/snippet-end)
@@ -1245,11 +1252,14 @@ exiting the snippet."
     ;;
     (yas/markers-to-points snippet)
 
-    ;; Push an action for snippet revival
+    ;; Take care of snippet revival
     ;;
-    (when yas/snippet-revival
-      (push `(apply yas/snippet-revive ,yas/snippet-beg ,yas/snippet-end ,snippet)
-	    buffer-undo-list))
+    (if yas/snippet-revival
+	(push `(apply yas/snippet-revive ,yas/snippet-beg ,yas/snippet-end ,snippet)
+	      buffer-undo-list)
+      ;; Dismember the snippet... this is useful if we get called
+      ;; again from `yas/take-care-of-redo'....
+      (setf (yas/snippet-fields snippet) nil))
     
     ;; XXX: `yas/after-exit-snippet-hook' should be run with
     ;; `yas/snippet-beg' and `yas/snippet-end' bound. That might not
@@ -1588,7 +1598,7 @@ will be deleted before inserting template."
 reviving it.
 
 Meant to exit in the `buffer-undo-list'."
-  (yas/commit-snippet snippet))
+  (yas/commit-snippet snippet 'no-hooks))
 
 (defun yas/snippet-revive (beg end snippet)
   "Revives the SNIPPET and creates a control overlay from BEG to
@@ -1698,7 +1708,7 @@ Meant to be called in a narrowed buffer, does various passes"
     (yas/indent snippet)))
 
 (defun yas/indent (snippet)
-  (message "would be indenting")
+  ;;; XXX: fixed indentation not working
   (cond ((eq yas/indent-line 'fixed)
 	 (let ((fill-prefix (make-string yas/start-column ? )))
 	   (indent-region (point-min) (point-max))))
@@ -1915,6 +1925,7 @@ When multiple expressions are found, only the last one counts."
 (defun yas/exterminate-package ()
   (interactive)
   (yas/minor-mode -1)
+  (unintern 'yasnippet)
   (mapatoms #'(lambda (atom)
                 (when (string-match "yas/" (symbol-name atom))
                   (unintern atom)))))
