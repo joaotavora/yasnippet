@@ -72,7 +72,7 @@ The following values are possible:
 
 `auto' Indent each line of the snippet with `indent-according-to-mode'"
   :type '(choice (const :tag "Nothing"  nothing)
-                 (const :tag "Fixed"    always)
+                 (const :tag "Fixed"    fixed)
                  (const :tag "Auto"     auto))
   :group 'yasnippet)
 
@@ -82,7 +82,7 @@ an exit from an active snippet or redoing a snippet expansion"
   :type 'boolean
   :group 'yasnippet)
 
-(defcustom yas/trigger-key "<tab>"
+(defcustom yas/trigger-key "TAB"
   "The key to bind as a trigger of snippet when `yas/minor-mode'
 is active.
 
@@ -99,7 +99,7 @@ representation using `read-kbd-macro'. "
   :type 'string
   :group 'yasnippet)
 
-(defcustom yas/prev-field-key "S-<tab>"
+(defcustom yas/prev-field-key "S-TAB"
   "The key to navigate to previous field when a snippet is active.
 
 Value is a string that is converted to the internal Emacs key
@@ -174,8 +174,7 @@ this variable to t."
   :group 'yasnippet)
 
 (defcustom yas/wrap-around-region t
-  "If non-nil, wrap selected region in the snippet being
-  expanded.
+  "If non-nil, snippet expansion wraps around selected region.
 
 The wrapping occurs just before the snippet's exit marker. This
 can be overriden on a per-snippet basis."
@@ -315,7 +314,7 @@ Here's an example:
   "A list of mode which is well known but not part of emacs.")
 
 (defvar yas/escaped-characters
-  '(?\\ ?` ?$ ?} )
+  '(?\\ ?` ?' ?$ ?} )
   "A list of characters which *might* need to be escaped in
 snippet templates")
 
@@ -933,14 +932,14 @@ when the condition evaluated to non-nil."
   (multiple-value-bind (templates start end) (yas/current-key)
     (if templates
 	(let ((template-content (or (and (rest templates) ;; more than one
-					 (mapcar #'cdr (yas/prompt-for-template-content templates)))
+					 (yas/prompt-for-template-content (mapcar #'cdr templates)))
 				    (yas/template-content (cdar templates)))))
 	  (when template-content
 	      (yas/expand-snippet start end template-content)))
       (if (eq yas/fallback-behavior 'return-nil)
 	  nil				; return nil
 	(let* ((yas/minor-mode nil)
-	       (command (key-binding yas/trigger-key)))
+	       (command (key-binding (read-kbd-macro yas/trigger-key))))
 	  (when (commandp command)
 	    (call-interactively command)))))))
 
@@ -994,11 +993,14 @@ to `yas/prompt-function'."
   "Two overlays protect the current actipve field ")
 
 (defvar yas/deleted-text nil
-  "The text deleted in the last snippet expansion")
+  "The text deleted in the last snippet expansion.")
 
-(defvar yas/selection-text nil
-  "The previously selected region deleted in the last snippet
-  expansion")
+(defvar yas/selected-text nil
+  "The selected region deleted before the last snippet
+  expansion.")
+
+(defvar yas/start-column nil
+  "The column where the snippet expansion started.")
 
 (eval-when-compile
   (make-variable-buffer-local 'yas/active-field-overlay)
@@ -1510,31 +1512,48 @@ will be deleted before inserting template."
 	(inhibit-modification-hooks t)
 	(column (current-column))
 	snippet)
+
+    ;; Delete the trigger key, this *does* get undo-recorded.
+    ;;
+    (delete-region start end)
+    
     ;; Narrow the region down to the template, shoosh the
     ;; `buffer-undo-list', and create the snippet, the new snippet
     ;; updates its mirrors once, so we are left with some plain text.
     ;; The undo action for deleting this plain text will get recorded
     ;; at the end of this function.
     ;; 
-    (save-restriction
-      (narrow-to-region end end)
-      (condition-case err
-	  (let ((buffer-undo-list t))
-	    ;; snippet creation might evaluate users elisp, which
-	    ;; might generate errors, so we have to be ready to catch
-	    ;; them mostly to make the undo information
-	    ;; 
-	    (insert template)
-	    (setq yas/deleted-text key)
-	    (setq yas/selected-text (if mark-active key ""))
-	    (setq snippet (yas/snippet-create (point-min) (point-max))))
-	(error
-	 (push (cons (point-min) (point-max)) buffer-undo-list)
-	 (error (cadr err)))))
+    ;; (save-restriction
+    ;;   (narrow-to-region end end)
+    ;;   (condition-case err
+    ;; 	  (let ((buffer-undo-list t))
+    ;; 	    ;; snippet creation might evaluate users elisp, which
+    ;; 	    ;; might generate errors, so we have to be ready to catch
+    ;; 	    ;; them mostly to make the undo information
+    ;; 	    ;; 
+    ;; 	    (insert template)
+    ;; 	    (setq yas/deleted-text key)
+    ;; 	    (setq yas/selected-text (if mark-active key ""))
+    ;; 	    (setq snippet (yas/snippet-create (point-min) (point-max))))
+    ;; 	(error
+    ;; 	 (push (cons (point-min) (point-max)) buffer-undo-list)
+    ;; 	 (error (cadr err)))))
 
-    ;; Delete the trigger key, this *does* get undo-recorded.
-    ;;
-    (delete-region start end)
+    
+
+    (save-restriction
+      (narrow-to-region start start)
+      (let ((buffer-undo-list t))
+	;; snippet creation might evaluate users elisp, which
+	;; might generate errors, so we have to be ready to catch
+	;; them mostly to make the undo information
+	;;
+	(setq yas/start-column (save-restriction (widen) (current-column)))
+	(insert template)
+	(setq yas/deleted-text key)
+	(setq yas/selected-text (when mark-active key))
+	(setq snippet (yas/snippet-create (point-min) (point-max)))))
+
     ;; stacked-expansion: This checks for stacked expansion, save the
     ;; `yas/previous-active-field' and advance its boudary.
     ;;
@@ -1645,9 +1664,9 @@ necessary fields, mirrors and exit points.
 
 Meant to be called in a narrowed buffer, does various passes"
   (let ((parse-start (point)))
-    ;; protect backquote escapes
+    ;; protect quote and backquote escapes
     ;; 
-    (yas/protect-escapes '(?`))
+    (yas/protect-escapes '(?` ?'))
     ;; replace all backquoted expressions
     ;;
     (goto-char parse-start)
@@ -1675,9 +1694,39 @@ Meant to be called in a narrowed buffer, does various passes"
     (yas/restore-escapes)
     ;; indent the best we can
     ;;
+    (goto-char parse-start)
+    (yas/indent snippet)))
 
-
-    ))
+(defun yas/indent (snippet)
+  (message "would be indenting")
+  (cond ((eq yas/indent-line 'fixed)
+	 (let ((fill-prefix (make-string yas/start-column ? )))
+	   (indent-region (point-min) (point-max))))
+	((eq yas/indent-line 'auto)
+	 (let ((begin (point-min))
+	       (end (point-max)))
+	   (save-restriction
+	     (widen)
+	     (indent-region (line-beginning-position) (point-max))
+	     (when (yas/snippet-exit snippet)
+	       (goto-char (yas/snippet-exit snippet))
+	       (indent-according-to-mode)
+	       ;; XXX: Here is the indent problem:
+	       ;;
+	       ;; `indent-according-to-mode' uses whatever
+	       ;; `indent-line-function' is available. Some
+	       ;; implementations of these functions delete text
+	       ;; before they insert. If there happens to be a marker
+	       ;; just after the text being deleted, the insertion
+	       ;; actually happens after the marker, which misplaces
+	       ;; it.
+	       ;;
+	       ;; This would also happen if we had used overlays with
+	       ;; the `front-advance' property set to nil.
+	       ;;
+	       (set-marker (yas/snippet-exit snippet) (point))))))
+	 (t
+	  nil)))
 
 (defun yas/escape-string (escaped)
   (concat "YASESCAPE" (format "%d" escaped) "PROTECTGUARD"))
@@ -1768,9 +1817,14 @@ When multiple expressions are found, only the last one counts."
   (while (re-search-forward yas/simple-mirror-regexp nil t)
     (let ((number (string-to-number (match-string-no-properties 1))))
       (cond ((zerop number)
+	     
 	     (setf (yas/snippet-exit snippet)
-		(set-marker (make-marker) (match-beginning 0)))
-	     (delete-region (match-beginning 0) (match-end 0)))
+		   (set-marker (make-marker) (match-end 0)))
+	     (save-excursion
+	       (goto-char (match-beginning 0))
+	       (when (and yas/wrap-around-region yas/selected-text)
+		 (insert yas/selected-text))
+	       (delete-region (point) (yas/snippet-exit snippet))))
 	    (t
 	     (let ((field (yas/snippet-find-field snippet number)))
 	       (if field
