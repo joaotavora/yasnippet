@@ -93,7 +93,7 @@ representation using `read-kbd-macro'. "
   :type 'string
   :group 'yasnippet)
 
-(defcustom yas/next-field-key "<tab>"
+(defcustom yas/next-field-key "TAB"
   "The key to navigate to next field when a snippet is active.
 
 Value is a string that is converted to the internal Emacs key
@@ -1705,39 +1705,41 @@ Meant to be called in a narrowed buffer, does various passes"
     (yas/indent snippet)))
 
 (defun yas/indent (snippet)
-  ;;; XXX: fixed indentation not working
-  (cond ((eq yas/indent-line 'fixed)
-	 (let ((fill-prefix (make-string yas/start-column ? )))
-	   (indent-region (point-min) (point-max))))
-	((eq yas/indent-line 'auto)
-	 (let ((begin (point-min))
-	       (end (point-max)))
-	   (save-restriction
-	     (widen)
-	     (indent-region (line-beginning-position) (point-max))
-	     (when (yas/snippet-exit snippet)
-	       (goto-char (yas/snippet-exit snippet))
-	       (indent-according-to-mode)
-	       ;; XXX: Here is the indent problem:
-	       ;;
-	       ;; `indent-according-to-mode' uses whatever
-	       ;; `indent-line-function' is available. Some
-	       ;; implementations of these functions delete text
-	       ;; before they insert. If there happens to be a marker
-	       ;; just after the text being deleted, the insertion
-	       ;; actually happens after the marker, which misplaces
-	       ;; it.
-	       ;;
-	       ;; This would also happen if we had used overlays with
-	       ;; the `front-advance' property set to nil.
-	       ;;
-	       (set-marker (yas/snippet-exit snippet) (point))))))
-	 (t
-	  nil))
-  (while (re-search-forward "$>" nil t)
-    (delete-region (match-beginning 0) (match-end 0))
-    (when (not (eq yas/indent-line 'auto))        
-      (indent-according-to-mode))))
+;;; XXX: fixed indentation not working
+  (save-excursion
+    (cond ((eq yas/indent-line 'fixed)
+	   (let ((fill-prefix (make-string yas/start-column ? )))
+	     (indent-region (point-min) (point-max))))
+	  ((eq yas/indent-line 'auto)
+	   (let ((begin (point-min))
+		 (end (point-max)))
+	     (save-restriction
+	       (widen)
+	       (indent-region (line-beginning-position) (point-max))
+	       (when (yas/snippet-exit snippet)
+		 (goto-char (yas/snippet-exit snippet))
+		 (indent-according-to-mode)
+		 ;; XXX: Here is the indent problem:
+		 ;;
+		 ;; `indent-according-to-mode' uses whatever
+		 ;; `indent-line-function' is available. Some
+		 ;; implementations of these functions delete text
+		 ;; before they insert. If there happens to be a marker
+		 ;; just after the text being deleted, the insertion
+		 ;; actually happens after the marker, which misplaces
+		 ;; it.
+		 ;;
+		 ;; This would also happen if we had used overlays with
+		 ;; the `front-advance' property set to nil.
+		 ;;
+		 (set-marker (yas/snippet-exit snippet) (point))))))
+	  (t
+	   nil)))
+  (save-excursion
+    (while (re-search-forward "$>" nil t)
+      (delete-region (match-beginning 0) (match-end 0))
+      (when (not (eq yas/indent-line 'auto))        
+	(indent-according-to-mode)))))
 
 
 (defun yas/escape-string (escaped)
