@@ -1894,6 +1894,28 @@ When multiple expressions are found, only the last one counts."
 	t))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Major mode stuff
+;;
+(defvar yas/font-lock-keywords
+  (append '(("^#.*$" . font-lock-comment-face))
+	  lisp-font-lock-keywords
+	  lisp-font-lock-keywords-1
+	  lisp-font-lock-keywords-2
+	  '(("$\\([0-9]+\\)"
+	     (0 font-lock-keyword-face)
+	     (1 font-lock-string-face t))
+	    ("${\\([0-9]+\\):?"
+	     (0 font-lock-keyword-face)
+	     (1 font-lock-warning-face t))
+	    ("\\(\\$\\)(" 1 font-lock-preprocessor-face)
+	    ("}"
+	     (0 font-lock-keyword-face)))))
+
+(define-derived-mode yas/snippet-editing-mode emacs-lisp-mode "YASnippet"
+  "A mode for editing yasnippets"
+  (setq font-lock-defaults '(yas/font-lock-keywords)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Debug functions.  Use (or change) at will whenever needed.
 ;;
 
