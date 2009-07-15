@@ -66,11 +66,13 @@ other values interactively."
 
 The following values are possible:
 
-`nothing' Don't apply any indendation after expansion;
-
 `fixed' Indent the snippet to the current column;
 
-`auto' Indent each line of the snippet with `indent-according-to-mode'"
+`auto' Indent each line of the snippet with `indent-according-to-mode'
+
+Every other value means don't apply any snippet-side indendation
+after expansion (the manual per-line \"$>\" indentation still
+applies)."
   :type '(choice (const :tag "Nothing"  nothing)
                  (const :tag "Fixed"    fixed)
                  (const :tag "Auto"     auto))
@@ -913,12 +915,7 @@ when the condition evaluated to non-nil."
   (if (not first-time?)
       (let ((yas/fallback-behavior 'return-nil))
         (yas/expand))
-    (when (and (null (car buffer-undo-list))
-               (eq 'apply
-                   (car (cadr buffer-undo-list)))
-               (eq 'yas/undo-expand-snippet
-                   (cadr (cadr buffer-undo-list))))
-      (undo 1))
+    (undo 1)
     nil))
 
 (defun yas/require-template-condition ()
@@ -1736,7 +1733,12 @@ Meant to be called in a narrowed buffer, does various passes"
 	       ;;
 	       (set-marker (yas/snippet-exit snippet) (point))))))
 	 (t
-	  nil)))
+	  nil))
+  (while (re-search-forward "$>" nil t)
+    (delete-region (match-beginning 0) (match-end 0))
+    (when (not (eq yas/indent-line 'auto))        
+      (indent-according-to-mode))))
+
 
 (defun yas/escape-string (escaped)
   (concat "YASESCAPE" (format "%d" escaped) "PROTECTGUARD"))
