@@ -28,12 +28,33 @@
 
 ;; Basic steps to setup:
 ;;   1. Place `yasnippet.el' in your `load-path'.
+;;	  (add-to-list 'load-path "/dir/to/yasnippet.el")
 ;;   2. In your .emacs file:
 ;;        (require 'yasnippet)
 ;;   3. Place the `snippets' directory somewhere.  E.g: ~/.emacs.d/snippets
 ;;   4. In your .emacs file
-;;        (yas/initialize)
-;;        (yas/load-directory "~/.emacs.d/snippets")
+;;        (setq yas/root-directory "~/.emacs/snippets") 
+;;        (yas/load-directory yas/root-directory)
+;;   5. To enable the YASnippet menu and tab-trigger expansion
+;;        M-x yas/minor-mode
+;;   6. To globally enable the minor mode in *all* buffers
+;;        M-x yas/global-mode
+;;
+;;   Steps 5. and 6. are optional, you can insert use snippets without
+;;   them via:
+;;        M-x yas/choose-snippet
+;;
+;;   The `dropdown-list.el' extension is bundled with YASnippet, you
+;;   can optionally use it the preferred "prompting method", puting in
+;;   your .emacs file, for example:
+;;
+;;       (require 'dropdown-list)
+;;       (setq 'yas/prompt-functions '(yas/dropdown-prompt
+;;				       yas/ido-prompt
+;;				       yas/completing-prompt))
+;;
+;;   Also check out the customization group
+;;        M-x customize-group RET yasnippet RET 
 ;;
 ;; For more information and detailed usage, refer to the project page:
 ;;      http://code.google.com/p/yasnippet/
@@ -204,8 +225,7 @@ An error string \"[yas] error\" is returned instead."
   :group 'yasnippet)
 
 (defface yas/field-debug-face
-  '((((class color) (background light)) (:background "tomato"))
-    (t (:background "tomato")))
+  '()
   "The face used for debugging some overlays normally hidden"
   :group 'yasnippet)
 
@@ -880,18 +900,7 @@ all the parameters:
   (interactive)
   (message (concat "yasnippet (version "
                    yas/version
-                   ") -- pluskid <pluskid@gmail.com>")))
-
-(defun yas/initialize ()
-  "Do necessary initialization. When turning on `yas/minor-mode'"
-  (add-hook 'yas/minor-mode-on-hook
-            'yas/ensure-minor-mode-priority)
-  (when yas/use-menu
-    (define-key-after
-      (lookup-key global-map [menu-bar])
-      [yasnippet]
-      (cons "YASnippet" yas/menu-keymap)
-      'buffer)))
+                   ") -- pluskid <pluskid@gmail.com>/joaotavora <joaotavora@gmail.com>")))
 
 (defun yas/define-snippets (mode snippets &optional parent-mode)
   "Define snippets for MODE.  SNIPPETS is a list of
@@ -1044,7 +1053,7 @@ by condition."
       (yas/expand-snippet (car where) (cdr where) template-content))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; User conveniente functions, for using in snippet definitions
+;;; User convenience functions, for using in snippet definitions
 ;;;
 
 (defun yas/substr (str pattern &optional subexp)
@@ -1115,8 +1124,7 @@ Otherwise throw exception."
   active-field
   ;; stacked expansion: the `previous-active-field' slot saves the
   ;; active field where the child expansion took place
-  previous-active-field
-  exit-hook)
+  previous-active-field)
 
 (defstruct (yas/field (:constructor yas/make-field (number start end parent-field)))
   "A field."
@@ -1379,8 +1387,8 @@ snippet, if so cleans up the whole snippet up."
     (dolist (snippet snippets)
       (let ((active-field (yas/snippet-active-field snippet))) 
 	(cond ((not (and active-field (yas/field-contains-point-p active-field)))
-	       (yas/commit-snippet snippet)
-	       (setq snippets-left (delete snippet snippets-left)))
+	       (setq snippets-left (delete snippet snippets-left))
+	       (yas/commit-snippet snippet snippets-left))
 	      ((and active-field
 		    (or (not yas/active-field-overlay)
 			(not (overlay-buffer yas/active-field-overlay))))
@@ -1413,8 +1421,8 @@ snippet, if so cleans up the whole snippet up."
 	 (setq yas/protection-violation nil))
 	((eq 'undo this-command)
 	 ;;
-	 ;; After undo's the correct field is sometimes not restored
-	 ;; correctly, this condition handles that
+	 ;; After undo revival the correct field is sometimes not
+	 ;; restored correctly, this condition handles that
 	 ;;
 	 (let* ((snippet (car (yas/snippets-at-point)))
 		(target-field (and snippet
