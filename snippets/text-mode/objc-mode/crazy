@@ -1,0 +1,4 @@
+#name : foo { ... } ; setFoo { ... }
+# --
+I say ${1:hello} and so ${2: goodbye $1}
+She also says $2

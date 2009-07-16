@@ -59,3 +59,22 @@ configuration and you may also ask for help on the `discussion group
 <http://groups.google.com/group/smart-snippet>`_. Don't forget to
 attach the information on what command is bound to TAB as well as the
 mode information (Can be obtained by ``C-h m``).
+
+How to define snippets with named by characters not supported by the filesystem?
+================================================================================
+For example, you want to define a snippet by the key ``<`` which is not a
+valid character for filename on Windows. In this case, you may use
+``yas/define`` to define the snippet. If you want to enjoy defining
+snippets in a file, you can use the ``key`` property to specify the key of
+the defined snippet explicitly.
+
+Just name your snippet with an arbitrary valid filename, ``lt`` for
+example. and specify ``<`` for the ``key`` property:
+
+.. sourcecode:: text
+
+  #key: <
+  #name: <...></...>
+  # --
+  <${1:div}>$0</$1>
+

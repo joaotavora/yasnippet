@@ -8,131 +8,95 @@ Yet Another Snippet extension
 
 .. contents::
 
-YASnippet is a re-design and re-write of my original extension
-`smart-snippet`_. It is much cleaner and more powerful than
-smart-snippet.
+Yasnippet is a template system for emacs. It allows you to type a
+abbrevation and automatically expand the abbreviation into function
+templates.
+
+Bundled language templates includes: C, C++, C#, Perl, Python, Ruby,
+SQL, LaTeX, HTML, CSS and more.
+
+Yasnippet system is inspired from TextMate's template system. You can
+use `a tool
+<https://groups.google.com/group/smart-snippet/browse_thread/thread/691fbdd33412d86e?pli=1>`_
+to import any TextMate template you have to Yasnippet. It is a
+re-design and re-write of my original extension `smart-snippet`_. It
+is much cleaner and more powerful than smart-snippet.
 
 .. _smart-snippet: http://code.google.com/p/smart-snippet/
 
-Getting Started
-===============
 
-For the busy or impatient people
---------------------------------
+Video Demo
+==========
 
-Watch the `screencast at YouTube
-<http://www.youtube.com/watch?v=vOj7btx3ATg>`_ or download `the one
-with a higher resolution
-<http://yasnippet.googlecode.com/files/yasnippet.avi>`_.
+Watch the `demo at YouTube
+<http://www.youtube.com/watch?v=vOj7btx3ATg>`_ (download a higher
+resolution version: `yasnippet.avi
+<http://yasnippet.googlecode.com/files/yasnippet.avi>`_).
 
-For lazy poeple or beginners
-----------------------------
+Brief Install Instruction
+=========================
 
-.. _downloads page: http://code.google.com/p/yasnippet/downloads/list
+There are two archives of YASnippet. One is a single file compiled
+“bundle”, and the other is normal. If all you need is to use the
+builtin templates, download the bundle one. If you want to add your
+own templates, download the normal one.
 
-1. Download the latest bundle release [1]_ from the `downloads page`_.
-2. Create a directory ``~/emacs/plugins``.
-3. Unpack the downloaded bundle to that directory.
-4. Add the following code to your ``~/.emacs`` file:
-   
+Bundle Install
+--------------
+
+1. Download the latest ``yasnippet-bundle-x.y.z.el.tgz`` and unpack it.
+2. You'll get a file named ``yasnippet-bundle.el``, put it under
+   ``~/.emacs.d/plugins/`` (create the directory if not exists).
+3. Open the file in Emacs, and type ``Alt+x eval-buffer``.
+
+That's it. Now open any one of your language file, you'll see a menu
+YASnippet. you can pull the menu to insert a template. Or, you can
+type the pre-defined abbrev and press ``TAB`` to expand it.
+
+To have emacs load YASnippet automatically when it starts, put the
+following in your ``~/.emacs`` file:
+
    .. sourcecode:: common-lisp
 
      (add-to-list 'load-path
-                   "~/emacs/plugins")
+                   "~/.emacs.d/plugins")
      (require 'yasnippet-bundle)
 
-For you
--------
+Normal Install
+--------------
 
-1. Download the latest YASnippet release package [2]_ from the
-   `downloads page`_.
-2. Unpack it to a directory and add that directory to your
-   ``load-path``.
-3. Add the following code to your ``~/.emacs`` file:
+For full install of the normal archive, just download and unpack the
+latest ``yasnippet-x.y.z.tar.bz2``. You'll get a directory named
+``yasnippet``, put it in your ``~/.emacs.d/plugins`` and add the
+following in your ``.emacs`` file:
 
    .. sourcecode:: common-lisp
 
+     (add-to-list 'load-path
+                   "~/.emacs.d/plugins")
      (require 'yasnippet) ;; not yasnippet-bundle
      (yas/initialize)
-     (yas/load-directory "/path/to/the/snippets/directory/")
+     (yas/load-directory "~/.emacs.d/plugins/yasnippet/snippets")
 
-4. You can inspect into the ``snippets`` directory for adding your own
-   snippets. 
-5. Detailed document can be found at the ``doc`` directory.
+Please refer to the documentation for full customization.
 
-For geeks
----------
+Bugs, Contribution and Support
+==============================
 
-If you want to always follow the latest code. You can check out it
-from the svn repository:
-
-.. sourcecode:: bash
-
-  svn checkout http://yasnippet.googlecode.com/svn/trunk/ yasnippet
-
-However, I try to release a new version as soon as I made some changes
-that will affect the normal use or added some new features. So there's
-usually no need to follow the svn repository. Except that you might
-find ``svn up`` is more convenient than downloading and unpacking the
-release package. :D
-
-How to contribute ?
-===================
-
-If you like YASnippet, you can recommendate it to your friends.
-
-Issues
-------
-
-If you find a bug you can create a new issue at the `issue list
-<http://code.google.com/p/yasnippet/issues/list>`_. Please describe
-the problem as clear as possible. 
-
-Suggestion, Feature Request
----------------------------
-
-There's a `discussion group`_ for both smart-snippet and yasnippet. If
-you have any suggesion, you can post to there and discuss with other
-members. 
-
-Especially, there's a `wish list`_ wiki page. I'll collect ideas from
-the `discussion group`_ to the `wish list`_. So you might want to look
-at the `wish list`_ before you post something.
-
-Snippets
---------
-
-YASnippet comes with some default snippet definitions. However, they
-are far from complete. So I'm calling users to share their
-snippets. If you have some good snippet definitions, you can post them
-to the `discussion group`_. You can specify the ``contributor``
-property of the snippet like:
-
-.. sourcecode:: text
-
-  #contributor : pluskid <pluskid@gmail.com>
-  #name : __...__
-  # --
-  __${init}__
-
-I'll incorporate (some of) them in the release if suitable. However,
-if you have *many* snippets (especially when they need to be
-maintained and updated constantly), it is not suitable to put them in
-the YASnippet release package. A better way is to make your snippets
-publicly available and tell me the URL. I'll try to keep a list of
-them on the wiki page.
+* If you find a bug, please report it at `Issue List
+  <http://code.google.com/p/yasnippet/issues/list>`_.
+* If you have problem using YASnippet, or have some new ideas, please
+  post to the `discussion group`_. Especially, there's a `wish list`_
+  wiki page. I'll collect ideas from the `discussion group`_ to the
+  `wish list`_. So you might want to look at the `wish list`_ before
+  you post something.
+* If you want to contribute some snippets, you can also post them to
+  the `discussion group`_. Some common snippets may be added to
+  YASnippet, while others will be collected at the
+  `UserContributedSnippets wiki page
+  <http://code.google.com/p/yasnippet/wiki/UserContributedSnippets>`_.
 
 .. _discussion group: http://groups.google.com/group/smart-snippet
 .. _wish list: http://code.google.com/p/yasnippet/wiki/WishList
 
-Detailed Documentation
-======================
-
-* See `this page <define_snippet.html>`_ on how to define a snippet by
-  yourself.
-* Here's the `FAQ <faq.html>`_ page.
-* Here's the `ChangeLog <changelog.html>`_.
-
-.. [1] They usually named like ``yasnippet-bundle-x.y.z.el.tgz`` where
-   ``x.y.z`` is the version number.
-.. [2] They usually named like ``yasnippet.x.y.z.tar.bz2``.
+Thank you very much for using YASnippet!

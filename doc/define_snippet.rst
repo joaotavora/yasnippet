@@ -178,6 +178,9 @@ Meta data are specified in the syntax of
 Any other text above ``# --`` is considered as comment and
 ignored. Here's a list of currently supported meta data:
 
+.. image:: images/group.png
+   :align: right
+
 * ``name``: The name of the snippet. This is a one-line description of
   the snippet. It will be displayed in the menu. So it's a good idea
   to select a descriptive name fo a snippet -- especially
@@ -186,6 +189,18 @@ ignored. Here's a list of currently supported meta data:
 * ``condition``: The condition of the snippet. This is a piece of
   elisp code. If a snippet has a condition, then it will only be
   expanded when the condition code evaluate to some non-nil value.
+* ``key``: The key to expand the snippet. Sometimes the key of a
+  snippet is non-ASCII or not valid filename (e.g. contains
+  ``/``). One can then define the ``key`` property which will
+  overwrite the filename as the key to expand the snippet.
+* ``group``: The snippets for a mode can be grouped. Grouped snippets
+  will be grouped in sub-menu. This is useful if one has too many
+  snippets for a mode which will make the menu too long. ``group``
+  property only affect menu construction (See `The Menu`_). Refer to
+  the snippets for ``ruby-mode`` for examples. Group can also be
+  nested, e.g.  ``control structure.loops`` tells that the snippet is
+  under the ``loops`` group which is under the ``control structure``
+  group.
 
 
 
@@ -215,10 +230,10 @@ element should have the following form:
 
 .. sourcecode:: common-lisp
 
-  (KEY TEMPLATE NAME CONDITION)
+  (KEY TEMPLATE NAME CONDITION GROUP)
 
-The ``NAME`` and ``CONDITION`` can be omitted if you don't want to
-provide one. Here's an example:
+The ``NAME``, ``CONDITION`` and ``GROUP`` can be omitted if you don't
+want to provide one. Here's an example:
 
 .. sourcecode:: common-lisp
 
@@ -278,14 +293,14 @@ The basic syntax for ``yas/define`` is
 
 .. sourcecode:: common-lisp
 
-  (yas/define mode key template &optional name condition)
+  (yas/define mode key template &optional name condition group)
 
 This is only a syntax sugar for
 
 .. sourcecode:: common-lisp
 
   (yas/define-snippets mode
-                       (list (list key template name condition)))
+                       (list (list key template name condition group)))
 
 The strategy to select a snippet
 ================================

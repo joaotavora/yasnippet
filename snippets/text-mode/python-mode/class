@@ -36,19 +36,23 @@ class ${1:ClassName}(${2:object}):
              indent)))
         }
         ${4:$
-        (mapconcat
-         '(lambda (x)
-            (if (not (string= (nth 0 x) ""))
-                (concat "self._" (nth 0 x) " = " (nth 0 x))))
-         (mapcar
-          '(lambda (x)
-             (mapcar
-              '(lambda (x)
-                 (replace-regexp-in-string "[[:blank:]]*$" ""
-                  (replace-regexp-in-string "^[[:blank:]]*" "" x)))
-              x))
-          (mapcar '(lambda (x) (split-string x "="))
-                  (split-string text ",")))
-         (concat "\n" (make-string (current-column) 32)))
+        (let* ((indent (concat "\n" (make-string (current-column) 32)))
+              (self-vars (mapconcat
+                   '(lambda (x)
+                      (if (not (string= (nth 0 x) ""))
+                          (concat "self._" (nth 0 x) " = " (nth 0 x))))
+                   (mapcar
+                    '(lambda (x)
+                       (mapcar
+                        '(lambda (x)
+                           (replace-regexp-in-string "[[:blank:]]*$" ""
+                                                     (replace-regexp-in-string "^[[:blank:]]*" "" x)))
+                        x))
+                    (mapcar '(lambda (x) (split-string x "="))
+                            (split-string text ",")))
+                   (concat indent))))
+  (if (string= self-vars "")
+      indent
+    self-vars))        
         }
         $0
