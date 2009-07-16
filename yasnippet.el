@@ -186,7 +186,9 @@ can be overriden on a per-snippet basis."
 (defcustom yas/good-grace nil
   "If non-nil, don't raise errors in inline elisp evaluation.
 
-The erorr string is instead returned."
+An error string \"[yas] error\" is returned instead."
+
+
   :type 'boolean
   :group 'yasnippet)
 
@@ -503,19 +505,23 @@ a list of modes like this to help the judgement."
   ;; TODO: This is a possible optimization point, the expression could
   ;; be stored in cons format instead of string,
   "Evaluate STRING and convert the result to string."
-  (condition-case err
-      (save-excursion
-        (save-restriction
-          (save-match-data
-            (widen)
-	    (let ((result (eval (read string))))
-	      (when result
-		(format "%s" result))))))
-    (error (if yas/good-grace
-	       (format "([yas] elisp error: %s"
-		       (error-message-string err))
-	     (error (format "([yas] elisp error: %s"
-			    (error-message-string err)))))))
+  (let ((retval (catch 'yas/exception
+		  (condition-case err
+		      (save-excursion
+			(save-restriction
+			  (save-match-data
+			    (widen)
+			    (let ((result (eval (read string))))
+			      (when result
+				(format "%s" result))))))
+		    (error (if yas/good-grace
+			       "[yas] elisp error!"
+			     (error (format "[yas] elisp error: %s"
+					    (error-message-string err)))))))))
+	(when (and (consp retval)
+		   (eq 'yas/exception (car retval)))
+	  (error (cdr retval)))
+	retval))
 
 (defun yas/snippet-table (mode)
   "Get the snippet table corresponding to MODE."
@@ -927,10 +933,14 @@ when the condition evaluated to non-nil."
 	 (symbolp (cdr local-condition))
 	 (cdr local-condition))))
 
-(defun yas/expand ()
+(defun yas/expand (&optional field)
   "Expand a snippet."
   (interactive)
-  (multiple-value-bind (templates start end) (yas/current-key)
+  (multiple-value-bind (templates start end) (if field
+						 (save-restriction
+						   (narrow-to-region (yas/field-start field) (yas/field-end field))
+						   (yas/current-key))
+					       (yas/current-key))
     (if templates
 	(let ((template-content (or (and (rest templates) ;; more than one
 					 (yas/prompt-for-template-content (mapcar #'cdr templates)))
@@ -973,9 +983,12 @@ to `yas/prompt-function'."
 	    (funcall fn "Choose: " possibilities))
 	yas/prompt-functions))
 
+(defun yas/throw (text)
+  (throw 'yas/exception (cons 'yas/exception text)))
+
 (defun yas/verify-value (&rest possibilities)
   (when (and yas/moving-away (notany #'(lambda (pos) (string= pos yas/text)) possibilities))
-    (error "field only allows " possibilities)))
+    (yas/throw (format "[yas] field only allows %s" possibilities))))
 
 (defun yas/field-value (number)
   (let ((snippet (car (yas/snippets-at-point)))
@@ -1100,8 +1113,10 @@ inserted first."
 delegate to `yas/next-field'."
   (interactive)
   (if yas/triggers-in-field
-      (let ((yas/fallback-behavior 'return-nil))
-	(unless (yas/expand)
+      (let ((yas/fallback-behavior 'return-nil)
+	    (active-field (overlay-get yas/active-field-overlay 'yas/field)))
+	(when active-field
+	  (unless (yas/expand active-field))
 	  (yas/next-field)))
     (yas/next-field)))
 
@@ -1911,7 +1926,7 @@ When multiple expressions are found, only the last one counts."
 	    ("}"
 	     (0 font-lock-keyword-face)))))
 
-(define-derived-mode yas/snippet-editing-mode emacs-lisp-mode "YASnippet"
+(define-derived-mode yas/snippet-editing-mode fundamental-mode "YASnippet"
   "A mode for editing yasnippets"
   (setq font-lock-defaults '(yas/font-lock-keywords)))
 
