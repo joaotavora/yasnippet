@@ -61,7 +61,8 @@
 
 ;;; Code:
 
-(eval-when-compile (require 'cl))
+(require 'cl)
+(require 'easymenu)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; User customizable variables
@@ -234,7 +235,7 @@ An error string \"[yas] error\" is returned instead."
 ;;
 
 (defvar yas/keymap (make-sparse-keymap)
-  "The keymap of snippet.")
+  "The keymap active while a snippet expansion is in progress.")
 
 (eval-when-compile
   (define-key yas/keymap (read-kbd-macro yas/next-field-key) 'yas/next-field-or-maybe-expand)
@@ -338,22 +339,6 @@ Here's an example:
 (defvar yas/menu-table (make-hash-table)
   "A hash table of menus of corresponding major-mode.")
 
-(defvar yas/menu-keymap (make-sparse-keymap "YASnippet"))
-;; empty menu will cause problems, so we insert some items
-
-(eval-when-compile
-  (define-key yas/menu-keymap [yas/about]
-    '(menu-item "About" yas/about))
-
-  (define-key yas/menu-keymap [yas/reload]
-    '(menu-item "Reload all snippets" yas/reload-all))
-
-  (define-key yas/menu-keymap [yas/load]
-    '(menu-item "Load snippets..." yas/load-directory))
-
-  (define-key yas/menu-keymap [yas/separator]
-    '(menu-item "--")))
-
 (defvar yas/known-modes
   '(ruby-mode rst-mode markdown-mode)
   "A list of mode which is well known but not part of emacs.")
@@ -395,8 +380,36 @@ snippet templates")
 ;; YASnippet minor mode
 ;;
 
-(defvar yas/minor-mode-map (make-sparse-keymap)
+(defvar yas/minor-mode-map nil
   "The keymap of yas/minor-mode")
+
+;;
+;; This bit of code stolen from hideshow.el
+;;
+(defun yas/init-keymap-and-menu ()
+  (setq yas/minor-mode-map (make-sparse-keymap))
+  (setq yas/minor-mode-menu nil)
+  
+  (easy-menu-define yas/minor-mode-menu
+    yas/minor-mode-map
+    "Menu used when YAS/minor-mode is active."
+    (cons "YASnippet"
+	  (mapcar #'(lambda (ent)
+		      (when (third ent)
+			(define-key yas/minor-mode-map (third ent) (second ent)))
+		      (vector (first ent) (second ent) t))
+		  (list (list "--")
+			(list "Expand trigger" 'yas/expand (read-kbd-macro yas/trigger-key))
+			(list "Insert at point" 'yas/choose-snippet "\C-c&\C-s")
+			(list "About" 'yas/about)
+			(list "Reload-all-snippets" 'yas/reload-all)
+			(list "Load snippets..." 'yas/load-directory))))))
+
+;;
+;; Init this on compilation/evaluation
+;;
+(unless yas/minor-mode-menu
+  (yas/init-keymap-and-menu))
 
 (define-minor-mode yas/minor-mode
   "Toggle YASnippet mode.
@@ -408,13 +421,19 @@ With no argument, this command toggles the mode.
 positive prefix argument turns on the mode.
 Negative prefix argument turns off the mode.
 
-You can customize the key through `yas/trigger-key'."
+You can customize the key through `yas/trigger-key'.
+
+Key bindings:
+\\{yas/minor-mode-map}"
   ;; The initial value.
   nil
   ;; The indicator for the mode line.
   " yas"
   :group 'yasnippet
-  (define-key yas/minor-mode-map (read-kbd-macro yas/trigger-key) 'yas/expand))
+  (if yas/minor-mode
+      (progn
+	(easy-menu-add yas/minor-mode-menu))
+    (easy-menu-remove yas/minor-mode-menu)))
 
 (defun yas/minor-mode-on ()
   "Turn on YASnippet minor mode."
@@ -662,14 +681,15 @@ Here's a list of currently recognized variables:
 
 (defun yas/make-menu-binding (template)
   (lexical-let ((template template))
-    (lambda ()
-      (interactive)
-      (let ((where (if mark-active
-		       (cons (region-beginning) (region-end))
-		     (cons (point) (point)))))
-	(yas/expand-snippet (car where)
-			    (cdr where)
-			    template)))))
+    #'(lambda () (interactive) (yas/expand-from-menu template))))
+
+(defun yas/expand-from-menu (template)
+  (let ((where (if mark-active
+		   (cons (region-beginning) (region-end))
+		 (cons (point) (point)))))
+    (yas/expand-snippet (car where)
+			(cdr where)
+			template)))
 
 (defun yas/modify-alist (alist key value)
   "Modify ALIST to map KEY to VALUE. return the new alist."
@@ -928,7 +948,7 @@ parent mode.  The PARENT-MODE may not need to be a real mode."
                       ,(yas/menu-keymap-for-mode parent-mode)))))
     (when (and yas/use-menu
                (yas/real-mode? mode))
-      (define-key yas/menu-keymap (vector mode)
+      (define-key yas/minor-mode-menu (vector mode)
         `(menu-item ,(symbol-name mode) ,keymap)))
     (dolist (snippet snippets)
       (let* ((full-key (car snippet))
@@ -1828,12 +1848,16 @@ Meant to be called in a narrowed buffer, does various passes"
 	     ;; This would also happen if we had used overlays with
 	     ;; the `front-advance' property set to nil.
 	     ;;
-	     (while (and (zerop (forward-line))
+	     (while (and (zerop (forward-line 1))
+			 (not (eobp))
 			 (<= (point) end))
 	       (goto-char (yas/real-line-beginning))
-	       (insert-before-markers "Y")
-	       (indent-according-to-mode)
-	       (backward-delete-char 1))
+	       (if (buffer-has-markers-at (point))
+		   (progn
+		     (insert-before-markers "Y")
+		     (indent-according-to-mode)
+		     (backward-delete-char 1))
+		 (indent-according-to-mode)))
 	     (set-marker end nil))))
 	(t
 	 nil)))
