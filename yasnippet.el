@@ -358,7 +358,7 @@ snippet templates")
 
 (defconst yas/backquote-lisp-expression-regexp
   "`\\([^`]*\\)`"
-  "A regexp to recognize a \"`(...)`\" expression")
+  "A regexp to recognize a \"`lisp-expression`\" expression" )
 
 (defconst yas/transform-mirror-regexp
   "${\\(?:\\([0-9]+\\):\\)?$\\([^}]*\\)"
@@ -385,6 +385,29 @@ snippet templates")
 
 (defvar yas/minor-mode-menu nil
   "The menu bar menu used when `yas/minor-mode' is active.")
+
+;;
+;; This bit of code inspired from hideshow.el
+;;
+(defun yas/init-keymap-and-menu ()
+  (setq yas/minor-mode-map (make-sparse-keymap))
+  (setq yas/minor-mode-menu nil)
+  
+  (easy-menu-define yas/minor-mode-menu
+    yas/minor-mode-map
+    "Menu used when YAS/minor-mode is active."
+    (cons "YASnippet"
+	  (mapcar #'(lambda (ent)
+		      (when (third ent)
+			(define-key yas/minor-mode-map (third ent) (second ent)))
+		      (vector (first ent) (second ent) t))
+		  (list (list "--")
+			(list "Expand trigger" 'yas/expand (read-kbd-macro yas/trigger-key))
+			(list "Insert at point" 'yas/insert-snippet "\C-c&\C-s")
+			(list "About" 'yas/about)
+			(list "Reload-all-snippets" 'yas/reload-all)
+			(list "Load snippets..." 'yas/load-directory)))))
+  (define-key yas/snippet-editing-mode-map "\C-c\C-c" 'yas/load-snippet-buffer))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Major mode stuff
@@ -430,10 +453,9 @@ Key bindings:
   ;; The indicator for the mode line.
   " yas"
   :group 'yasnippet
-  (if yas/minor-mode
-      (progn
-	(easy-menu-add yas/minor-mode-menu))
-    (easy-menu-remove yas/minor-mode-menu)))
+  (unless yas/minor-mode-menu
+    (yas/init-keymap-and-menu))
+  (easy-menu-add yas/minor-mode-menu))
 
 (defun yas/minor-mode-on ()
   "Turn on YASnippet minor mode."
@@ -447,35 +469,6 @@ Key bindings:
 
 (define-globalized-minor-mode yas/global-mode yas/minor-mode yas/minor-mode-on
   :group 'yasnippet)
-
-;;
-;; This bit of code inspired from hideshow.el
-;;
-(defun yas/init-keymap-and-menu ()
-  (setq yas/minor-mode-map (make-sparse-keymap))
-  (setq yas/minor-mode-menu nil)
-  
-  (easy-menu-define yas/minor-mode-menu
-    yas/minor-mode-map
-    "Menu used when YAS/minor-mode is active."
-    (cons "YASnippet"
-	  (mapcar #'(lambda (ent)
-		      (when (third ent)
-			(define-key yas/minor-mode-map (third ent) (second ent)))
-		      (vector (first ent) (second ent) t))
-		  (list (list "--")
-			(list "Expand trigger" 'yas/expand (read-kbd-macro yas/trigger-key))
-			(list "Insert at point" 'yas/insert-snippet "\C-c&\C-s")
-			(list "About" 'yas/about)
-			(list "Reload-all-snippets" 'yas/reload-all)
-			(list "Load snippets..." 'yas/load-directory)))))
-  (define-key yas/snippet-editing-mode-map "\C-c\C-c" 'yas/load-snippet-buffer))
-
-;;
-;; Init this on compilation/evaluation
-;;
-(unless yas/minor-mode-menu
-  (yas/init-keymap-and-menu))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal structs for template management
@@ -722,6 +715,8 @@ Here's a list of currently recognized variables:
   (remove-if (lambda (file)
                (or (string-match "^\\."
                                  (file-name-nondirectory file))
+		   (string-match "~$"
+                                 (file-name-nondirectory file))
                    (if file?
                        (file-directory-p file)
                      (not (file-directory-p file)))))
@@ -851,8 +846,13 @@ content of the file is the template."
     (message "done.")))
 
 (defun yas/reload-all ()
-  "Reload all snippets."
+  "Reload all snippets and rebuild the YASnippet menu."
   (interactive)
+  (setq yas/snippet-tables (make-hash-table))
+  (setq yas/menu-table (make-hash-table))
+  (setq yas/minor-mode-menu nil)
+  (setq yas/minor-mode-map (make-sparse-keymap))
+  (yas/init-keymap-and-menu)
   (if yas/root-directory
       (if (listp yas/root-directory)
           (dolist (directory yas/root-directory)
