@@ -128,15 +128,17 @@ representation using `read-kbd-macro'. "
   :type 'string
   :group 'yasnippet)
 
-(defcustom yas/prev-field-key "S-TAB"
+(defcustom yas/prev-field-key "<backtab>"
   "The key to navigate to previous field when a snippet is active.
+
+Can also be a list of keys.
 
 Value is a string that is converted to the internal Emacs key
 representation using `read-kbd-macro'. "
   :type 'string
   :group 'yasnippet)
 
-(defcustom yas/clear-field-key "C-d"
+(defcustom yas/skip-and-clear-key "C-d"
   "The key to clear the currently active field.
 
 Value is a string that is converted to the internal Emacs key
@@ -237,10 +239,17 @@ An error string \"[yas] error\" is returned instead."
 (defvar yas/keymap (make-sparse-keymap)
   "The keymap active while a snippet expansion is in progress.")
 
+(defun yas/define-some-keys (keys keymap definition)
+  "Bind KEYS to DEFINITION in KEYMAP, read with `read-kbd-macro'"
+  (let ((keys (or (and (listp keys) keys)
+		  (list keys))))
+    (dolist (key keys)
+      (define-key keymap (read-kbd-macro key) definition))))
+
 (eval-when-compile
-  (define-key yas/keymap (read-kbd-macro yas/next-field-key) 'yas/next-field-or-maybe-expand)
-  (define-key yas/keymap (read-kbd-macro yas/prev-field-key) 'yas/prev-field)
-  (define-key yas/keymap (read-kbd-macro yas/clear-field-key) 'yas/clear-field-or-delete-char))
+  (yas/define-some-keys yas/next-field-key yas/keymap 'yas/next-field-or-maybe-expand)
+  (yas/define-some-keys yas/prev-field-key yas/keymap 'yas/prev-field)
+  (yas/define-some-keys yas/skip-and-clear-key yas/keymap 'yas/skip-and-clear-or-delete-char))
 
 (defvar yas/key-syntaxes (list "w" "w_" "w_." "^ ")
   "A list of syntax of a key. This list is tried in the order
@@ -345,7 +354,7 @@ Here's an example:
 
 (defvar yas/escaped-characters
   '(?\\ ?` ?' ?$ ?} )
-  "A list of characters which *might* need to be escaped in
+  "A list of characters which *might*n need to be escaped in
 snippet templates")
 
 (defconst yas/field-regexp
@@ -380,10 +389,10 @@ snippet templates")
 ;; YASnippet minor mode
 ;;
 
-(defvar yas/minor-mode-map nil
+(defvar yas/minor-mode-map (make-sparse-keymap)
   "The keymap used when `yas/minor-mode' is active.")
 
-(defvar yas/minor-mode-menu nil
+(defvar yas/minor-mode-menu (make-sparse-keymap)
   "The menu bar menu used when `yas/minor-mode' is active.")
 
 ;;
@@ -407,7 +416,7 @@ snippet templates")
 			(list "About" 'yas/about)
 			(list "Reload-all-snippets" 'yas/reload-all)
 			(list "Load snippets..." 'yas/load-directory)))))
-  (define-key yas/snippet-editing-mode-map "\C-c\C-c" 'yas/load-snippet-buffer))
+  (define-key snippet-mode-map "\C-c\C-c" 'yas/load-snippet-buffer))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Major mode stuff
@@ -427,12 +436,12 @@ snippet templates")
 	    ("}"
 	     (0 font-lock-keyword-face)))))
 
-(defvar yas/snippet-editing-mode-map (make-sparse-keymap))
+(defvar snippet-mode-map (make-sparse-keymap))
 
-(define-derived-mode yas/snippet-editing-mode fundamental-mode "YASnippet"
+(define-derived-mode snippet-mode text-mode "YASnippet"
   "A mode for editing yasnippets"
   (setq font-lock-defaults '(yas/font-lock-keywords))
-  (use-local-map yas/snippet-editing-mode-map))
+  (use-local-map snippet-mode-map))
 
 (define-minor-mode yas/minor-mode
   "Toggle YASnippet mode.
@@ -449,11 +458,12 @@ You can customize the key through `yas/trigger-key'.
 Key bindings:
 \\{yas/minor-mode-map}"
   ;; The initial value.
-  nil
+  :keymap yas/minor-mode-map
   ;; The indicator for the mode line.
   " yas"
   :group 'yasnippet
-  (unless yas/minor-mode-menu
+  (unless (and yas/minor-mode-map
+	       (second yas/minor-mode-map))
     (yas/init-keymap-and-menu))
   (easy-menu-add yas/minor-mode-menu))
 
@@ -486,6 +496,7 @@ Key bindings:
 (defstruct (yas/snippet-table (:constructor yas/make-snippet-table ()))
   "A table to store snippets for a perticular mode."
   (hash (make-hash-table :test 'equal))
+  (default-directory nil)
   (parent nil))
 
 (defun yas/template-condition-predicate (condition)
@@ -524,14 +535,15 @@ This function implements the rules described in
 (defun yas/snippet-table-fetch (table key)
   "Fetch a snippet binding to KEY from TABLE. If not found,
 fetch from parent if any."
-  (let* ((unfiltered (gethash key (yas/snippet-table-hash table)))
-	 (templates  (yas/filter-templates-by-condition unfiltered)))
-    (when (and (null templates)
-               (not (null (yas/snippet-table-parent table))))
-      (setq templates (yas/snippet-table-fetch
-                       (yas/snippet-table-parent table)
-                       key)))
-    templates))
+  (when table
+    (let* ((unfiltered (gethash key (yas/snippet-table-hash table)))
+	   (templates  (yas/filter-templates-by-condition unfiltered)))
+      (when (and (null templates)
+		 (not (null (yas/snippet-table-parent table))))
+	(setq templates (yas/snippet-table-fetch
+			 (yas/snippet-table-parent table)
+			 key)))
+      templates)))
 
 (defun yas/snippet-table-all-templates (table)
   (when table
@@ -606,24 +618,39 @@ a list of modes like this to help the judgement."
       (error (cdr retval)))
     retval))
 
-(defun yas/snippet-table (mode)
-  "Get the snippet table corresponding to MODE."
-  (let ((table (gethash mode yas/snippet-tables)))
+(defun yas/snippet-table-get-create (mode &optional directory)
+  "Get the snippet table corresponding to MODE.
+
+Optional DIRECTORY gets recorded as the default directory to
+search for snippet files if the retrieved/created table didn't
+already have such a property."
+  (let ((table (gethash mode
+			yas/snippet-tables)))
     (unless table
       (setq table (yas/make-snippet-table))
       (puthash mode table yas/snippet-tables))
+    (unless (or (not directory) (yas/snippet-table-default-directory table))
+      (setf (yas/snippet-table-default-directory table)
+	    directory))
     table))
 
-(defsubst yas/current-snippet-table ()
+(defun yas/current-snippet-table (&optional mode-symbol dont-search-parents)
   "Get the snippet table for current major-mode."
-  (yas/snippet-table major-mode))
+  (let ((mode (or mode-symbol
+		  major-mode)))
+    (or (gethash mode
+		 yas/snippet-tables)
+	(and (not dont-search-parents)
+	     (get mode 'derived-mode-parent)
+	     (yas/current-snippet-table (get mode 'derived-mode-parent))))))
 
 (defun yas/menu-keymap-for-mode (mode)
   "Get the menu keymap correspondong to MODE."
   (let ((keymap (gethash mode yas/menu-table)))
     (unless keymap
       (setq keymap (make-sparse-keymap))
-      (puthash mode keymap yas/menu-table))
+      (puthash mode
+	       keymap yas/menu-table))
     keymap))
 
 (defun yas/current-key ()
@@ -826,7 +853,8 @@ TEMPLATES is a list of `yas/template'."
 		snippet-defs))))
     (yas/define-snippets mode-sym
                          snippet-defs
-                         parent)
+                         parent
+			 directory)
     (dolist (subdir (yas/subdirs directory))
       (yas/load-directory-1 subdir mode-sym))))
 
@@ -965,7 +993,7 @@ all the parameters:
                    yas/version
                    ") -- pluskid <pluskid@gmail.com>/joaotavora <joaotavora@gmail.com>")))
 
-(defun yas/define-snippets (mode snippets &optional parent-mode)
+(defun yas/define-snippets (mode snippets &optional parent-mode directory)
   "Define snippets for MODE.  SNIPPETS is a list of
 snippet definitions, each taking the following form:
 
@@ -974,10 +1002,17 @@ snippet definitions, each taking the following form:
 NAME, CONDITION or GROUP may be omitted.  Optional PARENT-MODE
 can be used to specify the parent mode of MODE.  That is, when
 looking a snippet in MODE failed, it can refer to its parent
-mode.  The PARENT-MODE does not need to be a real mode."
-  (let ((snippet-table (yas/snippet-table mode))
+mode.  The PARENT-MODE does not need to be a real mode.
+
+Optional DIRECTORY is recorded in the `yas/snippet-table' if it
+is created for the first time. Then, it becomes the default
+directory to find snippet files.
+
+
+"
+  (let ((snippet-table (yas/snippet-table-get-create mode directory))
         (parent-table (if parent-mode
-                          (yas/snippet-table parent-mode)
+                          (yas/snippet-table-get-create parent-mode)
                         nil))
         (keymap (if yas/use-menu
                     (yas/menu-keymap-for-mode mode)
@@ -1068,8 +1103,8 @@ Skip any submenus named \"parent mode\""
 (defun yas/set-mode-parent (mode parent)
   "Set parent mode of MODE to PARENT."
   (setf (yas/snippet-table-parent
-         (yas/snippet-table mode))
-        (yas/snippet-table parent))
+         (yas/snippet-table-get-create mode))
+        (yas/snippet-table-get-create parent))
   (when yas/use-menu
     (define-key (yas/menu-keymap-for-mode mode) (vector 'parent-mode)
       `(menu-item "parent mode"
@@ -1154,14 +1189,15 @@ by condition."
 	 (where (if mark-active
 		    (cons (region-beginning) (region-end))
 		  (cons (point) (point)))))
-    (when template
-      (yas/expand-snippet (car where)
-			  (cdr where)
-			  (yas/template-content template)
-			  (yas/template-env template)))))
+    (if template
+	(yas/expand-snippet (car where)
+			    (cdr where)
+			    (yas/template-content template)
+			    (yas/template-env template))
+      (message "[yas] No snippets can be inserted here!"))))
 
-(defun yas/find-snippet-file ()
-  "Choose a snippet to edit."
+(defun yas/find-snippet-by-key ()
+  "Choose a snippet to edit, selection like `yas/insert-snippet'."
   (interactive)
   (let* ((yas/buffer-local-condition 'always)
 	 (templates (mapcar #'cdr
@@ -1177,7 +1213,52 @@ by condition."
 
     (when template
       (find-file-other-window (yas/template-file template))
-      (yas/snippet-editing-mode))))
+      (snippet-mode))))
+
+(defun yas/guess-snippet-directory ()
+  "Try to guess the suitable yassnippet based on `major-mode'" 
+  (let ((loaded-root (or (and (listp yas/root-directory)
+			      (first yas/root-directory))
+			 yas/root-directory))
+	(mode major-mode)
+	(path))
+    (when loaded-root
+      (while mode
+	(setq path (format "%s/%s"
+			   mode
+			   (or path
+			       "")))
+	(setq mode (get mode 'derived-mode-parent)))
+      (concat loaded-root "/" path))))
+
+(defun yas/find-snippet (&optional same-window)
+  "Find a snippet file in a suitable directory."
+  (interactive "P")
+  (let* ((current-table (yas/current-snippet-table major-mode 'dont-search-parents))
+	 (parents-table (yas/current-snippet-table major-mode))
+	 (parents-directory (and parents-table
+				 (yas/snippet-table-default-directory parents-table)))
+	 (guessed-directory (or (and current-table 
+				     (yas/snippet-table-default-directory current-table))
+				(yas/guess-snippet-directory)
+				default-directory))
+	 (buffer))
+    (unless (file-exists-p guessed-directory)
+      (if (y-or-n-p (format "Guessed directory (%s) does not exist! Create? " guessed-directory))
+	  (make-directory guessed-directory 'also-make-parents)
+	(if parents-directory
+	    (setq guessed-directory parents-directory)
+	  (setq guessed-directory default-directory))))
+    (let ((default-directory guessed-directory))
+      (setq buffer (call-interactively (if same-window
+					   'find-file
+					 'find-file-other-window)))
+      (when buffer
+	(save-excursion
+	  (set-buffer buffer)
+	  (when (eq major-mode 'fundamental-mode)
+	    (snippet-mode)))))))
+
 
 (defun yas/compute-major-mode-and-parent (file)
   (let* ((file-dir (directory-file-name (file-name-directory file)))
@@ -1200,9 +1281,9 @@ by condition."
 	  (yas/define-snippets (car major-mode-and-parent)
 			       (list (yas/parse-template buffer-file-name))
 			       (cdr major-mode-and-parent)))
-	(if kill-buffer
-	    (kill-buffer)
-	  (delete-window)))
+	(when (and (buffer-modified-p)
+		   (y-or-n-p "Save snippet? "))
+	  (save-buffer)))
     (message "Save the buffer as a file first!")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1612,7 +1693,7 @@ holds the keymap."
     (overlay-put overlay 'evaporate t)
     overlay))
 
-(defun yas/clear-field-or-delete-char (&optional field)
+(defun yas/skip-and-clear-or-delete-char (&optional field)
   "Clears an unmodified field if at field start, otherwise
 deletes a character normally."
   (interactive)
@@ -1623,11 +1704,12 @@ deletes a character normally."
     (cond ((and field
 		(not (yas/field-modified-p field))
 		(eq (point) (marker-position (yas/field-start field))))
-	   (yas/clear-field field))
+	   (yas/skip-and-clear field)
+	   (yas/next-field 1))
 	  (t
 	   (call-interactively 'delete-char)))))
 
-(defun yas/clear-field (field)
+(defun yas/skip-and-clear (field)
   "Deletes the region of FIELD and sets it modified state to t" 
   (setf (yas/field-modified-p field) t)
   (delete-region (yas/field-start field) (yas/field-end field)))
@@ -1678,7 +1760,7 @@ progress."
 			(eq (point) (if (markerp (yas/field-start field))
 					(marker-position (yas/field-start field))
 				      (yas/field-start field))))
-	       (yas/clear-field field))
+	       (yas/skip-and-clear field))
 	     (setf (yas/field-modified-p field) t))))))
 
 ;;; Apropos protection overlays:
@@ -1806,8 +1888,10 @@ will be deleted before inserting template."
 	    (setq yas/deleted-text key)
 	    (setq yas/selected-text (when mark-active key))
 	    (setq snippet
-		  (eval `(let ,(read snippet-vars)
-			   (yas/snippet-create (point-min) (point-max))))))
+		  (if snippet-vars
+		      (eval `(let ,(read snippet-vars)
+			       (yas/snippet-create (point-min) (point-max))))
+		    (yas/snippet-create (point-min) (point-max)))))
 	(error
 	 (push (cons (point-min) (point-max)) buffer-undo-list)
 	 (error (format "[yas] parse error: %s" (cadr err))))))
