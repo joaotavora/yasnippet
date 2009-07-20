@@ -432,7 +432,9 @@ snippet templates")
 	    ("${\\([0-9]+\\):?"
 	     (0 font-lock-keyword-face)
 	     (1 font-lock-warning-face t))
-	    ("\\(\\$\\)(" 1 font-lock-preprocessor-face)
+	    ("${" font-lock-keyword-face)
+	    ("$[0-9]+?" font-lock-preprocessor-face)
+	    ("\\(\\$(\\)" 1 font-lock-preprocessor-face)
 	    ("}"
 	     (0 font-lock-keyword-face)))))
 
@@ -772,21 +774,22 @@ Here's a list of currently recognized variables:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Popping up for keys and templates
 ;; 
-(defun yas/prompt-for-template (templates)
+(defun yas/prompt-for-template (templates &optional prompt)
   "Interactively choose a template from the list TEMPLATES.
 
 TEMPLATES is a list of `yas/template'."
   (let ((template (some #'(lambda (fn)
-			    (funcall fn "Choose a snippet: " templates #'(lambda (template)
-									   (yas/template-name template))))
+			    (funcall fn (or prompt "Choose a snippet: ")
+				     templates #'(lambda (template)
+						   (yas/template-name template))))
 			yas/prompt-functions)))
     template))
 
-(defun yas/prompt-for-keys (keys)
+(defun yas/prompt-for-keys (keys &optional prompt)
   "Interactively choose a template key from the list KEYS."
   (if keys
       (some #'(lambda (fn)
-		(funcall fn "Choose a snippet key: " keys))
+		(funcall fn (or prompt "Choose a snippet key: ") keys))
 	    yas/prompt-functions)))
 
 (defun yas/x-prompt (prompt choices &optional display-fn)
@@ -1202,13 +1205,15 @@ by condition."
   (let* ((yas/buffer-local-condition 'always)
 	 (templates (mapcar #'cdr
 			    (if yas/choose-keys-first
-				(let ((key (yas/prompt-for-keys (yas/snippet-table-all-keys (yas/current-snippet-table)))))
+				(let ((key (yas/prompt-for-keys (yas/snippet-table-all-keys (yas/current-snippet-table))
+								"Choose a snippet key to edit: ")))
 				  (when key
 				    (yas/snippet-table-fetch (yas/current-snippet-table) key)))
 			      (yas/snippet-table-all-templates (yas/current-snippet-table)))))
 	 (template (and templates
 			(or (and (rest templates) ;; more than one template for same key
-				 (yas/prompt-for-template templates))
+				 (yas/prompt-for-template templates
+							  "Choose a snippet template to edit: "))
 			    (car templates)))))
 
     (when template
@@ -1229,7 +1234,10 @@ by condition."
 			   (or path
 			       "")))
 	(setq mode (get mode 'derived-mode-parent)))
-      (concat loaded-root "/" path))))
+      (concat loaded-root
+	      (unless (string-match "/$" loaded-root) "/")
+	      path))))
+
 
 (defun yas/find-snippet (&optional same-window)
   "Find a snippet file in a suitable directory."
@@ -1461,15 +1469,16 @@ delegate to `yas/next-field'."
 	 (active-field-pos (position active-field live-fields))
 	 (target-pos (+ arg active-field-pos))
 	 (target-field (nth target-pos live-fields)))
-    ;; First check if we're moving out of a field with a transform
+    ;; Are we moving out of a field?
     ;; 
-    (when (and active-field
-	       (yas/field-transform active-field))
-      (let* ((yas/moving-away t)
-	     (yas/text (yas/field-text-for-display active-field))
-	     (text yas/text)
-	     (yas/modified-p (yas/field-modified-p active-field)))
-	(yas/eval-string (yas/field-transform active-field))))
+    (when active-field
+      (yas/open-field-and-parents active-field 'close-instead)
+      (when (yas/field-transform active-field)
+	(let* ((yas/moving-away t)
+	       (yas/text (yas/field-text-for-display active-field))
+	       (text yas/text)
+	       (yas/modified-p (yas/field-modified-p active-field)))
+	  (yas/eval-string (yas/field-transform active-field)))))
     ;; Now actually move...
     (cond ((>= target-pos (length live-fields))
            (yas/exit-snippet snippet))
@@ -1481,12 +1490,17 @@ delegate to `yas/next-field'."
 (defun yas/move-to-field (snippet field)
   "Update SNIPPET to move to field FIELD.
 
-Also create some protection overlays"
+Also:
+
+* \"open\" the field, i.e nullify its start-marker insertion type
+
+* create some protection overlays"
   (goto-char (yas/field-start field))
   (setf (yas/snippet-active-field snippet) field)
   (yas/make-move-active-field-overlay snippet field)
   (yas/make-move-field-protection-overlays snippet field)
   (overlay-put yas/active-field-overlay 'yas/field field)
+  (yas/open-field-and-parents field)
   (unless (yas/field-modified-p field)
     (if (yas/field-update-display field snippet)
 	(let ((inhibit-modification-hooks t))
@@ -1544,7 +1558,9 @@ the original marker object with the position set to nil."
 
 (defun yas/points-to-markers (snippet)
   "Convert all cons (POINT . MARKER) in SNIPPET to markers. This
-is done by setting MARKER to POINT with `set-marker'."
+is done by setting MARKER to POINT with `set-marker'.
+
+Also closes all the fields before marker conversion."
   (dolist (field (yas/snippet-fields snippet))
     (setf (yas/field-start field) (set-marker (cdr (yas/field-start field)) (car (yas/field-start field))))
     (setf (yas/field-end field) (set-marker (cdr (yas/field-end field)) (car (yas/field-end field))))
@@ -1581,14 +1597,6 @@ NO-HOOKS means don't run the `yas/after-exit-snippet-hook' hooks."
 	(delete-overlay yas/active-field-overlay))
       (when yas/field-protection-overlays
 	(mapcar #'delete-overlay yas/field-protection-overlays)))
-
-    ;; stacked expansion: if the original expansion took place from a
-    ;; field, make sure we advance it here at least to
-    ;; `yas/snippet-end'...
-    ;;
-    (let ((previous-field (yas/snippet-previous-active-field snippet)))
-      (when previous-field
-	(yas/advance-field-and-parents-maybe previous-field yas/snippet-end)))
 
     ;; Convert all markers to points, 
     ;;
@@ -1714,14 +1722,14 @@ deletes a character normally."
   (setf (yas/field-modified-p field) t)
   (delete-region (yas/field-start field) (yas/field-end field)))
 
-(defun yas/advance-field-and-parents-maybe (field end)
-  "Advance FIELDs end-marker to END and recurse for parent fields
-
-This is needed since markers don't \"rear-advance\" like overlays"
-  (when (< (yas/field-end field) end)
-    (set-marker (yas/field-end field) end)
-    (when (yas/field-parent-field field)
-      (yas/advance-field-and-parents-maybe (yas/field-parent-field field) end))))
+(defun yas/open-field-and-parents (field &optional close-instead)
+  "Open FIELD, i.e. fiddle with its start-marker"
+  (set-marker-insertion-type (yas/field-start field)
+			     (if close-instead
+				 t
+			       nil))
+  (when (yas/field-parent-field field)
+    (yas/open-field-and-parents (yas/field-parent-field field))))
 
 (defun yas/make-move-active-field-overlay (snippet field)
   "Place the active field overlay in SNIPPET's FIELD.
@@ -1751,7 +1759,6 @@ progress."
   (unless (yas/undo-in-progress)
     (let ((field (overlay-get yas/active-field-overlay 'yas/field)))
       (cond (after?
-	     (yas/advance-field-and-parents-maybe field (overlay-end overlay))
 	     (yas/field-update-display field (car (yas/snippets-at-point)))
 	     (yas/update-mirrors (car (yas/snippets-at-point))))
 	    (field
@@ -1897,14 +1904,13 @@ will be deleted before inserting template."
 	 (error (format "[yas] parse error: %s" (cadr err))))))
 
     ;; stacked-expansion: This checks for stacked expansion, save the
-    ;; `yas/previous-active-field' and advance its boudary.
+    ;; `yas/previous-active-field'.
     ;;
     (let ((existing-field (and yas/active-field-overlay
 			       (overlay-buffer yas/active-field-overlay)
 			       (overlay-get yas/active-field-overlay 'yas/field))))
       (when existing-field
-	(setf (yas/snippet-previous-active-field snippet) existing-field)
-	(yas/advance-field-and-parents-maybe existing-field (overlay-end yas/active-field-overlay))))
+	(setf (yas/snippet-previous-active-field snippet) existing-field)))
     
     ;; Move to the first of fields, or exit the snippet to its exit
     ;; point
@@ -2129,6 +2135,12 @@ Meant to be called in a narrowed buffer, does various passes"
     (error
      nil)))
 
+(defun yas/make-marker (pos)
+  "Create a marker at POS with `t' `marker-insertion-type'"
+  (let ((marker (set-marker (make-marker) pos)))
+    (set-marker-insertion-type marker t)
+    marker))
+
 (defun yas/field-parse-create (snippet &optional parent-field)
   "Parse most field expression, except for the simple one \"$n\".
 
@@ -2149,8 +2161,8 @@ When multiple expressions are found, only the last one counts."
 					(eq (string-match "$[ \t\n]+(" (match-string-no-properties 2)) 0)))
 				 (not (and number (zerop number)))
 				 (yas/make-field number
-						 (set-marker (make-marker) (match-beginning 2))
-						 (set-marker (make-marker) (1- real-match-end-0))
+						 (yas/make-marker (match-beginning 2))
+						 (yas/make-marker (1- real-match-end-0))
 						 parent-field))))
       (when brand-new-field
 	(delete-region (1- real-match-end-0) real-match-end-0)
@@ -2180,8 +2192,8 @@ When multiple expressions are found, only the last one counts."
 		     (yas/snippet-find-field snippet number))))
     (when (and real-match-end-0
 	       field) 
-      (push (yas/make-mirror (set-marker (make-marker) (match-beginning 0))
-			     (set-marker (make-marker) (match-beginning 0))
+      (push (yas/make-mirror (yas/make-marker (match-beginning 0))
+			     (yas/make-marker (match-beginning 0))
 			     (buffer-substring-no-properties (match-beginning 2)
 							     (1- real-match-end-0)))
 	    (yas/field-mirrors field))
@@ -2194,7 +2206,7 @@ When multiple expressions are found, only the last one counts."
     (cond ((zerop number)
 	     
 	   (setf (yas/snippet-exit snippet)
-		 (set-marker (make-marker) (match-end 0)))
+		 (yas/make-marker (match-end 0)))
 	   (save-excursion
 	     (goto-char (match-beginning 0))
 	     (when (and yas/wrap-around-region yas/selected-text)
@@ -2203,13 +2215,13 @@ When multiple expressions are found, only the last one counts."
 	  (t
 	   (let ((field (yas/snippet-find-field snippet number)))
 	     (if field
-		 (push (yas/make-mirror (set-marker (make-marker) (match-beginning 0))
-					(set-marker (make-marker) (match-beginning 0))
+		 (push (yas/make-mirror (yas/make-marker (match-beginning 0))
+					(yas/make-marker (match-beginning 0))
 					nil)
 		       (yas/field-mirrors field))
 	       (push (yas/make-field number
-				     (set-marker (make-marker) (match-beginning 0))
-				     (set-marker (make-marker) (match-beginning 0))
+				     (yas/make-marker (match-beginning 0))
+				     (yas/make-marker (match-beginning 0))
 				     nil)
 		     (yas/snippet-fields snippet))))
 	   (delete-region (match-beginning 0) (match-end 0)))))))
@@ -2232,11 +2244,12 @@ When multiple expressions are found, only the last one counts."
 			(yas/field-text-for-display field))))
   (when (and reflection
 	     (not (string= reflection (buffer-substring-no-properties (yas/mirror-start mirror) (yas/mirror-end mirror)))))
+    
     (goto-char (yas/mirror-start mirror))
+    (set-marker-insertion-type (yas/mirror-start mirror) nil)
     (insert reflection)
-    (if (> (yas/mirror-end mirror) (point))
-	(delete-region (point) (yas/mirror-end mirror))
-      (set-marker (yas/mirror-end mirror) (point))))))
+    (delete-region (point) (yas/mirror-end mirror))
+    (set-marker-insertion-type (yas/mirror-start mirror) t))))
 
 (defun yas/field-update-display (field snippet)
   "Much like `yas/mirror-update-display', but for fields"
@@ -2266,15 +2279,23 @@ When multiple expressions are found, only the last one counts."
   (princ (format "\nPost command hook: %s\n" post-command-hook))
   (princ (format "\nPre  command hook: %s\n" pre-command-hook))
 
-  (princ (format "%s live snippets in total" (length (yas/snippets-at-point (quote all-snippets)))))
-  (princ (format "%s live snippets at point:" (length (yas/snippets-at-point))))
+  (princ (format "%s live snippets in total\n" (length (yas/snippets-at-point (quote all-snippets)))))
+  (princ (format "%s live snippets at point:\n\n" (length (yas/snippets-at-point))))
     
   (dolist (snippet (yas/snippets-at-point))
     (princ (format "\tid: %s and active field from %s to %s covering \"%s\"\n"
 		   (yas/snippet-id snippet)
 		   (marker-position (yas/field-start (yas/snippet-active-field snippet)))
 		   (marker-position (yas/field-end (yas/snippet-active-field snippet)))
-		   (buffer-substring-no-properties (yas/field-start (yas/snippet-active-field snippet)) (yas/field-end (yas/snippet-active-field snippet))))))
+		   (buffer-substring-no-properties (yas/field-start (yas/snippet-active-field snippet)) (yas/field-end (yas/snippet-active-field snippet)))))
+    (dolist (field (yas/snippet-fields snippet))
+      (princ (format "\tn: %d field from %s to %s covering \"%s\"\n"
+		     (yas/field-number field)
+		     (marker-position (yas/field-start field))
+		     (marker-position (yas/field-end field))
+		     (buffer-substring-no-properties (yas/field-start field) (yas/field-end field))))))
+
+  
 
   (princ (format "\nUndo is %s and point-max is %s.\n"
 		 (if (eq buffer-undo-list t)
@@ -2304,7 +2325,6 @@ When multiple expressions are found, only the last one counts."
   (erase-buffer)
   (setq buffer-undo-list nil)
   (c-mode)
-  (yas/initialize)
   (yas/minor-mode 1)
   (let ((abbrev))
     ;; (if (require 'ido nil t)
@@ -2312,9 +2332,8 @@ When multiple expressions are found, only the last one counts."
     ;;   (setq abbrev "prop"))
   (setq abbrev "bosta")
   (insert abbrev))
-  (when quiet
-  (add-hook 'post-command-hook 'yas/debug-some-vars 't 'local))
-  )
+  (unless quiet
+    (add-hook 'post-command-hook 'yas/debug-some-vars 't 'local)))
 
 (provide 'yasnippet)
 
