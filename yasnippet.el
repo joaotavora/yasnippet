@@ -1469,16 +1469,15 @@ delegate to `yas/next-field'."
 	 (active-field-pos (position active-field live-fields))
 	 (target-pos (+ arg active-field-pos))
 	 (target-field (nth target-pos live-fields)))
-    ;; Are we moving out of a field?
+    ;; First check if we're moving out of a field with a transform
     ;; 
-    (when active-field
-      (yas/open-field-and-parents active-field 'close-instead)
-      (when (yas/field-transform active-field)
-	(let* ((yas/moving-away t)
-	       (yas/text (yas/field-text-for-display active-field))
-	       (text yas/text)
-	       (yas/modified-p (yas/field-modified-p active-field)))
-	  (yas/eval-string (yas/field-transform active-field)))))
+    (when (and active-field
+	       (yas/field-transform active-field))
+      (let* ((yas/moving-away t)
+	     (yas/text (yas/field-text-for-display active-field))
+	     (text yas/text)
+	     (yas/modified-p (yas/field-modified-p active-field)))
+	(yas/eval-string (yas/field-transform active-field))))
     ;; Now actually move...
     (cond ((>= target-pos (length live-fields))
            (yas/exit-snippet snippet))
@@ -1490,17 +1489,12 @@ delegate to `yas/next-field'."
 (defun yas/move-to-field (snippet field)
   "Update SNIPPET to move to field FIELD.
 
-Also:
-
-* \"open\" the field, i.e nullify its start-marker insertion type
-
-* create some protection overlays"
+Also create some protection overlays"
   (goto-char (yas/field-start field))
   (setf (yas/snippet-active-field snippet) field)
   (yas/make-move-active-field-overlay snippet field)
   (yas/make-move-field-protection-overlays snippet field)
   (overlay-put yas/active-field-overlay 'yas/field field)
-  (yas/open-field-and-parents field)
   (unless (yas/field-modified-p field)
     (if (yas/field-update-display field snippet)
 	(let ((inhibit-modification-hooks t))
@@ -1558,9 +1552,7 @@ the original marker object with the position set to nil."
 
 (defun yas/points-to-markers (snippet)
   "Convert all cons (POINT . MARKER) in SNIPPET to markers. This
-is done by setting MARKER to POINT with `set-marker'.
-
-Also closes all the fields before marker conversion."
+is done by setting MARKER to POINT with `set-marker'."
   (dolist (field (yas/snippet-fields snippet))
     (setf (yas/field-start field) (set-marker (cdr (yas/field-start field)) (car (yas/field-start field))))
     (setf (yas/field-end field) (set-marker (cdr (yas/field-end field)) (car (yas/field-end field))))
@@ -1597,6 +1589,14 @@ NO-HOOKS means don't run the `yas/after-exit-snippet-hook' hooks."
 	(delete-overlay yas/active-field-overlay))
       (when yas/field-protection-overlays
 	(mapcar #'delete-overlay yas/field-protection-overlays)))
+
+    ;; stacked expansion: if the original expansion took place from a
+    ;; field, make sure we advance it here at least to
+    ;; `yas/snippet-end'...
+    ;;
+    (let ((previous-field (yas/snippet-previous-active-field snippet)))
+      (when previous-field
+	(yas/advance-field-and-parents-maybe previous-field yas/snippet-end)))
 
     ;; Convert all markers to points, 
     ;;
@@ -1722,14 +1722,14 @@ deletes a character normally."
   (setf (yas/field-modified-p field) t)
   (delete-region (yas/field-start field) (yas/field-end field)))
 
-(defun yas/open-field-and-parents (field &optional close-instead)
-  "Open FIELD, i.e. fiddle with its start-marker"
-  (set-marker-insertion-type (yas/field-start field)
-			     (if close-instead
-				 t
-			       nil))
-  (when (yas/field-parent-field field)
-    (yas/open-field-and-parents (yas/field-parent-field field))))
+(defun yas/advance-field-and-parents-maybe (field end)
+  "Advance FIELDs end-marker to END and recurse for parent fields
+
+This is needed since markers don't \"rear-advance\" like overlays"
+  (when (< (yas/field-end field) end)
+    (set-marker (yas/field-end field) end)
+    (when (yas/field-parent-field field)
+      (yas/advance-field-and-parents-maybe (yas/field-parent-field field) end))))
 
 (defun yas/make-move-active-field-overlay (snippet field)
   "Place the active field overlay in SNIPPET's FIELD.
@@ -1759,6 +1759,7 @@ progress."
   (unless (yas/undo-in-progress)
     (let ((field (overlay-get yas/active-field-overlay 'yas/field)))
       (cond (after?
+	     (yas/advance-field-and-parents-maybe field (overlay-end overlay))
 	     (yas/field-update-display field (car (yas/snippets-at-point)))
 	     (yas/update-mirrors (car (yas/snippets-at-point))))
 	    (field
@@ -1904,13 +1905,14 @@ will be deleted before inserting template."
 	 (error (format "[yas] parse error: %s" (cadr err))))))
 
     ;; stacked-expansion: This checks for stacked expansion, save the
-    ;; `yas/previous-active-field'.
+    ;; `yas/previous-active-field' and advance its boudary.
     ;;
     (let ((existing-field (and yas/active-field-overlay
 			       (overlay-buffer yas/active-field-overlay)
 			       (overlay-get yas/active-field-overlay 'yas/field))))
       (when existing-field
-	(setf (yas/snippet-previous-active-field snippet) existing-field)))
+	(setf (yas/snippet-previous-active-field snippet) existing-field)
+	(yas/advance-field-and-parents-maybe existing-field (overlay-end yas/active-field-overlay))))
     
     ;; Move to the first of fields, or exit the snippet to its exit
     ;; point
@@ -2136,9 +2138,9 @@ Meant to be called in a narrowed buffer, does various passes"
      nil)))
 
 (defun yas/make-marker (pos)
-  "Create a marker at POS with `t' `marker-insertion-type'"
+  "Create a marker at POS with `nil' `marker-insertion-type'"
   (let ((marker (set-marker (make-marker) pos)))
-    (set-marker-insertion-type marker t)
+    (set-marker-insertion-type marker nil)
     marker))
 
 (defun yas/field-parse-create (snippet &optional parent-field)
@@ -2244,12 +2246,11 @@ When multiple expressions are found, only the last one counts."
 			(yas/field-text-for-display field))))
   (when (and reflection
 	     (not (string= reflection (buffer-substring-no-properties (yas/mirror-start mirror) (yas/mirror-end mirror)))))
-    
     (goto-char (yas/mirror-start mirror))
-    (set-marker-insertion-type (yas/mirror-start mirror) nil)
     (insert reflection)
-    (delete-region (point) (yas/mirror-end mirror))
-    (set-marker-insertion-type (yas/mirror-start mirror) t))))
+    (if (> (yas/mirror-end mirror) (point))
+	(delete-region (point) (yas/mirror-end mirror))
+      (set-marker (yas/mirror-end mirror) (point))))))
 
 (defun yas/field-update-display (field snippet)
   "Much like `yas/mirror-update-display', but for fields"
@@ -2307,6 +2308,7 @@ When multiple expressions are found, only the last one counts."
     (let ((first-ten (subseq buffer-undo-list 0 19)))
       (dolist (undo-elem first-ten)
 	(princ (format "%2s:  %s\n" (position undo-elem first-ten) (truncate-string-to-width (format "%s" undo-elem) 70))))))))
+
 
 (defun yas/exterminate-package ()
   (interactive)
