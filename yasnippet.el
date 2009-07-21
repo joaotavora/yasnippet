@@ -804,11 +804,12 @@ TEMPLATES is a list of `yas/template'."
 			   keymap))))))
 
 (defun yas/ido-prompt (prompt choices &optional display-fn)
-  (when (featurep 'ido)
+  (when (and (featurep 'ido)
+	     ido-mode)
     (let* ((formatted-choices (or (and display-fn
 				       (mapcar display-fn choices))
 				  choices))
-	   (chosen (and choices
+	   (chosen (and formatted-choices
 			(ido-completing-read prompt
 					     formatted-choices
 					     nil
@@ -820,13 +821,30 @@ TEMPLATES is a list of `yas/template'."
 
 (defun yas/dropdown-prompt (prompt choices &optional display-fn)
   (when (featurep 'dropdown-list)
-    ))
+    (let* ((formatted-choices (or (and display-fn
+				       (mapcar display-fn choices))
+				  choices))
+	   (chosen (and formatted-choices
+			(nth (dropdown-list formatted-choices)
+			     choices))))
+      chosen)))
 
 (defun yas/completing-prompt (prompt choices &optional display-fn)
-  )
+  (let* ((formatted-choices (or (and display-fn
+				     (mapcar display-fn choices))
+				choices))
+	 (chosen (and formatted-choices
+		      (completing-read prompt
+				       formatted-choices
+				       nil
+				       'require-match
+				       nil
+				       nil))))
+    (when chosen
+      (nth (position chosen formatted-choices) choices))))
 
 (defun yas/no-prompt (prompt choices &optional display-fn)
-  )
+  (first choices))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Loading snippets from files
@@ -892,7 +910,7 @@ foo\"bar\\! -> \"foo\\\"bar\\\\!\""
           "\""))
 
 (defun yas/compile-bundle
-  (&optional yasnippet yasnippet-bundle snippet-roots code)
+  (&optional yasnippet yasnippet-bundle snippet-roots code dropdown)
   "Compile snippets in SNIPPET-ROOTS to a single bundle file.
 SNIPPET-ROOTS is a list of root directories that contains the snippets
 definition. YASNIPPET is the yasnippet.el file path. YASNIPPET-BUNDLE
@@ -903,7 +921,12 @@ all the parameters:
  (yas/compile-bundle \"yasnippet.el\"
                      \"./yasnippet-bundle.el\"
                      '(\"snippets\")
-                     \"(yas/initialize)\")"
+                     \"(yas/initialize)\")
+
+Last optional argument DROPDOWN is the filename of the
+dropdown-list.el library...
+
+"
   (when (null yasnippet)
     (setq yasnippet "yasnippet.el"))
   (when (null yasnippet-bundle)
@@ -923,6 +946,8 @@ all the parameters:
       (insert ";;; yasnippet-bundle.el --- "
               "Yet another snippet extension (Auto compiled bundle)\n")
       (insert-file-contents yasnippet)
+      (when dropdown
+	(insert-file-contents dropdown))
       (goto-char (point-max))
       (insert ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;\n")
       (insert ";;;;      Auto-generated code         ;;;;\n")
@@ -2336,7 +2361,10 @@ When multiple expressions are found, only the last one counts."
 
 (defun yas/debug-test (&optional quiet)
   (interactive "P")
-  (yas/load-directory "~/Source/yasnippet/snippets/")
+  (yas/load-directory (or (and (listp yas/root-directory)
+			       (first yas/root-directory))
+			  yas/root-directory
+			  "~/Source/yasnippet/snippets/"))
   ;;(kill-buffer (get-buffer "*YAS TEST*"))
   (set-buffer (switch-to-buffer "*YAS TEST*"))
   (mapcar #'yas/commit-snippet (yas/snippets-at-point 'all-snippets))
