@@ -1,9 +1,9 @@
-;;; yasnippet.el --- Yet another snippet extension for Emacs.
+;;; Yasnippet.el --- Yet another snippet extension for Emacs.
 
 ;; Copyright 2008 pluskid
 
 ;; Authors: pluskid <pluskid@gmail.com>, joaotavora <joaotavora@gmail.com>
-;; Version: 0.6.0
+;; Version: 0.6.0 beta
 ;; X-URL: http://code.google.com/p/yasnippet/
 ;; Keywords: snippet, textmate
 ;; URL: http://code.google.com/p/yasnippet/
@@ -340,7 +340,7 @@ Here's an example:
 ;; Internal variables
 ;; 
 
-(defvar yas/version "0.5.6-nested-placeholders")
+(defvar yas/version "0.6.0-beta")
 
 (defvar yas/snippet-tables (make-hash-table)
   "A hash table of snippet tables corresponding to each major-mode.")
@@ -386,37 +386,58 @@ snippet templates")
     id))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; YASnippet minor mode
+;; Minor mode stuff
 ;;
 
 (defvar yas/minor-mode-map (make-sparse-keymap)
   "The keymap used when `yas/minor-mode' is active.")
 
-(defvar yas/minor-mode-menu (make-sparse-keymap)
-  "The menu bar menu used when `yas/minor-mode' is active.")
+(easy-menu-define yas/minor-mode-menu
+  yas/minor-mode-map
+  "Menu used when YAS/minor-mode is active."
+  (cons "YASnippet"
+	(mapcar #'(lambda (ent)
+		    (when (third ent)
+		      (define-key yas/minor-mode-map (third ent) (second ent)))
+		    (vector (first ent) (second ent) t))
+		(list (list "--")
+		      (list "Expand trigger" 'yas/expand (read-kbd-macro yas/trigger-key))
+		      (list "Insert at point" 'yas/insert-snippet "\C-c&\C-s")
+		      (list "About" 'yas/about)
+		      (list "Reload-all-snippets" 'yas/reload-all)
+		      (list "Load snippets..." 'yas/load-directory)))))
 
-;;
-;; This bit of code inspired from hideshow.el
-;;
-(defun yas/init-keymap-and-menu ()
-  (setq yas/minor-mode-map (make-sparse-keymap))
-  (setq yas/minor-mode-menu nil)
-  
-  (easy-menu-define yas/minor-mode-menu
-    yas/minor-mode-map
-    "Menu used when YAS/minor-mode is active."
-    (cons "YASnippet"
-	  (mapcar #'(lambda (ent)
-		      (when (third ent)
-			(define-key yas/minor-mode-map (third ent) (second ent)))
-		      (vector (first ent) (second ent) t))
-		  (list (list "--")
-			(list "Expand trigger" 'yas/expand (read-kbd-macro yas/trigger-key))
-			(list "Insert at point" 'yas/insert-snippet "\C-c&\C-s")
-			(list "About" 'yas/about)
-			(list "Reload-all-snippets" 'yas/reload-all)
-			(list "Load snippets..." 'yas/load-directory)))))
-  (define-key snippet-mode-map "\C-c\C-c" 'yas/load-snippet-buffer))
+(define-minor-mode yas/minor-mode
+  "Toggle YASnippet mode.
+
+When YASnippet mode is enabled, the `tas/trigger-key' key expands
+snippets of code depending on the mode.
+
+With no argument, this command toggles the mode.
+positive prefix argument turns on the mode.
+Negative prefix argument turns off the mode.
+
+You can customize the key through `yas/trigger-key'.
+
+Key bindings:
+\\{yas/minor-mode-map}"
+  nil
+  ;; The indicator for the mode line.
+  " yas"
+  :group 'yasnippet)
+
+(defun yas/minor-mode-on ()
+  "Turn on YASnippet minor mode."
+  (interactive)
+  (yas/minor-mode 1))
+
+(defun yas/minor-mode-off ()
+  "Turn off YASnippet minor mode."
+  (interactive)
+  (yas/minor-mode -1))
+
+(define-globalized-minor-mode yas/global-mode yas/minor-mode yas/minor-mode-on
+  :group 'yasnippet)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Major mode stuff
@@ -439,6 +460,8 @@ snippet templates")
 	     (0 font-lock-keyword-face)))))
 
 (defvar snippet-mode-map (make-sparse-keymap))
+(define-key snippet-mode-map "\C-c\C-c" 'yas/load-snippet-buffer)
+
 
 (define-derived-mode snippet-mode text-mode "YASnippet"
   "A mode for editing yasnippets"
@@ -446,42 +469,7 @@ snippet templates")
   (set (make-local-variable 'require-final-newline) nil)
   (use-local-map snippet-mode-map))
 
-(define-minor-mode yas/minor-mode
-  "Toggle YASnippet mode.
 
-When YASnippet mode is enabled, the `tas/trigger-key' key expands
-snippets of code depending on the mode.
-
-With no argument, this command toggles the mode.
-positive prefix argument turns on the mode.
-Negative prefix argument turns off the mode.
-
-You can customize the key through `yas/trigger-key'.
-
-Key bindings:
-\\{yas/minor-mode-map}"
-  ;; The initial value.
-  :keymap yas/minor-mode-map
-  ;; The indicator for the mode line.
-  " yas"
-  :group 'yasnippet
-  (unless (and yas/minor-mode-map
-	       (second yas/minor-mode-map))
-    (yas/init-keymap-and-menu))
-  (easy-menu-add yas/minor-mode-menu))
-
-(defun yas/minor-mode-on ()
-  "Turn on YASnippet minor mode."
-  (interactive)
-  (yas/minor-mode 1))
-
-(defun yas/minor-mode-off ()
-  "Turn off YASnippet minor mode."
-  (interactive)
-  (yas/minor-mode -1))
-
-(define-globalized-minor-mode yas/global-mode yas/minor-mode yas/minor-mode-on
-  :group 'yasnippet)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal structs for template management
@@ -1466,9 +1454,12 @@ delegate to `yas/next-field'."
                   1))
          (snippet (first (yas/snippets-at-point)))
 	 (active-field (overlay-get yas/active-field-overlay 'yas/field))
-         (live-fields (remove-if #'yas/field-probably-deleted-p (yas/snippet-fields snippet)))
+         (live-fields (remove-if #'(lambda (field)
+				     (and (not (eq field active-field))
+					  (yas/field-probably-deleted-p field)))
+				 (yas/snippet-fields snippet)))
 	 (active-field-pos (position active-field live-fields))
-	 (target-pos (+ arg active-field-pos))
+	 (target-pos (and active-field-pos (+ arg active-field-pos)))
 	 (target-field (nth target-pos live-fields)))
     ;; First check if we're moving out of a field with a transform
     ;; 
@@ -1737,7 +1728,9 @@ This is needed since markers don't \"rear-advance\" like overlays"
   (let ((adjacents (yas/field-back-adjacent-fields field)))
     (when adjacents
       (dolist (adjacent adjacents)
-	(set-marker (yas/field-start adjacent) end)))))
+	(when (< (yas/field-start adjacent) end)
+	  (set-marker (yas/field-start adjacent) end))
+	(yas/advance-field-and-parents-maybe adjacent end)))))
 
 (defun yas/make-move-active-field-overlay (snippet field)
   "Place the active field overlay in SNIPPET's FIELD.
@@ -2299,8 +2292,9 @@ When multiple expressions are found, only the last one counts."
   (princ (format "%s live snippets at point:\n\n" (length (yas/snippets-at-point))))
     
   (dolist (snippet (yas/snippets-at-point))
-    (princ (format "\tid: %s and active field from %s to %s covering \"%s\"\n"
+    (princ (format "\tid: %s active field %d from %s to %s covering \"%s\"\n"
 		   (yas/snippet-id snippet)
+		   (yas/field-number (yas/snippet-active-field snippet))
 		   (marker-position (yas/field-start (yas/snippet-active-field snippet)))
 		   (marker-position (yas/field-end (yas/snippet-active-field snippet)))
 		   (buffer-substring-no-properties (yas/field-start (yas/snippet-active-field snippet)) (yas/field-end (yas/snippet-active-field snippet)))))
@@ -2343,13 +2337,13 @@ When multiple expressions are found, only the last one counts."
   (erase-buffer)
   (setq buffer-undo-list nil)
   (setq undo-in-progress nil)
-  (c-mode)
+  (snippet-mode)
   (yas/minor-mode 1)
   (let ((abbrev))
     ;; (if (require 'ido nil t)
     ;; 	(setq abbrev (ido-completing-read "Snippet abbrev: " '("crazy" "prip" "prop")))
     ;;   (setq abbrev "prop"))
-  (setq abbrev "bosta")
+  (setq abbrev "$f")
   (insert abbrev))
   (unless quiet
     (add-hook 'post-command-hook 'yas/debug-some-vars 't 'local)))
