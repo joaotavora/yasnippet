@@ -929,9 +929,9 @@ all the parameters:
       (insert ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;\n")
       (insert "(defun yas/initialize-bundle ()\n"
               "  \"Initialize YASnippet and load snippets in the bundle.\""
-              "  (yas/initialize)\n")
+              "  (yas/global-mode 1)\n")
       (flet ((yas/define-snippets
-              (mode snippets &optional parent)
+              (mode snippets &optional parent directory)
               (with-current-buffer bundle-buffer
                 (insert ";;; snippets for " (symbol-name mode) "\n")
                 (insert "(yas/define-snippets '" (symbol-name mode) "\n")
@@ -958,6 +958,9 @@ all the parameters:
                 (insert (if parent
                             (concat "'" (symbol-name parent))
                           "nil")
+			;; (if directory
+                        ;;     (concat "\"" directory "\"")
+                        ;;   "nil")
                         ")\n\n"))))
         (dolist (dir dirs)
           (dolist (subdir (yas/subdirs dir))
@@ -1356,7 +1359,8 @@ Otherwise throw exception."
   active-field
   ;; stacked expansion: the `previous-active-field' slot saves the
   ;; active field where the child expansion took place
-  previous-active-field)
+  previous-active-field
+  force-exit)
 
 (defstruct (yas/field (:constructor yas/make-field (number start end parent-field)))
   "A field."
@@ -1501,9 +1505,9 @@ Also create some protection overlays"
   (yas/next-field -1))
 
 (defun yas/exit-snippet (snippet)
-  "Goto exit-marker of SNIPPET and commit the snippet.  Cleaning
-up the snippet does not delete it!"
+  "Goto exit-marker of SNIPPET."
   (interactive)
+  (setf (yas/snippet-force-exit snippet) t)
   (goto-char (if (yas/snippet-exit snippet)
 		 (yas/snippet-exit snippet)
 	       (overlay-end (yas/snippet-control-overlay snippet)))))
@@ -1622,7 +1626,9 @@ snippet, if so cleans up the whole snippet up."
 	 (snippets-left snippets))
     (dolist (snippet snippets)
       (let ((active-field (yas/snippet-active-field snippet))) 
-	(cond ((not (and active-field (yas/field-contains-point-p active-field)))
+	(cond ((or (prog1 (yas/snippet-force-exit snippet)
+		     (setf (yas/snippet-force-exit snippet) nil))
+		   (not (and active-field (yas/field-contains-point-p active-field))))
 	       (setq snippets-left (delete snippet snippets-left))
 	       (yas/commit-snippet snippet snippets-left))
 	      ((and active-field
@@ -2168,7 +2174,7 @@ When multiple expressions are found, only the last one counts."
 			(string-to-number (match-string-no-properties 1))))
 	   (brand-new-field (and real-match-end-0
 				 (not (save-match-data
-					(eq (string-match "$[ \t\n]+(" (match-string-no-properties 2)) 0)))
+					(eq (string-match "$[ \t\n]*(" (match-string-no-properties 2)) 0)))
 				 (not (and number (zerop number)))
 				 (yas/make-field number
 						 (yas/make-marker (match-beginning 2))
