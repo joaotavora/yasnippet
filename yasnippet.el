@@ -3,7 +3,7 @@
 ;; Copyright 2008 pluskid
 
 ;; Authors: pluskid <pluskid@gmail.com>, joaotavora <joaotavora@gmail.com>
-;; Version: 0.6.0 beta
+;; Version: 0.6.0b
 ;; X-URL: http://code.google.com/p/yasnippet/
 ;; Keywords: snippet, textmate
 ;; URL: http://code.google.com/p/yasnippet/
@@ -27,22 +27,59 @@
 ;;; Commentary:
 
 ;; Basic steps to setup:
-;;   1. Place `yasnippet.el' in your `load-path'.
+;; 
+;;   1. In your .emacs file:
 ;;	  (add-to-list 'load-path "/dir/to/yasnippet.el")
-;;   2. In your .emacs file:
 ;;        (require 'yasnippet)
-;;   3. Place the `snippets' directory somewhere.  E.g: ~/.emacs.d/snippets
-;;   4. In your .emacs file
+;;   2. Place the `snippets' directory somewhere.  E.g: ~/.emacs.d/snippets
+;;   3. In your .emacs file
 ;;        (setq yas/root-directory "~/.emacs/snippets") 
 ;;        (yas/load-directory yas/root-directory)
-;;   5. To enable the YASnippet menu and tab-trigger expansion
+;;   4. To enable the YASnippet menu and tab-trigger expansion
 ;;        M-x yas/minor-mode
-;;   6. To globally enable the minor mode in *all* buffers
+;;   5. To globally enable the minor mode in *all* buffers
 ;;        M-x yas/global-mode
 ;;
-;;   Steps 5. and 6. are optional, you can insert use snippets without
-;;   them via:
-;;        M-x yas/insert-snippet
+;;   Steps 4. and 5. are optional, you don't have to use the minor
+;;   mode to use YASnippet.
+;;
+;;
+;;   Major commands are:
+;;
+;;       M-x yas/expand
+;;
+;;           Try to expand snippets before point. In `yas/minor-mode',
+;;           this is bound to `yas/trigger-key' which you can customize.
+;;
+;;       M-x yas/load-directory
+;;
+;;           Prompts you for a directory hierarchy of snippets to load.
+;;
+;;       M-x yas/insert-snippet
+;;
+;;	     Prompts you for possible snippet expansion if that is
+;;	     possible according to buffer-local and snippet-local
+;;	     expansion conditions. With prefix argument, ignore these
+;;	     conditions.
+;;
+;;       M-x yas/find-snippets
+;;
+;;           Lets you find the snippet file in the directory the
+;;           snippet was loaded from (if it exists) like
+;;           `find-file-other-window'.
+;;
+;;       M-x yas/find-snippet-file
+;;
+;;           Prompts you for possible snippet expasions like
+;;           `yas/insert-snippet', but instead of expanding it, takes
+;;           you directly to the snippet definition's file, if it
+;;           exits.
+;;
+;;       M-x yas/load-snippet-buffer
+;;
+;;           When editing a snippet, this loads the snippet. This is
+;;           bound to "C-c C-c" while in the `snippet-mode' editing
+;;           mode.
 ;;
 ;;   The `dropdown-list.el' extension is bundled with YASnippet, you
 ;;   can optionally use it the preferred "prompting method", puting in
@@ -54,6 +91,7 @@
 ;;				       yas/completing-prompt))
 ;;
 ;;   Also check out the customization group
+;;   
 ;;        M-x customize-group RET yasnippet RET 
 ;;
 ;; For more information and detailed usage, refer to the project page:
@@ -392,20 +430,24 @@ snippet templates")
 (defvar yas/minor-mode-map (make-sparse-keymap)
   "The keymap used when `yas/minor-mode' is active.")
 
-(easy-menu-define yas/minor-mode-menu
-  yas/minor-mode-map
-  "Menu used when YAS/minor-mode is active."
-  (cons "YASnippet"
-	(mapcar #'(lambda (ent)
-		    (when (third ent)
-		      (define-key yas/minor-mode-map (third ent) (second ent)))
-		    (vector (first ent) (second ent) t))
-		(list (list "--")
-		      (list "Expand trigger" 'yas/expand (read-kbd-macro yas/trigger-key))
-		      (list "Insert at point" 'yas/insert-snippet "\C-c&\C-s")
-		      (list "About" 'yas/about)
-		      (list "Reload-all-snippets" 'yas/reload-all)
-		      (list "Load snippets..." 'yas/load-directory)))))
+(defun yas/init-keymap-and-menu ()
+  (easy-menu-define yas/minor-mode-menu
+    yas/minor-mode-map
+    "Menu used when YAS/minor-mode is active."
+    (cons "YASnippet"
+	  (mapcar #'(lambda (ent)
+		      (when (third ent)
+			(define-key yas/minor-mode-map (third ent) (second ent)))
+		      (vector (first ent) (second ent) t))
+		  (list (list "--")
+			(list "Expand trigger" 'yas/expand (read-kbd-macro yas/trigger-key))
+			(list "Insert at point" 'yas/insert-snippet "\C-c&\C-s")
+			(list "About" 'yas/about)
+			(list "Reload-all-snippets" 'yas/reload-all)
+			(list "Load snippets..." 'yas/load-directory))))))
+
+(eval-when-compile
+  (yas/init-keymap-and-menu))
 
 (define-minor-mode yas/minor-mode
   "Toggle YASnippet mode.
@@ -884,20 +926,40 @@ content of the file is the template."
     (message "done.")))
 
 (defun yas/reload-all ()
-  "Reload all snippets and rebuild the YASnippet menu."
+  "Reload all snippets and rebuild the YASnippet menu. "
+
   (interactive)
-  (setq yas/snippet-tables (make-hash-table))
-  (setq yas/menu-table (make-hash-table))
-  (setq yas/minor-mode-menu nil)
-  (setq yas/minor-mode-map (make-sparse-keymap))
-  (yas/init-keymap-and-menu)
-  (if yas/root-directory
-      (if (listp yas/root-directory)
-          (dolist (directory yas/root-directory)
-            (yas/load-directory directory))
-        (yas/load-directory yas/root-directory))
-    (call-interactively 'yas/load-directory))
-  (message "done."))
+  (let ((restore-global-mode nil)
+	(restore-minor-mode nil))
+    (setq yas/snippet-tables (make-hash-table))
+    (setq yas/menu-table (make-hash-table))
+    (setf (cdr yas/minor-mode-menu) nil)
+    (setf (cdr yas/minor-mode-map) nil)
+    (when yas/global-mode
+      (yas/global-mode -1)
+      (setq restore-global-mode t))
+
+    (when yas/minor-mode 
+      (yas/minor-mode -1)
+      (setq restore-minor-mode t))
+
+    (yas/init-keymap-and-menu)
+
+    (if yas/root-directory
+	(if (listp yas/root-directory)
+	    (dolist (directory yas/root-directory)
+	      (yas/load-directory directory))
+	  (yas/load-directory yas/root-directory))
+      (call-interactively 'yas/load-directory))
+
+
+    (when restore-minor-mode
+      (yas/minor-mode 1))
+
+    (when restore-global-mode
+      (yas/global-mode 1))
+
+    (message "done.")))
 
 (defun yas/quote-string (string)
   "Escape and quote STRING.
@@ -908,23 +970,31 @@ foo\"bar\\! -> \"foo\\\"bar\\\\!\""
                                     string
                                     t)
           "\""))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Yasnipept Bundle
+
+(defun yas/initialize ()
+  "For backward compatibility, enable `yas/minor-mode' globally" 
+  (yas/global-mode 1))
 
 (defun yas/compile-bundle
   (&optional yasnippet yasnippet-bundle snippet-roots code dropdown)
   "Compile snippets in SNIPPET-ROOTS to a single bundle file.
-SNIPPET-ROOTS is a list of root directories that contains the snippets
-definition. YASNIPPET is the yasnippet.el file path. YASNIPPET-BUNDLE
-is the output file of the compile result. CODE is the code you would
-like to used to initialize yasnippet. Here's the default value for
-all the parameters:
+SNIPPET-ROOTS is a list of root directories that contains the
+snippets definition. YASNIPPET is the yasnippet.el file
+path. YASNIPPET-BUNDLE is the output file of the compile
+result. CODE is the code you would like to used to initialize
+yasnippet. Last optional argument DROPDOWN is the filename of the
+dropdown-list.el library.
+
+Here's the default value for all the parameters:
 
  (yas/compile-bundle \"yasnippet.el\"
                      \"./yasnippet-bundle.el\"
                      '(\"snippets\")
                      \"(yas/initialize)\")
 
-Last optional argument DROPDOWN is the filename of the
-dropdown-list.el library...
+..
 
 "
   (when (null yasnippet)
@@ -933,6 +1003,8 @@ dropdown-list.el library...
     (setq yasnippet-bundle "./yasnippet-bundle.el"))
   (when (null snippet-roots)
     (setq snippet-roots '("snippets")))
+  (when (null dropdown)
+    (setq dropdown "dropdown-list.el"))
   (when (null code)
     (setq code (concat "(yas/initialize-bundle)"
 		       "\n;;;###autoload" ; break through so that won't
@@ -1216,7 +1288,7 @@ by condition."
 			    (yas/template-env template))
       (message "[yas] No snippets can be inserted here!"))))
 
-(defun yas/find-snippet-by-key ()
+(defun yas/find-snippet-file ()
   "Choose a snippet to edit, selection like `yas/insert-snippet'."
   (interactive)
   (let* ((yas/buffer-local-condition 'always)
@@ -1234,8 +1306,14 @@ by condition."
 			    (car templates)))))
 
     (when template
-      (find-file-other-window (yas/template-file template))
-      (snippet-mode))))
+      (let ((file (yas/template-file template)))
+	(cond ((and file (file-exists-p file))
+	       (find-file-other-window file)
+	       (snippet-mode))
+	      (file
+	       (message "Original file %s no longer exists!" file))
+	      (t
+	       (message "This snippet was not loaded from a file!")))))))
 
 (defun yas/guess-snippet-directory ()
   "Try to guess the suitable yassnippet based on `major-mode'" 
@@ -1256,7 +1334,7 @@ by condition."
 	      path))))
 
 
-(defun yas/find-snippet (&optional same-window)
+(defun yas/find-snippets (&optional same-window)
   "Find a snippet file in a suitable directory."
   (interactive "P")
   (let* ((current-table (yas/current-snippet-table major-mode 'dont-search-parents))
