@@ -166,7 +166,7 @@ representation using `read-kbd-macro'. "
   :type 'string
   :group 'yasnippet)
 
-(defcustom yas/prev-field-key "<backtab>"
+(defcustom yas/prev-field-key '("<backtab>" "<S-tab>")
   "The key to navigate to previous field when a snippet is active.
 
 Can also be a list of keys.
@@ -1404,11 +1404,14 @@ by condition."
 	 (template (and parsed
 			(yas/make-template (second parsed) (third parsed) nil (sixth parsed) nil))))
     (cond (template
-	   (set-buffer (switch-to-buffer (format "*YAS TEST: %s*" (yas/template-name template))))
-	   (funcall (car major-mode-and-parent))
-	   (yas/expand-snippet (point-min) (point-max) (yas/template-content template) (yas/template-env template))
-	   (when debug
-	     (add-hook 'post-command-hook 'yas/debug-some-vars 't 'local)))
+	   (let ((buffer-name (format "*YAS TEST: %s*" (yas/template-name template))))
+	     (set-buffer (switch-to-buffer buffer-name))
+	     (erase-buffer)
+	     (setq buffer-undo-list nil)
+	     (funcall (car major-mode-and-parent))
+	     (yas/expand-snippet (point-min) (point-max) (yas/template-content template) (yas/template-env template))
+	     (when debug
+	       (add-hook 'post-command-hook 'yas/debug-some-vars 't 'local))))
 	  (t
 	   (message "[yas] Coulnd not parse template!")))))
 
@@ -1427,20 +1430,31 @@ If found, the content of subexp group SUBEXP (default 0) is
           (match-string-no-properties grp str)
         str))))
 
-(defun yas/choose-value (&rest possibilities)
-  "Prompt for a string in the list POSSIBILITIES."
-  (some #'(lambda (fn)
-	    (funcall fn "Choose: " possibilities))
-	yas/prompt-functions))
+(defun yas/choose-value (possibilities)
+  "Prompt for a string in the list POSSIBILITIES and return it."
+  (unless (or yas/moving-away-p
+	      yas/modified-p)
+    (some #'(lambda (fn)
+	      (funcall fn "Choose: " possibilities))
+	  yas/prompt-functions)))
+
+(defun yas/key-to-value (alist)
+  "Prompt for a string in the list POSSIBILITIES and return it."
+  (unless (or yas/moving-away-p
+	      yas/modified-p)
+    (let ((key (read-key-sequence "")))
+      (when (stringp key)
+	(cdr (find key alist :key #'car :test #'string=))))))
 
 (defun yas/throw (text)
+  "Throw a yas/exception with TEXT as the reason."
   (throw 'yas/exception (cons 'yas/exception text)))
 
-(defun yas/verify-value (&rest possibilities)
+(defun yas/verify-value (possibilities)
   "Verify that the current field value is in POSSIBILITIES
 
 Otherwise throw exception."
-  (when (and yas/moving-away (notany #'(lambda (pos) (string= pos yas/text)) possibilities))
+  (when (and yas/moving-away-p (notany #'(lambda (pos) (string= pos yas/text)) possibilities))
     (yas/throw (format "[yas] field only allows %s" possibilities))))
 
 (defun yas/field-value (number)
@@ -1509,7 +1523,7 @@ for this field, apply it. Otherwise, returned nil."
   (let* ((yas/text (yas/field-text-for-display field))
 	 (text yas/text)
 	 (yas/modified-p (yas/field-modified-p field))
-	 (yas/moving-away nil)
+	 (yas/moving-away-p nil)
 	 (transform (if (yas/mirror-p field-or-mirror)  
 			(yas/mirror-transform field-or-mirror)
 		      (yas/field-transform field-or-mirror)))
@@ -1595,7 +1609,7 @@ delegate to `yas/next-field'."
     ;; 
     (when (and active-field
 	       (yas/field-transform active-field))
-      (let* ((yas/moving-away t)
+      (let* ((yas/moving-away-p t)
 	     (yas/text (yas/field-text-for-display active-field))
 	     (text yas/text)
 	     (yas/modified-p (yas/field-modified-p active-field)))
