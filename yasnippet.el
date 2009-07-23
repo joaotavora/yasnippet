@@ -503,6 +503,7 @@ Key bindings:
 
 (defvar snippet-mode-map (make-sparse-keymap))
 (define-key snippet-mode-map "\C-c\C-c" 'yas/load-snippet-buffer)
+(define-key snippet-mode-map "\C-c\C-t" 'yas/tryout-snippet)
 
 
 (define-derived-mode snippet-mode text-mode "YASnippet"
@@ -713,7 +714,7 @@ the template of a snippet in the current snippet-table."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Template-related and snippet loading functions
 
-(defun yas/parse-template (file)
+(defun yas/parse-template (&optional file)
   "Parse the template in the current buffer.
 
 Optional FILE is the absolute file name of the file being
@@ -1370,10 +1371,10 @@ by condition."
 	 (parent-mode-name (file-name-nondirectory parent-file-dir))
 	 (major-mode-sym (intern major-mode-name))
 	 (parent-mode-sym (intern parent-mode-name)))
-    (cons (when (fboundp major-mode-sym)
-	    major-mode-sym)
-	  (when (fboundp parent-mode-sym)
-	    parent-mode-sym))))
+    (when (fboundp major-mode-sym)
+      (cons major-mode-sym
+	    (when (fboundp parent-mode-sym)
+	      parent-mode-sym)))))
 
 (defun yas/load-snippet-buffer (&optional kill)
   "Parse and load current buffer's snippet definition."
@@ -1389,6 +1390,27 @@ by condition."
 	  (save-buffer))
 	(quit-window))
     (message "Save the buffer as a file first!")))
+
+(defun yas/tryout-snippet (&optional debug)
+  "Parse and load current buffer's snippet definition."
+  (interactive "P")
+  (let* ((major-mode-and-parent (or (and buffer-file-name
+					 (yas/compute-major-mode-and-parent buffer-file-name))
+				    (cons (intern (read-from-minibuffer "Cannot auto-detect major mode! Enter a major mode: "))
+					  nil)))
+	 (parsed (and major-mode-and-parent
+		      (fboundp (car major-mode-and-parent))
+		      (yas/parse-template (symbol-name (car major-mode-and-parent)))))
+	 (template (and parsed
+			(yas/make-template (second parsed) (third parsed) nil (sixth parsed) nil))))
+    (cond (template
+	   (set-buffer (switch-to-buffer (format "*YAS TEST: %s*" (yas/template-name template))))
+	   (funcall (car major-mode-and-parent))
+	   (yas/expand-snippet (point-min) (point-max) (yas/template-content template) (yas/template-env template))
+	   (when debug
+	     (add-hook 'post-command-hook 'yas/debug-some-vars 't 'local)))
+	  (t
+	   (message "[yas] Coulnd not parse template!")))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; User convenience functions, for using in snippet definitions
@@ -1473,7 +1495,8 @@ Otherwise throw exception."
   (mirrors '())
   (transform nil)
   (modified-p nil)
-  (back-adjacent-fields nil))
+  (back-adjacent-fields nil)
+  (back-adjacent-mirrors nil))
 
 (defstruct (yas/mirror (:constructor yas/make-mirror (start end transform)))
   "A mirror."
@@ -1586,14 +1609,18 @@ delegate to `yas/next-field'."
           (t
            nil))))
 
+(defun yas/place-overlays (snippet field)
+  "Correctly place overlays for SNIPPET's FIELD"
+  (yas/make-move-active-field-overlay snippet field)
+  (yas/make-move-field-protection-overlays snippet field))
+
 (defun yas/move-to-field (snippet field)
   "Update SNIPPET to move to field FIELD.
 
 Also create some protection overlays"
   (goto-char (yas/field-start field))
   (setf (yas/snippet-active-field snippet) field)
-  (yas/make-move-active-field-overlay snippet field)
-  (yas/make-move-field-protection-overlays snippet field)
+  (yas/place-overlays snippet field)
   (overlay-put yas/active-field-overlay 'yas/field field)
   ;;; primary field transform: first call to snippet transform  
   (unless (yas/field-modified-p field)
@@ -1697,7 +1724,7 @@ NO-HOOKS means don't run the `yas/after-exit-snippet-hook' hooks."
     ;;
     (let ((previous-field (yas/snippet-previous-active-field snippet)))
       (when (and yas/snippet-end previous-field)
-	(yas/advance-field-and-parents-maybe previous-field yas/snippet-end)))
+	(yas/advance-field-end-marker previous-field yas/snippet-end)))
 
     ;; Convert all markers to points, 
     ;;
@@ -1825,21 +1852,25 @@ deletes a character normally."
   (setf (yas/field-modified-p field) t)
   (delete-region (yas/field-start field) (yas/field-end field)))
 
-(defun yas/advance-field-and-parents-maybe (field end)
-  "Advance FIELDs end-marker to END and recurse for parent fields
-
-This is needed since markers don't \"rear-advance\" like overlays"
-  (when (< (yas/field-end field) end)
-    (set-marker (yas/field-end field) end)
+(defun yas/advance-field-end-marker (field newend)
+  "Advance FIELDs end-marker to NEWEND and recurse for parent fields"
+  (when (< (yas/field-end field) newend)
+    (set-marker (yas/field-end field) newend)
     (when (yas/field-parent-field field)
-      (yas/advance-field-and-parents-maybe (yas/field-parent-field field) end)))
-  ;; take care of adjacents
+      (yas/advance-field-end-marker (yas/field-parent-field field) newend)))
+  ;; take care of adjacent fields
   (let ((adjacents (yas/field-back-adjacent-fields field)))
     (when adjacents
       (dolist (adjacent adjacents)
-	(when (< (yas/field-start adjacent) end)
-	  (set-marker (yas/field-start adjacent) end))
-	(yas/advance-field-and-parents-maybe adjacent end)))))
+	(when (< (yas/field-start adjacent) newend)
+	  (set-marker (yas/field-start adjacent) newend))
+	(yas/advance-field-end-marker adjacent newend))))
+  ;; take care of adjacent mirrors
+  (let ((adjacents (yas/field-back-adjacent-mirrors field)))
+    (when adjacents
+      (dolist (adjacent adjacents)
+	(when (< (yas/mirror-start adjacent) newend)
+	  (set-marker (yas/mirror-start adjacent) newend))))))
 
 (defun yas/make-move-active-field-overlay (snippet field)
   "Place the active field overlay in SNIPPET's FIELD.
@@ -1869,7 +1900,7 @@ progress."
   (unless (yas/undo-in-progress)
     (let ((field (overlay-get yas/active-field-overlay 'yas/field)))
       (cond (after?
-	     (yas/advance-field-and-parents-maybe field (overlay-end overlay))
+	     (yas/advance-field-end-marker field (overlay-end overlay))
 	     ;;; primary field transform: normal calls to expression
 	     (let ((saved-point (point)))
 	       (yas/field-update-display field (car (yas/snippets-at-point)))
@@ -2025,7 +2056,7 @@ will be deleted before inserting template."
 			       (overlay-get yas/active-field-overlay 'yas/field))))
       (when existing-field
 	(setf (yas/snippet-previous-active-field snippet) existing-field)
-	(yas/advance-field-and-parents-maybe existing-field (overlay-end yas/active-field-overlay))))
+	(yas/advance-field-end-marker existing-field (overlay-end yas/active-field-overlay))))
     
     ;; Move to the first of fields, or exit the snippet to its exit
     ;; point
@@ -2096,6 +2127,9 @@ Returns the newly created snippet."
 
     ;; Sort and link each field
     (yas/snippet-sort-link-fields snippet)
+
+    ;; Calculate field and mirror adjacencies
+    (yas/calculate-adjacencies snippet)
     
     ;; Update the mirrors for the first time
     (yas/update-mirrors snippet)
@@ -2116,14 +2150,25 @@ Returns the newly created snippet."
   (setf (yas/snippet-fields snippet)
 	(sort (yas/snippet-fields snippet)
 	      '(lambda (field1 field2)
-		 (yas/snippet-field-compare field1 field2))))
-  (let ((prev nil))
-    (dolist (field (yas/snippet-fields snippet))
-      ;; also check for other fields adjacent to this fields back
-      (dolist (otherfield (yas/snippet-fields snippet))
-	(when (and (not (eq otherfield field))
-		   (= (yas/field-end field) (yas/field-start otherfield)))
-	  (push otherfield (yas/field-back-adjacent-fields field)))))))
+		 (yas/snippet-field-compare field1 field2)))))
+
+(defun yas/calculate-adjacencies (snippet)
+  ;; For each field in the snippet
+  ;; 
+  (dolist (field (yas/snippet-fields snippet))
+    ;; Calculate its adjacencies to other mirrors and fields
+    ;; 
+    (dolist (otherfield (yas/snippet-fields snippet))
+      (dolist (mirror (yas/field-mirrors otherfield))
+	(when (= (yas/field-end field) (yas/mirror-start mirror))
+	  (push mirror (yas/field-back-adjacent-mirrors field))))
+      (when (and (not (eq otherfield field))
+		 (= (yas/field-end field) (yas/field-start otherfield)))
+	(push otherfield (yas/field-back-adjacent-fields field))))
+    ;; Calculate the adjacencies of each one of its mirrors
+    ;;
+    ;; TODO: Known bug.
+    ))
 
 (defun yas/snippet-parse-create (snippet)
   "Parse a recently inserted snippet template, creating all
@@ -2143,11 +2188,11 @@ Meant to be called in a narrowed buffer, does various passes"
     ;;
     (goto-char parse-start)
     (yas/protect-escapes)
-    ;; parse fields
+    ;; parse fields with {}  
     ;; 
     (goto-char parse-start)
     (yas/field-parse-create snippet)
-    ;; parse simple mirrors
+    ;; parse simple mirrors and fields
     ;; 
     (goto-char parse-start)
     (yas/simple-mirror-parse-create snippet)
@@ -2355,7 +2400,16 @@ When multiple expressions are found, only the last one counts."
       ;; altered.
       ;; 
       (let ((inhibit-modification-hooks t))
-	(yas/mirror-update-display mirror field))))))
+	(yas/mirror-update-display mirror field)
+	;; Take care of the fields adjacent to this mirror's back
+	;; TODO: Known bug 
+	
+	;; `yas/place-overlays' is needed if the active field and
+	;; protected overlays have been changed because of insertions
+	;; in `yas/mirror-update-display'
+	;;
+	(when (eq field (yas/snippet-active-field snippet))
+	  (yas/place-overlays snippet field)))))))
 
 (defun yas/mirror-update-display (mirror field)
   "Update MIRROR according to FIELD (and mirror transform)."
@@ -2401,19 +2455,25 @@ When multiple expressions are found, only the last one counts."
   (princ (format "%s live snippets at point:\n\n" (length (yas/snippets-at-point))))
     
   (dolist (snippet (yas/snippets-at-point))
-    (princ (format "\tid: %s active field %d from %s to %s covering \"%s\"\n"
+    (princ (format "\tsid: %s active field %d from %s to %s covering \"%s\"\n"
 		   (yas/snippet-id snippet)
 		   (yas/field-number (yas/snippet-active-field snippet))
 		   (marker-position (yas/field-start (yas/snippet-active-field snippet)))
 		   (marker-position (yas/field-end (yas/snippet-active-field snippet)))
 		   (buffer-substring-no-properties (yas/field-start (yas/snippet-active-field snippet)) (yas/field-end (yas/snippet-active-field snippet)))))
     (dolist (field (yas/snippet-fields snippet))
-      (princ (format "\tn: %d field from %s to %s covering \"%s\" adjacent %s\n"
+      (princ (format "\tfield %d from %s to %s covering \"%s\" adj-fields %s adj-mirrors %s\n"
 		     (yas/field-number field)
 		     (marker-position (yas/field-start field))
 		     (marker-position (yas/field-end field))
 		     (buffer-substring-no-properties (yas/field-start field) (yas/field-end field))
-		     (length (yas/field-back-adjacent-fields field))))))
+		     (length (yas/field-back-adjacent-fields field))
+		     (length (yas/field-back-adjacent-mirrors field))))
+      (dolist (mirror (yas/field-mirrors field))
+	(princ (format "\t\tmirror from %s to %s covering \"%s\"\n"
+		       (marker-position (yas/mirror-start mirror))
+		       (marker-position (yas/mirror-end mirror))
+		       (buffer-substring-no-properties (yas/mirror-start mirror) (yas/mirror-end mirror)))))))
 
   
 
