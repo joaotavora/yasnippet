@@ -400,7 +400,7 @@ snippet templates")
   "A regexp to *almost* recognize a field")
 
 (defconst yas/multi-dollar-lisp-expression-regexp
-  "$\\(([^)]*)\\)"
+  "$+\\(([^)]*)\\)"
   "A regexp to *almost* recognize a \"$(...)\" expression")
 
 (defconst yas/backquote-lisp-expression-regexp
@@ -1444,7 +1444,8 @@ If found, the content of subexp group SUBEXP (default 0) is
 	      yas/modified-p)
     (let ((key (read-key-sequence "")))
       (when (stringp key)
-	(cdr (find key alist :key #'car :test #'string=))))))
+	(or (cdr (find key alist :key #'car :test #'string=))
+	    key)))))
 
 (defun yas/throw (text)
   "Throw a yas/exception with TEXT as the reason."
@@ -1638,7 +1639,7 @@ Also create some protection overlays"
   (overlay-put yas/active-field-overlay 'yas/field field)
   ;;; primary field transform: first call to snippet transform  
   (unless (yas/field-modified-p field)
-    (if (save-excursion (yas/field-update-display field snippet))
+    (if (yas/field-update-display field snippet)
 	(let ((inhibit-modification-hooks t))
 	  (yas/update-mirrors snippet))
       (setf (yas/field-modified-p field) nil))))
@@ -2072,14 +2073,11 @@ will be deleted before inserting template."
 	(setf (yas/snippet-previous-active-field snippet) existing-field)
 	(yas/advance-field-end-marker existing-field (overlay-end yas/active-field-overlay))))
     
-    ;; Move to the first of fields, or exit the snippet to its exit
-    ;; point
-    ;; 
-    (let ((first-field (car (yas/snippet-fields snippet))))
-      (cond (first-field
-	     (yas/move-to-field snippet first-field))
-	    (t
-	     (yas/exit-snippet snippet))))
+    ;; Exit the snippet immediately if no fields
+    ;;
+    (unless (yas/snippet-fields snippet)
+      (yas/exit-snippet snippet))
+    
     ;; Push two undo actions: the deletion of the inserted contents of
     ;; the new snippet (whitout the "key") followed by an apply of
     ;; `yas/take-care-of-redo' on the newly inserted snippet boundaries
@@ -2088,7 +2086,12 @@ will be deleted before inserting template."
 	  (end (overlay-end (yas/snippet-control-overlay snippet))))
       (push (cons start end) buffer-undo-list)
       (push `(apply yas/take-care-of-redo ,start ,end ,snippet)
-	    buffer-undo-list)))
+	    buffer-undo-list))
+    ;; Now, move to the first field
+    ;;
+    (let ((first-field (car (yas/snippet-fields snippet))))
+      (when first-field
+	(yas/move-to-field snippet first-field))))
   (message "[yas] snippet expanded."))
 
 (defun yas/take-care-of-redo (beg end snippet)
@@ -2354,11 +2357,11 @@ When multiple expressions are found, only the last one counts."
   (when parent-field
   (save-excursion
     (while (re-search-forward yas/multi-dollar-lisp-expression-regexp nil t)
-      (let* ((real-match-end-0 (yas/scan-sexps (1+ (match-beginning 0)) 1)))
-	(when real-match-end-0
-	  (let ((lisp-expression-string (buffer-substring-no-properties (match-beginning 1) real-match-end-0))) 
+      (let* ((real-match-end-1 (yas/scan-sexps (match-beginning 1) 1)))
+	(when real-match-end-1
+	  (let ((lisp-expression-string (buffer-substring-no-properties (match-beginning 1) real-match-end-1))) 
 	    (setf (yas/field-transform parent-field) lisp-expression-string))
-	  (delete-region (match-beginning 0) real-match-end-0)))))))
+	  (delete-region (match-beginning 0) real-match-end-1)))))))
 
 (defun yas/transform-mirror-parse-create (snippet)
   "Parse the \"${n:$(lisp-expression)}\" mirror transformations."
