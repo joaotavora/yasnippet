@@ -1626,8 +1626,8 @@ delegate to `yas/next-field'."
 
 (defun yas/place-overlays (snippet field)
   "Correctly place overlays for SNIPPET's FIELD"
-  (yas/make-move-active-field-overlay snippet field)
-  (yas/make-move-field-protection-overlays snippet field))
+  (yas/make-move-field-protection-overlays snippet field)
+  (yas/make-move-active-field-overlay snippet field))
 
 (defun yas/move-to-field (snippet field)
   "Update SNIPPET to move to field FIELD.
@@ -1901,7 +1901,7 @@ Move the overlay, or create it if it does not exit."
 			(yas/field-end field)
 			nil nil t))
     (overlay-put yas/active-field-overlay 'face 'yas/field-highlight-face)
-    ;;(overlay-put yas/active-field-overlay 'evaporate t)
+    (overlay-put yas/active-field-overlay 'yas/snippet snippet)
     (overlay-put yas/active-field-overlay 'modification-hooks '(yas/on-field-overlay-modification))
     (overlay-put yas/active-field-overlay 'insert-in-front-hooks '(yas/on-field-overlay-modification))
     (overlay-put yas/active-field-overlay 'insert-behind-hooks '(yas/on-field-overlay-modification))))
@@ -1959,7 +1959,7 @@ Move the overlays, or create them if they do not exit."
     ;; insert a newline. the `(1+ (buffer-size))' should prevent this
     ;; when using stacked expansion
     ;; 
-    (when (< (1+ (buffer-size)) (1+ end))
+    (when (< (buffer-size) end)
       (save-excursion
 	(let ((inhibit-modification-hooks t))
 	  (goto-char (point-max))
@@ -2181,7 +2181,8 @@ Returns the newly created snippet."
 	  (push mirror (yas/field-back-adjacent-mirrors field))))
       (when (and (not (eq otherfield field))
 		 (= (yas/field-end field) (yas/field-start otherfield)))
-	(push otherfield (yas/field-back-adjacent-fields field))))
+	(when (not (find field (yas/field-back-adjacent-fields otherfield)))
+	  (push otherfield (yas/field-back-adjacent-fields field)))))
     ;; Calculate the adjacencies of each one of its mirrors
     ;;
     ;; TODO: Known bug.
@@ -2221,6 +2222,9 @@ Meant to be called in a narrowed buffer, does various passes"
     ;;
     (goto-char parse-start)
     (yas/restore-escapes)
+    ;; update mirrors for the first time
+    ;;
+    (yas/update-mirrors snippet)
     ;; indent the best we can
     ;;
     (goto-char parse-start)
@@ -2228,50 +2232,67 @@ Meant to be called in a narrowed buffer, does various passes"
 
 (defun yas/indent (snippet)
   (save-excursion
-  (cond ((eq yas/indent-line 'fixed)
-	 (let* ((indent (if indent-tabs-mode
-			    (concat (make-string (/ column tab-width) ?\t)
-				    (make-string (% column tab-width) ?\ ))
-			  (make-string (current-colum) ?\ ))))
-	   (goto-char (point-min))
-	   (while (and (zerop (forward-line))
-		       (= (current-column) 0))
-	     (insert indent))))
-	((eq yas/indent-line 'auto)
-	 (let ((end (set-marker (make-marker) (point-max))))
-	   (save-restriction
-	     (widen)
-	     ;; XXX: Here seems to be the indent problem:
-	     ;;
-	     ;; `indent-according-to-mode' uses whatever
-	     ;; `indent-line-function' is available. Some
-	     ;; implementations of these functions delete text
-	     ;; before they insert. If there happens to be a marker
-	     ;; just after the text being deleted, the insertion
-	     ;; actually happens after the marker, which misplaces
-	     ;; it.
-	     ;;
-	     ;; This would also happen if we had used overlays with
-	     ;; the `front-advance' property set to nil.
-	     ;;
-	     (while (and (zerop (forward-line 1))
-			 (not (eobp))
-			 (<= (point) end))
-	       (goto-char (yas/real-line-beginning))
-	       (if (buffer-has-markers-at (point))
-		   (progn
-		     (insert-before-markers "Y")
-		     (indent-according-to-mode)
-		     (backward-delete-char 1))
-		 (indent-according-to-mode)))
-	     (set-marker end nil))))
-	(t
-	 nil)))
-  (save-excursion
     (while (re-search-forward "$>" nil t)
       (delete-region (match-beginning 0) (match-end 0))
       (when (not (eq yas/indent-line 'auto))        
-	(indent-according-to-mode)))))
+	(indent-according-to-mode))))
+  (save-excursion
+    (cond ((eq yas/indent-line 'fixed)
+	   (let* ((indent (if indent-tabs-mode
+			      (concat (make-string (/ column tab-width) ?\t)
+				      (make-string (% column tab-width) ?\ ))
+			    (make-string (current-colum) ?\ ))))
+	     (goto-char (point-min))
+	     (while (and (zerop (forward-line))
+			 (= (current-column) 0))
+	       (insert indent))))
+	  ((eq yas/indent-line 'auto)
+	   (let ((end (set-marker (make-marker) (point-max)))
+		 (snippet-markers (yas/collect-snippet-markers snippet)))
+	     (save-restriction
+	       (widen)
+	       ;; XXX: Here seems to be the indent problem:
+	       ;;
+	       ;; `indent-according-to-mode' uses whatever
+	       ;; `indent-line-function' is available. Some
+	       ;; implementations of these functions delete text
+	       ;; before they insert. If there happens to be a marker
+	       ;; just after the text being deleted, the insertion
+	       ;; actually happens after the marker, which misplaces
+	       ;; it.
+	       ;;
+	       ;; This would also happen if we had used overlays with
+	       ;; the `front-advance' property set to nil.
+	       ;;
+	       (while (and (zerop (forward-line 1))
+			   (not (eobp))
+			   (<= (point) end))
+		 (goto-char (yas/real-line-beginning))
+		 (let ((trouble-markers (remove-if-not #'(lambda (marker)
+							   (= marker (point)))
+						       snippet-markers)))
+		       (indent-according-to-mode)
+		       (mapc #'(lambda (marker)
+				 (set-marker marker (point)))
+			     trouble-markers)
+		   (indent-according-to-mode)))
+	       (set-marker end nil))))
+	  (t
+	   nil))))
+
+(defun yas/collect-snippet-markers (snippet)
+  "Make a list of all the markers used by SNIPPET."
+  (let (markers)
+    (dolist (field (yas/snippet-fields snippet))
+      (push (yas/field-start field) markers)
+      (push (yas/field-end field) markers)
+      (dolist (mirror (yas/field-mirrors field))
+	(push (yas/mirror-start mirror) markers)
+	(push (yas/mirror-end mirror) markers)))
+    (when (and (yas/snippet-exit snippet)
+	       (marker-buffer (yas/snippet-exit snippet)))
+      (push (yas/snippet-exit snippet) markers))
+    markers))
 
 (defun yas/real-line-beginning ()
   (let ((c (char-after (line-beginning-position)))
