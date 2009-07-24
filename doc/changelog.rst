@@ -6,6 +6,28 @@ ChangeLog
 :Contact: pluskid@gmail.com
 :Date: 2008-03-22
 
+
+0.6.0b / 2009-07-2x
+===================
+ 
+* Nested placeholders of the type <div${1: id="${2:someid}"}> $0
+* More robust undo/redo support
+* Stacked snippet expansion (snippet in snippet)
+* Transformation on a primary field, the syntax being
+* Validation on field exit
+* Wrapping the region in the exit marker $0 of the snippet
+* Auto-indentation 
+* Easier definition of snippets
+* Customization group
+* Overriding customization variables in snippets
+
+* Fixed `Issue 60
+  <http://code.google.com/p/yasnippet/issues/detail?id=60>`_
+* Fixed `Issue 65
+  <http://code.google.com/p/yasnippet/issues/detail?id=65>`_
+* Fixed `Issue 56
+  <http://code.google.com/p/yasnippet/issues/detail?id=56>`_
+
 0.5.10 / 2009-02-11
 ===================
 

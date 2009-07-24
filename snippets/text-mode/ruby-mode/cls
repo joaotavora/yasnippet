@@ -2,7 +2,7 @@
 #contributor : hitesh <hitesh.jasani@gmail.com>
 #group : definitions
 # --
-class ${1:$
+class ${1:$$
          (let ((fn (capitalize (file-name-nondirectory
                                  (file-name-sans-extension
                                    (buffer-file-name))))))

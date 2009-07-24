@@ -400,7 +400,7 @@ snippet templates")
   "A regexp to *almost* recognize a field")
 
 (defconst yas/multi-dollar-lisp-expression-regexp
-  "$+\\(([^)]*)\\)"
+  "$+[ \t\n]*\\(([^)]*)\\)"
   "A regexp to *almost* recognize a \"$(...)\" expression")
 
 (defconst yas/backquote-lisp-expression-regexp
