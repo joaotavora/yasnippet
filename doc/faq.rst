@@ -1,6 +1,6 @@
-=========================
-How to define a snippet ?
-=========================
+==========================
+Frequently Asked Questions
+==========================
 
 :Author: pluskid
 :Contact: pluskid@gmail.com
