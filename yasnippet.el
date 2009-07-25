@@ -3,7 +3,8 @@
 ;; Copyright 2008 pluskid
 
 ;; Authors: pluskid <pluskid@gmail.com>, joaotavora <joaotavora@gmail.com>
-;; Version: 0.6.0b
+;; Version: 0.6.0
+;; Package-version: 0.6.0b
 ;; X-URL: http://code.google.com/p/yasnippet/
 ;; Keywords: snippet, textmate
 ;; URL: http://code.google.com/p/yasnippet/
@@ -2367,7 +2368,7 @@ With optional string TEXT do it in string instead"
   "Replace all the \"`(lisp-expression)`\"-style expression
   with their evaluated value"
   (while (re-search-forward yas/backquote-lisp-expression-regexp nil t)
-  (let ((transformed (yas/eval-string (match-string 1))))
+  (let ((transformed (yas/eval-string (yas/restore-escapes (match-string 1)))))
     (goto-char (match-end 0))
     (when transformed (insert transformed))
     (delete-region (match-beginning 0) (match-end 0)))))

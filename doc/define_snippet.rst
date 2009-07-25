@@ -202,6 +202,25 @@ ignored. Here's a list of currently supported meta data:
   under the ``loops`` group which is under the ``control structure``
   group.
 
+Quickly finding/defining snippets
+---------------------------------
+
+From version 0.6 upwards there are two ways you can quickly find a
+snippet file. Once you find this file it will be set to
+``snippet-mode`` (see ahead)
+
+* ``M-x yas/find-snippets``
+
+  Lets you find the snippet file in the directory the snippet was
+  loaded from (if it exists) like ``find-file-other-window``. 
+
+* ``M-x yas/visit-snippet-file``
+
+  Prompts you for possible snippet expansions like
+  ``yas/insert-snippet``, but instead of expanding it, takes you
+  directly to the snippet definition's file, if it exists.
+
+
 Using the ``snippet-mode`` major mode
 -------------------------------------
 
@@ -446,7 +465,7 @@ When there are multiple candidates, YASnippet will let you select
 one. The UI for selecting multiple candidate can be
 customized. There're two variable related:
 
-From version 0.6 of YASnippet this has changed significantly. A
+From version 0.6 of YASnippet this has changed significantly. A new
 customization variable, called ``yas/prompt-functions`` defines your
 preferred method of being prompted for snippets.
 
@@ -455,7 +474,8 @@ yas/prompt-functions RET``. Alternatively you can put in your
 emacs-file:
 
 .. sourcecode:: common-lisp
-  (setq yas/prompt-functions '(yas/x-prompt yas/dropdown-prompt))
+   
+   (setq yas/prompt-functions '(yas/x-prompt yas/dropdown-prompt))
 
 Currently there are some alternatives solution with YASnippet.
 
@@ -481,6 +501,9 @@ Use built-in Emacs selection methods
 You can use functions ``yas/completing-prompt`` for the classic emacs
 completion method or ``yas/ido-prompt`` for a much nicer looking
 method. The best way is to try it. This works in a terminal.
+
+.. image:: images/idrop-menu.png
+   :align: center
 
 Use ``dropdown-menu.el``
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -592,6 +615,22 @@ is inserted.
 
 However, there're other ways to insert a snippet.
 
+``yas/insert-snippet``
+~~~~~~~~~~~~~~~~~~~~~~
+
+The command ``M-x yas/insert-snippet`` lets you insert snippets at
+point *for you current major mode*. It prompts you for the snippet
+key first, and then for a snippet template if more than one template
+exists for the same key.
+
+The list presented contains the snippets that can be inserted at
+point, according to the condition system. If you want to see all
+applicable snippets for the major mode, prefix this command with
+``C-u``.
+
+The prompting methods used are again controlled by
+``yas/prompt-functions``.
+
 The Menu
 ~~~~~~~~
 
@@ -700,8 +739,8 @@ to "wrap" the selected region inside your recently inserted
 snippet. Alternatively, you can also customize the variable
 ``yas/wrap-around-region`` to ``t`` which will do this automatically.
 
-Fields of type "Tab Stop"
--------------------------
+Tab stop fields
+---------------
 
 Tab stops are fields that you can navigate back and forth by ``TAB``
 and ``S-TAB`` [3]_. They are written by ``$`` followed with a
@@ -715,8 +754,8 @@ fields. Here's a typical example:
       $0
   </div>
 
-Fields of type "Placeholder"
-----------------------------
+Placeholder fields
+------------------
 
 Tab stops can have default values -- a.k.a placeholders. The syntax is
 like this:

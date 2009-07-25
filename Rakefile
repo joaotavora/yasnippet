@@ -3,7 +3,7 @@
 require 'fileutils'
 
 def find_version
-  File.read("yasnippet.el") =~ /;; Version: *([0-9.]+[a-z]?) *$/
+  File.read("yasnippet.el") =~ /;; Package-version: *([0-9.]+[a-z]?) *$/
   $version = $1
 end
 find_version

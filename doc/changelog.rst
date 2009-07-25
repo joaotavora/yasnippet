@@ -7,7 +7,7 @@ ChangeLog
 :Date: 2008-03-22
 
 
-0.6.0b / 2009-07-2x
+0.6.0b / 2009-07-25
 ===================
  
 * Nested placeholders of the type ``<div${1: id="${2:someid}"}> $0``.
