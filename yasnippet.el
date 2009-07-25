@@ -1598,10 +1598,12 @@ have, compare through the field's start point"
         (< (yas/field-start field1)
            (yas/field-start field2))))))
 
-(defun yas/field-probably-deleted-p (field)
-  "Guess if FIELD was deleted because of his parent-field"
+(defun yas/field-probably-deleted-p (snippet field)
+  "Guess if SNIPPET's FIELD should be skipped."
   (and (zerop (- (yas/field-start field) (yas/field-end field)))
-       (yas/field-parent-field field)))
+       (or (yas/field-parent-field field)
+	   (and (eq field (car (last (yas/snippet-fields snippet))))
+		(= (yas/field-start field) (overlay-end (yas/snippet-control-overlay snippet)))))))
 
 (defun yas/snippets-at-point (&optional all-snippets)
   "Return a sorted list of snippets at point, most recently
@@ -1636,7 +1638,7 @@ delegate to `yas/next-field'."
 	 (active-field (overlay-get yas/active-field-overlay 'yas/field))
          (live-fields (remove-if #'(lambda (field)
 				     (and (not (eq field active-field))
-					  (yas/field-probably-deleted-p field)))
+					  (yas/field-probably-deleted-p snippet field)))
 				 (yas/snippet-fields snippet)))
 	 (active-field-pos (position active-field live-fields))
 	 (target-pos (and active-field-pos (+ arg active-field-pos)))
@@ -1848,7 +1850,8 @@ snippet, if so cleans up the whole snippet up."
 	 ;;
 	 (let* ((snippet (car (yas/snippets-at-point)))
 		(target-field (and snippet
-				   (find-if-not #'yas/field-probably-deleted-p
+				   (find-if-not #'(lambda (field)
+						    (yas/field-probably-deleted-p snippet field))
 						(remove nil
 							(cons (yas/snippet-active-field snippet)
 							      (yas/snippet-fields snippet)))))))

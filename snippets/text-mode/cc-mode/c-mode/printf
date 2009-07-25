@@ -1,0 +1,20 @@
+# name : printf 
+# contributor : joaotavora
+# description : a snippet that is very slightly buggy in 0.6.0b. There *must* be a space before the $2!
+#
+# While a per-snippet exit-hook property does not exist, this can be fixed with
+# this in your .emacs
+#
+# (setq yas/after-exit-snippet-hook '(yas/munch-useless-spaces-at-end))
+#
+# (defun yas/munch-useless-spaces-at-end ()
+#   (let ((end (1- yas/snippet-end)))
+#     (while (= (char-after end) ?\s)
+#       (setq end (1- end))
+#       (backward-char))
+#     (delete-region (point) yas/snippet-end)))
+#
+# but this might break some other snippets...
+#
+# --
+printf ("${1:%s}\\n"${1:$(if (string-match "%" text) "," "\);")} $2${1:$(if (string-match "%" text) "\);" "")}
