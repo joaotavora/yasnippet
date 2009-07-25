@@ -56,10 +56,13 @@ newline for you automatically.</p>
 <tt class="docutils literal"><span class="pre">M-x</span> <span class="pre">yas/minor-mode-on</span></tt> to manually turn on <tt class="docutils literal"><span class="pre">yas/minor-mode</span></tt> and
 try to expand the snippet again. If it works, then, you can add the
 following code to your <tt class="docutils literal"><span class="pre">.emacs</span></tt> <em>before</em> loading YASnippet:</p>
-<div class="highlight"><pre>(setq yas/extra-mode-hooks &#39;(the-major-mode))
+<div class="highlight"><pre>(add-hook &#39;the-major-mode-hook &#39;yas/minor-mode-on)
 </pre></div>
 <p>where <tt class="docutils literal"><span class="pre">the-major-mode</span></tt> is the major mode in which <tt class="docutils literal"><span class="pre">yas/minor-mode</span></tt>
 isn't enabled by default.</p>
+<p>From YASnippet 0.6 you can also use the command <tt class="docutils literal"><span class="pre">M-x</span>
+<span class="pre">yas/global-mode</span></tt> to turn on YASnippet automatically for <em>all</em> major
+modes.</p>
 <p>If <tt class="docutils literal"><span class="pre">yas/minor-mode</span></tt> is on but the snippet still not expanded. Then
 try to see what command is bound to the <tt class="docutils literal"><span class="pre">TAB</span></tt> key: press <tt class="docutils literal"><span class="pre">C-h</span> <span class="pre">k</span></tt>
 and then press <tt class="docutils literal"><span class="pre">TAB</span></tt>. Emacs will show you the result.</p>

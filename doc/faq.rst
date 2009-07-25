@@ -28,10 +28,14 @@ following code to your ``.emacs`` *before* loading YASnippet:
 
 .. sourcecode:: lisp
 
-  (setq yas/extra-mode-hooks '(the-major-mode))
+  (add-hook 'the-major-mode-hook 'yas/minor-mode-on)
 
 where ``the-major-mode`` is the major mode in which ``yas/minor-mode``
 isn't enabled by default.
+
+From YASnippet 0.6 you can also use the command ``M-x
+yas/global-mode`` to turn on YASnippet automatically for *all* major
+modes.
 
 If ``yas/minor-mode`` is on but the snippet still not expanded. Then
 try to see what command is bound to the ``TAB`` key: press ``C-h k``

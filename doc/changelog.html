@@ -40,7 +40,30 @@
       <div id="squeeze">
         <div class="right-corner">
           <div class="left-corner">
-	  <div class="section" id="id1">
+	  <div class="section" id="b-2009-07-2x">
+<h1>0.6.0b / 2009-07-2x</h1>
+<ul class="simple">
+<li>Nested placeholders of the type <tt class="docutils literal"><span class="pre">&lt;div${1:</span> <span class="pre">id=&quot;${2:someid}&quot;}&gt;</span> <span class="pre">$0</span></tt>.</li>
+<li>More robust undo/redo support.</li>
+<li>Stacked snippet expansion (<em>snippet in snippet</em>).</li>
+<li>Transformation on a primary field with syntax <tt class="docutils literal"><span class="pre">${1:default$(transform)}</span></tt></li>
+<li>Validations on field exit through the <tt class="docutils literal"><span class="pre">yas/verify-value</span></tt>
+primary field transformation.</li>
+<li>Wrapping the region in the exit marker <tt class="docutils literal"><span class="pre">$0</span></tt> of the snippet. Use
+<tt class="docutils literal"><span class="pre">yas/wrap-around-region</span></tt>.</li>
+<li>Auto-indentation. Use <tt class="docutils literal"><span class="pre">yas/indent-line</span></tt> set to <tt class="docutils literal"><span class="pre">'auto</span></tt></li>
+<li>Easier definition of snippets. Use <tt class="docutils literal"><span class="pre">yas/find-snippets</span></tt> or
+<tt class="docutils literal"><span class="pre">yas/visit-snippet-file</span></tt>. In the new <tt class="docutils literal"><span class="pre">snippet-mode</span></tt> use
+<tt class="docutils literal"><span class="pre">yas/load-snippet-buffer</span></tt> and <tt class="docutils literal"><span class="pre">yas/tryout-snippet</span></tt>.</li>
+<li>Customization group <tt class="docutils literal"><span class="pre">yasnippet</span></tt>.</li>
+<li>Overriding customization variables in snippets. Use the <tt class="docutils literal"><span class="pre">env:</span>
+<span class="pre">let-form</span></tt> template keyword.</li>
+<li>Fixed <a class="reference external" href="http://code.google.com/p/yasnippet/issues/detail?id=60">Issue 60</a></li>
+<li>Fixed <a class="reference external" href="http://code.google.com/p/yasnippet/issues/detail?id=65">Issue 65</a></li>
+<li>Fixed <a class="reference external" href="http://code.google.com/p/yasnippet/issues/detail?id=56">Issue 56</a></li>
+</ul>
+</div>
+<div class="section" id="id1">
 <h1>0.5.10 / 2009-02-11</h1>
 <ul class="simple">
 <li>Added <em>grouping</em> support so that the snippets in the menu can be

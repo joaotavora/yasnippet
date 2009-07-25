@@ -5,8 +5,8 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="Docutils 0.5: http://docutils.sourceforge.net/" />
 <title>How to define a snippet ?</title>
-<meta name="author" content="pluskid" />
-<meta name="date" content="2008-03-20" />
+<meta name="author" content="pluskid, joaotavora" />
+<meta name="date" content="2009-07-24" />
 <link rel="stylesheet" href="styles.css" type="text/css" />
 </head>
 <body>
@@ -43,47 +43,53 @@
 	  <div class="contents topic" id="contents">
 <p class="topic-title first">Contents</p>
 <ul class="simple">
-<li><a class="reference internal" href="#define-snippets-in-files" id="id9">Define snippets in files</a><ul>
-<li><a class="reference internal" href="#directory-hierarchy" id="id10">Directory hierarchy</a></li>
-<li><a class="reference internal" href="#file-content" id="id11">File content</a></li>
-<li><a class="reference internal" href="#define-snippets-using-elisp-code" id="id12">Define snippets using elisp code</a><ul>
-<li><a class="reference internal" href="#yas-define-snippets" id="id13">yas/define-snippets</a></li>
-<li><a class="reference internal" href="#yas-compile-bundle" id="id14">yas/compile-bundle</a></li>
-<li><a class="reference internal" href="#yas-define" id="id15">yas/define</a></li>
+<li><a class="reference internal" href="#define-snippets-in-files" id="id8">Define snippets in files</a><ul>
+<li><a class="reference internal" href="#directory-hierarchy" id="id9">Directory hierarchy</a></li>
+<li><a class="reference internal" href="#file-content" id="id10">File content</a></li>
+<li><a class="reference internal" href="#quickly-finding-defining-snippets" id="id11">Quickly finding/defining snippets</a></li>
+<li><a class="reference internal" href="#using-the-snippet-mode-major-mode" id="id12">Using the <tt class="docutils literal"><span class="pre">snippet-mode</span></tt> major mode</a></li>
+<li><a class="reference internal" href="#define-snippets-using-elisp-code" id="id13">Define snippets using elisp code</a><ul>
+<li><a class="reference internal" href="#yas-define-snippets" id="id14">yas/define-snippets</a></li>
+<li><a class="reference internal" href="#yas-compile-bundle" id="id15">yas/compile-bundle</a></li>
+<li><a class="reference internal" href="#yas-define" id="id16">yas/define</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#the-strategy-to-select-a-snippet" id="id16">The strategy to select a snippet</a><ul>
-<li><a class="reference internal" href="#finding-the-key" id="id17">Finding the key</a></li>
-<li><a class="reference internal" href="#the-condition-system" id="id18">The condition system</a></li>
-<li><a class="reference internal" href="#multiple-snippet-with-the-same-key" id="id19">Multiple snippet with the same key</a><ul>
-<li><a class="reference internal" href="#popup-menu" id="id20">Popup Menu</a></li>
-<li><a class="reference internal" href="#just-select-the-first-one" id="id21">Just select the first one</a></li>
-<li><a class="reference internal" href="#use-a-dropdown-menu-el" id="id22">Use a dropdown-menu.el</a></li>
+<li><a class="reference internal" href="#the-strategy-to-select-a-snippet" id="id17">The strategy to select a snippet</a><ul>
+<li><a class="reference internal" href="#finding-the-key" id="id18">Finding the key</a></li>
+<li><a class="reference internal" href="#the-condition-system" id="id19">The condition system</a></li>
+<li><a class="reference internal" href="#multiple-snippet-with-the-same-key" id="id20">Multiple snippet with the same key</a><ul>
+<li><a class="reference internal" href="#use-the-x-window-system" id="id21">Use the X window system</a></li>
+<li><a class="reference internal" href="#use-built-in-emacs-selection-methods" id="id22">Use built-in Emacs selection methods</a></li>
+<li><a class="reference internal" href="#use-dropdown-menu-el" id="id23">Use <tt class="docutils literal"><span class="pre">dropdown-menu.el</span></tt></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#the-trigger-key" id="id23">The Trigger Key</a><ul>
-<li><a class="reference internal" href="#the-minor-mode" id="id24">The Minor Mode</a></li>
-<li><a class="reference internal" href="#the-fallback" id="id25">The Fallback</a></li>
-<li><a class="reference internal" href="#integration-with-hippie-expand" id="id26">Integration with <tt class="docutils literal"><span class="pre">hippie-expand</span></tt></a></li>
+<li><a class="reference internal" href="#the-trigger-key" id="id24">The Trigger Key</a><ul>
+<li><a class="reference internal" href="#the-minor-mode" id="id25">The Minor Mode</a></li>
+<li><a class="reference internal" href="#the-fallback" id="id26">The Fallback</a></li>
+<li><a class="reference internal" href="#integration-with-hippie-expand" id="id27">Integration with <tt class="docutils literal"><span class="pre">hippie-expand</span></tt></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#other-way-to-select-a-snippet" id="id27">Other way to select a snippet</a><ul>
-<li><a class="reference internal" href="#the-menu" id="id28">The Menu</a></li>
-<li><a class="reference internal" href="#expanding-from-elisp-code" id="id29">Expanding From Elisp Code</a></li>
+<li><a class="reference internal" href="#other-way-to-select-a-snippet" id="id28">Other way to select a snippet</a><ul>
+<li><a class="reference internal" href="#yas-insert-snippet" id="id29"><tt class="docutils literal"><span class="pre">yas/insert-snippet</span></tt></a></li>
+<li><a class="reference internal" href="#the-menu" id="id30">The Menu</a></li>
+<li><a class="reference internal" href="#expanding-from-elisp-code" id="id31">Expanding From Elisp Code</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#the-syntax-of-the-template" id="id30">The Syntax of the Template</a><ul>
-<li><a class="reference internal" href="#plain-text" id="id31">Plain Text</a></li>
-<li><a class="reference internal" href="#embedded-elisp-code" id="id32">Embedded elisp code</a></li>
-<li><a class="reference internal" href="#tab-stops" id="id33">Tab Stops</a></li>
-<li><a class="reference internal" href="#placeholders" id="id34">Placeholders</a></li>
-<li><a class="reference internal" href="#id4" id="id35">Mirrors</a></li>
-<li><a class="reference internal" href="#id5" id="id36">Transformations</a></li>
-<li><a class="reference internal" href="#indenting" id="id37">Indenting</a></li>
+<li><a class="reference internal" href="#the-syntax-of-the-template" id="id32">The Syntax of the Template</a><ul>
+<li><a class="reference internal" href="#plain-text" id="id33">Plain Text</a></li>
+<li><a class="reference internal" href="#embedded-elisp-code" id="id34">Embedded elisp code</a></li>
+<li><a class="reference internal" href="#tab-stop-fields" id="id35">Tab stop fields</a></li>
+<li><a class="reference internal" href="#placeholder-fields" id="id36">Placeholder fields</a></li>
+<li><a class="reference internal" href="#id4" id="id37">Mirrors</a></li>
+<li><a class="reference internal" href="#mirrors-with-transformations" id="id38">Mirrors with transformations</a></li>
+<li><a class="reference internal" href="#fields-with-transformations" id="id39">Fields with transformations</a></li>
+<li><a class="reference internal" href="#choosing-fields-value-from-a-list" id="id40">Choosing fields value from a list</a></li>
+<li><a class="reference internal" href="#nested-placeholder-fields" id="id41">Nested placeholder fields</a></li>
+<li><a class="reference internal" href="#indenting" id="id42">Indenting</a></li>
 </ul>
 </li>
 </ul>
@@ -104,9 +110,9 @@ snippets.</p>
 <p>Finally, you can use <tt class="docutils literal"><span class="pre">yas/define</span></tt> to define a single snippet at your
 convenience. I ofthen use this to do some testing.</p>
 <div class="section" id="define-snippets-in-files">
-<h1><a class="toc-backref" href="#id9">Define snippets in files</a></h1>
+<h1><a class="toc-backref" href="#id8">Define snippets in files</a></h1>
 <div class="section" id="directory-hierarchy">
-<h2><a class="toc-backref" href="#id10">Directory hierarchy</a></h2>
+<h2><a class="toc-backref" href="#id9">Directory hierarchy</a></h2>
 <p>Here's the directory hierarchy of the <tt class="docutils literal"><span class="pre">snippets</span></tt> directory comes
 with YASnippet:</p>
 <div class="highlight"><pre>snippets
@@ -218,7 +224,7 @@ whose parent is <tt class="docutils literal"><span class="pre">perl-mode</span><
 dot (<tt class="docutils literal"><span class="pre">.</span></tt>) are ignored.</p>
 </div>
 <div class="section" id="file-content">
-<h2><a class="toc-backref" href="#id11">File content</a></h2>
+<h2><a class="toc-backref" href="#id10">File content</a></h2>
 <p>A file defining a snippet may just contain the template for the
 snippet. Optionally it can also contains some meta data for the
 snippet as well as comments.</p>
@@ -261,12 +267,55 @@ under the <tt class="docutils literal"><span class="pre">loops</span></tt> group
 group.</li>
 </ul>
 </div>
+<div class="section" id="quickly-finding-defining-snippets">
+<h2><a class="toc-backref" href="#id11">Quickly finding/defining snippets</a></h2>
+<p>From version 0.6 upwards there are two ways you can quickly find a
+snippet file. Once you find this file it will be set to
+<tt class="docutils literal"><span class="pre">snippet-mode</span></tt> (see ahead)</p>
+<ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">M-x</span> <span class="pre">yas/find-snippets</span></tt></p>
+<p>Lets you find the snippet file in the directory the snippet was
+loaded from (if it exists) like <tt class="docutils literal"><span class="pre">find-file-other-window</span></tt>.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">M-x</span> <span class="pre">yas/visit-snippet-file</span></tt></p>
+<p>Prompts you for possible snippet expansions like
+<tt class="docutils literal"><span class="pre">yas/insert-snippet</span></tt>, but instead of expanding it, takes you
+directly to the snippet definition's file, if it exists.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="using-the-snippet-mode-major-mode">
+<h2><a class="toc-backref" href="#id12">Using the <tt class="docutils literal"><span class="pre">snippet-mode</span></tt> major mode</a></h2>
+<p>From version 0.6 upwards there is a major mode <tt class="docutils literal"><span class="pre">snippet-mode</span></tt> to
+edit snippets. You can set the buffer to this mode with <tt class="docutils literal"><span class="pre">M-x</span>
+<span class="pre">snippet-mode</span></tt>. It provides reasonably useful syntax highlighting.</p>
+<p>Two commands are defined in this mode:</p>
+<ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">M-x</span> <span class="pre">yas/load-snippet-buffer</span></tt></p>
+<blockquote>
+<p>When editing a snippet, this loads the snippet into the correct
+mode and menu. Bound to <tt class="docutils literal"><span class="pre">C-c</span> <span class="pre">C-c</span></tt> by default while in
+<tt class="docutils literal"><span class="pre">snippet-mode</span></tt>.</p>
+</blockquote>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">M-x</span> <span class="pre">yas/tryout-snippet</span></tt></p>
+<blockquote>
+<p>When editing a snippet, this opens a new empty buffer, sets it to
+the appropriate major mode and inserts the snippet there, so you
+can see what it looks like. This is bound to <tt class="docutils literal"><span class="pre">C-c</span> <span class="pre">C-t</span></tt> while in
+<tt class="docutils literal"><span class="pre">snippet-mode</span></tt>.</p>
+</blockquote>
+</li>
+</ul>
+<p>There are also snippets for making snippets: <tt class="docutils literal"><span class="pre">vars</span></tt>, <tt class="docutils literal"><span class="pre">field</span></tt> and
+<tt class="docutils literal"><span class="pre">mirror</span></tt>.</p>
+</div>
 <div class="section" id="define-snippets-using-elisp-code">
-<h2><a class="toc-backref" href="#id12">Define snippets using elisp code</a></h2>
+<h2><a class="toc-backref" href="#id13">Define snippets using elisp code</a></h2>
 <p>As I mentioned above, you can define snippets directly by writing
 elisp code.</p>
 <div class="section" id="yas-define-snippets">
-<h3><a class="toc-backref" href="#id13">yas/define-snippets</a></h3>
+<h3><a class="toc-backref" href="#id14">yas/define-snippets</a></h3>
 <p>The basic syntax of <tt class="docutils literal"><span class="pre">yas/define-snippets</span></tt> is</p>
 <div class="highlight"><pre>(<span style="color: #19177C">yas/define-snippets</span> <span style="color: #19177C">MODE</span> <span style="color: #19177C">SNIPPETS</span> <span style="color: #008000; font-weight: bold">&amp;optional</span> <span style="color: #19177C">PARENT</span>)
 </pre></div>
@@ -298,14 +347,14 @@ want to provide one. Here's an example:</p>
 <p>The example above is auto-generated code by <tt class="docutils literal"><span class="pre">yas/compile-bundle</span></tt>.</p>
 </div>
 <div class="section" id="yas-compile-bundle">
-<h3><a class="toc-backref" href="#id14">yas/compile-bundle</a></h3>
+<h3><a class="toc-backref" href="#id15">yas/compile-bundle</a></h3>
 <p><tt class="docutils literal"><span class="pre">yas/compile-bundle</span></tt> can be used to parse the snippets from a
 directory hierarchy and translate them into the elisp form. The
 translated code is faster to load. Further more, the generated bundle
 is a stand-alone file not depending on <tt class="docutils literal"><span class="pre">yasnippet.el</span></tt>. The released
 bundles of YASnippet are all generated this way.</p>
 <p>The basic syntax of <tt class="docutils literal"><span class="pre">yas/compile-bundle</span></tt> is</p>
-<div class="highlight"><pre>(<span style="color: #19177C">yas/compile-bundle</span> <span style="color: #008000; font-weight: bold">&amp;optional</span> <span style="color: #19177C">yasnippet</span> <span style="color: #19177C">yasnippet-bundle</span> <span style="color: #19177C">snippet-roots</span> <span style="color: #19177C">code</span>)
+<div class="highlight"><pre>(<span style="color: #19177C">yas/compile-bundle</span> <span style="color: #008000; font-weight: bold">&amp;optional</span> <span style="color: #19177C">yasnippet</span> <span style="color: #19177C">yasnippet-bundle</span> <span style="color: #19177C">snippet-roots</span> <span style="color: #19177C">code</span> <span style="color: #19177C">dropdown</span>)
 </pre></div>
 <p>As you can see, all the parameters are optional. The default values
 for those parameters are convenient for me to produce the default
@@ -313,7 +362,8 @@ release bundle:</p>
 <div class="highlight"><pre>(<span style="color: #19177C">yas/compile-bundle</span> <span style="color: #BA2121">&quot;yasnippet.el&quot;</span>
                     <span style="color: #BA2121">&quot;./yasnippet-bundle.el&quot;</span>
                     <span style="color: #666666">&#39;</span>(<span style="color: #BA2121">&quot;snippets&quot;</span>)
-                    <span style="color: #BA2121">&quot;(yas/initialize)&quot;</span>)
+                    <span style="color: #BA2121">&quot;(yas/initialize)&quot;</span>
+                    <span style="color: #BA2121">&quot;dropdown-list.el&quot;</span>)
 </pre></div>
 <p>The <tt class="docutils literal"><span class="pre">snippet-roots</span></tt> can be a list of root directories. This is
 useful when you have multiple snippet directories (maybe from other
@@ -321,9 +371,11 @@ users). The <tt class="docutils literal"><span class="pre">code</span></tt> para
 customization code instead of the default <tt class="docutils literal"><span class="pre">(yas/initialize)</span></tt>. For
 example, you can set <tt class="docutils literal"><span class="pre">yas/trigger-key</span></tt> to <tt class="docutils literal"><span class="pre">(kbd</span> <span class="pre">&quot;SPC&quot;)</span></tt> here if
 you like.</p>
+<p>From release 0.6 you have to specify the <tt class="docutils literal"><span class="pre">dropdown-list.el</span></tt> file if
+you want it to be a part of the generated bundle.</p>
 </div>
 <div class="section" id="yas-define">
-<h3><a class="toc-backref" href="#id15">yas/define</a></h3>
+<h3><a class="toc-backref" href="#id16">yas/define</a></h3>
 <p>The basic syntax for <tt class="docutils literal"><span class="pre">yas/define</span></tt> is</p>
 <div class="highlight"><pre>(<span style="color: #19177C">yas/define</span> <span style="color: #19177C">mode</span> <span style="color: #19177C">key</span> <span style="color: #19177C">template</span> <span style="color: #008000; font-weight: bold">&amp;optional</span> <span style="color: #19177C">name</span> <span style="color: #B00040">condition</span> <span style="color: #19177C">group</span>)
 </pre></div>
@@ -335,12 +387,12 @@ you like.</p>
 </div>
 </div>
 <div class="section" id="the-strategy-to-select-a-snippet">
-<h1><a class="toc-backref" href="#id16">The strategy to select a snippet</a></h1>
+<h1><a class="toc-backref" href="#id17">The strategy to select a snippet</a></h1>
 <p>When user press the <tt class="docutils literal"><span class="pre">yas/trigger-key</span></tt>, YASnippet try to find a
 proper snippet to expand. The strategy to find such a snippet is
 explained here.</p>
 <div class="section" id="finding-the-key">
-<h2><a class="toc-backref" href="#id17">Finding the key</a></h2>
+<h2><a class="toc-backref" href="#id18">Finding the key</a></h2>
 <p>YASnippet search from current point backward trying to find the
 snippet to be expanded. The default searching strategy is quite
 powerful. For example, in <tt class="docutils literal"><span class="pre">c-mode</span></tt>, <tt class="docutils literal"><span class="pre">&quot;bar&quot;</span></tt>, <tt class="docutils literal"><span class="pre">&quot;foo_bar&quot;</span></tt>,
@@ -362,7 +414,7 @@ following thing until found one:</p>
 Emacs's syntax rule mean.</p>
 </div>
 <div class="section" id="the-condition-system">
-<h2><a class="toc-backref" href="#id18">The condition system</a></h2>
+<h2><a class="toc-backref" href="#id19">The condition system</a></h2>
 <p>I write forked snippet.el to make the smart-snippet.el. I call it
 <em>smart</em>-snippet because a condition can be attached to a snippet. This
 is really a good idea. However, writing condition for a snippet
@@ -426,7 +478,7 @@ can be expanded as you expected, while other snippets like <tt class="docutils l
 still can't expanded in comment.</p>
 </div>
 <div class="section" id="multiple-snippet-with-the-same-key">
-<h2><a class="toc-backref" href="#id19">Multiple snippet with the same key</a></h2>
+<h2><a class="toc-backref" href="#id20">Multiple snippet with the same key</a></h2>
 <p>There can be multiple snippet bind to the same key. If you define a
 snippet with a key that is already used, you'll overwrite the original
 snippet definition. However, you can add a different <em>postfix</em> to the
@@ -437,20 +489,21 @@ valid candidates when the key is <tt class="docutils literal"><span class="pre">
 <p>When there are multiple candidates, YASnippet will let you select
 one. The UI for selecting multiple candidate can be
 customized. There're two variable related:</p>
-<ul class="simple">
-<li><tt class="docutils literal"><span class="pre">yas/window-system-popup-function</span></tt>: the function used when you
-have a window system.</li>
-<li><tt class="docutils literal"><span class="pre">yas/text-popup-function</span></tt>: the function used when you don't have a
-window system, i.e. when you are working in a terminal.</li>
-</ul>
-<blockquote>
-Currently there're three solution come with YASnippet.</blockquote>
+<p>From version 0.6 of YASnippet this has changed significantly. A
+customization variable, called <tt class="docutils literal"><span class="pre">yas/prompt-functions</span></tt> defines your
+preferred method of being prompted for snippets.</p>
+<p>You can customize it with <tt class="docutils literal"><span class="pre">M-x</span> <span class="pre">customize-variable</span> <span class="pre">RET</span>
+<span class="pre">yas/prompt-functions</span> <span class="pre">RET</span></tt>. Alternatively you can put in your
+emacs-file:</p>
+<div class="highlight"><pre>(<span style="color: #008000; font-weight: bold">setq</span> <span style="color: #19177C">yas/prompt-functions</span> <span style="color: #666666">&#39;</span>(<span style="color: #19177C">yas/x-prompt</span> <span style="color: #19177C">yas/dropdown-prompt</span>))
+</pre></div>
+<p>Currently there are some alternatives solution with YASnippet.</p>
 <img align="right" alt="images/popup-menu.png" class="align-right" src="images/popup-menu.png" />
-<div class="section" id="popup-menu">
-<h3><a class="toc-backref" href="#id20">Popup Menu</a></h3>
-<p>The function <tt class="docutils literal"><span class="pre">yas/x-popup-menu-for-template</span></tt> can be used to show a
-popup menu for you to select. This menu will be part of you native
-window system widget, which means:</p>
+<div class="section" id="use-the-x-window-system">
+<h3><a class="toc-backref" href="#id21">Use the X window system</a></h3>
+<p>The function <tt class="docutils literal"><span class="pre">yas/x-prompt</span></tt> can be used to show a popup menu for you
+to select. This menu will be part of you native window system widget,
+which means:</p>
 <ul class="simple">
 <li>It usually looks beautiful. E.g. when you compile Emacs with gtk
 support, this menu will be rendered with your gtk theme.</li>
@@ -459,14 +512,17 @@ support, this menu will be rendered with your gtk theme.</li>
 <li>This function can't be used when in a terminal.</li>
 </ul>
 </div>
-<div class="section" id="just-select-the-first-one">
-<h3><a class="toc-backref" href="#id21">Just select the first one</a></h3>
-<p>This one is originally used in terminal mode. It doesn't let you to
-choose anything, it just select the first one on behalf of you. So I
-bet you never want to use this. :p</p>
+<div class="section" id="use-built-in-emacs-selection-methods">
+<h3><a class="toc-backref" href="#id22">Use built-in Emacs selection methods</a></h3>
+<p>You can use functions <tt class="docutils literal"><span class="pre">yas/completing-prompt</span></tt> for the classic emacs
+completion method or <tt class="docutils literal"><span class="pre">yas/ido-prompt</span></tt> for a much nicer looking
+method. The best way is to try it. This works in a terminal.</p>
+<div align="center" class="align-center"><img alt="images/idrop-menu.png" class="align-center" src="images/idrop-menu.png" /></div>
 </div>
-<div class="section" id="use-a-dropdown-menu-el">
-<h3><a class="toc-backref" href="#id22">Use a dropdown-menu.el</a></h3>
+<div class="section" id="use-dropdown-menu-el">
+<h3><a class="toc-backref" href="#id23">Use <tt class="docutils literal"><span class="pre">dropdown-menu.el</span></tt></a></h3>
+<p>The function <tt class="docutils literal"><span class="pre">yas/dropdown-prompt</span></tt> can also be placed in the
+<tt class="docutils literal"><span class="pre">yas/prompt-functions</span></tt> list.</p>
 <img align="right" alt="images/dropdown-menu.png" class="align-right" src="images/dropdown-menu.png" />
 <p>Originally, only the above two function is available in
 YASnippet. They are difficult to use -- especially in a
@@ -482,7 +538,7 @@ candidate.</li>
 <tt class="docutils literal"><span class="pre">dropdown-list.el</span></tt>. And upload <tt class="docutils literal"><span class="pre">dropdown-list.el</span></tt> to YASnippet
 hompage for an optional download (since Jaeyoun didn't provide a URL).</p>
 <p>Then finally, in 0.4.0, I included a copy of the content of
-<tt class="docutils literal"><span class="pre">dropdown-list.el</span></tt> <a class="footnote-reference" href="#id6" id="id1">[1]</a> in <tt class="docutils literal"><span class="pre">yasnippet.el</span></tt> and made it the default
+<tt class="docutils literal"><span class="pre">dropdown-list.el</span></tt> <a class="footnote-reference" href="#id5" id="id1">[1]</a> in <tt class="docutils literal"><span class="pre">yasnippet.el</span></tt> and made it the default
 way for selecting multiple candidates.</p>
 <p>However, the original functions are still there, you can still use this</p>
 <div class="highlight"><pre>(<span style="color: #008000; font-weight: bold">setq</span> <span style="color: #19177C">yas/window-system-popup-function</span>
@@ -492,17 +548,18 @@ way for selecting multiple candidates.</p>
 </div>
 </div>
 <div class="section" id="the-trigger-key">
-<h2><a class="toc-backref" href="#id23">The Trigger Key</a></h2>
+<h2><a class="toc-backref" href="#id24">The Trigger Key</a></h2>
 <p>YASnippet is implemented as a minor-mode (<tt class="docutils literal"><span class="pre">yas/minor-mode</span></tt>). The
 trigger key <tt class="docutils literal"><span class="pre">yas/trigger-key</span></tt> is defined in <tt class="docutils literal"><span class="pre">yas/minor-mode-map</span></tt>
 to call <tt class="docutils literal"><span class="pre">yas/expand</span></tt> to try to expand a snippet.</p>
 <div class="section" id="the-minor-mode">
-<h3><a class="toc-backref" href="#id24">The Minor Mode</a></h3>
+<h3><a class="toc-backref" href="#id25">The Minor Mode</a></h3>
 <img align="left" alt="images/minor-mode-indicator.png" class="align-left" src="images/minor-mode-indicator.png" />
 <p>When <tt class="docutils literal"><span class="pre">yas/minor-mode</span></tt> is enabled, the trigger key will take
 effect. The default key is <tt class="docutils literal"><span class="pre">(kbd</span> <span class="pre">&quot;TAB&quot;)</span></tt>, however, you can freely
-set it to some other key. By default, YASnippet add a hook to
-<tt class="docutils literal"><span class="pre">after-change-major-mode-hook</span></tt> to enable <tt class="docutils literal"><span class="pre">yas/minor-mode</span></tt> <a class="footnote-reference" href="#id7" id="id2">[2]</a> in
+set it to some other key.</p>
+<p>In version 0.5, YASnippet add a hook to
+<tt class="docutils literal"><span class="pre">after-change-major-mode-hook</span></tt> to enable <tt class="docutils literal"><span class="pre">yas/minor-mode</span></tt> <a class="footnote-reference" href="#id6" id="id2">[2]</a> in
 every buffer. This works fine for most modes, however, some mode
 doesn't follow the Emacs convention and doens't call this hook. You
 can either explicitly hook for those mode or just add it to
@@ -515,9 +572,12 @@ can either explicitly hook for those mode or just add it to
 <p>Note that <strong>should</strong> be put after <tt class="docutils literal"><span class="pre">(require</span> <span class="pre">'yasnippet)</span></tt> and before
 <tt class="docutils literal"><span class="pre">(yas/initialize)</span></tt>. Further more, you may report it to me, I'll add
 that to the default value.</p>
+<p>In version 0.6, just use <tt class="docutils literal"><span class="pre">yas/global-mode</span></tt> to enable YASnippet in
+all major modes. Or put <tt class="docutils literal"><span class="pre">yas/minor-mode-on</span></tt> in that modes hook. See
+the <a class="reference external" href="faq.html">FAQ</a>.</p>
 </div>
 <div class="section" id="the-fallback">
-<h3><a class="toc-backref" href="#id25">The Fallback</a></h3>
+<h3><a class="toc-backref" href="#id26">The Fallback</a></h3>
 <p>If <tt class="docutils literal"><span class="pre">yas/expand</span></tt> failed to find any suitable snippet to expand, it
 will disable the minor mode temporarily and find if there's any other
 command bind the <tt class="docutils literal"><span class="pre">yas/trigger-key</span></tt>. If found, the command will be
@@ -533,7 +593,7 @@ e.g. <tt class="docutils literal"><span class="pre">hippie-expand</span></tt>. I
 with <tt class="docutils literal"><span class="pre">hippie-expand</span></tt> is already included in YASnippet.</p>
 </div>
 <div class="section" id="integration-with-hippie-expand">
-<h3><a class="toc-backref" href="#id26">Integration with <tt class="docutils literal"><span class="pre">hippie-expand</span></tt></a></h3>
+<h3><a class="toc-backref" href="#id27">Integration with <tt class="docutils literal"><span class="pre">hippie-expand</span></tt></a></h3>
 <p>To integrate with <tt class="docutils literal"><span class="pre">hippie-expand</span></tt>, just put
 <tt class="docutils literal"><span class="pre">yas/hippie-try-expand</span></tt> in
 <tt class="docutils literal"><span class="pre">hippie-expand-try-functions-list</span></tt>. Personally I would like to put
@@ -541,13 +601,26 @@ in front of the list, but it can be put anywhere you prefer.</p>
 </div>
 </div>
 <div class="section" id="other-way-to-select-a-snippet">
-<h2><a class="toc-backref" href="#id27">Other way to select a snippet</a></h2>
+<h2><a class="toc-backref" href="#id28">Other way to select a snippet</a></h2>
 <p>When you use the trigger key (so <tt class="docutils literal"><span class="pre">yas/expand</span></tt>) to expand a snippet,
 the key for the snippet is deleted before the template for the snippet
 is inserted.</p>
 <p>However, there're other ways to insert a snippet.</p>
+<div class="section" id="yas-insert-snippet">
+<h3><a class="toc-backref" href="#id29"><tt class="docutils literal"><span class="pre">yas/insert-snippet</span></tt></a></h3>
+<p>The command <tt class="docutils literal"><span class="pre">M-x</span> <span class="pre">yas/insert-snippet</span></tt> lets you insert snippets at
+point <em>for you current major mode</em>. It prompts you for the snippet
+key first, and then for a snippet template if more than one template
+exists for the same key.</p>
+<p>The list presented contains the snippets that can be inserted at
+point, according to the condition system. If you want to see all
+applicable snippets for the major mode, prefix this command with
+<tt class="docutils literal"><span class="pre">C-u</span></tt>.</p>
+<p>The prompting methods used are again controlled by
+<tt class="docutils literal"><span class="pre">yas/prompt-functions</span></tt>.</p>
+</div>
 <div class="section" id="the-menu">
-<h3><a class="toc-backref" href="#id28">The Menu</a></h3>
+<h3><a class="toc-backref" href="#id30">The Menu</a></h3>
 <p>YASnippet will setup a menu just after the <em>Buffers</em> Menu in the
 menubar. The snippets for all <em>real</em> modes are listed there under the
 menu. You can select a snippet from the menu to expand it. Since you
@@ -579,7 +652,7 @@ maintain a list of known modes (<tt class="docutils literal"><span class="pre">y
 to that list if you need.</p>
 </div>
 <div class="section" id="expanding-from-elisp-code">
-<h3><a class="toc-backref" href="#id29">Expanding From Elisp Code</a></h3>
+<h3><a class="toc-backref" href="#id31">Expanding From Elisp Code</a></h3>
 <p>Sometimes you might want to expand a snippet directly by calling a
 functin from elisp code. You should call <tt class="docutils literal"><span class="pre">yas/expand-snippet</span></tt>
 instead of <tt class="docutils literal"><span class="pre">yas/expand</span></tt> in this case.</p>
@@ -600,18 +673,18 @@ also indicate where to insert and expand the <tt class="docutils literal"><span 
 </div>
 </div>
 <div class="section" id="the-syntax-of-the-template">
-<h1><a class="toc-backref" href="#id30">The Syntax of the Template</a></h1>
+<h1><a class="toc-backref" href="#id32">The Syntax of the Template</a></h1>
 <p>The syntax of the snippet template is simple but powerful, very
 similar to TextMate's.</p>
 <div class="section" id="plain-text">
-<h2><a class="toc-backref" href="#id31">Plain Text</a></h2>
+<h2><a class="toc-backref" href="#id33">Plain Text</a></h2>
 <p>Arbitrary text can be included as the content of a template. They are
 usually interpreted as plain text, except <tt class="docutils literal"><span class="pre">$</span></tt> and <tt class="docutils literal"><span class="pre">`</span></tt>. You need to
 use <tt class="docutils literal"><span class="pre">\</span></tt> to escape them: <tt class="docutils literal"><span class="pre">\$</span></tt> and <tt class="docutils literal"><span class="pre">\`</span></tt>. The <tt class="docutils literal"><span class="pre">\</span></tt> itself may also
 needed to be escaped as <tt class="docutils literal"><span class="pre">\\</span></tt> sometimes.</p>
 </div>
 <div class="section" id="embedded-elisp-code">
-<h2><a class="toc-backref" href="#id32">Embedded elisp code</a></h2>
+<h2><a class="toc-backref" href="#id34">Embedded elisp code</a></h2>
 <p>Elisp code can be embedded inside the template. They are written
 inside back-quotes (<tt class="docutils literal"><span class="pre">`</span></tt>):</p>
 <p>They are evaluated when the snippet is being expanded. The evaluation
@@ -624,11 +697,21 @@ $0
 
 #endif /* $1 */
 </pre></div>
+<p>From version 0.6.0, snippets expansions are run with some special
+emacs-lisp variables bound. One of this is <tt class="docutils literal"><span class="pre">yas/selected-text</span></tt>. You
+can therefore define a snippet like:</p>
+<div class="highlight"><pre>for ($1;$2;$3) {
+  `yas/selected-text`$0
+}
+</pre></div>
+<p>to &quot;wrap&quot; the selected region inside your recently inserted
+snippet. Alternatively, you can also customize the variable
+<tt class="docutils literal"><span class="pre">yas/wrap-around-region</span></tt> to <tt class="docutils literal"><span class="pre">t</span></tt> which will do this automatically.</p>
 </div>
-<div class="section" id="tab-stops">
-<h2><a class="toc-backref" href="#id33">Tab Stops</a></h2>
+<div class="section" id="tab-stop-fields">
+<h2><a class="toc-backref" href="#id35">Tab stop fields</a></h2>
 <p>Tab stops are fields that you can navigate back and forth by <tt class="docutils literal"><span class="pre">TAB</span></tt>
-and <tt class="docutils literal"><span class="pre">S-TAB</span></tt> <a class="footnote-reference" href="#id8" id="id3">[3]</a>. They are written by <tt class="docutils literal"><span class="pre">$</span></tt> followed with a
+and <tt class="docutils literal"><span class="pre">S-TAB</span></tt> <a class="footnote-reference" href="#id7" id="id3">[3]</a>. They are written by <tt class="docutils literal"><span class="pre">$</span></tt> followed with a
 number. <tt class="docutils literal"><span class="pre">$0</span></tt> has the special meaning of the <em>exit point</em> of a
 snippet. That is the last place to go when you've traveled all the
 fields. Here's a typical example:</p>
@@ -637,8 +720,8 @@ fields. Here's a typical example:</p>
 &lt;/div&gt;
 </pre></div>
 </div>
-<div class="section" id="placeholders">
-<h2><a class="toc-backref" href="#id34">Placeholders</a></h2>
+<div class="section" id="placeholder-fields">
+<h2><a class="toc-backref" href="#id36">Placeholder fields</a></h2>
 <p>Tab stops can have default values -- a.k.a placeholders. The syntax is
 like this:</p>
 <div class="highlight"><pre>${N:default value}
@@ -649,7 +732,7 @@ typing. The number can be omitted if you don't want to create
 <a class="reference internal" href="#mirrors">mirrors</a> or <a class="reference internal" href="#transformations">transformations</a> for this field.</p>
 </div>
 <div class="section" id="id4">
-<span id="mirrors"></span><h2><a class="toc-backref" href="#id35">Mirrors</a></h2>
+<span id="mirrors"></span><h2><a class="toc-backref" href="#id37">Mirrors</a></h2>
 <p>We refer the tab stops with placeholders as a <em>field</em>. A field can have
 mirrors. Its mirrors will get updated when you change the text of a
 field. Here's an example:</p>
@@ -664,8 +747,8 @@ explanation is to see the screencast(<a class="reference external" href="http://
 none of the tab stops has an initial value, the first one is selected
 as the field and others mirrors.</p>
 </div>
-<div class="section" id="id5">
-<span id="transformations"></span><h2><a class="toc-backref" href="#id36">Transformations</a></h2>
+<div class="section" id="mirrors-with-transformations">
+<span id="transformations"></span><h2><a class="toc-backref" href="#id38">Mirrors with transformations</a></h2>
 <p>If the default value of a field starts with <tt class="docutils literal"><span class="pre">$</span></tt>, then it is interpreted
 as the transformation code instead of default value. A transformation
 is some arbitrary elisp code that will get evaluated in an environment
@@ -709,27 +792,81 @@ ${1:$(make-string (string-width text) ?\=)}
 
 $0
 </pre></div>
-<table class="docutils footnote" frame="void" id="id6" rules="none">
+<table class="docutils footnote" frame="void" id="id5" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
 <tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>With some minor change, mainly for fixing some trivial bugs.</td></tr>
 </tbody>
 </table>
-<table class="docutils footnote" frame="void" id="id7" rules="none">
+<table class="docutils footnote" frame="void" id="id6" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
 <tr><td class="label"><a class="fn-backref" href="#id2">[2]</a></td><td>This is done when you call <tt class="docutils literal"><span class="pre">yas/initialize</span></tt>.</td></tr>
 </tbody>
 </table>
-<table class="docutils footnote" frame="void" id="id8" rules="none">
+<table class="docutils footnote" frame="void" id="id7" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
 <tr><td class="label"><a class="fn-backref" href="#id3">[3]</a></td><td>Of course, this can be customized.</td></tr>
 </tbody>
 </table>
 </div>
+<div class="section" id="fields-with-transformations">
+<h2><a class="toc-backref" href="#id39">Fields with transformations</a></h2>
+<p>From version 0.6 on, you can also have lisp transformation inside
+fields. These work mostly mirror transformations but are evaluated
+when you first enter the field, after each change you make to the
+field and also just before you exit the field.</p>
+<p>The syntax is also a tiny bit different, so that the parser can
+distinguish between fields and mirrors. In the following example</p>
+<div class="highlight"><pre>#define &quot;${1:mydefine$(upcase yas/text)}&quot;
+</pre></div>
+<p><tt class="docutils literal"><span class="pre">mydefine</span></tt> gets automatically upcased to <tt class="docutils literal"><span class="pre">MYDEFINE</span></tt> once you enter
+the field. As you type text, it gets filtered through the
+transformation every time.</p>
+<p>Note that this is differentiated from a mirror with a transformation
+by the existance of extra text between the <tt class="docutils literal"><span class="pre">:</span></tt> and the
+transformation's <tt class="docutils literal"><span class="pre">$</span></tt>. If you don't want this extra-text, you can use
+two <tt class="docutils literal"><span class="pre">$</span></tt>'s instead.</p>
+<div class="highlight"><pre>#define &quot;${1:$$(upcase yas/text)}&quot;
+</pre></div>
+<p>Please note that as soon as a transformation takes place, it changes
+the value of the field and sets it its internal modification state to
+<tt class="docutils literal"><span class="pre">true</span></tt>. As a consequence, the auto-deletion behaviour of normal
+fields does not take place. This is by design.</p>
+</div>
+<div class="section" id="choosing-fields-value-from-a-list">
+<h2><a class="toc-backref" href="#id40">Choosing fields value from a list</a></h2>
+<p>As mentioned, the field transformation is invoked just after you enter
+the field, and with some useful variables bound, notably
+<tt class="docutils literal"><span class="pre">yas/field-modified-p</span></tt> and <tt class="docutils literal"><span class="pre">yas/moving-away-p</span></tt>. Because of this
+feature you can place a transformation in the primary field that lets
+you select default values for it.</p>
+<p>The <tt class="docutils literal"><span class="pre">yas/choose-value</span></tt> does this work for you. For example:</p>
+<div class="highlight"><pre>&lt;div align=&quot;${2:$$(yas/choose-value &#39;(&quot;right&quot; &quot;center&quot; &quot;left&quot;))}&quot;&gt;
+  $0
+&lt;/div&gt;
+</pre></div>
+<p>See the definition of <tt class="docutils literal"><span class="pre">yas/choose-value</span></tt> to see how it was written
+using the two variables. Also check out <tt class="docutils literal"><span class="pre">yas/verify-value</span></tt> for
+another neat trick.</p>
+</div>
+<div class="section" id="nested-placeholder-fields">
+<h2><a class="toc-backref" href="#id41">Nested placeholder fields</a></h2>
+<p>From version 0.6 on, you can also have nested placeholders of the type:</p>
+<div class="highlight"><pre>&lt;div${1: id=&quot;${2:some_id}&quot;}&gt;$0&lt;/div&gt;
+</pre></div>
+<p>This allows you to choose if you want to give this <tt class="docutils literal"><span class="pre">div</span></tt> an <tt class="docutils literal"><span class="pre">id</span></tt>
+attribute. If you tab forward after expanding it will let you change
+&quot;some_id&quot; to whatever you like. Alternatively, you can just press
+<tt class="docutils literal"><span class="pre">C-d</span></tt> (which executes <tt class="docutils literal"><span class="pre">yas/skip-and-clear-or-delete-char</span></tt>) and go
+straight to the exit marker.</p>
+<p>By the way, <tt class="docutils literal"><span class="pre">C-d</span></tt> will only clear the field if you cursor is at the
+beginning of the field <em>and</em> it hasn't been changed yet. Otherwise, it
+performs the normal Emacs <tt class="docutils literal"><span class="pre">delete-char</span></tt> command.</p>
+</div>
 <div class="section" id="indenting">
-<h2><a class="toc-backref" href="#id37">Indenting</a></h2>
+<h2><a class="toc-backref" href="#id42">Indenting</a></h2>
 <p>Many people miss the indenting feature of smart-snippet: when you
 place a <tt class="docutils literal"><span class="pre">$&gt;</span></tt> in your snippet, an <tt class="docutils literal"><span class="pre">(indent-according-to-mode)</span></tt> will
 be executed there to indent the line. So you'll not need to hard-code
@@ -747,6 +884,9 @@ this to YASnippet. Here's an example of the usage:</p>
 $0$&gt;
 }$&gt;
 </pre></div>
+<p>In 0.6.0 You should <strong>not</strong> need to use this feature although it's
+supported for backward compatibility. Just set <tt class="docutils literal"><span class="pre">yas/indent-line</span></tt> to
+<tt class="docutils literal"><span class="pre">'auto</span></tt>.</p>
 </div>
 </div>
 	  </div>

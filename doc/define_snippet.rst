@@ -2,9 +2,9 @@
 How to define a snippet ?
 =========================
 
-:Author: pluskid
+:Author: pluskid, joaotavora
 :Contact: pluskid@gmail.com
-:Date: 2008-03-20
+:Date: 2009-07-24
 
 .. contents::
 
@@ -202,7 +202,49 @@ ignored. Here's a list of currently supported meta data:
   under the ``loops`` group which is under the ``control structure``
   group.
 
+Quickly finding/defining snippets
+---------------------------------
 
+From version 0.6 upwards there are two ways you can quickly find a
+snippet file. Once you find this file it will be set to
+``snippet-mode`` (see ahead)
+
+* ``M-x yas/find-snippets``
+
+  Lets you find the snippet file in the directory the snippet was
+  loaded from (if it exists) like ``find-file-other-window``. 
+
+* ``M-x yas/visit-snippet-file``
+
+  Prompts you for possible snippet expansions like
+  ``yas/insert-snippet``, but instead of expanding it, takes you
+  directly to the snippet definition's file, if it exists.
+
+
+Using the ``snippet-mode`` major mode
+-------------------------------------
+
+From version 0.6 upwards there is a major mode ``snippet-mode`` to
+edit snippets. You can set the buffer to this mode with ``M-x
+snippet-mode``. It provides reasonably useful syntax highlighting.
+
+Two commands are defined in this mode:
+
+* ``M-x yas/load-snippet-buffer``                                     
+                                                                
+    When editing a snippet, this loads the snippet into the correct
+    mode and menu. Bound to ``C-c C-c`` by default while in
+    ``snippet-mode``.
+                                                                
+* ``M-x yas/tryout-snippet``                                          
+                                                                
+    When editing a snippet, this opens a new empty buffer, sets it to
+    the appropriate major mode and inserts the snippet there, so you
+    can see what it looks like. This is bound to ``C-c C-t`` while in
+    ``snippet-mode``.
+    
+There are also snippets for making snippets: ``vars``, ``field`` and
+``mirror``.
 
 Define snippets using elisp code
 --------------------------------
@@ -266,7 +308,7 @@ The basic syntax of ``yas/compile-bundle`` is
 
 .. sourcecode:: common-lisp
 
-  (yas/compile-bundle &optional yasnippet yasnippet-bundle snippet-roots code)
+  (yas/compile-bundle &optional yasnippet yasnippet-bundle snippet-roots code dropdown)
 
 As you can see, all the parameters are optional. The default values
 for those parameters are convenient for me to produce the default
@@ -277,7 +319,8 @@ release bundle:
   (yas/compile-bundle "yasnippet.el"
                       "./yasnippet-bundle.el"
                       '("snippets")
-                      "(yas/initialize)")
+                      "(yas/initialize)"
+		      "dropdown-list.el")
 
 The ``snippet-roots`` can be a list of root directories. This is
 useful when you have multiple snippet directories (maybe from other
@@ -285,6 +328,9 @@ users). The ``code`` parameter can be used to specify your own
 customization code instead of the default ``(yas/initialize)``. For
 example, you can set ``yas/trigger-key`` to ``(kbd "SPC")`` here if
 you like.
+
+From release 0.6 you have to specify the ``dropdown-list.el`` file if
+you want it to be a part of the generated bundle.
 
 yas/define
 ~~~~~~~~~~
@@ -419,22 +465,29 @@ When there are multiple candidates, YASnippet will let you select
 one. The UI for selecting multiple candidate can be
 customized. There're two variable related:
 
-* ``yas/window-system-popup-function``: the function used when you
-  have a window system.
-* ``yas/text-popup-function``: the function used when you don't have a
-  window system, i.e. when you are working in a terminal.
+From version 0.6 of YASnippet this has changed significantly. A new
+customization variable, called ``yas/prompt-functions`` defines your
+preferred method of being prompted for snippets.
 
- Currently there're three solution come with YASnippet.
+You can customize it with ``M-x customize-variable RET
+yas/prompt-functions RET``. Alternatively you can put in your
+emacs-file:
+
+.. sourcecode:: common-lisp
+   
+   (setq yas/prompt-functions '(yas/x-prompt yas/dropdown-prompt))
+
+Currently there are some alternatives solution with YASnippet.
 
 .. image:: images/popup-menu.png
    :align: right
 
-Popup Menu
-~~~~~~~~~~
+Use the X window system
+~~~~~~~~~~~~~~~~~~~~~~~
 
-The function ``yas/x-popup-menu-for-template`` can be used to show a
-popup menu for you to select. This menu will be part of you native
-window system widget, which means:
+The function ``yas/x-prompt`` can be used to show a popup menu for you
+to select. This menu will be part of you native window system widget,
+which means:
 
 * It usually looks beautiful. E.g. when you compile Emacs with gtk
   support, this menu will be rendered with your gtk theme.
@@ -442,15 +495,21 @@ window system widget, which means:
   ``C-p`` to navigate.
 * This function can't be used when in a terminal.
 
-Just select the first one
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Use built-in Emacs selection methods
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This one is originally used in terminal mode. It doesn't let you to
-choose anything, it just select the first one on behalf of you. So I
-bet you never want to use this. :p
+You can use functions ``yas/completing-prompt`` for the classic emacs
+completion method or ``yas/ido-prompt`` for a much nicer looking
+method. The best way is to try it. This works in a terminal.
 
-Use a dropdown-menu.el
-~~~~~~~~~~~~~~~~~~~~~~
+.. image:: images/idrop-menu.png
+   :align: center
+
+Use ``dropdown-menu.el``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The function ``yas/dropdown-prompt`` can also be placed in the
+``yas/prompt-functions`` list.
 
 .. image:: images/dropdown-menu.png
    :align: right
@@ -497,7 +556,9 @@ The Minor Mode
 
 When ``yas/minor-mode`` is enabled, the trigger key will take
 effect. The default key is ``(kbd "TAB")``, however, you can freely
-set it to some other key. By default, YASnippet add a hook to
+set it to some other key. 
+
+In version 0.5, YASnippet add a hook to
 ``after-change-major-mode-hook`` to enable ``yas/minor-mode`` [2]_ in
 every buffer. This works fine for most modes, however, some mode
 doesn't follow the Emacs convention and doens't call this hook. You
@@ -514,6 +575,10 @@ can either explicitly hook for those mode or just add it to
 Note that **should** be put after ``(require 'yasnippet)`` and before
 ``(yas/initialize)``. Further more, you may report it to me, I'll add
 that to the default value.
+
+In version 0.6, just use ``yas/global-mode`` to enable YASnippet in
+all major modes. Or put ``yas/minor-mode-on`` in that modes hook. See
+the `FAQ <faq.html>`_.
 
 The Fallback
 ~~~~~~~~~~~~
@@ -549,6 +614,22 @@ the key for the snippet is deleted before the template for the snippet
 is inserted. 
 
 However, there're other ways to insert a snippet.
+
+``yas/insert-snippet``
+~~~~~~~~~~~~~~~~~~~~~~
+
+The command ``M-x yas/insert-snippet`` lets you insert snippets at
+point *for you current major mode*. It prompts you for the snippet
+key first, and then for a snippet template if more than one template
+exists for the same key.
+
+The list presented contains the snippets that can be inserted at
+point, according to the condition system. If you want to see all
+applicable snippets for the major mode, prefix this command with
+``C-u``.
+
+The prompting methods used are again controlled by
+``yas/prompt-functions``.
 
 The Menu
 ~~~~~~~~
@@ -644,8 +725,22 @@ example for ``c-mode`` to calculate the header file guard dynamically:
   
   #endif /* $1 */
 
-Tab Stops
----------
+From version 0.6.0, snippets expansions are run with some special
+emacs-lisp variables bound. One of this is ``yas/selected-text``. You
+can therefore define a snippet like:
+
+.. sourcecode:: text
+
+   for ($1;$2;$3) {
+     `yas/selected-text`$0
+   }
+
+to "wrap" the selected region inside your recently inserted
+snippet. Alternatively, you can also customize the variable
+``yas/wrap-around-region`` to ``t`` which will do this automatically.
+
+Tab stop fields
+---------------
 
 Tab stops are fields that you can navigate back and forth by ``TAB``
 and ``S-TAB`` [3]_. They are written by ``$`` followed with a
@@ -659,8 +754,8 @@ fields. Here's a typical example:
       $0
   </div>
 
-Placeholders
-------------
+Placeholder fields
+------------------
 
 Tab stops can have default values -- a.k.a placeholders. The syntax is
 like this:
@@ -701,8 +796,8 @@ as the field and others mirrors.
 
 .. _transformations:
 
-Transformations
----------------
+Mirrors with transformations
+----------------------------
 
 If the default value of a field starts with ``$``, then it is interpreted
 as the transformation code instead of default value. A transformation
@@ -764,6 +859,79 @@ is not. Here's an snippet for rst title:
 .. [2] This is done when you call ``yas/initialize``.
 .. [3] Of course, this can be customized.
 
+Fields with transformations
+---------------------------
+
+From version 0.6 on, you can also have lisp transformation inside
+fields. These work mostly mirror transformations but are evaluated
+when you first enter the field, after each change you make to the
+field and also just before you exit the field.
+
+The syntax is also a tiny bit different, so that the parser can
+distinguish between fields and mirrors. In the following example
+
+.. sourcecode:: text
+
+  #define "${1:mydefine$(upcase yas/text)}"
+
+``mydefine`` gets automatically upcased to ``MYDEFINE`` once you enter
+the field. As you type text, it gets filtered through the
+transformation every time.
+
+Note that this is differentiated from a mirror with a transformation
+by the existance of extra text between the ``:`` and the
+transformation's ``$``. If you don't want this extra-text, you can use
+two ``$``'s instead.
+
+.. sourcecode:: text
+
+  #define "${1:$$(upcase yas/text)}"
+
+Please note that as soon as a transformation takes place, it changes
+the value of the field and sets it its internal modification state to
+``true``. As a consequence, the auto-deletion behaviour of normal
+fields does not take place. This is by design.
+
+Choosing fields value from a list
+---------------------------------
+
+As mentioned, the field transformation is invoked just after you enter
+the field, and with some useful variables bound, notably
+``yas/field-modified-p`` and ``yas/moving-away-p``. Because of this
+feature you can place a transformation in the primary field that lets
+you select default values for it. 
+
+The ``yas/choose-value`` does this work for you. For example:
+ 
+.. sourcecode:: text
+
+   <div align="${2:$$(yas/choose-value '("right" "center" "left"))}">
+     $0
+   </div>
+  
+See the definition of ``yas/choose-value`` to see how it was written
+using the two variables. Also check out ``yas/verify-value`` for
+another neat trick.
+
+Nested placeholder fields
+-------------------------
+
+From version 0.6 on, you can also have nested placeholders of the type:
+
+.. sourcecode:: text
+
+   <div${1: id="${2:some_id}"}>$0</div>
+
+This allows you to choose if you want to give this ``div`` an ``id``
+attribute. If you tab forward after expanding it will let you change
+"some_id" to whatever you like. Alternatively, you can just press
+``C-d`` (which executes ``yas/skip-and-clear-or-delete-char``) and go
+straight to the exit marker. 
+
+By the way, ``C-d`` will only clear the field if you cursor is at the
+beginning of the field *and* it hasn't been changed yet. Otherwise, it
+performs the normal Emacs ``delete-char`` command.
+
 Indenting
 ---------
 
@@ -788,4 +956,8 @@ this to YASnippet. Here's an example of the usage:
   {$>
   $0$>
   }$>
+
+In 0.6.0 You should **not** need to use this feature although it's
+supported for backward compatibility. Just set ``yas/indent-line`` to
+``'auto``.
 

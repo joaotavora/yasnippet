@@ -3,7 +3,7 @@
 require 'fileutils'
 
 def find_version
-  File.read("yasnippet.el") =~ /;; Version: *([0-9.]+) *$/
+  File.read("yasnippet.el") =~ /;; Package-version: *([0-9.]+[a-z]?) *$/
   $version = $1
 end
 find_version
@@ -19,7 +19,7 @@ desc "create a release package"
 task :package do
   release_dir = "pkg/yasnippet-#{$version}"
   FileUtils.mkdir_p(release_dir)
-  files = ['snippets', 'yasnippet.el']
+  files = ['snippets', 'yasnippet.el', 'dropdown-list.el']
   FileUtils.cp_r files, release_dir
   FileUtils.rm_r Dir[release_dir + "/**/.svn"]
   FileUtils.cd 'pkg'

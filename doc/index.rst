@@ -78,7 +78,26 @@ following in your ``.emacs`` file:
      (yas/initialize)
      (yas/load-directory "~/.emacs.d/plugins/yasnippet/snippets")
 
-Please refer to the documentation for full customization.
+Please refer to the documentation for full customization, or use the
+customization group.
+
+.. image:: images/customization-group.png
+   :align: right
+
+Customization group
+===================
+
+From version 0.6 onwards, there is a customization group that you can
+access with:
+
+``M-x customize-group RET yasnippet RET``
+
+Each customization variable affects how some part of YASnippet works,
+for example automatic snippet indentation, what prompting method to
+use, whether to expand snippets inside snippets, etc...
+
+Inside the customization group, each variable is reasonably documented
+to explain what it does.
 
 Bugs, Contribution and Support
 ==============================

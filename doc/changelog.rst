@@ -6,6 +6,42 @@ ChangeLog
 :Contact: pluskid@gmail.com
 :Date: 2008-03-22
 
+
+0.6.0b / 2009-07-25
+===================
+ 
+* Nested placeholders of the type ``<div${1: id="${2:someid}"}> $0``.
+
+* More robust undo/redo support.
+
+* Stacked snippet expansion (*snippet in snippet*).
+
+* Transformation on a primary field with syntax ``${1:default$(transform)}``
+
+* Validations on field exit through the ``yas/verify-value``
+  primary field transformation.
+
+* Wrapping the region in the exit marker ``$0`` of the snippet. Use
+  ``yas/wrap-around-region``.
+
+* Auto-indentation. Use ``yas/indent-line`` set to ``'auto`` 
+
+* Easier definition of snippets. Use ``yas/find-snippets`` or
+  ``yas/visit-snippet-file``. In the new ``snippet-mode`` use
+  ``yas/load-snippet-buffer`` and ``yas/tryout-snippet``.
+
+* Customization group ``yasnippet``.
+
+* Overriding customization variables in snippets. Use the ``env:
+  let-form`` template keyword.
+
+* Fixed `Issue 60
+  <http://code.google.com/p/yasnippet/issues/detail?id=60>`_
+* Fixed `Issue 65
+  <http://code.google.com/p/yasnippet/issues/detail?id=65>`_
+* Fixed `Issue 56
+  <http://code.google.com/p/yasnippet/issues/detail?id=56>`_
+
 0.5.10 / 2009-02-11
 ===================
 
