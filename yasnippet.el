@@ -70,10 +70,10 @@
 ;;
 ;;       M-x yas/visit-snippet-file
 ;;
-;;           Prompts you for possible snippet expasions like
+;;           Prompts you for possible snippet expansions like
 ;;           `yas/insert-snippet', but instead of expanding it, takes
 ;;           you directly to the snippet definition's file, if it
-;;           exits.
+;;           exists.
 ;;
 ;;       M-x yas/load-snippet-buffer
 ;;
@@ -430,6 +430,8 @@ Here's an example:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Minor mode stuff
 ;;
+;; TODO: XXX: This is somehow needed in Carbon Emacs for MacOSX 
+(defvar last-buffer-undo-list nil)
 
 (defvar yas/minor-mode-map (make-sparse-keymap)
   "The keymap used when function `yas/minor-mode' is active.")
@@ -445,7 +447,9 @@ Here's an example:
 		      (vector (first ent) (second ent) t))
 		  (list (list "--")
 			(list "Expand trigger" 'yas/expand (read-kbd-macro yas/trigger-key))
-			(list "Insert at point" 'yas/insert-snippet "\C-c&\C-s")
+			(list "Insert at point..." 'yas/insert-snippet "\C-c&\C-s")
+			(list "Visit snippet file..." 'yas/visit-snippet-file "\C-c&\C-v")
+			(list "Find snippets..." 'yas/find-snippets "\C-c&\C-f")
 			(list "About" 'yas/about)
 			(list "Reload-all-snippets" 'yas/reload-all)
 			(list "Load snippets..." 'yas/load-directory))))))
@@ -1024,6 +1028,8 @@ Here's the default value for all the parameters:
       (insert ";;; yasnippet-bundle.el --- "
               "Yet another snippet extension (Auto compiled bundle)\n")
       (insert-file-contents yasnippet)
+      (goto-char (point-max))
+      (insert "\n")
       (when dropdown
 	(insert-file-contents dropdown))
       (goto-char (point-max))
@@ -1375,40 +1381,54 @@ major mode."
 	    (snippet-mode)))))))
 
 
-(defun yas/compute-major-mode-and-parent (file)
-  (let* ((file-dir (directory-file-name (file-name-directory file)))
-	 (major-mode-name (file-name-nondirectory file-dir))
-	 (parent-file-dir (directory-file-name (file-name-directory file-dir)))
-	 (parent-mode-name (file-name-nondirectory parent-file-dir))
-	 (major-mode-sym (intern major-mode-name))
-	 (parent-mode-sym (intern parent-mode-name)))
-    (when (fboundp major-mode-sym)
-      (cons major-mode-sym
-	    (when (fboundp parent-mode-sym)
-	      parent-mode-sym)))))
+(defun yas/compute-major-mode-and-parent (file &optional prompt-if-failed)
+  (let* ((file-dir (and file
+			(directory-file-name (file-name-directory file))))
+	 (major-mode-name (and file-dir
+			       (file-name-nondirectory file-dir)))
+	 (parent-file-dir (and file-dir
+			       (directory-file-name (file-name-directory file-dir))))
+	 (parent-mode-name (and parent-file-dir
+				(file-name-nondirectory parent-file-dir)))
+	 (major-mode-sym (or (and major-mode-name
+				  (intern major-mode-name))
+			     (when prompt-if-failed
+			       (read-from-minibuffer "[yas] Cannot auto-detect major mode! Enter a major mode: "))))
+	 (parent-mode-sym (and parent-mode-name
+			       (intern parent-mode-name))))
+    (if (fboundp major-mode-sym)
+	(cons major-mode-sym
+	      (when (fboundp parent-mode-sym)
+		parent-mode-sym)))))
 
 (defun yas/load-snippet-buffer (&optional kill)
-  "Parse and load current buffer's snippet definition."
+  "Parse and load current buffer's snippet definition.
+
+With optional prefix argument KILL quit the window and buffer."
   (interactive "P")
   (if buffer-file-name
       (let ((major-mode-and-parent (yas/compute-major-mode-and-parent buffer-file-name)))
-	(when major-mode-and-parent
-	  (yas/define-snippets (car major-mode-and-parent)
-			       (list (yas/parse-template buffer-file-name))
-			       (cdr major-mode-and-parent)))
-	(when (and (buffer-modified-p)
-		   (y-or-n-p "Save snippet? "))
-	  (save-buffer))
-	(quit-window))
+	(if major-mode-and-parent
+	    (let* ((parsed (yas/parse-template buffer-file-name))
+		   (name (and parsed
+			      (third parsed))))
+	      (when name
+		(yas/define-snippets (car major-mode-and-parent)
+				     (list parsed)
+				     (cdr major-mode-and-parent))
+		(when (and (buffer-modified-p)
+			   (y-or-n-p "Save snippet? "))
+		  (save-buffer))
+		(if kill
+		    (quit-window kill)
+		  (message "[yas] Snippet \"%s\" loaded for %s." name (car major-mode-and-parent)))))
+	  (message "[yas] Cannot load snippet for unknown major mode")))
     (message "Save the buffer as a file first!")))
 
 (defun yas/tryout-snippet (&optional debug)
   "Test current buffers's snippet template in other buffer."
   (interactive "P")
-  (let* ((major-mode-and-parent (or (and buffer-file-name
-					 (yas/compute-major-mode-and-parent buffer-file-name))
-				    (cons (intern (read-from-minibuffer "Cannot auto-detect major mode! Enter a major mode: "))
-					  nil)))
+  (let* ((major-mode-and-parent (yas/compute-major-mode-and-parent buffer-file-name))
 	 (parsed (and major-mode-and-parent
 		      (fboundp (car major-mode-and-parent))
 		      (yas/parse-template (symbol-name (car major-mode-and-parent)))))
@@ -1480,17 +1500,16 @@ Otherwise throw exception."
 ;;; Snippet expansion and field management
 
 (defvar yas/active-field-overlay nil
-  "Overlays the currently active field")
+  "Overlays the currently active field.")
 
 (defvar yas/field-protection-overlays nil
-  "Two overlays protect the current actipve field ")
+  "Two overlays protect the current active field ")
 
 (defvar yas/deleted-text nil
   "The text deleted in the last snippet expansion.")
 
 (defvar yas/selected-text nil
-  "The selected region deleted before the last snippet
-  expansion.")
+  "The selected region deleted on the last snippet expansion.")
 
 (defvar yas/start-column nil
   "The column where the snippet expansion started.")
@@ -1548,11 +1567,15 @@ for this field, apply it. Otherwise, returned nil."
 			     (yas/eval-string transform)))))
     transformed))
 
-(defsubst yas/replace-all (from to)
-  "Replace all occurance from FROM to TO."
+(defsubst yas/replace-all (from to &optional text)
+  "Replace all occurance from FROM to TO.
+
+With optional string TEXT do it in that string."
   (goto-char (point-min))
-  (while (search-forward from nil t)
-    (replace-match to t t)))
+  (if text
+      (replace-regexp-in-string from to text t t)
+    (while (search-forward from nil t)
+      (replace-match to t t text))))
 
 (defun yas/snippet-find-field (snippet number)
   (find-if #'(lambda (field)
@@ -2326,12 +2349,19 @@ Meant to be called in a narrowed buffer, does various passes"
 			     (yas/escape-string escaped)))
   (or escaped yas/escaped-characters)))
 
-(defun yas/restore-escapes ()
-  "Restore all escaped characters from their numeric ASCII value."
-  (mapc #'(lambda (escaped)
-	    (yas/replace-all (yas/escape-string escaped)
-			     (char-to-string escaped)))
-  yas/escaped-characters))
+(defun yas/restore-escapes (&optional text)
+  "Restore all escaped characters from their numeric ASCII value.
+
+With optional string TEXT do it in string instead"
+  (let ((changed-text text)
+	(text-provided-p text))
+    (mapc #'(lambda (escaped)
+	      (setq changed-text
+		    (yas/replace-all (yas/escape-string escaped)
+				     (char-to-string escaped)
+				     (when text-provided-p changed-text))))
+	  yas/escaped-characters)
+    changed-text))
 
 (defun yas/replace-backquotes ()
   "Replace all the \"`(lisp-expression)`\"-style expression
@@ -2339,7 +2369,7 @@ Meant to be called in a narrowed buffer, does various passes"
   (while (re-search-forward yas/backquote-lisp-expression-regexp nil t)
   (let ((transformed (yas/eval-string (match-string 1))))
     (goto-char (match-end 0))
-    (insert transformed)
+    (when transformed (insert transformed))
     (delete-region (match-beginning 0) (match-end 0)))))
 
 (defun yas/scan-sexps (from count)
@@ -2393,7 +2423,7 @@ When multiple expressions are found, only the last one counts."
       (let* ((real-match-end-1 (yas/scan-sexps (match-beginning 1) 1)))
 	(when real-match-end-1
 	  (let ((lisp-expression-string (buffer-substring-no-properties (match-beginning 1) real-match-end-1)))
-	    (setf (yas/field-transform parent-field) lisp-expression-string))
+	    (setf (yas/field-transform parent-field) (yas/restore-escapes lisp-expression-string)))
 	  (delete-region (match-beginning 0) real-match-end-1)))))))
 
 (defun yas/transform-mirror-parse-create (snippet)
@@ -2408,8 +2438,8 @@ When multiple expressions are found, only the last one counts."
 	       field)
       (push (yas/make-mirror (yas/make-marker (match-beginning 0))
 			     (yas/make-marker (match-beginning 0))
-			     (buffer-substring-no-properties (match-beginning 2)
-							     (1- real-match-end-0)))
+			     (yas/restore-escapes (buffer-substring-no-properties (match-beginning 2)
+										  (1- real-match-end-0))))
 	    (yas/field-mirrors field))
       (delete-region (match-beginning 0) real-match-end-0)))))
 
