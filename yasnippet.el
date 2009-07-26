@@ -151,6 +151,13 @@ applies)."
                  (const :tag "Auto"     auto))
   :group 'yasnippet)
 
+(defcustom yas/also-auto-indent-first-line nil
+  "Non-nil means also auto indent first line according to mode.
+
+Naturally this is only valid when `yas/indent-line' is `auto'"
+  :type 'boolean
+  :group 'yasnippet)
+
 (defcustom yas/snippet-revival t
   "Non-nil means re-activate snippet fields after undo/redo."
   :type 'boolean
@@ -436,6 +443,9 @@ Here's an example:
 
 (defvar yas/minor-mode-map (make-sparse-keymap)
   "The keymap used when function `yas/minor-mode' is active.")
+
+(defvar yas/minor-mode-menu (make-sparse-keymap)
+  "Holds the YASnippet menu. For use with `easy-menu-define'.")
 
 (defun yas/init-keymap-and-menu ()
   (easy-menu-define yas/minor-mode-menu
@@ -2287,6 +2297,7 @@ Meant to be called in a narrowed buffer, does various passes"
 	       (insert indent))))
 	  ((eq yas/indent-line 'auto)
 	   (let ((end (set-marker (make-marker) (point-max)))
+		 (indent-first-line-p yas/also-auto-indent-first-line)
 		 (snippet-markers (yas/collect-snippet-markers snippet)))
 	     (save-restriction
 	       (widen)
@@ -2303,7 +2314,11 @@ Meant to be called in a narrowed buffer, does various passes"
 	       ;; This would also happen if we had used overlays with
 	       ;; the `front-advance' property set to nil.
 	       ;;
-	       (while (and (zerop (forward-line 1))
+	       (while (and (zerop (if indent-first-line-p
+				      (prog1
+					  (forward-line 0)
+					(setq indent-first-line-p nil))
+				    (forward-line 1)))
 			   (not (eobp))
 			   (<= (point) end))
 		 (goto-char (yas/real-line-beginning))
