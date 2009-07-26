@@ -50,11 +50,6 @@ desc "Generate document"
 task :doc => FileList['doc/*.rst'].ext('html')
 
 namespace :doc do
-  task :upload do
-    sh "rsync -avz --exclude '.svn' doc " +
-      "pluskid.lifegoo.com:~/public_html/upload/project/yasnippet/"
-  end
-  
   task :archive do
     release_dir = "pkg/yasnippet-#{$version}"
     FileUtils.mkdir_p(release_dir)
@@ -62,5 +57,12 @@ namespace :doc do
       "--exclude=doc/.svn --exclude=doc/images/.svn doc/*.html doc/images"
   end
 end
+
+desc "Compile yasnippet.el into yasnippet.elc" 
+
+rule '.elc' => '.el' do |t|
+  sh "emacs --batch -L . --eval \"(byte-compile-file \\\"#{t.source}\\\")\""
+end
+task :compile => FileList["yasnippet.el", "dropdown-list.el"].ext('elc')
 
 task :default => :doc

@@ -297,10 +297,9 @@ An error string \"[yas] error\" is returned instead."
     (dolist (key keys)
       (define-key keymap (read-kbd-macro key) definition))))
 
-(eval-when-compile
-  (yas/define-some-keys yas/next-field-key yas/keymap 'yas/next-field-or-maybe-expand)
-  (yas/define-some-keys yas/prev-field-key yas/keymap 'yas/prev-field)
-  (yas/define-some-keys yas/skip-and-clear-key yas/keymap 'yas/skip-and-clear-or-delete-char))
+(yas/define-some-keys yas/next-field-key yas/keymap 'yas/next-field-or-maybe-expand)
+(yas/define-some-keys yas/prev-field-key yas/keymap 'yas/prev-field)
+(yas/define-some-keys yas/skip-and-clear-key yas/keymap 'yas/skip-and-clear-or-delete-char)
 
 (defvar yas/key-syntaxes (list "w" "w_" "w_." "^ ")
   "A list of syntax of a key. This list is tried in the order
@@ -465,8 +464,7 @@ Here's an example:
 			(list "Reload-all-snippets" 'yas/reload-all)
 			(list "Load snippets..." 'yas/load-directory))))))
 
-(eval-when-compile
-  (yas/init-keymap-and-menu))
+(yas/init-keymap-and-menu)
 
 (define-minor-mode yas/minor-mode
   "Toggle YASnippet mode.
@@ -881,6 +879,7 @@ TEMPLATES is a list of `yas/template'."
       (when chosen
 	(nth (position chosen formatted-choices) choices)))))
 
+(eval-when-compile (require 'dropdown-list nil t))
 (defun yas/dropdown-prompt (prompt choices &optional display-fn)
   (when (featurep 'dropdown-list)
     (let* ((formatted-choices (or (and display-fn
@@ -1050,38 +1049,38 @@ Here's the default value for all the parameters:
       (insert "(defun yas/initialize-bundle ()\n"
               "  \"Initialize YASnippet and load snippets in the bundle.\""
               "  (yas/global-mode 1)\n")
-      (flet ((yas/define-snippets
-              (mode snippets &optional parent directory)
-              (with-current-buffer bundle-buffer
-                (insert ";;; snippets for " (symbol-name mode) "\n")
-                (insert "(yas/define-snippets '" (symbol-name mode) "\n")
-                (insert "'(\n")
-                (dolist (snippet snippets)
-                  (insert "  ("
-                          (yas/quote-string (car snippet))
-                          " "
-                          (yas/quote-string (nth 1 snippet))
-                          " "
-                          (if (nth 2 snippet)
-                              (yas/quote-string (nth 2 snippet))
-                            "nil")
-                          " "
-                          (if (nth 3 snippet)
-                              (format "'%s" (nth 3 snippet))
-                            "nil")
-                          " "
-                          (if (nth 4 snippet)
-                              (yas/quote-string (nth 4 snippet))
-                            "nil")
-                          ")\n"))
-                (insert "  )\n")
-                (insert (if parent
-                            (concat "'" (symbol-name parent))
-                          "nil")
-			;; (if directory
-                        ;;     (concat "\"" directory "\"")
-                        ;;   "nil")
-                        ")\n\n"))))
+      (labels ((yas/define-snippets
+		(mode snippets &optional parent directory)
+		(with-current-buffer bundle-buffer
+		  (insert ";;; snippets for " (symbol-name mode) "\n")
+		  (insert "(yas/define-snippets '" (symbol-name mode) "\n")
+		  (insert "'(\n")
+		  (dolist (snippet snippets)
+		    (insert "  ("
+			    (yas/quote-string (car snippet))
+			    " "
+			    (yas/quote-string (nth 1 snippet))
+			    " "
+			    (if (nth 2 snippet)
+				(yas/quote-string (nth 2 snippet))
+			      "nil")
+			    " "
+			    (if (nth 3 snippet)
+				(format "'%s" (nth 3 snippet))
+			      "nil")
+			    " "
+			    (if (nth 4 snippet)
+				(yas/quote-string (nth 4 snippet))
+			      "nil")
+			    ")\n"))
+		  (insert "  )\n")
+		  (insert (if parent
+			      (concat "'" (symbol-name parent))
+			    "nil")
+			  ;; (if directory
+			  ;;     (concat "\"" directory "\"")
+			  ;;   "nil")
+			  ")\n\n"))))
         (dolist (dir dirs)
           (dolist (subdir (yas/subdirs dir))
             (yas/load-directory-1 subdir nil))))
@@ -1455,11 +1454,20 @@ With optional prefix argument KILL quit the window and buffer."
 	     (when debug
 	       (add-hook 'post-command-hook 'yas/debug-some-vars 't 'local))))
 	  (t
-	   (message "[yas] Coulnd not parse template!")))))
+	   (message "[yas] Cannot test snippet for unknown major mode"))))) 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; User convenience functions, for using in snippet definitions
 ;;;
+
+(defvar yas/modified-p nil
+  "Non-nil if field has been modified by user or transformation.")
+
+(defvar yas/moving-away-p nil
+  "Non-nil if user is about to exit field.")
+
+(defvar yas/text nil
+  "Contains current field text.")
 
 (defun yas/substr (str pattern &optional subexp)
   "Search PATTERN in STR and return SUBEXPth match.
@@ -1582,9 +1590,9 @@ for this field, apply it. Otherwise, returned nil."
   "Replace all occurance from FROM to TO.
 
 With optional string TEXT do it in that string."
-  (goto-char (point-min))
   (if text
-      (replace-regexp-in-string from to text t t)
+      (replace-regexp-in-string (regexp-quote from) to text t t)
+    (goto-char (point-min))
     (while (search-forward from nil t)
       (replace-match to t t text))))
 
@@ -1778,7 +1786,7 @@ NO-HOOKS means don't run the `yas/after-exit-snippet-hook' hooks."
       (when yas/active-field-overlay
 	(delete-overlay yas/active-field-overlay))
       (when yas/field-protection-overlays
-	(mapcar #'delete-overlay yas/field-protection-overlays)))
+	(mapc #'delete-overlay yas/field-protection-overlays)))
 
     ;; stacked expansion: if the original expansion took place from a
     ;; field, make sure we advance it here at least to
@@ -1845,31 +1853,6 @@ snippet, if so cleans up the whole snippet up."
 		   (point))))
     (and (>= point (yas/field-start field))
 	 (<= point (yas/field-end field)))))
-
-(defun yas/pre-command-handler () )
-
-(defun yas/post-command-handler ()
-  "Handles various yasnippet conditions after each command."
-  (cond (yas/protection-violation
-	 (goto-char yas/protection-violation)
-	 (setq yas/protection-violation nil))
-	((eq 'undo this-command)
-	 ;;
-	 ;; After undo revival the correct field is sometimes not
-	 ;; restored correctly, this condition handles that
-	 ;;
-	 (let* ((snippet (car (yas/snippets-at-point)))
-		(target-field (and snippet
-				   (find-if-not #'(lambda (field)
-						    (yas/field-probably-deleted-p snippet field))
-						(remove nil
-							(cons (yas/snippet-active-field snippet)
-							      (yas/snippet-fields snippet)))))))
-	   (when target-field
-	     (yas/move-to-field snippet target-field))))
-	((not (yas/undo-in-progress))
-	 ;; When not in an undo, check if we must commit the snippet (use exited it).
-	 (yas/check-commit-snippet))))
 
 (defun yas/field-text-for-display (field)
   "Return the propertized display text for field FIELD.  "
@@ -2245,7 +2228,7 @@ Meant to be called in a narrowed buffer, does various passes"
   (let ((parse-start (point)))
     ;; protect quote and backquote escapes
     ;; 
-    (yas/protect-escapes '(?` ?'))
+    (yas/protect-escapes nil '(?` ?'))
     ;; replace all backquoted expressions
     ;;
     (goto-char parse-start)
@@ -2290,7 +2273,7 @@ Meant to be called in a narrowed buffer, does various passes"
 	   (let* ((indent (if indent-tabs-mode
 			      (concat (make-string (/ column tab-width) ?\t)
 				      (make-string (% column tab-width) ?\ ))
-			    (make-string (current-colum) ?\ ))))
+			    (make-string (current-column) ?\ ))))
 	     (goto-char (point-min))
 	     (while (and (zerop (forward-line))
 			 (= (current-column) 0))
@@ -2361,17 +2344,24 @@ Meant to be called in a narrowed buffer, does various passes"
 (defun yas/escape-string (escaped)
   (concat "YASESCAPE" (format "%d" escaped) "PROTECTGUARD"))
 
-(defun yas/protect-escapes (&optional escaped)
-  "Protect all escaped characters with their numeric ASCII value."
-  (mapc #'(lambda (escaped)
-	    (yas/replace-all (concat "\\" (char-to-string escaped))
-			     (yas/escape-string escaped)))
-  (or escaped yas/escaped-characters)))
+(defun yas/protect-escapes (&optional text escaped)
+  "Protect all escaped characters with their numeric ASCII value.
 
-(defun yas/restore-escapes (&optional text)
+With optional string TEXT do it in string instead of buffer."
+  (let ((changed-text text)
+	(text-provided-p text))
+    (mapc #'(lambda (escaped)
+	      (setq changed-text
+		    (yas/replace-all (concat "\\" (char-to-string escaped))
+				     (yas/escape-string escaped)
+				     (when text-provided-p changed-text))))
+	  (or escaped yas/escaped-characters))
+    changed-text))
+  
+(defun yas/restore-escapes (&optional text escaped)
   "Restore all escaped characters from their numeric ASCII value.
 
-With optional string TEXT do it in string instead"
+With optional string TEXT do it in string instead of the buffer."
   (let ((changed-text text)
 	(text-provided-p text))
     (mapc #'(lambda (escaped)
@@ -2379,7 +2369,7 @@ With optional string TEXT do it in string instead"
 		    (yas/replace-all (yas/escape-string escaped)
 				     (char-to-string escaped)
 				     (when text-provided-p changed-text))))
-	  yas/escaped-characters)
+	  (or escaped yas/escaped-characters))
     changed-text))
 
 (defun yas/replace-backquotes ()
@@ -2539,6 +2529,34 @@ When multiple expressions are found, only the last one counts."
       t))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Pre- and post-command hooks
+;; 
+(defun yas/pre-command-handler () )
+
+(defun yas/post-command-handler ()
+  "Handles various yasnippet conditions after each command."
+  (cond (yas/protection-violation
+	 (goto-char yas/protection-violation)
+	 (setq yas/protection-violation nil))
+	((eq 'undo this-command)
+	 ;;
+	 ;; After undo revival the correct field is sometimes not
+	 ;; restored correctly, this condition handles that
+	 ;;
+	 (let* ((snippet (car (yas/snippets-at-point)))
+		(target-field (and snippet
+				   (find-if-not #'(lambda (field)
+						    (yas/field-probably-deleted-p snippet field))
+						(remove nil
+							(cons (yas/snippet-active-field snippet)
+							      (yas/snippet-fields snippet)))))))
+	   (when target-field
+	     (yas/move-to-field snippet target-field))))
+	((not (yas/undo-in-progress))
+	 ;; When not in an undo, check if we must commit the snippet (use exited it).
+	 (yas/check-commit-snippet))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Debug functions.  Use (or change) at will whenever needed.
 ;;
 
@@ -2603,18 +2621,14 @@ When multiple expressions are found, only the last one counts."
 			       (first yas/root-directory))
 			  yas/root-directory
 			  "~/Source/yasnippet/snippets/"))
-  ;;(kill-buffer (get-buffer "*YAS TEST*"))
   (set-buffer (switch-to-buffer "*YAS TEST*"))
-  (mapcar #'yas/commit-snippet (yas/snippets-at-point 'all-snippets))
+  (mapc #'yas/commit-snippet (yas/snippets-at-point 'all-snippets))
   (erase-buffer)
   (setq buffer-undo-list nil)
   (setq undo-in-progress nil)
   (snippet-mode)
   (yas/minor-mode 1)
   (let ((abbrev))
-    ;; (if (require 'ido nil t)
-    ;; 	(setq abbrev (ido-completing-read "Snippet abbrev: " '("crazy" "prip" "prop")))
-    ;;   (setq abbrev "prop"))
   (setq abbrev "$f")
   (insert abbrev))
   (unless quiet
