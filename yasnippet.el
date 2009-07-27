@@ -877,7 +877,7 @@ TEMPLATES is a list of `yas/template'."
 					     nil
 					     nil))))
       (when chosen
-	(nth (position chosen formatted-choices) choices)))))
+	(nth (position chosen formatted-choices :test #'string=) choices)))))
 
 (eval-when-compile (require 'dropdown-list nil t))
 (defun yas/dropdown-prompt (prompt choices &optional display-fn)
@@ -902,7 +902,7 @@ TEMPLATES is a list of `yas/template'."
 				       nil
 				       nil))))
     (when chosen
-      (nth (position chosen formatted-choices) choices))))
+      (nth (position chosen formatted-choices :test #'string=) choices))))
 
 (defun yas/no-prompt (prompt choices &optional display-fn)
   (first choices))
