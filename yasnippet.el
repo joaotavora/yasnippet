@@ -267,8 +267,6 @@ can be overriden on a per-snippet basis."
   "If non-nil, don't raise errors in inline elisp evaluation.
 
 An error string \"[yas] error\" is returned instead."
-
-
   :type 'boolean
   :group 'yasnippet)
 
@@ -456,7 +454,7 @@ Here's an example:
 			(define-key yas/minor-mode-map (third ent) (second ent)))
 		      (vector (first ent) (second ent) t))
 		  (list (list "--")
-			(list "Expand trigger" 'yas/expand (read-kbd-macro yas/trigger-key))
+			(list "Expand trigger" 'yas/expand (when yas/trigger-key (read-kbd-macro yas/trigger-key)))
 			(list "Insert at point..." 'yas/insert-snippet "\C-c&\C-s")
 			(list "Visit snippet file..." 'yas/visit-snippet-file "\C-c&\C-v")
 			(list "Find snippets..." 'yas/find-snippets "\C-c&\C-f")
@@ -525,6 +523,7 @@ Key bindings:
 
 (define-derived-mode snippet-mode text-mode "YASnippet"
   "A mode for editing yasnippets"
+  (set-syntax-table (standard-syntax-table))
   (setq font-lock-defaults '(yas/font-lock-keywords))
   (set (make-local-variable 'require-final-newline) nil)
   (use-local-map snippet-mode-map))
@@ -1049,38 +1048,38 @@ Here's the default value for all the parameters:
       (insert "(defun yas/initialize-bundle ()\n"
               "  \"Initialize YASnippet and load snippets in the bundle.\""
               "  (yas/global-mode 1)\n")
-      (labels ((yas/define-snippets
-		(mode snippets &optional parent directory)
-		(with-current-buffer bundle-buffer
-		  (insert ";;; snippets for " (symbol-name mode) "\n")
-		  (insert "(yas/define-snippets '" (symbol-name mode) "\n")
-		  (insert "'(\n")
-		  (dolist (snippet snippets)
-		    (insert "  ("
-			    (yas/quote-string (car snippet))
-			    " "
-			    (yas/quote-string (nth 1 snippet))
-			    " "
-			    (if (nth 2 snippet)
-				(yas/quote-string (nth 2 snippet))
-			      "nil")
-			    " "
-			    (if (nth 3 snippet)
-				(format "'%s" (nth 3 snippet))
-			      "nil")
-			    " "
-			    (if (nth 4 snippet)
-				(yas/quote-string (nth 4 snippet))
-			      "nil")
-			    ")\n"))
-		  (insert "  )\n")
-		  (insert (if parent
-			      (concat "'" (symbol-name parent))
+      (flet ((yas/define-snippets
+	      (mode snippets &optional parent directory)
+	      (with-current-buffer bundle-buffer
+		(insert ";;; snippets for " (symbol-name mode) "\n")
+		(insert "(yas/define-snippets '" (symbol-name mode) "\n")
+		(insert "'(\n")
+		(dolist (snippet snippets)
+		  (insert "  ("
+			  (yas/quote-string (car snippet))
+			  " "
+			  (yas/quote-string (nth 1 snippet))
+			  " "
+			  (if (nth 2 snippet)
+			      (yas/quote-string (nth 2 snippet))
 			    "nil")
-			  ;; (if directory
-			  ;;     (concat "\"" directory "\"")
-			  ;;   "nil")
-			  ")\n\n"))))
+			  " "
+			  (if (nth 3 snippet)
+			      (format "'%s" (nth 3 snippet))
+			    "nil")
+			  " "
+			  (if (nth 4 snippet)
+			      (yas/quote-string (nth 4 snippet))
+			    "nil")
+			  ")\n"))
+		(insert "  )\n")
+		(insert (if parent
+			    (concat "'" (symbol-name parent))
+			  "nil")
+			;; (if directory
+			;;     (concat "\"" directory "\"")
+			;;   "nil")
+			")\n\n"))))
         (dolist (dir dirs)
           (dolist (subdir (yas/subdirs dir))
             (yas/load-directory-1 subdir nil))))
@@ -1278,6 +1277,7 @@ conditions to filter out potential expansions."
 	(let* ((yas/minor-mode nil)
 	       (command (key-binding (read-kbd-macro yas/trigger-key))))
 	  (when (commandp command)
+	    (setq this-command command)
 	    (call-interactively command)))))))
 
 (defun yas/insert-snippet (&optional no-condition)
@@ -1559,13 +1559,17 @@ Otherwise throw exception."
   (mirrors '())
   (transform nil)
   (modified-p nil)
-  (back-adjacent-fields nil)
-  (back-adjacent-mirrors nil))
+  next)
 
 (defstruct (yas/mirror (:constructor yas/make-mirror (start end transform)))
   "A mirror."
   start end
-  (transform nil))
+  (transform nil)
+  next)
+
+(defstruct (yas/exit (:constructor yas/make-exit (marker)))
+  marker
+  next)
 
 (defun yas/apply-transform (field-or-mirror field)
   "Calculate the value of the field/mirror. If there's a transform
@@ -1600,6 +1604,13 @@ With optional string TEXT do it in that string."
   (find-if #'(lambda (field)
 	       (eq number (yas/field-number field)))
 	   (yas/snippet-fields snippet)))
+
+(defun yas/snippet-sort-fields (snippet)
+  "Sort the fields of SNIPPET in navigation order."
+  (setf (yas/snippet-fields snippet)
+	(sort (yas/snippet-fields snippet)
+	      '(lambda (field1 field2)
+		 (yas/snippet-field-compare field1 field2)))))
 
 (defun yas/snippet-field-compare (field1 field2)
   "Compare two fields. The field with a number is sorted first.
@@ -1709,20 +1720,20 @@ Also create some protection overlays"
   (interactive)
   (setf (yas/snippet-force-exit snippet) t)
   (goto-char (if (yas/snippet-exit snippet)
-		 (yas/snippet-exit snippet)
+		 (yas/exit-marker (yas/snippet-exit snippet))
 	       (overlay-end (yas/snippet-control-overlay snippet)))))
 
 ;;; Apropos markers-to-points:
 ;;;
-;;; This was ground useful for performance
-;;; reasons, so that an excessive number of live markers arent kept
-;;; aroung in the `buffer-undo-list'. However, in `markers-to-points',
-;;; the set-to-nil markers can't simply be discarded and replaced with
+;;; This was found useful for performance reasons, so that an
+;;; excessive number of live markers aren't kept around in the
+;;; `buffer-undo-list'. However, in `markers-to-points', the
+;;; set-to-nil markers can't simply be discarded and replaced with
 ;;; fresh ones in `points-to-markers'. The original marker that was
-;;; just set to nilhas to be reused.
+;;; just set to nil has to be reused.
 ;;;
 ;;; This shouldn't bring horrible problems with undo/redo, but it
-;;; would be one of the the first thing I'd remove if I was debugging that...
+;;; you never know
 ;;;
 
 (defun yas/markers-to-points (snippet)
@@ -1743,10 +1754,11 @@ the original marker object with the position set to nil."
 	(set-marker (yas/mirror-end mirror) nil)
 	(setf (yas/mirror-start mirror) (cons start (yas/mirror-start mirror)))
 	(setf (yas/mirror-end mirror) (cons end (yas/mirror-end mirror))))))
-  (when (yas/snippet-exit snippet)
-    (let ((exit (marker-position (yas/snippet-exit snippet))))
-      (set-marker (yas/snippet-exit snippet) nil)
-      (setf (yas/snippet-exit snippet) (cons exit (yas/snippet-exit snippet))))))
+  (let ((snippet-exit (yas/snippet-exit snippet)))
+    (when snippet-exit 
+      (let ((exit (marker-position (yas/exit-marker snippet-exit))))
+	(set-marker (yas/exit-marker snippet-exit) nil)
+	(setf (yas/exit-marker snippet-exit) (cons exit (yas/exit-marker snippet-exit)))))))
 
 (defun yas/points-to-markers (snippet)
   "Convert all cons (POINT . MARKER) in SNIPPET to markers. This
@@ -1757,8 +1769,9 @@ is done by setting MARKER to POINT with `set-marker'."
     (dolist (mirror (yas/field-mirrors field))
       (setf (yas/mirror-start mirror) (set-marker (cdr (yas/mirror-start mirror)) (car (yas/mirror-start mirror))))
       (setf (yas/mirror-end mirror) (set-marker (cdr (yas/mirror-end mirror)) (car (yas/mirror-end mirror))))))
-  (when (yas/snippet-exit snippet)
-    (setf (yas/snippet-exit snippet) (set-marker (cdr (yas/snippet-exit snippet)) (car (yas/snippet-exit snippet))))))
+  (let ((snippet-exit (yas/snippet-exit snippet)))
+    (when snippet-exit
+      (setf (yas/exit-marker snippet-exit) (set-marker (cdr (yas/exit-marker snippet-exit)) (car (yas/exit-marker snippet-exit)))))))
 
 (defun yas/commit-snippet (snippet &optional no-hooks)
   "Commit SNIPPET, but leave point as it is.  This renders the
@@ -1794,7 +1807,7 @@ NO-HOOKS means don't run the `yas/after-exit-snippet-hook' hooks."
     ;;
     (let ((previous-field (yas/snippet-previous-active-field snippet)))
       (when (and yas/snippet-end previous-field)
-	(yas/advance-field-end-marker previous-field yas/snippet-end)))
+	(yas/advance-end-maybe previous-field yas/snippet-end)))
 
     ;; Convert all markers to points,
     ;;
@@ -1874,7 +1887,6 @@ holds the keymap."
                                t)))
     (overlay-put overlay 'keymap yas/keymap)
     (overlay-put overlay 'yas/snippet snippet)
-    (overlay-put overlay 'evaporate t)
     overlay))
 
 (defun yas/skip-and-clear-or-delete-char (&optional field)
@@ -1898,26 +1910,6 @@ Otherwise deletes a character normally by calling `delete-char'."
   "Deletes the region of FIELD and sets it modified state to t"
   (setf (yas/field-modified-p field) t)
   (delete-region (yas/field-start field) (yas/field-end field)))
-
-(defun yas/advance-field-end-marker (field newend)
-  "Advance FIELDs end-marker to NEWEND and recurse for parent fields"
-  (when (< (yas/field-end field) newend)
-    (set-marker (yas/field-end field) newend)
-    (when (yas/field-parent-field field)
-      (yas/advance-field-end-marker (yas/field-parent-field field) newend)))
-  ;; take care of adjacent fields
-  (let ((adjacents (yas/field-back-adjacent-fields field)))
-    (when adjacents
-      (dolist (adjacent adjacents)
-	(when (< (yas/field-start adjacent) newend)
-	  (set-marker (yas/field-start adjacent) newend))
-	(yas/advance-field-end-marker adjacent newend))))
-  ;; take care of adjacent mirrors
-  (let ((adjacents (yas/field-back-adjacent-mirrors field)))
-    (when adjacents
-      (dolist (adjacent adjacents)
-	(when (< (yas/mirror-start adjacent) newend)
-	  (set-marker (yas/mirror-start adjacent) newend))))))
 
 (defun yas/make-move-active-field-overlay (snippet field)
   "Place the active field overlay in SNIPPET's FIELD.
@@ -1947,7 +1939,7 @@ progress."
   (unless (yas/undo-in-progress)
     (let ((field (overlay-get yas/active-field-overlay 'yas/field)))
       (cond (after?
-	     (yas/advance-field-end-marker field (overlay-end overlay))
+	     (yas/advance-end-maybe field (overlay-end overlay))
 	     ;;; primary field transform: normal calls to expression
 	     (let ((saved-point (point)))
 	       (yas/field-update-display field (car (yas/snippets-at-point)))
@@ -2076,24 +2068,20 @@ will be deleted before inserting template."
     ;; at the end of this function.
     (save-restriction
       (narrow-to-region start start)
-      (condition-case err
-	  (let ((buffer-undo-list t))
-	    ;; snippet creation might evaluate users elisp, which
-	    ;; might generate errors, so we have to be ready to catch
-	    ;; them mostly to make the undo information
-	    ;;
-	    (setq yas/start-column (save-restriction (widen) (current-column)))
-	    (insert template)
-	    (setq yas/deleted-text key)
-	    (setq yas/selected-text (when mark-active key))
-	    (setq snippet
-		  (if snippet-vars
-		      (eval `(let ,(read snippet-vars)
-			       (yas/snippet-create (point-min) (point-max))))
-		    (yas/snippet-create (point-min) (point-max)))))
-	(error
-	 (push (cons (point-min) (point-max)) buffer-undo-list)
-	 (error (format "[yas] parse error: %s" (cadr err))))))
+      (let ((buffer-undo-list t))
+	;; snippet creation might evaluate users elisp, which
+	;; might generate errors, so we have to be ready to catch
+	;; them mostly to make the undo information
+	;;
+	(setq yas/start-column (save-restriction (widen) (current-column)))
+	(insert template)
+	(setq yas/deleted-text key)
+	(setq yas/selected-text (when mark-active key))
+	(setq snippet
+	      (if snippet-vars
+		  (eval `(let ,(read snippet-vars)
+			   (yas/snippet-create (point-min) (point-max))))
+		(yas/snippet-create (point-min) (point-max))))))
 
     ;; stacked-expansion: This checks for stacked expansion, save the
     ;; `yas/previous-active-field' and advance its boudary.
@@ -2103,7 +2091,7 @@ will be deleted before inserting template."
 			       (overlay-get yas/active-field-overlay 'yas/field))))
       (when existing-field
 	(setf (yas/snippet-previous-active-field snippet) existing-field)
-	(yas/advance-field-end-marker existing-field (overlay-end yas/active-field-overlay))))
+	(yas/advance-end-maybe existing-field (overlay-end yas/active-field-overlay))))
     
     ;; Exit the snippet immediately if no fields
     ;;
@@ -2175,10 +2163,7 @@ Returns the newly created snippet."
     (yas/snippet-parse-create snippet)
 
     ;; Sort and link each field
-    (yas/snippet-sort-link-fields snippet)
-
-    ;; Calculate field and mirror adjacencies
-    (yas/calculate-adjacencies snippet)
+    (yas/snippet-sort-fields snippet)
     
     ;; Update the mirrors for the first time
     (yas/update-mirrors snippet)
@@ -2195,37 +2180,107 @@ Returns the newly created snippet."
     
     snippet))
 
-(defun yas/snippet-sort-link-fields (snippet)
-  (setf (yas/snippet-fields snippet)
-	(sort (yas/snippet-fields snippet)
-	      '(lambda (field1 field2)
-		 (yas/snippet-field-compare field1 field2)))))
+;;; apropos adjacencies: Once the $-constructs bits like "$n" and
+;;; "${:n" are deleted in the recently expanded snippet, we might
+;;; actually have many fields, mirrors (and the snippet exit) in the
+;;; very same position in the buffer. Therefore we need to single-link
+;;; the fields-or-mirrors-or-exit, which I have called "fom",
+;;; according to their original positions in the buffer.
+;;;
+;;; Then we have operation `yas/advance-end-maybe' and
+;;; `yas/advance-start-maybe', which conditionally push the starts and
+;;; ends of these foms down the chain.
+;;;
+;;; This allows for like the printf with the magic ",":
+;;;
+;;;   printf ("${1:%s}\\n"${1:$(if (string-match "%" text) "," "\);")}  \
+;;;   $2${1:$(if (string-match "%" text) "\);" "")}$0
+;;;
+
+(defun yas/fom-start (fom)
+  (cond ((yas/field-p fom)
+	 (yas/field-start fom))
+	((yas/mirror-p fom)
+	 (yas/mirror-start fom))
+	(t
+	 (yas/exit-marker fom))))
+
+(defun yas/fom-end (fom)
+  (cond ((yas/field-p fom)
+	 (yas/field-end fom))
+	((yas/mirror-p fom)
+	 (yas/mirror-end fom))
+	(t
+	 (yas/exit-marker fom))))
+
+(defun yas/fom-next (fom)
+  (cond ((yas/field-p fom)
+	 (yas/field-next fom))
+	((yas/mirror-p fom)
+	 (yas/mirror-next fom))
+	(t
+	 (yas/exit-next fom))))
 
 (defun yas/calculate-adjacencies (snippet)
-  ;; For each field in the snippet
-  ;; 
-  (dolist (field (yas/snippet-fields snippet))
-    ;; Calculate its adjacencies to other mirrors and fields
-    ;; 
-    (dolist (otherfield (yas/snippet-fields snippet))
-      (dolist (mirror (yas/field-mirrors otherfield))
-	(when (= (yas/field-end field) (yas/mirror-start mirror))
-	  (push mirror (yas/field-back-adjacent-mirrors field))))
-      (when (and (not (eq otherfield field))
-		 (= (yas/field-end field) (yas/field-start otherfield)))
-	(when (not (find field (yas/field-back-adjacent-fields otherfield)))
-	  (push otherfield (yas/field-back-adjacent-fields field)))))
-    ;; Calculate the adjacencies of each one of its mirrors
-    ;;
-    ;; TODO: Known bug.
-    ))
+  "Calculate adjacencies for fields or mirrors of SNIPPET.
+
+This is according to their relative positions in the buffer, and
+has to be called before the $-constructs are deleted."
+  (flet ((yas/fom-set-next-fom (fom nextfom)
+			       (cond ((yas/field-p fom)
+				      (setf (yas/field-next fom) nextfom))
+				     ((yas/mirror-p fom)
+				      (setf (yas/mirror-next fom) nextfom))
+				     (t
+				      (setf (yas/exit-next fom) nextfom))))
+	 (yas/compare-fom-begs (fom1 fom2)
+			       (> (yas/fom-start fom2) (yas/fom-start fom1)))
+	 (yas/link-foms (fom1 fom2)
+			(yas/fom-set-next-fom fom1 fom2)))
+    ;; make some yas/field, yas/mirror and yas/exit soup 
+    (let ((soup))
+      (when (yas/snippet-exit snippet)
+	(push (yas/snippet-exit snippet) soup))
+      (dolist (field (yas/snippet-fields snippet))
+	(push field soup)
+	(dolist (mirror (yas/field-mirrors field))
+	  (push mirror soup)))
+      (setq soup
+	    (sort soup
+		  #'yas/compare-fom-begs))
+      (reduce #'yas/link-foms soup))))
+
+(defun yas/advance-end-maybe (fom newend)
+  "Maybe advance FOM's end to NEWEND if it needs it.
+
+If it does, also:
+
+* call `yas/advance-start-maybe' on FOM's next fom.
+
+* in case FOM is field call `yas/advance-end-maybe' on its parent
+  field"
+  (when (and fom (< (yas/fom-end fom) newend))
+    (set-marker (yas/fom-end fom) newend)
+    (yas/advance-start-maybe (yas/fom-next fom) newend)
+    (if (and (yas/field-p fom)
+	     (yas/field-parent-field field))
+	(yas/advance-end-maybe (yas/field-parent-field field) newend))))
+
+(defun yas/advance-start-maybe (fom newstart)
+  "Maybe advance FOM's start to NEWSTART if it needs it.
+
+If it does, also call `yas/advance-end-maybe' on FOM."
+  (when (and fom (< (yas/fom-start fom) newstart))
+    (set-marker (yas/fom-start fom) newstart)
+    (yas/advance-end-maybe fom newstart)))
 
 (defun yas/snippet-parse-create (snippet)
   "Parse a recently inserted snippet template, creating all
 necessary fields, mirrors and exit points.
 
 Meant to be called in a narrowed buffer, does various passes"
-  (let ((parse-start (point)))
+  (let ((parse-start (point))
+	(dollar-regions (list 'reg)))
     ;; protect quote and backquote escapes
     ;; 
     (yas/protect-escapes nil '(?` ?'))
@@ -2241,15 +2296,21 @@ Meant to be called in a narrowed buffer, does various passes"
     ;; parse fields with {}
     ;; 
     (goto-char parse-start)
-    (yas/field-parse-create snippet)
+    (yas/field-parse-create snippet dollar-regions)
     ;; parse simple mirrors and fields
     ;; 
     (goto-char parse-start)
-    (yas/simple-mirror-parse-create snippet)
+    (yas/simple-mirror-parse-create snippet dollar-regions)
     ;; parse mirror transforms
     ;;
     (goto-char parse-start)
-    (yas/transform-mirror-parse-create snippet)
+    (yas/transform-mirror-parse-create snippet dollar-regions)
+    ;; calculate adjacencies of fields and mirrors
+    ;;
+    (yas/calculate-adjacencies snippet)
+    ;; Delete $-constructs
+    ;;
+    (yas/delete-regions (copy-list (rest dollar-regions)))
     ;; restore escapes
     ;;
     (goto-char parse-start)
@@ -2326,9 +2387,10 @@ Meant to be called in a narrowed buffer, does various passes"
       (dolist (mirror (yas/field-mirrors field))
 	(push (yas/mirror-start mirror) markers)
 	(push (yas/mirror-end mirror) markers)))
-    (when (and (yas/snippet-exit snippet)
-	       (marker-buffer (yas/snippet-exit snippet)))
-      (push (yas/snippet-exit snippet) markers))
+    (let ((snippet-exit (yas/snippet-exit snippet)))
+      (when (and snippet-exit
+		 (marker-buffer (yas/exit-marker snippet-exit)))
+	(push (yas/exit-marker snippet-exit) markers)))
     markers))
 
 (defun yas/real-line-beginning ()
@@ -2339,7 +2401,6 @@ Meant to be called in a narrowed buffer, does various passes"
       (incf n)
       (setq c (char-after n)))
     n))
-
 
 (defun yas/escape-string (escaped)
   (concat "YASESCAPE" (format "%d" escaped) "PROTECTGUARD"))
@@ -2394,7 +2455,11 @@ With optional string TEXT do it in string instead of the buffer."
     (set-marker-insertion-type marker nil)
     marker))
 
-(defun yas/field-parse-create (snippet &optional parent-field)
+(defun yas/add-to-list (l e)
+  (setf (cdr l)
+	(cons e (cdr l))))
+
+(defun yas/field-parse-create (snippet dollar-regions &optional parent-field)
   "Parse most field expression, except for the simple one \"$n\".
 
 The following count as a field:
@@ -2418,14 +2483,16 @@ When multiple expressions are found, only the last one counts."
 						 (yas/make-marker (1- real-match-end-0))
 						 parent-field))))
       (when brand-new-field
-	(delete-region (1- real-match-end-0) real-match-end-0)
-	(delete-region (match-beginning 0) (match-beginning 2))
+	(yas/add-to-list dollar-regions
+			 (cons (1- real-match-end-0) real-match-end-0))
+	(yas/add-to-list dollar-regions
+			 (cons (match-beginning 0) (match-beginning 2))) 
 	(push brand-new-field (yas/snippet-fields snippet))
 	(save-excursion
 	  (save-restriction
 	    (narrow-to-region (yas/field-start brand-new-field) (yas/field-end brand-new-field))
 	    (goto-char (point-min))
-	    (yas/field-parse-create snippet brand-new-field)))))))
+	    (yas/field-parse-create snippet dollar-regions brand-new-field)))))))
   (when parent-field
   (save-excursion
     (while (re-search-forward yas/multi-dollar-lisp-expression-regexp nil t)
@@ -2433,9 +2500,10 @@ When multiple expressions are found, only the last one counts."
 	(when real-match-end-1
 	  (let ((lisp-expression-string (buffer-substring-no-properties (match-beginning 1) real-match-end-1)))
 	    (setf (yas/field-transform parent-field) (yas/restore-escapes lisp-expression-string)))
-	  (delete-region (match-beginning 0) real-match-end-1)))))))
+	  (yas/add-to-list dollar-regions
+			   (cons (match-beginning 0) real-match-end-1))))))))
 
-(defun yas/transform-mirror-parse-create (snippet)
+(defun yas/transform-mirror-parse-create (snippet dollar-regions)
   "Parse the \"${n:$(lisp-expression)}\" mirror transformations."
   (while (re-search-forward yas/transform-mirror-regexp nil t)
   (let* ((real-match-end-0 (yas/scan-sexps (1+ (match-beginning 0)) 1))
@@ -2450,21 +2518,23 @@ When multiple expressions are found, only the last one counts."
 			     (yas/restore-escapes (buffer-substring-no-properties (match-beginning 2)
 										  (1- real-match-end-0))))
 	    (yas/field-mirrors field))
-      (delete-region (match-beginning 0) real-match-end-0)))))
+      (yas/add-to-list dollar-regions
+		       (cons (match-beginning 0) real-match-end-0))))))
 
-(defun yas/simple-mirror-parse-create (snippet)
+(defun yas/simple-mirror-parse-create (snippet dollar-regions)
   "Parse the simple \"$n\" mirrors and the exit-marker."
   (while (re-search-forward yas/simple-mirror-regexp nil t)
   (let ((number (string-to-number (match-string-no-properties 1))))
     (cond ((zerop number)
 	     
 	   (setf (yas/snippet-exit snippet)
-		 (yas/make-marker (match-end 0)))
+		 (yas/make-exit (yas/make-marker (match-end 0)))) 
 	   (save-excursion
 	     (goto-char (match-beginning 0))
 	     (when (and yas/wrap-around-region yas/selected-text)
 	       (insert yas/selected-text))
-	     (delete-region (point) (yas/snippet-exit snippet))))
+	     (yas/add-to-list dollar-regions
+			      (cons (point) (yas/exit-marker (yas/snippet-exit snippet))))))
 	  (t
 	   (let ((field (yas/snippet-find-field snippet number)))
 	     (if field
@@ -2477,7 +2547,16 @@ When multiple expressions are found, only the last one counts."
 				     (yas/make-marker (match-beginning 0))
 				     nil)
 		     (yas/snippet-fields snippet))))
-	   (delete-region (match-beginning 0) (match-end 0)))))))
+	   (yas/add-to-list dollar-regions
+			    (cons (match-beginning 0) (match-end 0))))))))
+
+(defun yas/delete-regions (regions)
+  "Sort disjuct REGIONS by start point, then delete from the back."
+  (mapc #'(lambda (reg)
+	    (delete-region (car reg) (cdr reg)))
+	(sort regions
+	      #'(lambda (r1 r2)
+		  (>= (car r1) (car r2))))))
 
 (defun yas/update-mirrors (snippet)
   "Updates all the mirrors of SNIPPET."
@@ -2490,9 +2569,6 @@ When multiple expressions are found, only the last one counts."
       ;; 
       (let ((inhibit-modification-hooks t))
 	(yas/mirror-update-display mirror field)
-	;; Take care of the fields adjacent to this mirror's back
-	;; TODO: Known bug
-	
 	;; `yas/place-overlays' is needed if the active field and
 	;; protected overlays have been changed because of insertions
 	;; in `yas/mirror-update-display'
@@ -2510,7 +2586,8 @@ When multiple expressions are found, only the last one counts."
     (insert reflection)
     (if (> (yas/mirror-end mirror) (point))
 	(delete-region (point) (yas/mirror-end mirror))
-      (set-marker (yas/mirror-end mirror) (point))))))
+      (set-marker (yas/mirror-end mirror) (point))
+      (yas/advance-start-maybe (yas/mirror-next mirror) (point))))))
 
 (defun yas/field-update-display (field snippet)
   "Much like `yas/mirror-update-display', but for fields"
@@ -2525,7 +2602,8 @@ When multiple expressions are found, only the last one counts."
       (insert transformed)
       (if (> (yas/field-end field) (point))
 	  (delete-region (point) (yas/field-end field))
-	(set-marker (yas/field-end field) (point)))
+	(set-marker (yas/field-end field) (point))
+	(yas/advance-start-maybe (yas/field-next field) (point)))
       t))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2564,48 +2642,70 @@ When multiple expressions are found, only the last one counts."
   "Debug snippets, fields, mirrors and the `buffer-undo-list'."
   (interactive)
   (with-output-to-temp-buffer "*YASnippet trace*"
-  (princ "Interesting YASnippet vars: \n\n")
+    (princ "Interesting YASnippet vars: \n\n")
 
-  (princ (format "\nPost command hook: %s\n" post-command-hook))
-  (princ (format "\nPre  command hook: %s\n" pre-command-hook))
+    (princ (format "\nPost command hook: %s\n" post-command-hook))
+    (princ (format "\nPre  command hook: %s\n" pre-command-hook))
 
-  (princ (format "%s live snippets in total\n" (length (yas/snippets-at-point (quote all-snippets)))))
-  (princ (format "%s live snippets at point:\n\n" (length (yas/snippets-at-point))))
+    (princ (format "%s live snippets in total\n" (length (yas/snippets-at-point (quote all-snippets)))))
+    (princ (format "%s overlays in buffer:\n\n" (length (overlays-in (point-min) (point-max)))))
+    (princ (format "%s live snippets at point:\n\n" (length (yas/snippets-at-point))))
     
-  (dolist (snippet (yas/snippets-at-point))
-    (princ (format "\tsid: %s active field %d from %s to %s covering \"%s\"\n"
-		   (yas/snippet-id snippet)
-		   (yas/field-number (yas/snippet-active-field snippet))
-		   (marker-position (yas/field-start (yas/snippet-active-field snippet)))
-		   (marker-position (yas/field-end (yas/snippet-active-field snippet)))
-		   (buffer-substring-no-properties (yas/field-start (yas/snippet-active-field snippet)) (yas/field-end (yas/snippet-active-field snippet)))))
-    (dolist (field (yas/snippet-fields snippet))
-      (princ (format "\tfield %d from %s to %s covering \"%s\" adj-fields %s adj-mirrors %s\n"
-		     (yas/field-number field)
-		     (marker-position (yas/field-start field))
-		     (marker-position (yas/field-end field))
-		     (buffer-substring-no-properties (yas/field-start field) (yas/field-end field))
-		     (length (yas/field-back-adjacent-fields field))
-		     (length (yas/field-back-adjacent-mirrors field))))
-      (dolist (mirror (yas/field-mirrors field))
-	(princ (format "\t\tmirror from %s to %s covering \"%s\"\n"
-		       (marker-position (yas/mirror-start mirror))
-		       (marker-position (yas/mirror-end mirror))
-		       (buffer-substring-no-properties (yas/mirror-start mirror) (yas/mirror-end mirror)))))))
+    
+    (dolist (snippet (yas/snippets-at-point))
+      (princ (format "\tsid: %d control overlay from %d to %d\n"
+		     (yas/snippet-id snippet)
+		     (overlay-start (yas/snippet-control-overlay snippet))
+		     (overlay-end (yas/snippet-control-overlay snippet))))
+      (princ (format "\tactive field: %d from %s to %s covering \"%s\"\n"
+		     (yas/field-number (yas/snippet-active-field snippet))
+		     (marker-position (yas/field-start (yas/snippet-active-field snippet)))
+		     (marker-position (yas/field-end (yas/snippet-active-field snippet)))
+		     (buffer-substring-no-properties (yas/field-start (yas/snippet-active-field snippet)) (yas/field-end (yas/snippet-active-field snippet)))))
+      (when (yas/snippet-exit snippet)
+	(princ (format "\tsnippet-exit: at %s next: %s\n"
+		       (yas/exit-marker (yas/snippet-exit snippet))
+		       (yas/exit-next (yas/snippet-exit snippet)))))
+      (dolist (field (yas/snippet-fields snippet))
+	(princ (format "\tfield: %d from %s to %s covering \"%s\" next: %s\n"
+		       (yas/field-number field)
+		       (marker-position (yas/field-start field))
+		       (marker-position (yas/field-end field))
+		       (buffer-substring-no-properties (yas/field-start field) (yas/field-end field))
+		       (yas/debug-format-fom-concise (yas/field-next field))))
+	(dolist (mirror (yas/field-mirrors field))
+	  (princ (format "\t\tmirror: from %s to %s covering \"%s\" next: %s\n"
+			 (marker-position (yas/mirror-start mirror))
+			 (marker-position (yas/mirror-end mirror))
+			 (buffer-substring-no-properties (yas/mirror-start mirror) (yas/mirror-end mirror))
+			 (yas/debug-format-fom-concise (yas/mirror-next mirror)))))))
 
-  
+    (princ (format "\nUndo is %s and point-max is %s.\n"
+		   (if (eq buffer-undo-list t)
+		       "DISABLED"
+		     "ENABLED")
+		   (point-max)))
+    (unless (eq buffer-undo-list t)
+      (princ (format "Undpolist has %s elements. First 10 elements follow:\n" (length buffer-undo-list)))
+      (let ((first-ten (subseq buffer-undo-list 0 19)))
+	(dolist (undo-elem first-ten)
+	  (princ (format "%2s:  %s\n" (position undo-elem first-ten) (truncate-string-to-width (format "%s" undo-elem) 70))))))))
 
-  (princ (format "\nUndo is %s and point-max is %s.\n"
-		 (if (eq buffer-undo-list t)
-		     "DISABLED"
-		   "ENABLED")
-		 (point-max)))
-  (unless (eq buffer-undo-list t)
-    (princ (format "Undpolist has %s elements. First 10 elements follow:\n" (length buffer-undo-list)))
-    (let ((first-ten (subseq buffer-undo-list 0 19)))
-      (dolist (undo-elem first-ten)
-	(princ (format "%2s:  %s\n" (position undo-elem first-ten) (truncate-string-to-width (format "%s" undo-elem) 70))))))))
-
+(defun yas/debug-format-fom-concise (fom)
+  (when fom
+    (cond ((yas/field-p fom)
+	   (format "field %d from %d to %d"
+		   (yas/field-number fom)
+		   (marker-position (yas/field-start fom))
+		   (marker-position (yas/field-end fom))))
+	  ((yas/mirror-p fom)
+	   (format "mirror from %d to %d"
+		   (marker-position (yas/mirror-start fom))
+		   (marker-position (yas/mirror-end fom))))
+	  (t
+	   (format "snippet exit at %d"
+		   (marker-position (yas/fom-start fom)))))))
+	  
 
 (defun yas/exterminate-package ()
   (interactive)
