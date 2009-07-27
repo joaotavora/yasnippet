@@ -6,6 +6,14 @@ ChangeLog
 :Contact: pluskid@gmail.com
 :Date: 2008-03-22
 
+0.6.0c / 2009-07-27
+===================
+
+* Now byte compiles correctly with no warnings.
+* Fixed `Issue 68
+  <http://code.google.com/p/yasnippet/issues/detail?id=68>`_ with
+  mouse-clicking alternatives in ``ido-mode``.
+* Added ``yas/also-auto-indent-first-line`` customization variable.
 
 0.6.0b / 2009-07-25
 ===================

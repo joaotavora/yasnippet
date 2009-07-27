@@ -4,7 +4,7 @@
 
 ;; Authors: pluskid <pluskid@gmail.com>, joaotavora <joaotavora@gmail.com>
 ;; Version: 0.6.0
-;; Package-version: 0.6.0b
+;; Package-version: 0.6.0c
 ;; X-URL: http://code.google.com/p/yasnippet/
 ;; Keywords: snippet, textmate
 ;; URL: http://code.google.com/p/yasnippet/
