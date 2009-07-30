@@ -239,10 +239,14 @@ field"
 The fall back behavior of YASnippet when it can't find a snippet
 to expand.
 
-`call-other-command' means try to temporarily disable
-    YASnippet and call other command bound to `yas/trigger-key'.
+`call-other-command' means try to temporarily disable YASnippet
+    and call the next command bound to `yas/trigger-key'.
 
-`return-nil' means return do nothing."
+`return-nil' means return do nothing.
+
+An entry (apply COMMAND . ARGS) means interactively call COMMAND,
+if ARGS is non-nil, call COMMAND non-interactively with ARGS as
+arguments."
   :type '(choice (const :tag "Call previous command"  'call-other-command)
                  (const :tag "Do nothing"    'return-nil))
   :group 'yasnippet)
@@ -715,12 +719,8 @@ MODE-SYMBOL or `major-mode'."
 	
 (defun yas/menu-keymap-get-create (mode)
   "Get the menu keymap correspondong to MODE."
-  (let ((keymap (gethash mode yas/menu-table)))
-    (unless keymap
-      (setq keymap (make-sparse-keymap))
-      (puthash mode
-	       keymap yas/menu-table))
-    keymap))
+  (or (gethash mode yas/menu-table)
+      (puthash mode (make-sparse-keymap) yas/menu-table)))
 
 (defun yas/current-key ()
   "Get the key under current position. A key is used to find
@@ -936,30 +936,24 @@ TEMPLATES is a list of `yas/template'."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Loading snippets from files
 ;; 
-(defun yas/load-directory-1 (directory &optional parents)
+(defun yas/load-directory-1 (directory &optional parents root)
   "Recursively load snippet templates from DIRECTORY."
 
-  (let ((mode-sym (intern (file-name-nondirectory directory)))
-        (snippet-defs nil)
-	(parent-file-name (concat directory "/.yas-parents"))
-	more-parents)
+  (let* ((major-mode-and-parents (yas/compute-major-mode-and-parents (concat directory "/dummy")
+								     nil
+								     root))
+	 (mode-sym (car major-mode-and-parents))
+	 (parents (rest major-mode-and-parents))
+	 (snippet-defs nil))
     (with-temp-buffer
       (dolist (file (yas/subdirs directory 'no-subdirs-just-files))
         (when (file-readable-p file)
           (insert-file-contents file nil nil nil t)
           (push (yas/parse-template file)
 		snippet-defs))))
-    (when (file-readable-p parent-file-name)
-      (setq more-parents
-	    (mapcar #'intern
-		    (split-string
-		     (with-temp-buffer
-		       (insert-file parent-file-name)
-		       (buffer-substring-no-properties (point-min)
-						       (point-max)))))))
     (yas/define-snippets mode-sym
                          snippet-defs
-                         (append parents more-parents))
+                         parents)
     (dolist (subdir (yas/subdirs directory))
       (yas/load-directory-1 subdir (list mode-sym)))))
 
@@ -975,7 +969,7 @@ content of the file is the template."
     (error "Error %s not a directory" directory))
   (add-to-list 'yas/root-directory directory)
   (dolist (dir (yas/subdirs directory))
-    (yas/load-directory-1 dir))
+    (yas/load-directory-1 dir nil directory))
   (when (interactive-p)
     (message "done.")))
 
@@ -1167,9 +1161,17 @@ its parent modes."
       (setf (yas/snippet-table-parents snippet-table)
             parent-tables)
       (when yas/use-menu
-        (define-key keymap (vector 'parent-mode)
-          `(menu-item "parent mode"
-                      ,(yas/menu-keymap-get-create parent-mode)))))
+	(let ((parent-menu-syms-and-names
+	       (if (listp parent-mode)
+		   (mapcar #'(lambda (sym)
+			       (cons sym (concat "parent mode - " (symbol-name sym))))
+			   parent-mode)
+		 '((parent-mode . "parent mode")))))
+	  (mapc #'(lambda (sym-and-name)
+		    (define-key keymap (vector (intern (replace-regexp-in-string " " "_" (cdr sym-and-name))))
+		      (list 'menu-item (cdr sym-and-name)
+			    (yas/menu-keymap-get-create (car sym-and-name)))))
+		(reverse parent-menu-syms-and-names)))))
     (when (and yas/use-menu
                (yas/real-mode? mode))
       (define-key yas/minor-mode-menu (vector mode)
@@ -1225,8 +1227,7 @@ Skip any submenus named \"parent mode\""
   (mapc #'(lambda (item)
 	    (when (and (keymapp (fourth item))
 		       (stringp (third item))
-		       (not (string= (third item)
-				     "parent mode")))
+		       (not (string-match "parent mode" (third item))))
 	      (yas/delete-from-keymap (fourth item) name)))
 	(rest keymap))
   ;;
@@ -1241,6 +1242,8 @@ Skip any submenus named \"parent mode\""
 							     (and (string= (third item) name)))
 							;; a stale subgroup
 							(and (keymapp (fourth item))
+							     (not (and (stringp (third item))
+								       (string-match "parent mode" (third item))))
 							     (null (rest (fourth item)))))))
 					      keymap))
 	(setf (nthcdr pos-in-keymap keymap)
@@ -1295,13 +1298,27 @@ conditions to filter out potential expansions."
 				end
 				(yas/template-content template)
 				(yas/template-env template))))
-      (if (eq yas/fallback-behavior 'return-nil)
-	  nil				; return nil
-	(let* ((yas/minor-mode nil)
-	       (command (key-binding (read-kbd-macro yas/trigger-key))))
-	  (when (commandp command)
-	    (setq this-command command)
-	    (call-interactively command)))))))
+      (cond ((eq yas/fallback-behavior 'return-nil)
+	     ;; return nil
+	     nil)
+	    ((eq yas/fallback-behavior 'call-other-command)
+	     (let* ((yas/minor-mode nil)
+		    (command (key-binding (read-kbd-macro yas/trigger-key))))
+	       (when (commandp command)
+		 (setq this-command command)
+		 (call-interactively command))))
+	    ((and (listp yas/fallback-behavior)
+		  (cdr yas/fallback-behavior)
+		  (eq 'apply (car yas/fallback-behavior)))
+	     (if (cddr yas/fallback-behavior)
+		 (apply (cadr yas/fallback-behavior)
+			(cddr yas/fallback-behavior))
+	       (when (commandp (cadr yas/fallback-behavior))
+		 (setq this-command (cadr yas/fallback-behavior))
+		 (call-interactively (cadr yas/fallback-behavior)))))
+	    (t
+	     ;; also return nil if all the other fallbacks have failed
+	     nil)))))
 
 (defun yas/all-templates (tables)
   "Return all snippet tables applicable for the current buffer.
@@ -1435,7 +1452,7 @@ otherwise, proposes to create the first option returned by
 	    (when (eq major-mode 'fundamental-mode)
 	      (snippet-mode))))))))
 
-(defun yas/compute-major-mode-and-parent (file &optional prompt-if-failed)
+(defun yas/compute-major-mode-and-parents (file &optional prompt-if-failed root-directory)
   (let* ((file-dir (and file
 			(directory-file-name (file-name-directory file))))
 	 (major-mode-name (and file-dir
@@ -1443,17 +1460,25 @@ otherwise, proposes to create the first option returned by
 	 (parent-file-dir (and file-dir
 			       (directory-file-name (file-name-directory file-dir))))
 	 (parent-mode-name (and parent-file-dir
+				(not (string= parent-file-dir root-directory))
 				(file-name-nondirectory parent-file-dir)))
 	 (major-mode-sym (or (and major-mode-name
 				  (intern major-mode-name))
 			     (when prompt-if-failed
 			       (read-from-minibuffer "[yas] Cannot auto-detect major mode! Enter a major mode: "))))
 	 (parent-mode-sym (and parent-mode-name
-			       (intern parent-mode-name))))
-    (if (fboundp major-mode-sym)
-	(cons major-mode-sym
-	      (when (fboundp parent-mode-sym)
-		parent-mode-sym)))))
+			       (intern parent-mode-name)))
+	 (parent-file-name (concat file-dir "/.yas-parents"))
+	 (more-parents (when (file-readable-p parent-file-name)
+			 (mapcar #'intern
+				 (split-string
+				  (with-temp-buffer
+				    (insert-file parent-file-name)
+				    (buffer-substring-no-properties (point-min)
+								    (point-max))))))))
+    (when major-mode-sym
+      (append (list major-mode-sym parent-mode-sym)
+	      more-parents))))
 
 (defun yas/load-snippet-buffer (&optional kill)
   "Parse and load current buffer's snippet definition.
