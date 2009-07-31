@@ -3,8 +3,8 @@
 ;; Copyright 2008 pluskid
 
 ;; Authors: pluskid <pluskid@gmail.com>, joaotavora <joaotavora@gmail.com>
-;; Version: 0.6.0
-;; Package-version: 0.6.0c
+;; Version: 0.6.1
+;; Package-version: 0.6.1b
 ;; X-URL: http://code.google.com/p/yasnippet/
 ;; Keywords: snippet, textmate
 ;; URL: http://code.google.com/p/yasnippet/
@@ -936,12 +936,12 @@ TEMPLATES is a list of `yas/template'."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Loading snippets from files
 ;; 
-(defun yas/load-directory-1 (directory &optional parents root)
+(defun yas/load-directory-1 (directory &optional parents no-hierarchy-parents)
   "Recursively load snippet templates from DIRECTORY."
 
   (let* ((major-mode-and-parents (yas/compute-major-mode-and-parents (concat directory "/dummy")
 								     nil
-								     root))
+								     no-hierarchy-parents))
 	 (mode-sym (car major-mode-and-parents))
 	 (parents (rest major-mode-and-parents))
 	 (snippet-defs nil))
@@ -969,7 +969,7 @@ content of the file is the template."
     (error "Error %s not a directory" directory))
   (add-to-list 'yas/root-directory directory)
   (dolist (dir (yas/subdirs directory))
-    (yas/load-directory-1 dir nil directory))
+    (yas/load-directory-1 dir nil 'no-hierarchy-parents))
   (when (interactive-p)
     (message "done.")))
 
@@ -1415,14 +1415,21 @@ also the current active tables."
       (push (format "%s/%s" main-dir (get mode 'derived-mode-parent)) options))
     (reverse options)))
 
-(defun yas/find-snippets (&optional same-window file)
+(defun yas/new-snippet (&optional same-window)
+  "Create a new snippet in guessed current mode's directory."
+  (interactive)
+  (yas/find-snippets same-window
+		     (read-from-minibuffer "Enter snippet name: ")))
+  
+
+(defun yas/find-snippets (&optional same-window file-name)
   "Look for user snippets in guessed current mode's directory.
 
 Calls `find-file' interactively in the guessed directory.
 
 With prefix arg SAME-WINDOW opens the buffer in the same window.
 
-With optional FILE, finds the file directly, i.e. `find-file' is
+With optional FILE-NAME, finds the file directly, i.e. `find-file' is
 called non-interactively.
 
 Because snippets can be loaded from many different locations,
@@ -1443,24 +1450,28 @@ otherwise, proposes to create the first option returned by
 
     (when target-directory
       (let ((default-directory target-directory))
-	(setq buffer (call-interactively (if same-window
-					     'find-file
-					   'find-file-other-window)))
+	(setq buffer (if file-name
+			 (if same-window
+			     (find-file file-name)
+			   (find-file-other-window file-name))
+		       (call-interactively (if same-window
+					       'find-file
+					     'find-file-other-window))))
 	(when buffer
 	  (save-excursion
 	    (set-buffer buffer)
 	    (when (eq major-mode 'fundamental-mode)
 	      (snippet-mode))))))))
 
-(defun yas/compute-major-mode-and-parents (file &optional prompt-if-failed root-directory)
+(defun yas/compute-major-mode-and-parents (file &optional prompt-if-failed no-hierarchy-parents)
   (let* ((file-dir (and file
-			(directory-file-name (file-name-directory file))))
+   			(directory-file-name (file-name-directory file))))
 	 (major-mode-name (and file-dir
 			       (file-name-nondirectory file-dir)))
 	 (parent-file-dir (and file-dir
 			       (directory-file-name (file-name-directory file-dir))))
 	 (parent-mode-name (and parent-file-dir
-				(not (string= parent-file-dir root-directory))
+				(not no-hierarchy-parents)
 				(file-name-nondirectory parent-file-dir)))
 	 (major-mode-sym (or (and major-mode-name
 				  (intern major-mode-name))
@@ -1468,17 +1479,17 @@ otherwise, proposes to create the first option returned by
 			       (read-from-minibuffer "[yas] Cannot auto-detect major mode! Enter a major mode: "))))
 	 (parent-mode-sym (and parent-mode-name
 			       (intern parent-mode-name)))
-	 (parent-file-name (concat file-dir "/.yas-parents"))
-	 (more-parents (when (file-readable-p parent-file-name)
+	 (extra-parents-file-name (concat file-dir "/.yas-parents"))
+	 (more-parents (when (file-readable-p extra-parents-file-name)
 			 (mapcar #'intern
 				 (split-string
 				  (with-temp-buffer
-				    (insert-file parent-file-name)
+				    (insert-file extra-parents-file-name)
 				    (buffer-substring-no-properties (point-min)
 								    (point-max))))))))
     (when major-mode-sym
-      (append (list major-mode-sym parent-mode-sym)
-	      more-parents))))
+      (remove nil (append (list major-mode-sym parent-mode-sym)
+			  more-parents)))))
 
 (defun yas/load-snippet-buffer (&optional kill)
   "Parse and load current buffer's snippet definition.
