@@ -98,7 +98,7 @@
 ;;
 ;;           Lets you create a new snippet file in the correct
 ;;           subdirectory of `yas/root-directory', according to the
-;;           active major mode
+;;           active major mode.
 ;;
 ;;       M-x yas/load-snippet-buffer
 ;;
@@ -273,9 +273,11 @@ This affects `yas/insert-snippet', `yas/visit-snippet-file'"
 (defcustom yas/use-menu t
   "Display a YASnippet menu in the menu bar.
 
-If this is set to t, all snippet template of the current
-mode will be listed under the menu \"yasnippet\"."
-  :type 'boolean
+When non-nil, snippet templates will be listed under the menu
+\"Yasnippet\". If set to `abbreviate', only the current major-mode
+menu and the modes set in `yas/mode-symbol' are listed."
+  :type '(choice (const :tag "Full"  t)
+                 (const :tag "Abbreviate" abbreviate))
   :group 'yasnippet)
 
 (defcustom yas/trigger-symbol " =>"
@@ -484,8 +486,6 @@ Here's an example:
 			(list "Reload-all-snippets" 'yas/reload-all)
 			(list "Load snippets..." 'yas/load-directory))))))
 
-(yas/init-keymap-and-menu)
-
 (define-minor-mode yas/minor-mode
   "Toggle YASnippet mode.
 
@@ -503,7 +503,15 @@ Key bindings:
   nil
   ;; The indicator for the mode line.
   " yas"
-  :group 'yasnippet)
+  :group 'yasnippet
+  (when yas/minor-mode
+    ;; when turning on theminor mode, re-read the `yas/trigger-key'
+    ;; if a `yas/minor-mode-map' is already built. Else, call
+    ;; `yas/init-keymap-and-menu' to build it
+    (if (and (cdr yas/minor-mode-map)
+	     yas/trigger-key)
+	(define-key yas/minor-mode-map (read-kbd-macro yas/trigger-key) 'yas/expand) 
+      (yas/init-keymap-and-menu))))
 
 (defun yas/minor-mode-on ()
   "Turn on YASnippet minor mode."
@@ -1175,7 +1183,8 @@ its parent modes."
     (when (and yas/use-menu
                (yas/real-mode? mode))
       (define-key yas/minor-mode-menu (vector mode)
-        `(menu-item ,(symbol-name mode) ,keymap)))
+        `(menu-item ,(symbol-name mode) ,keymap
+		    :visible (yas/show-menu-p ',mode))))
     (dolist (snippet snippets)
       (let* ((full-key (car snippet))
              (key (file-name-sans-extension full-key))
@@ -1216,11 +1225,19 @@ its parent modes."
                           ,(yas/make-menu-binding template)
                           :keys ,(concat key yas/trigger-symbol)))))))))
 
+(defun yas/show-menu-p (mode)
+  (message "what")
+  (or (not (eq yas/use-menu 'abbreviate)) 
+      (find mode (cons major-mode
+		       (if (listp yas/mode-symbol)
+			   yas/mode-symbol
+			 (list yas/mode-symbol))))))
+
 (defun yas/delete-from-keymap (keymap name)
   "Recursively delete items name NAME from KEYMAP and its submenus.
 
 Skip any submenus named \"parent mode\""
-  ;; First of all, r ecursively enter submenus, i.e. the tree is
+  ;; First of all, recursively enter submenus, i.e. the tree is
   ;; searched depth first so that stale submenus can be found in the
   ;; higher passes.
   ;; 
@@ -1275,15 +1292,24 @@ conditions to filter out potential expansions."
       'always
     (let ((local-condition (yas/template-condition-predicate
 			    yas/buffer-local-condition)))
-      (and local-condition
-	   (consp local-condition)
-	   (eq 'require-snippet-condition (car local-condition))
-	   (symbolp (cdr local-condition))
-	   (cdr local-condition)))))
+      (when local-condition
+	(if (eq local-condition t)
+	    t
+	  (and (consp local-condition)
+	       (eq 'require-snippet-condition (car local-condition))
+	       (symbolp (cdr local-condition))
+	       (cdr local-condition)))))))
 
-(defun yas/expand (&optional field)
-  "Expand a snippet."
+(defun yas/expand ()
+  "Expand a snippet before point.
+
+If no snippet expansion is possible, fall back to the behaviour
+defined in `yas/fallback-behavior'"
   (interactive)
+  (yas/expand-1))
+
+(defun yas/expand-1 (&optional field)
+  "Actually fo the work for `yas/expand'"
   (multiple-value-bind (templates start end) (if field
 						 (save-restriction
 						   (narrow-to-region (yas/field-start field) (yas/field-end field))
@@ -1497,7 +1523,7 @@ otherwise, proposes to create the first option returned by
 With optional prefix argument KILL quit the window and buffer."
   (interactive "P")
   (if buffer-file-name
-      (let ((major-mode-and-parent (yas/compute-major-mode-and-parent buffer-file-name)))
+      (let ((major-mode-and-parent (yas/compute-major-mode-and-parents buffer-file-name)))
 	(if major-mode-and-parent
 	    (let* ((parsed (yas/parse-template buffer-file-name))
 		   (name (and parsed
@@ -1518,7 +1544,7 @@ With optional prefix argument KILL quit the window and buffer."
 (defun yas/tryout-snippet (&optional debug)
   "Test current buffers's snippet template in other buffer."
   (interactive "P")
-  (let* ((major-mode-and-parent (yas/compute-major-mode-and-parent buffer-file-name))
+  (let* ((major-mode-and-parent (yas/compute-major-mode-and-parents buffer-file-name))
 	 (parsed (and major-mode-and-parent
 		      (fboundp (car major-mode-and-parent))
 		      (yas/parse-template (symbol-name (car major-mode-and-parent)))))
@@ -1739,7 +1765,7 @@ delegate to `yas/next-field'."
       (let ((yas/fallback-behavior 'return-nil)
 	    (active-field (overlay-get yas/active-field-overlay 'yas/field)))
 	(when active-field
-	  (unless (yas/expand active-field)
+	  (unless (yas/expand-1 active-field)
 	    (yas/next-field))))
     (yas/next-field)))
 
