@@ -604,8 +604,8 @@ This function implements the rules described in
 	templates
       (remove-if-not #'(lambda (pair)
 			 (let* ((condition (yas/template-condition (cdr pair)))
-				(result (and condition
-					     (yas/template-condition-predicate condition))))
+				(result (or (null condition)
+					    (yas/template-condition-predicate condition))))
 			   (cond ((eq requirement t)
 				  result)
 				 (t
@@ -1086,7 +1086,7 @@ Here's the default value for all the parameters:
               "  \"Initialize YASnippet and load snippets in the bundle.\""
               "  (yas/global-mode 1)\n")
       (flet ((yas/define-snippets
-	      (mode snippets &optional parent directory)
+	      (mode snippets &optional parent-or-parents)
 	      (with-current-buffer bundle-buffer
 		(insert ";;; snippets for " (symbol-name mode) "\n")
 		(insert "(yas/define-snippets '" (symbol-name mode) "\n")
@@ -1110,8 +1110,8 @@ Here's the default value for all the parameters:
 			    "nil")
 			  ")\n"))
 		(insert "  )\n")
-		(insert (if parent
-			    (concat "'" (symbol-name parent))
+		(insert (if parent-or-parents
+			    (format "'%s" parent-or-parents)
 			  "nil")
 			;; (if directory
 			;;     (concat "\"" directory "\"")
@@ -1119,7 +1119,7 @@ Here's the default value for all the parameters:
 			")\n\n"))))
         (dolist (dir dirs)
           (dolist (subdir (yas/subdirs dir))
-            (yas/load-directory-1 subdir nil))))
+            (yas/load-directory-1 subdir nil 'no-hierarchy-parents))))
 
       (insert ")\n\n" code "\n")
       (insert "(provide '"
@@ -2748,6 +2748,15 @@ When multiple expressions are found, only the last one counts."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Debug functions.  Use (or change) at will whenever needed.
+;;
+;; some useful debug code for looking up snippet tables
+;;
+;; (insert (pp
+;; (let ((shit))
+;;   (maphash #'(lambda (k v)
+;; 	       (push k shit))
+;; 	   (yas/snippet-table-hash (gethash 'ruby-mode yas/snippet-tables)))
+;;   shit)))
 ;;
 
 (defun yas/debug-some-vars ()
