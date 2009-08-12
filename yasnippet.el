@@ -317,6 +317,13 @@ tab trigger."
   :type 'boolean
   :group 'yasnippet)
 
+(defcustom yas/visit-from-menu nil
+  "If non-nil visit snippets's files from menu, instead of expanding them.
+
+This cafn only work when snippets are loaded from files."
+  :type 'boolean
+  :group 'yasnippet)
+
 (defface yas/field-highlight-face
   '((((class color) (background light)) (:background "DarkSeaGreen1"))
     (t (:background "DimGrey")))
@@ -491,22 +498,63 @@ Here's an example:
   (easy-menu-define yas/minor-mode-menu
     yas/minor-mode-map
     "Menu used when YAS/minor-mode is active."
-    (cons "YASnippet"
-          (mapcar #'(lambda (ent)
-                      (when (third ent)
-                        (define-key yas/minor-mode-map (third ent) (second ent)))
-                      (vector (first ent) (second ent) t))
-                  (list (list "--")
-                        (list "Expand trigger" 'yas/expand (when yas/trigger-key
-                                                             (read-kbd-macro yas/trigger-key)))
-                        (list "Insert at point..." 'yas/insert-snippet "\C-c&\C-s")
-                        (list "New snippet..." 'yas/new-snippet "\C-c&\C-n")
-                        (list "Visit snippet file..." 'yas/visit-snippet-file "\C-c&\C-v")
-                        (list "Find snippets..." 'yas/find-snippets "\C-c&\C-f")
-                        (list "--")
-                        (list "Load snippets..." 'yas/load-directory)
-                        (list "Reload everything" 'yas/reload-all)
-                        (list "About" 'yas/about))))))
+    '("YASnippet"
+      "----"
+      ["Expand trigger" yas/expand
+       :help "Possibly expand tab trigger before point"]
+      ["Insert at point..." yas/insert-snippet
+       :help "Prompt for an expandable snippet and expand it at point"]
+      ["New snippet..." yas/new-snippet
+       :help "Create a new snippet in an appropriate directory"]
+      ["Visit snippet file..." yas/visit-snippet-file
+       :help "Prompt for an expandable snippet and find its file"]
+      ["Find snippets..." yas/find-snippets
+       :help "Invoke `find-file' in the appropriate snippet directory"] 
+      "----"
+      ["Wrap region in exit marker" 
+       (setq yas/wrap-around-region
+             (not yas/wrap-around-region))
+       :help "If t automatically wrap the selected text in the $0 snippet exit"
+       :style toggle :selected yas/wrap-around-region]
+      ["Allow stacked expansions " 
+       (setq yas/triggers-in-field
+             (not yas/triggers-in-field))
+       :help "If t allow snippets to be triggered inside other snippet fields"
+       :style toggle :selected yas/triggers-in-field]
+      ("Snippet menu behaviour"
+       ["Visit snippets" (setq yas/visit-from-menu t)
+        :help "Visit snippets from the menu"
+        :active t :style radio   :selected yas/visit-from-menu]
+       ["Expand snippets" (setq yas/visit-from-menu nil)
+        :help "Expand snippets from the menu"
+        :active t :style radio :selected (not yas/visit-from-menu)]
+       "----"
+       ["Show \"Real\" modes only" (setq yas/use-menu 'real-modes)
+        :help "Show snippet submenus for modes that appear to be real major modes"
+        :active t :style radio   :selected (eq yas/use-menu 'real-modes)]
+       ["Show all modes" (setq yas/use-menu 't)
+        :help "Show one snippet submenu for each loaded table"
+        :active t :style radio   :selected (eq yas/use-menu 'y)]
+       ["Abbreviate according to current mode" (setq yas/use-menu 'abbreviate)
+        :help "Show only snippet submenus for the current active modes"
+        :active t :style radio   :selected (eq yas/use-menu 'abbreviate)])
+      "----"
+      ["Load snippets..."  yas/load-directory
+       :help "Load snippets from a specific directory"]
+      ["Reload everything" yas/reload-all
+       :help "Cleanup stuff, reload snippets, rebuild menus"]
+      ["About"            yas/about
+       :help "Display some information about YASsnippet"]))
+  ;; Now for the stuff that has direct keybindings
+  ;;
+  (define-key yas/minor-mode-map (when yas/trigger-key
+                                   (read-kbd-macro
+                                    yas/trigger-key))
+    'yas/expand)
+  (define-key yas/minor-mode-map "\C-c&\C-s" 'yas/insert-snippet)
+  (define-key yas/minor-mode-map "\C-c&\C-n" 'yas/new-snippet)
+  (define-key yas/minor-mode-map "\C-c&\C-v" 'yas/visit-snippet-file)
+  (define-key yas/minor-mode-map "\C-c&\C-f" 'yas/find-snippets))
 
 (progn
   (yas/init-minor-keymap))
@@ -943,15 +991,17 @@ Here's a list of currently recognized variables:
              (directory-files directory t)))
 
 (defun yas/make-menu-binding (template)
-  `(lambda () (interactive) (yas/expand-from-menu ,template)))
+  `(lambda () (interactive) (yas/expand-or-visit-from-menu ,template)))
 
-(defun yas/expand-from-menu (template)
-  (let ((where (if mark-active
-                   (cons (region-beginning) (region-end))
-                 (cons (point) (point)))))
-    (yas/expand-snippet (yas/template-content template)
-                        (car where)
-                        (cdr where))))
+(defun yas/expand-or-visit-from-menu (template)
+  (if yas/visit-from-menu
+      (yas/visit-snippet-file-1 template)
+    (let ((where (if mark-active
+                       (cons (region-beginning) (region-end))
+                     (cons (point) (point)))))
+        (yas/expand-snippet (yas/template-content template)
+                            (car where)
+                            (cdr where)))))
 
 (defun yas/modify-alist (alist key value)
   "Modify ALIST to map KEY to VALUE. return the new alist."
@@ -1430,7 +1480,9 @@ its parent modes."
             (define-key group-keymap (vector (gensym))
               `(menu-item ,(yas/template-name template)
                           ,(yas/make-menu-binding template)
-                          :keys ,(concat key yas/trigger-symbol)))))))))
+                          :help name
+                          :keys (when (and key name)
+                                  ,(concat key yas/trigger-symbol))))))))))
 
 (defun yas/show-menu-p (mode)
   (message "what")
@@ -1616,14 +1668,17 @@ visited file in `snippet-mode'."
                             (car templates)))))
 
     (when template
-      (let ((file (yas/template-file template)))
-        (cond ((and file (file-exists-p file))
-               (find-file-other-window file)
-               (snippet-mode))
-              (file
-               (message "Original file %s no longer exists!" file))
-              (t
-               (message "This snippet was not loaded from a file!")))))))
+      (yas/visit-snippet-file-1 template))))
+
+(defun yas/visit-snippet-file-1 (template)
+  (let ((file (yas/template-file template)))
+    (cond ((and file (file-exists-p file))
+           (find-file-other-window file)
+           (snippet-mode))
+          (file
+           (message "Original file %s no longer exists!" file))
+          (t
+           (message "This snippet was not loaded from a file!")))))
 
 (defun yas/guess-snippet-directory ()
   "Try to guess suitable directories based on `major-mode' and
