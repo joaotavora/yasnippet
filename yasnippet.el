@@ -309,6 +309,14 @@ An error string \"[yas] error\" is returned instead."
   :type 'boolean
   :group 'yasnippet)
 
+(defcustom yas/ignore-filenames-as-triggers nil
+  "If non-nil, don't derive tab triggers from filenames.
+
+This means a snippet without a \"# key:'\ directive wont have a
+tab trigger."
+  :type 'boolean
+  :group 'yasnippet)
+
 (defface yas/field-highlight-face
   '((((class color) (background light)) (:background "DarkSeaGreen1"))
     (t (:background "DimGrey")))
@@ -652,21 +660,49 @@ This function implements the rules described in
 (defun yas/snippet-table-fetch (table key)
   "Fetch a snippet binding to KEY from TABLE."
   (when table
-    (yas/filter-templates-by-condition (gethash key (yas/snippet-table-hash table)))))
+    (yas/filter-templates-by-condition
+     (copy-list (gethash key (yas/snippet-table-hash table))))))
 
 (defun yas/snippet-table-get-all-parents (table)
   (let ((parents (yas/snippet-table-parents table)))
     (when parents
-      (append parents
+      (append (copy-list parents)
               (mapcan #'yas/snippet-table-get-all-parents parents)))))
 
 (defun yas/snippet-table-templates (table)
   (when table
-    (let ((acc))
+    (let ((acc (list)))
       (maphash #'(lambda (key templates)
-                   (setq acc (append acc templates)))
+                   (setq acc (nconc acc (copy-list templates))))
                (yas/snippet-table-hash table))
       (yas/filter-templates-by-condition acc))))
+
+(defun yas/current-key ()
+  "Get the key under current position. A key is used to find
+the template of a snippet in the current snippet-table."
+  (let ((start (point))
+        (end (point))
+        (syntaxes yas/key-syntaxes)
+        syntax
+        done
+        templates)
+    (while (and (not done) syntaxes)
+      (setq syntax (car syntaxes))
+      (setq syntaxes (cdr syntaxes))
+      (save-excursion
+        (skip-syntax-backward syntax)
+        (setq start (point)))
+      (setq templates
+            (mapcan #'(lambda (table)
+                        (yas/snippet-table-fetch table (buffer-substring-no-properties start end)))
+                    (yas/get-snippet-tables)))
+      (if templates
+          (setq done t)
+        (setq start end)))
+    (list templates
+          start
+          end)))
+
 
 (defun yas/snippet-table-all-keys (table)
   (when table
@@ -677,13 +713,13 @@ This function implements the rules described in
                (yas/snippet-table-hash table))
       acc)))
 
-(defun yas/snippet-table-store (table full-key key template)
+(defun yas/snippet-table-store (table name key template)
   "Store a snippet template in the TABLE."
   ;; If replacing a snippet template, remember to remove its
   ;; keybinding first.
   ;;
   (let ((existing (aget (gethash key (yas/snippet-table-hash table))
-                        full-key)))
+                        name)))
     (when (and existing
                (yas/template-keybinding existing))
       (define-key
@@ -695,7 +731,7 @@ This function implements the rules described in
   (puthash key
            (yas/modify-alist (gethash key
                                       (yas/snippet-table-hash table))
-                             full-key
+                             name
                              template)
            (yas/snippet-table-hash table)))
 
@@ -780,30 +816,6 @@ MODE-SYMBOL or `major-mode'."
   (or (gethash mode yas/menu-table)
       (puthash mode (make-sparse-keymap) yas/menu-table)))
 
-(defun yas/current-key ()
-  "Get the key under current position. A key is used to find
-the template of a snippet in the current snippet-table."
-  (let ((start (point))
-        (end (point))
-        (syntaxes yas/key-syntaxes)
-        syntax done templates)
-    (while (and (not done) syntaxes)
-      (setq syntax (car syntaxes))
-      (setq syntaxes (cdr syntaxes))
-      (save-excursion
-        (skip-syntax-backward syntax)
-        (setq start (point)))
-      (setq templates
-            (mapcan #'(lambda (table)
-                        (yas/snippet-table-fetch table (buffer-substring-no-properties start end)))
-                    (yas/get-snippet-tables)))
-      (if templates
-          (setq done t)
-        (setq start end)))
-    (list templates
-          start
-          end)))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Template-related and snippet loading functions
 
@@ -815,7 +827,7 @@ parsed.
 
 Return a snippet-definition, i.e. a list
 
- (KEY TEMPLATE NAME CONDITION GROUP ENV)
+ (KEY TEMPLATE NAME CONDITION GROUP VARS FILE KEYBINDING)
 
 If the buffer contains a line of \"# --\" then the contents
 above this line are ignored. Variables can be set above this
@@ -830,18 +842,24 @@ Here's a list of currently recognized variables:
  * condition
  * key
  * group
- * env
+ * expand-env
 
 #name: #include \"...\"
 # --
 #include \"$1\""
+  ;;
+  ;;
   (goto-char (point-min))
-  (let* ((name (and file (file-name-nondirectory file)))
-         (key name)
+  (let* ((name (and file
+                    (file-name-nondirectory file)))
+         (key (unless yas/ignore-filenames-as-triggers
+                (and name
+                     (file-name-sans-extension name))))
          template
          bound
          condition
-         group
+         (group (and file
+                     (yas/calculate-group file)))
          env
          binding)
     (if (re-search-forward "^# --\n" nil t)
@@ -866,6 +884,51 @@ Here's a list of currently recognized variables:
       (setq template
             (buffer-substring-no-properties (point-min) (point-max))))
     (list key template name condition group env file binding)))
+
+(defun yas/calculate-group (file)
+  "Calculate the group for snippet file path FILE."
+  (let* ((dominating-dir (locate-dominating-file file
+                                                 ".yas-make-groups"))
+         (extra-path (and dominating-dir
+                          (replace-regexp-in-string (concat "^"
+                                                            (expand-file-name dominating-dir))
+                                                    ""
+                                                    (expand-file-name file))))
+         (extra-dir (and extra-path
+                         (file-name-directory extra-path)))
+         (group (and extra-dir
+                     (replace-regexp-in-string "/"
+                                               "."
+                                               (directory-file-name extra-dir)))))
+    group))
+
+;; (defun yas/glob-files (directory &optional recurse-p append)
+;;   "Returns files under DIRECTORY ignoring dirs and hidden files.
+
+;; If RECURSE in non-nil, do that recursively."
+;;   (let (ret
+;;         (default-directory directory))
+;;     (dolist (entry (directory-files "."))
+;;       (cond ((or (string-match "^\\."
+;;                                (file-name-nondirectory entry))
+;;                  (string-match "~$"
+;;                                (file-name-nondirectory entry)))
+;;              nil)
+;;             ((and recurse-p
+;;                   (file-directory-p entry))
+;;              (setq ret (nconc ret
+;;                               (yas/glob-files (expand-file-name entry)
+;;                                               recurse-p
+;;                                               (if append
+;;                                                   (concat append "/" entry)
+;;                                                 entry)))))
+;;             ((file-directory-p entry)
+;;              nil)
+;;             (t
+;;              (push (if append
+;;                        (concat append "/" entry)
+;;                      entry) ret))))
+;;     ret))
 
 (defun yas/subdirs (directory &optional file?)
   "Return subdirs or files of DIRECTORY according to FILE?."
@@ -997,26 +1060,36 @@ TEMPLATES is a list of `yas/template'."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Loading snippets from files
 ;;
-(defun yas/load-directory-1 (directory &optional parents no-hierarchy-parents)
+(defun yas/load-directory-1 (directory &optional parents no-hierarchy-parents making-groups-sym)
   "Recursively load snippet templates from DIRECTORY."
 
-  (let* ((major-mode-and-parents (yas/compute-major-mode-and-parents (concat directory "/dummy")
-                                                                     nil
-                                                                     no-hierarchy-parents))
-         (mode-sym (car major-mode-and-parents))
-         (parents (rest major-mode-and-parents))
-         (snippet-defs nil))
+  (let* ((major-mode-and-parents (unless making-groups-sym
+                                   (yas/compute-major-mode-and-parents (concat directory "/dummy")
+                                                                       nil
+                                                                       no-hierarchy-parents)))
+         (mode-sym (and major-mode-and-parents
+                        (car major-mode-and-parents)))
+         (parents (if making-groups-sym
+                      parents
+                    (rest major-mode-and-parents)))
+         (snippet-defs nil)
+         (make-groups-p (or making-groups-sym
+                            (file-exists-p (concat directory "/" ".yas-make-groups")))))
     (with-temp-buffer
       (dolist (file (yas/subdirs directory 'no-subdirs-just-files))
         (when (file-readable-p file)
           (insert-file-contents file nil nil nil t)
           (push (yas/parse-template file)
                 snippet-defs))))
-    (yas/define-snippets mode-sym
+    (yas/define-snippets (or mode-sym
+                             making-groups-sym)
                          snippet-defs
                          parents)
     (dolist (subdir (yas/subdirs directory))
-      (yas/load-directory-1 subdir (list mode-sym)))))
+      (if make-groups-p
+          (yas/load-directory-1 subdir parents 't (or mode-sym
+                                                      making-groups-sym))
+        (yas/load-directory-1 subdir (list mode-sym))))))
 
 (defun yas/load-directory (directory)
   "Load snippet definition from a directory hierarchy.
@@ -1265,9 +1338,14 @@ its parent modes."
     ;; Iterate the recently parsed snippets definition
     ;;
     (dolist (snippet snippets)
-      (let* ((full-key (car snippet))
-             (key (file-name-sans-extension full-key))
-             (name (or (third snippet) (file-name-extension full-key)))
+      (let* ((file (seventh snippet))
+             (key (or (car snippet)
+                      (unless yas/ignore-filenames-as-triggers
+                        (and file 
+                             (file-name-sans-extension (file-name-nondirectory file))))))
+             (name (or (third snippet)
+                       (and file
+                            (file-name-directory file))))
              (condition (fourth snippet))
              (group (fifth snippet))
              (keybinding (eighth snippet))
@@ -1297,27 +1375,33 @@ its parent modes."
            (setf keybinding nil)))
 
         ;; Create the `yas/template' object and store in the
-        ;; appropriate snippet table
+        ;; appropriate snippet table. This only done if we have found
+        ;; a key and a name for the snippet, because that is what
+        ;; indexes the snippet tables
         ;;
-        (setq template (yas/make-template (second snippet)
-                                          (or name key)
-                                          condition
-                                          (sixth snippet)
-                                          (seventh snippet)
-                                          keybinding))
-        (yas/snippet-table-store snippet-table
-                                 full-key
-                                 key
-                                 template)
-
-        ;; Now register the keybinding if it does not conflict!
+        (when (and key
+                   name)
+          (setq template (yas/make-template (second snippet)
+                                            (or name key)
+                                            condition
+                                            (sixth snippet)
+                                            (seventh snippet)
+                                            keybinding))
+          (yas/snippet-table-store snippet-table
+                                   name
+                                   key
+                                   template))
+        ;; If we have a keybinding, register it if it does not
+        ;; conflict!
         ;;
         (unless (or (not (consp keybinding))
                     (lookup-key (car keybinding) (cdr keybinding)))
           (define-key
             (car keybinding)
             (cdr keybinding)
-            `(lambda () (interactive) (yas/expand-snippet ,(second snippet)))))
+            `(lambda (&optional yas/prefix)
+               (interactive "P")
+               (yas/expand-snippet ,(second snippet)))))
 
         ;; Setup the menu groups, reorganizing from group to group if
         ;; necessary
@@ -1343,7 +1427,7 @@ its parent modes."
                       `(menu-item ,(symbol-name subgroup)
                                   ,subgroup-keymap)))
                   (setq group-keymap subgroup-keymap))))
-            (define-key group-keymap (vector (make-symbol full-key))
+            (define-key group-keymap (vector (gensym))
               `(menu-item ,(yas/template-name template)
                           ,(yas/make-menu-binding template)
                           :keys ,(concat key yas/trigger-symbol)))))))))
@@ -1687,10 +1771,12 @@ With optional prefix argument KILL quit the window and buffer."
   "Test current buffers's snippet template in other buffer."
   (interactive "P")
   (let* ((major-mode-and-parent (yas/compute-major-mode-and-parents buffer-file-name))
-         (parsed (and major-mode-and-parent
-                      (fboundp (car major-mode-and-parent))
-                      (yas/parse-template (symbol-name (car major-mode-and-parent)))))
+         (parsed (yas/parse-template))
+         (test-mode (or (and (car major-mode-and-parent)
+                             (fboundp (car major-mode-and-parent)))
+                        (intern (read-from-minibuffer "[yas] please input a mode: "))))
          (template (and parsed
+                        (fboundp test-mode)
                         (yas/make-template (second parsed)
                                            (third parsed)
                                            nil
@@ -1702,7 +1788,7 @@ With optional prefix argument KILL quit the window and buffer."
              (set-buffer (switch-to-buffer buffer-name))
              (erase-buffer)
              (setq buffer-undo-list nil)
-             (funcall (car major-mode-and-parent))
+             (funcall test-mode)
              (yas/expand-snippet (yas/template-content template)
                                  (point-min)
                                  (point-max)
@@ -1788,6 +1874,9 @@ Otherwise throw exception."
 
 (defvar yas/field-protection-overlays nil
   "Two overlays protect the current active field ")
+
+(defconst yas/prefix nil
+  "A prefix argument for expansion direct from keybindings")
 
 (defvar yas/deleted-text nil
   "The text deleted in the last snippet expansion.")
@@ -2673,11 +2762,12 @@ Meant to be called in a narrowed buffer, does various passes"
                  (let ((trouble-markers (remove-if-not #'(lambda (marker)
                                                            (= marker (point)))
                                                        snippet-markers)))
-                       (indent-according-to-mode)
-                       (mapc #'(lambda (marker)
-                                 (set-marker marker (point)))
-                             trouble-markers)
-                   (indent-according-to-mode)))
+                   (goto-char (line-end-position))
+                   (save-excursion
+                     (indent-according-to-mode))
+                   (mapc #'(lambda (marker)
+                             (set-marker marker (point)))
+                         trouble-markers)))
                (set-marker end nil))))
           (t
            nil))))
@@ -3068,6 +3158,90 @@ When multiple expressions are found, only the last one counts."
   (insert abbrev))
   (unless quiet
     (add-hook 'post-command-hook 'yas/debug-snippet-vars 't 'local)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; `locate-dominating-file' is added for compatibility in emacs < 23
+(unless (eq emacs-major-version 23)
+  
+  (defvar locate-dominating-stop-dir-regexp
+    "\\`\\(?:[\\/][\\/][^\\/]+[\\/]\\|/\\(?:net\\|afs\\|\\.\\.\\.\\)/\\)\\'"
+    "Regexp of directory names which stop the search in `locate-dominating-file'.
+Any directory whose name matches this regexp will be treated like
+a kind of root directory by `locate-dominating-file' which will stop its search
+when it bumps into it.
+The default regexp prevents fruitless and time-consuming attempts to find
+special files in directories in which filenames are interpreted as hostnames,
+or mount points potentially requiring authentication as a different user.")
+
+  ;; (defun locate-dominating-files (file regexp)
+  ;;   "Look up the directory hierarchy from FILE for a file matching REGEXP.
+  ;; Stop at the first parent where a matching file is found and return the list
+  ;; of files that that match in this directory."
+  ;;   (catch 'found
+  ;;     ;; `user' is not initialized yet because `file' may not exist, so we may
+  ;;     ;; have to walk up part of the hierarchy before we find the "initial UID".
+  ;;     (let ((user nil)
+  ;;           ;; Abbreviate, so as to stop when we cross ~/.
+  ;;           (dir (abbreviate-file-name (file-name-as-directory file)))
+  ;;           files)
+  ;;       (while (and dir
+  ;;                   ;; As a heuristic, we stop looking up the hierarchy of
+  ;;                   ;; directories as soon as we find a directory belonging to
+  ;;                   ;; another user.  This should save us from looking in
+  ;;                   ;; things like /net and /afs.  This assumes that all the
+  ;;                   ;; files inside a project belong to the same user.
+  ;;                   (let ((prev-user user))
+  ;;                     (setq user (nth 2 (file-attributes dir)))
+  ;;                     (or (null prev-user) (equal user prev-user))))
+  ;;         (if (setq files (condition-case nil
+  ;; 			    (directory-files dir 'full regexp 'nosort)
+  ;; 			  (error nil)))
+  ;;             (throw 'found files)
+  ;;           (if (equal dir
+  ;;                      (setq dir (file-name-directory
+  ;;                                 (directory-file-name dir))))
+  ;;               (setq dir nil))))
+  ;;       nil)))
+
+  (defun locate-dominating-file (file name)
+    "Look up the directory hierarchy from FILE for a file named NAME.
+Stop at the first parent directory containing a file NAME,
+and return the directory.  Return nil if not found."
+    ;; We used to use the above locate-dominating-files code, but the
+    ;; directory-files call is very costly, so we're much better off doing
+    ;; multiple calls using the code in here.
+    ;;
+    ;; Represent /home/luser/foo as ~/foo so that we don't try to look for
+    ;; `name' in /home or in /.
+    (setq file (abbreviate-file-name file))
+    (let ((root nil)
+          (prev-file file)
+          ;; `user' is not initialized outside the loop because
+          ;; `file' may not exist, so we may have to walk up part of the
+          ;; hierarchy before we find the "initial UID".
+          (user nil)
+          try)
+      (while (not (or root
+                      (null file)
+                      ;; FIXME: Disabled this heuristic because it is sometimes
+                      ;; inappropriate.
+                      ;; As a heuristic, we stop looking up the hierarchy of
+                      ;; directories as soon as we find a directory belonging
+                      ;; to another user.  This should save us from looking in
+                      ;; things like /net and /afs.  This assumes that all the
+                      ;; files inside a project belong to the same user.
+                      ;; (let ((prev-user user))
+                      ;;   (setq user (nth 2 (file-attributes file)))
+                      ;;   (and prev-user (not (equal user prev-user))))
+                      (string-match locate-dominating-stop-dir-regexp file)))
+        (setq try (file-exists-p (expand-file-name name file)))
+        (cond (try (setq root file))
+              ((equal file (setq prev-file file
+                                 file (file-name-directory
+                                       (directory-file-name file))))
+               (setq file nil))))
+      root)))
 
 (provide 'yasnippet)
 
