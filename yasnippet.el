@@ -252,7 +252,7 @@ arguments."
                  (const :tag "Do nothing"    'return-nil))
   :group 'yasnippet)
 
-(defcustom yas/choose-keys-first t
+(defcustom yas/choose-keys-first nil
   "If non-nil, prompt for snippet key first, then for template.
 
 Otherwise prompts for all possible snippet names.
@@ -511,16 +511,6 @@ Here's an example:
       ["Find snippets..." yas/find-snippets
        :help "Invoke `find-file' in the appropriate snippet directory"] 
       "----"
-      ["Wrap region in exit marker" 
-       (setq yas/wrap-around-region
-             (not yas/wrap-around-region))
-       :help "If t automatically wrap the selected text in the $0 snippet exit"
-       :style toggle :selected yas/wrap-around-region]
-      ["Allow stacked expansions " 
-       (setq yas/triggers-in-field
-             (not yas/triggers-in-field))
-       :help "If t allow snippets to be triggered inside other snippet fields"
-       :style toggle :selected yas/triggers-in-field]
       ("Snippet menu behaviour"
        ["Visit snippets" (setq yas/visit-from-menu t)
         :help "Visit snippets from the menu"
@@ -538,6 +528,80 @@ Here's an example:
        ["Abbreviate according to current mode" (setq yas/use-menu 'abbreviate)
         :help "Show only snippet submenus for the current active modes"
         :active t :style radio   :selected (eq yas/use-menu 'abbreviate)])
+      ("Indenting"
+       ["Auto" (setq yas/indent-line 'auto)
+        :help "Indent each line of the snippet with `indent-according-to-mode'"
+        :active t :style radio   :selected (eq yas/indent-line 'auto)]
+       ["Fixed" (setq yas/indent-line 'fixed)
+        :help "Indent the snippet to the current column"
+        :active t :style radio   :selected (eq yas/indent-line 'fixed)]
+       ["None" (setq yas/indent-line 'none)
+        :help "Don't apply any particular snippet indentation after expansion"
+        :active t :style radio   :selected (not (member yas/indent-line '(fixed auto)))]
+       "----"
+       ["Also auto indent first line" (setq yas/also-auto-indent-first-line
+                                            (not yas/also-auto-indent-first-line))
+        :help "When auto-indenting also, auto indent the first line menu"
+        :active (eq yas/indent-line 'auto)
+        :style toggle :selected yas/also-auto-indent-first-line]
+       )
+      ("Prompting method"
+       ["System X-widget" (setq yas/prompt-functions
+                                (cons 'yas/x-prompt
+                                      (remove 'yas/x-prompt
+                                              (yas/prompt-functions))))
+        :help "Use your windowing system's (gtk, mac, windows, etc...) default menu"
+        :active t :style radio   :selected (eq (car yas/prompt-functions)
+                                               'yas/x-prompt)]
+       ["Dropdown-list" (setq yas/prompt-functions
+                              (cons 'yas/dropdown-prompt
+                                    (remove 'yas/dropdown-prompt
+                                            (yas/prompt-functions))))
+        :help "Use a special dropdown list"
+        :active t :style radio   :selected (eq (car yas/prompt-functions)
+                                               'yas/dropdown-prompt)]
+       ["Ido" (setq yas/prompt-functions
+                    (cons 'yas/ido-prompt
+                          (remove 'yas/ido-prompt
+                                  (yas/prompt-functions))))
+        :help "Use an ido-style minibuffer prompt"
+        :active t :style radio   :selected (eq (car yas/prompt-functions)
+                                               'yas/ido-prompt)]
+       ["Completing read" (setq yas/prompt-functions
+                                (cons 'yas/completing-prompt
+                                      (remove 'yas/completing-prompt-prompt
+                                              (yas/prompt-functions))))
+        :help "Use a normal minibuffer prompt"
+        :active t :style radio   :selected (eq (car yas/prompt-functions)
+                                               'yas/completing-prompt-prompt)]
+       )
+      ("Misc"
+       ["Wrap region in exit marker" 
+        (setq yas/wrap-around-region
+              (not yas/wrap-around-region))
+        :help "If t automatically wrap the selected text in the $0 snippet exit"
+        :style toggle :selected yas/wrap-around-region]
+       ["Allow stacked expansions " 
+        (setq yas/triggers-in-field
+              (not yas/triggers-in-field))
+        :help "If t allow snippets to be triggered inside other snippet fields"
+        :style toggle :selected yas/triggers-in-field]
+       ["Revive snippets on undo " 
+        (setq yas/snippet-revival
+              (not yas/snippet-revival))
+        :help "If t allow snippets to become active again after undo"
+        :style toggle :selected yas/snippet-revival]
+       ["Good grace " 
+        (setq yas/good-grace
+              (not yas/good-grace))
+        :help "If t don't raise errors in bad embedded eslip in snippets"
+        :style toggle :selected yas/good-grace]
+       ["Ignore filenames as triggers" 
+        (setq yas/ignore-filenames-as-triggers
+              (not yas/ignore-filenames-as-triggers))
+        :help "If t don't derive tab triggers from filenames"
+        :style toggle :selected yas/ignore-filenames-as-triggers]
+       )
       "----"
       ["Load snippets..."  yas/load-directory
        :help "Load snippets from a specific directory"]
@@ -1828,7 +1892,8 @@ With optional prefix argument KILL quit the window and buffer."
   (let* ((major-mode-and-parent (yas/compute-major-mode-and-parents buffer-file-name))
          (parsed (yas/parse-template))
          (test-mode (or (and (car major-mode-and-parent)
-                             (fboundp (car major-mode-and-parent)))
+                             (fboundp (car major-mode-and-parent))
+                             (car major-mode-and-parent))
                         (intern (read-from-minibuffer "[yas] please input a mode: "))))
          (template (and parsed
                         (fboundp test-mode)
@@ -1849,7 +1914,7 @@ With optional prefix argument KILL quit the window and buffer."
                                  (point-max)
                                  (yas/template-env template))
              (when debug
-               (add-hook 'post-command-hook 'yas/debug-some-vars 't 'local))))
+               (add-hook 'post-command-hook 'yas/debug-snippet-vars 't 'local))))
           (t
            (message "[yas] Cannot test snippet for unknown major mode")))))
 
@@ -2471,7 +2536,7 @@ The error should be ignored in `debug-ignored-errors'"
 ;;; they should account for all situations...
 ;;;
 
-(defun yas/expand-snippet (template &optional start end snippet-vars)
+(defun yas/expand-snippet (template &optional start end expand-env)
   "Expand snippet at current point. Text between START and END
 will be deleted before inserting template."
   (run-hooks 'yas/before-expand-snippet-hook)
@@ -2496,12 +2561,10 @@ will be deleted before inserting template."
         (column (current-column))
         snippet)
 
-
-
-
     ;; Delete the region to delete, this *does* get undo-recorded.
     ;;
-    (when to-delete
+    (when (and to-delete
+               (> end start))
       (delete-region start end)
       (setq yas/deleted-text to-delete))
 
@@ -2521,9 +2584,9 @@ will be deleted before inserting template."
         (insert template)
 
         (setq snippet
-              (if snippet-vars
+              (if expand-env
                   (let ((read-vars (condition-case err
-                                       (read snippet-vars)
+                                       (read expand-env)
                                      (error nil))))
                     (eval `(let ,read-vars
                                (yas/snippet-create (point-min) (point-max)))))
@@ -2611,8 +2674,7 @@ Returns the newly created snippet."
     ;; Sort and link each field
     (yas/snippet-sort-fields snippet)
 
-    ;; Update the mirrors for the first time
-    (yas/update-mirrors snippet)
+    ;; (yas/update-mirrors snippet) ;; XXX: WHY was this here for so long...
 
     ;; Create keymap overlay for snippet
     (setf (yas/snippet-control-overlay snippet)
@@ -2627,6 +2689,7 @@ Returns the newly created snippet."
 
     snippet))
 
+
 ;;; apropos adjacencies: Once the $-constructs bits like "$n" and
 ;;; "${:n" are deleted in the recently expanded snippet, we might
 ;;; actually have many fields, mirrors (and the snippet exit) in the
@@ -2817,9 +2880,7 @@ Meant to be called in a narrowed buffer, does various passes"
                  (let ((trouble-markers (remove-if-not #'(lambda (marker)
                                                            (= marker (point)))
                                                        snippet-markers)))
-                   (goto-char (line-end-position))
-                   (save-excursion
-                     (indent-according-to-mode))
+                   (indent-according-to-mode)
                    (mapc #'(lambda (marker)
                              (set-marker marker (point)))
                          trouble-markers)))
