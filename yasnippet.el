@@ -549,28 +549,28 @@ Here's an example:
        ["System X-widget" (setq yas/prompt-functions
                                 (cons 'yas/x-prompt
                                       (remove 'yas/x-prompt
-                                              (yas/prompt-functions))))
+                                              yas/prompt-functions)))
         :help "Use your windowing system's (gtk, mac, windows, etc...) default menu"
         :active t :style radio   :selected (eq (car yas/prompt-functions)
                                                'yas/x-prompt)]
        ["Dropdown-list" (setq yas/prompt-functions
                               (cons 'yas/dropdown-prompt
                                     (remove 'yas/dropdown-prompt
-                                            (yas/prompt-functions))))
+                                            yas/prompt-functions)))
         :help "Use a special dropdown list"
         :active t :style radio   :selected (eq (car yas/prompt-functions)
                                                'yas/dropdown-prompt)]
        ["Ido" (setq yas/prompt-functions
                     (cons 'yas/ido-prompt
                           (remove 'yas/ido-prompt
-                                  (yas/prompt-functions))))
+                                  yas/prompt-functions)))
         :help "Use an ido-style minibuffer prompt"
         :active t :style radio   :selected (eq (car yas/prompt-functions)
                                                'yas/ido-prompt)]
        ["Completing read" (setq yas/prompt-functions
                                 (cons 'yas/completing-prompt
                                       (remove 'yas/completing-prompt-prompt
-                                              (yas/prompt-functions))))
+                                              yas/prompt-functions)))
         :help "Use a normal minibuffer prompt"
         :active t :style radio   :selected (eq (car yas/prompt-functions)
                                                'yas/completing-prompt-prompt)]
@@ -1176,34 +1176,35 @@ TEMPLATES is a list of `yas/template'."
 ;;
 (defun yas/load-directory-1 (directory &optional parents no-hierarchy-parents making-groups-sym)
   "Recursively load snippet templates from DIRECTORY."
-
-  (let* ((major-mode-and-parents (unless making-groups-sym
-                                   (yas/compute-major-mode-and-parents (concat directory "/dummy")
-                                                                       nil
-                                                                       no-hierarchy-parents)))
-         (mode-sym (and major-mode-and-parents
-                        (car major-mode-and-parents)))
-         (parents (if making-groups-sym
-                      parents
-                    (rest major-mode-and-parents)))
-         (snippet-defs nil)
-         (make-groups-p (or making-groups-sym
-                            (file-exists-p (concat directory "/" ".yas-make-groups")))))
-    (with-temp-buffer
-      (dolist (file (yas/subdirs directory 'no-subdirs-just-files))
-        (when (file-readable-p file)
-          (insert-file-contents file nil nil nil t)
-          (push (yas/parse-template file)
-                snippet-defs))))
-    (yas/define-snippets (or mode-sym
-                             making-groups-sym)
-                         snippet-defs
-                         parents)
-    (dolist (subdir (yas/subdirs directory))
-      (if make-groups-p
-          (yas/load-directory-1 subdir parents 't (or mode-sym
-                                                      making-groups-sym))
-        (yas/load-directory-1 subdir (list mode-sym))))))
+  ;; TODO: Rewrite this horrible, horrible monster I created
+  (unless (file-exists-p (concat directory "/" ".yas-skip"))
+    (let* ((major-mode-and-parents (unless making-groups-sym
+                                     (yas/compute-major-mode-and-parents (concat directory "/dummy")
+                                                                         nil
+                                                                         no-hierarchy-parents)))
+           (mode-sym (and major-mode-and-parents
+                          (car major-mode-and-parents)))
+           (parents (if making-groups-sym
+                        parents
+                      (rest major-mode-and-parents)))
+           (snippet-defs nil)
+           (make-groups-p (or making-groups-sym
+                              (file-exists-p (concat directory "/" ".yas-make-groups")))))
+      (with-temp-buffer
+        (dolist (file (yas/subdirs directory 'no-subdirs-just-files))
+          (when (file-readable-p file)
+            (insert-file-contents file nil nil nil t)
+            (push (yas/parse-template file)
+                  snippet-defs))))
+      (yas/define-snippets (or mode-sym
+                               making-groups-sym)
+                           snippet-defs
+                           parents)
+      (dolist (subdir (yas/subdirs directory))
+        (if make-groups-p
+            (yas/load-directory-1 subdir parents 't (or mode-sym
+                                                        making-groups-sym))
+          (yas/load-directory-1 subdir (list mode-sym)))))))
 
 (defun yas/load-directory (directory)
   "Load snippet definition from a directory hierarchy.
@@ -1493,14 +1494,14 @@ its parent modes."
         ;; a key and a name for the snippet, because that is what
         ;; indexes the snippet tables
         ;;
+        (setq template (yas/make-template (second snippet)
+                                          (or name key)
+                                          condition
+                                          (sixth snippet)
+                                          (seventh snippet)
+                                          keybinding))
         (when (and key
                    name)
-          (setq template (yas/make-template (second snippet)
-                                            (or name key)
-                                            condition
-                                            (sixth snippet)
-                                            (seventh snippet)
-                                            keybinding))
           (yas/snippet-table-store snippet-table
                                    name
                                    key
@@ -1544,9 +1545,9 @@ its parent modes."
             (define-key group-keymap (vector (gensym))
               `(menu-item ,(yas/template-name template)
                           ,(yas/make-menu-binding template)
-                          :help name
-                          :keys (when (and key name)
-                                  ,(concat key yas/trigger-symbol))))))))))
+                          :help ,name
+                          :keys ,(when (and key name)
+                                  (concat key yas/trigger-symbol))))))))))
 
 (defun yas/show-menu-p (mode)
   (message "what")
@@ -3290,11 +3291,12 @@ When multiple expressions are found, only the last one counts."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; `locate-dominating-file' is added for compatibility in emacs < 23
-(unless (eq emacs-major-version 23)
-  
-  (defvar locate-dominating-stop-dir-regexp
-    "\\`\\(?:[\\/][\\/][^\\/]+[\\/]\\|/\\(?:net\\|afs\\|\\.\\.\\.\\)/\\)\\'"
-    "Regexp of directory names which stop the search in `locate-dominating-file'.
+(eval-when-compile 
+  (unless (or (eq emacs-major-version 23)
+              (fboundp 'locate-dominating-file))
+    (defvar locate-dominating-stop-dir-regexp
+      "\\`\\(?:[\\/][\\/][^\\/]+[\\/]\\|/\\(?:net\\|afs\\|\\.\\.\\.\\)/\\)\\'"
+      "Regexp of directory names which stop the search in `locate-dominating-file'.
 Any directory whose name matches this regexp will be treated like
 a kind of root directory by `locate-dominating-file' which will stop its search
 when it bumps into it.
@@ -3302,74 +3304,44 @@ The default regexp prevents fruitless and time-consuming attempts to find
 special files in directories in which filenames are interpreted as hostnames,
 or mount points potentially requiring authentication as a different user.")
 
-  ;; (defun locate-dominating-files (file regexp)
-  ;;   "Look up the directory hierarchy from FILE for a file matching REGEXP.
-  ;; Stop at the first parent where a matching file is found and return the list
-  ;; of files that that match in this directory."
-  ;;   (catch 'found
-  ;;     ;; `user' is not initialized yet because `file' may not exist, so we may
-  ;;     ;; have to walk up part of the hierarchy before we find the "initial UID".
-  ;;     (let ((user nil)
-  ;;           ;; Abbreviate, so as to stop when we cross ~/.
-  ;;           (dir (abbreviate-file-name (file-name-as-directory file)))
-  ;;           files)
-  ;;       (while (and dir
-  ;;                   ;; As a heuristic, we stop looking up the hierarchy of
-  ;;                   ;; directories as soon as we find a directory belonging to
-  ;;                   ;; another user.  This should save us from looking in
-  ;;                   ;; things like /net and /afs.  This assumes that all the
-  ;;                   ;; files inside a project belong to the same user.
-  ;;                   (let ((prev-user user))
-  ;;                     (setq user (nth 2 (file-attributes dir)))
-  ;;                     (or (null prev-user) (equal user prev-user))))
-  ;;         (if (setq files (condition-case nil
-  ;; 			    (directory-files dir 'full regexp 'nosort)
-  ;; 			  (error nil)))
-  ;;             (throw 'found files)
-  ;;           (if (equal dir
-  ;;                      (setq dir (file-name-directory
-  ;;                                 (directory-file-name dir))))
-  ;;               (setq dir nil))))
-  ;;       nil)))
-
-  (defun locate-dominating-file (file name)
-    "Look up the directory hierarchy from FILE for a file named NAME.
+    (defun locate-dominating-file (file name)
+      "Look up the directory hierarchy from FILE for a file named NAME.
 Stop at the first parent directory containing a file NAME,
 and return the directory.  Return nil if not found."
-    ;; We used to use the above locate-dominating-files code, but the
-    ;; directory-files call is very costly, so we're much better off doing
-    ;; multiple calls using the code in here.
-    ;;
-    ;; Represent /home/luser/foo as ~/foo so that we don't try to look for
-    ;; `name' in /home or in /.
-    (setq file (abbreviate-file-name file))
-    (let ((root nil)
-          (prev-file file)
-          ;; `user' is not initialized outside the loop because
-          ;; `file' may not exist, so we may have to walk up part of the
-          ;; hierarchy before we find the "initial UID".
-          (user nil)
-          try)
-      (while (not (or root
-                      (null file)
-                      ;; FIXME: Disabled this heuristic because it is sometimes
-                      ;; inappropriate.
-                      ;; As a heuristic, we stop looking up the hierarchy of
-                      ;; directories as soon as we find a directory belonging
-                      ;; to another user.  This should save us from looking in
-                      ;; things like /net and /afs.  This assumes that all the
-                      ;; files inside a project belong to the same user.
-                      ;; (let ((prev-user user))
-                      ;;   (setq user (nth 2 (file-attributes file)))
-                      ;;   (and prev-user (not (equal user prev-user))))
-                      (string-match locate-dominating-stop-dir-regexp file)))
-        (setq try (file-exists-p (expand-file-name name file)))
-        (cond (try (setq root file))
-              ((equal file (setq prev-file file
-                                 file (file-name-directory
-                                       (directory-file-name file))))
-               (setq file nil))))
-      root)))
+      ;; We used to use the above locate-dominating-files code, but the
+      ;; directory-files call is very costly, so we're much better off doing
+      ;; multiple calls using the code in here.
+      ;;
+      ;; Represent /home/luser/foo as ~/foo so that we don't try to look for
+      ;; `name' in /home or in /.
+      (setq file (abbreviate-file-name file))
+      (let ((root nil)
+            (prev-file file)
+            ;; `user' is not initialized outside the loop because
+            ;; `file' may not exist, so we may have to walk up part of the
+            ;; hierarchy before we find the "initial UID".
+            (user nil)
+            try)
+        (while (not (or root
+                        (null file)
+                        ;; FIXME: Disabled this heuristic because it is sometimes
+                        ;; inappropriate.
+                        ;; As a heuristic, we stop looking up the hierarchy of
+                        ;; directories as soon as we find a directory belonging
+                        ;; to another user.  This should save us from looking in
+                        ;; things like /net and /afs.  This assumes that all the
+                        ;; files inside a project belong to the same user.
+                        ;; (let ((prev-user user))
+                        ;;   (setq user (nth 2 (file-attributes file)))
+                        ;;   (and prev-user (not (equal user prev-user))))
+                        (string-match locate-dominating-stop-dir-regexp file)))
+          (setq try (file-exists-p (expand-file-name name file)))
+          (cond (try (setq root file))
+                ((equal file (setq prev-file file
+                                   file (file-name-directory
+                                         (directory-file-name file))))
+                 (setq file nil))))
+        root))))
 
 (provide 'yasnippet)
 
