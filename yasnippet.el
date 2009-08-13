@@ -467,7 +467,7 @@ Here's an example:
   "A regexp to recognize a \"`lisp-expression`\" expression." )
 
 (defconst yas/transform-mirror-regexp
-  "${\\(?:\\([0-9]+\\):\\)?$\\([^}]*\\)"
+  "${\\(?:\\([0-9]+\\):\\)?$\\(([^}]*\\)"
   "A regexp to *almost* recognize a mirror with a transform.")
 
 (defconst yas/simple-mirror-regexp
@@ -1833,7 +1833,8 @@ otherwise, proposes to create the first option returned by
 
 (defun yas/compute-major-mode-and-parents (file &optional prompt-if-failed no-hierarchy-parents)
   (let* ((file-dir (and file
-                        (directory-file-name (file-name-directory file))))
+                        (directory-file-name (or (locate-dominating-file file ".yas-make-groups")
+                                                 (directory-file-name (file-name-directory file))))))
          (major-mode-name (and file-dir
                                (file-name-nondirectory file-dir)))
          (parent-file-dir (and file-dir
@@ -1976,15 +1977,6 @@ Otherwise throw exception."
                      (yas/snippet-find-field snippet number))))
     (when field
       (yas/field-text-for-display field))))
-
-;; (defun yas/oni (text regexp format &optional options)
-;;   "Pipes TEXT thru ruby Oniguruma regexp"
-;;   (replace-regexp-in-string
-;;    "\n$"
-;;    ""
-;;    (shell-command-to-string (format "ruby -e 'puts \"%s\".gsub(\"a\",\"b\")'" text))))
-
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Snippet expansion and field management
@@ -2785,13 +2777,19 @@ If it does, also call `yas/advance-end-maybe' on FOM."
     (set-marker (yas/fom-start fom) newstart)
     (yas/advance-end-maybe fom newstart)))
 
+
+(defvar yas/dollar-regions nil
+  "When expanding the snippet the \"parse-create\" functions add
+  cons cells to this var")
 (defun yas/snippet-parse-create (snippet)
   "Parse a recently inserted snippet template, creating all
 necessary fields, mirrors and exit points.
 
 Meant to be called in a narrowed buffer, does various passes"
-  (let ((parse-start (point))
-        (dollar-regions (list 'reg)))
+  (let ((parse-start (point)))
+    ;; Reset the yas/dollar-regions
+    ;;
+    (setq yas/dollar-regions nil)
     ;; protect quote and backquote escapes
     ;;
     (yas/protect-escapes nil '(?` ?'))
@@ -2807,21 +2805,21 @@ Meant to be called in a narrowed buffer, does various passes"
     ;; parse fields with {}
     ;;
     (goto-char parse-start)
-    (yas/field-parse-create snippet dollar-regions)
+    (yas/field-parse-create snippet)
     ;; parse simple mirrors and fields
     ;;
     (goto-char parse-start)
-    (yas/simple-mirror-parse-create snippet dollar-regions)
+    (yas/simple-mirror-parse-create snippet)
     ;; parse mirror transforms
     ;;
     (goto-char parse-start)
-    (yas/transform-mirror-parse-create snippet dollar-regions)
+    (yas/transform-mirror-parse-create snippet)
     ;; calculate adjacencies of fields and mirrors
     ;;
     (yas/calculate-adjacencies snippet)
     ;; Delete $-constructs
     ;;
-    (yas/delete-regions (copy-list (rest dollar-regions)))
+    (yas/delete-regions yas/dollar-regions)
     ;; restore escapes
     ;;
     (goto-char parse-start)
@@ -2965,57 +2963,72 @@ With optional string TEXT do it in string instead of the buffer."
     (set-marker-insertion-type marker nil)
     marker))
 
-(defun yas/add-to-list (l e)
-  (setf (cdr l)
-        (cons e (cdr l))))
-
-(defun yas/field-parse-create (snippet dollar-regions &optional parent-field)
-  "Parse most field expression, except for the simple one \"$n\".
+(defun yas/field-parse-create (snippet &optional parent-field)
+  "Parse most field expressions, except for the simple one \"$n\".
 
 The following count as a field:
 
 * \"${n: text}\", for a numbered field with default text, as long as N is not 0;
+
 * \"${n: text$(expression)}, the same with a lisp expression;
+  this is caught with the curiously named `yas/multi-dollar-lisp-expression-regexp'
+
 * the same as above but unnumbered, (no N:) and number is calculated automatically.
 
 When multiple expressions are found, only the last one counts."
+  ;;
   (save-excursion
-  (while (re-search-forward yas/field-regexp nil t)
-    (let* ((real-match-end-0 (yas/scan-sexps (1+ (match-beginning 0)) 1))
-           (number (and (match-string-no-properties 1)
-                        (string-to-number (match-string-no-properties 1))))
-           (brand-new-field (and real-match-end-0
-                                 (not (save-match-data
-                                        (eq (string-match "$[ \t\n]*("
-                                                          (match-string-no-properties 2)) 0)))
-                                 (not (and number (zerop number)))
-                                 (yas/make-field number
-                                                 (yas/make-marker (match-beginning 2))
-                                                 (yas/make-marker (1- real-match-end-0))
-                                                 parent-field))))
-      (when brand-new-field
-        (yas/add-to-list dollar-regions
-                         (cons (1- real-match-end-0) real-match-end-0))
-        (yas/add-to-list dollar-regions
-                         (cons (match-beginning 0) (match-beginning 2)))
-        (push brand-new-field (yas/snippet-fields snippet))
-        (save-excursion
-          (save-restriction
-            (narrow-to-region (yas/field-start brand-new-field) (yas/field-end brand-new-field))
-            (goto-char (point-min))
-            (yas/field-parse-create snippet dollar-regions brand-new-field)))))))
+    (while (re-search-forward yas/field-regexp nil t)
+      (let* ((real-match-end-0 (yas/scan-sexps (1+ (match-beginning 0)) 1))
+             (number (and (match-string-no-properties 1)
+                          (string-to-number (match-string-no-properties 1))))
+             (brand-new-field (and real-match-end-0
+                                   ;; break if on "$(" immediately
+                                   ;; after the ":", this will be
+                                   ;; caught as a mirror with
+                                   ;; transform later.
+                                   (not (save-match-data
+                                          (eq (string-match "$[ \t\n]*("
+                                                            (match-string-no-properties 2)) 0)))
+                                   (not (and number (zerop number)))
+                                   (yas/make-field number
+                                                   (yas/make-marker (match-beginning 2))
+                                                   (yas/make-marker (1- real-match-end-0))
+                                                   parent-field))))
+        (when brand-new-field
+          (goto-char real-match-end-0)
+          (push (cons (1- real-match-end-0) real-match-end-0)
+                yas/dollar-regions)
+          (push (cons (match-beginning 0) (match-beginning 2))
+                yas/dollar-regions)
+          (push brand-new-field (yas/snippet-fields snippet))
+          (save-excursion
+            (save-restriction
+              (narrow-to-region (yas/field-start brand-new-field) (yas/field-end brand-new-field))
+              (goto-char (point-min))
+              (yas/field-parse-create snippet brand-new-field)))))))
+  ;; if we entered from a parent field, now search for the
+  ;; `yas/multi-dollar-lisp-expression-regexp'. THis is used for
+  ;; primary field transformations
+  ;; 
   (when parent-field
-  (save-excursion
-    (while (re-search-forward yas/multi-dollar-lisp-expression-regexp nil t)
-      (let* ((real-match-end-1 (yas/scan-sexps (match-beginning 1) 1)))
-        (when real-match-end-1
-          (let ((lisp-expression-string (buffer-substring-no-properties (match-beginning 1)
-                                                                        real-match-end-1)))
-            (setf (yas/field-transform parent-field) (yas/restore-escapes lisp-expression-string)))
-          (yas/add-to-list dollar-regions
-                           (cons (match-beginning 0) real-match-end-1))))))))
+    (save-excursion
+      (while (re-search-forward yas/multi-dollar-lisp-expression-regexp nil t)
+        (let* ((real-match-end-1 (yas/scan-sexps (match-beginning 1) 1)))
+          ;; commit the primary field transformation if we don't find
+          ;; it in yas/dollar-regions (a subnested field) might have
+          ;; already caught it.
+          (when (and real-match-end-1
+                     (not (member (cons (match-beginning 0)
+                                        real-match-end-1)
+                                  yas/dollar-regions)))
+            (let ((lisp-expression-string (buffer-substring-no-properties (match-beginning 1)
+                                                                          real-match-end-1)))
+              (setf (yas/field-transform parent-field) (yas/restore-escapes lisp-expression-string)))
+            (push (cons (match-beginning 0) real-match-end-1)
+                  yas/dollar-regions)))))))
 
-(defun yas/transform-mirror-parse-create (snippet dollar-regions)
+(defun yas/transform-mirror-parse-create (snippet)
   "Parse the \"${n:$(lisp-expression)}\" mirror transformations."
   (while (re-search-forward yas/transform-mirror-regexp nil t)
   (let* ((real-match-end-0 (yas/scan-sexps (1+ (match-beginning 0)) 1))
@@ -3031,37 +3044,36 @@ When multiple expressions are found, only the last one counts."
                               (buffer-substring-no-properties (match-beginning 2)
                                                               (1- real-match-end-0))))
             (yas/field-mirrors field))
-      (yas/add-to-list dollar-regions
-                       (cons (match-beginning 0) real-match-end-0))))))
+      (push (cons (match-beginning 0) real-match-end-0) yas/dollar-regions)))))
 
-(defun yas/simple-mirror-parse-create (snippet dollar-regions)
+(defun yas/simple-mirror-parse-create (snippet)
   "Parse the simple \"$n\" mirrors and the exit-marker."
   (while (re-search-forward yas/simple-mirror-regexp nil t)
-  (let ((number (string-to-number (match-string-no-properties 1))))
-    (cond ((zerop number)
+    (let ((number (string-to-number (match-string-no-properties 1))))
+      (cond ((zerop number)
 
-           (setf (yas/snippet-exit snippet)
-                 (yas/make-exit (yas/make-marker (match-end 0))))
-           (save-excursion
-             (goto-char (match-beginning 0))
-             (when (and yas/wrap-around-region yas/selected-text)
-               (insert yas/selected-text))
-             (yas/add-to-list dollar-regions
-                              (cons (point) (yas/exit-marker (yas/snippet-exit snippet))))))
-          (t
-           (let ((field (yas/snippet-find-field snippet number)))
-             (if field
-                 (push (yas/make-mirror (yas/make-marker (match-beginning 0))
-                                        (yas/make-marker (match-beginning 0))
-                                        nil)
-                       (yas/field-mirrors field))
-               (push (yas/make-field number
-                                     (yas/make-marker (match-beginning 0))
-                                     (yas/make-marker (match-beginning 0))
-                                     nil)
-                     (yas/snippet-fields snippet))))
-           (yas/add-to-list dollar-regions
-                            (cons (match-beginning 0) (match-end 0))))))))
+             (setf (yas/snippet-exit snippet)
+                   (yas/make-exit (yas/make-marker (match-end 0))))
+             (save-excursion
+               (goto-char (match-beginning 0))
+               (when (and yas/wrap-around-region yas/selected-text)
+                 (insert yas/selected-text))
+               (push (cons (point) (yas/exit-marker (yas/snippet-exit snippet)))
+                     yas/dollar-regions)))
+            (t
+             (let ((field (yas/snippet-find-field snippet number)))
+               (if field
+                   (push (yas/make-mirror (yas/make-marker (match-beginning 0))
+                                          (yas/make-marker (match-beginning 0))
+                                          nil)
+                         (yas/field-mirrors field))
+                 (push (yas/make-field number
+                                       (yas/make-marker (match-beginning 0))
+                                       (yas/make-marker (match-beginning 0))
+                                       nil)
+                       (yas/snippet-fields snippet))))
+             (push (cons (match-beginning 0) (match-end 0))
+                   yas/dollar-regions))))))
 
 (defun yas/delete-regions (regions)
   "Sort disjuct REGIONS by start point, then delete from the back."
