@@ -721,12 +721,12 @@ Key bindings:
 ;;
 
 (defstruct (yas/template (:constructor yas/make-template
-                                       (content name condition env file keybinding)))
+                                       (content name condition expand-env file keybinding)))
   "A template for a snippet."
   content
   name
   condition
-  env
+  expand-env
   file
   keybinding)
 
@@ -736,14 +736,17 @@ Key bindings:
   (hash (make-hash-table :test 'equal))
   (parents nil))
 
-(defun yas/template-condition-predicate (condition)
+
+;;;; Filtering/condition login
+;;;; 
+(defun yas/eval-condition (condition)
   (condition-case err
       (save-excursion
         (save-restriction
           (save-match-data
             (eval condition))))
     (error (progn
-             (message (format "[yas]error in condition evaluation: %s"
+             (message (format "[yas] error in condition evaluation: %s"
                               (error-message-string err)))
              nil))))
 
@@ -760,14 +763,25 @@ This function implements the rules described in
     (if (eq requirement 'always)
         templates
       (remove-if-not #'(lambda (pair)
-                         (let* ((condition (yas/template-condition (cdr pair)))
-                                (result (or (null condition)
-                                            (yas/template-condition-predicate condition))))
-                           (cond ((eq requirement t)
-                                  result)
-                                 (t
-                                  (eq requirement result)))))
+                         (yas/template-can-expand-p (yas/template-condition (cdr pair)) requirement))
                      templates))))
+
+(defun yas/template-can-expand-p (condition &optional requirement)
+  "Evaluates CONDITION and REQUIREMENT and returns a boolean"
+  (let* ((requirement (or requirement
+                          (yas/require-template-specific-condition-p)))
+         (result (or (null condition)
+                     (yas/eval-condition
+                      (condition-case err
+                          (read condition)
+                        (error (progn
+                                 (message (format "[yas] error reading condition: %s"
+                                                  (error-message-string err))))
+                               nil))))))
+    (cond ((eq requirement t)
+           result)
+          (t
+           (eq requirement result)))))
 
 (defun yas/snippet-table-fetch (table key)
   "Fetch a snippet binding to KEY from TABLE."
@@ -835,9 +849,12 @@ the template of a snippet in the current snippet-table."
     (when (and existing
                (yas/template-keybinding existing))
       (define-key
-        (car (yas/template-keybinding existing))
-        (cdr (yas/template-keybinding existing))
-        nil)))
+        (symbol-value (first (yas/template-keybinding existing)))
+        (second (yas/template-keybinding existing))
+        nil)
+      (setq yas/active-keybindings
+            (delete (yas/template-keybinding existing)
+                    yas/active-keybindings))))
   ;; Now store the new template
   ;;
   (puthash key
@@ -860,7 +877,7 @@ a list of modes like this to help the judgement."
   (or (fboundp mode)
       (find mode yas/known-modes)))
 
-(defun yas/eval-string (string)
+(defun yas/read-and-eval-string (string)
   ;; TODO: This is a possible optimization point, the expression could
   ;; be stored in cons format instead of string,
   "Evaluate STRING and convert the result to string."
@@ -984,7 +1001,7 @@ Here's a list of currently recognized variables:
                  (when (string= "name" (match-string-no-properties 1))
                    (setq name (match-string-no-properties 2)))
                  (when (string= "condition" (match-string-no-properties 1))
-                   (setq condition (read (match-string-no-properties 2))))
+                   (setq condition (match-string-no-properties 2)))
                  (when (string= "group" (match-string-no-properties 1))
                    (setq group (match-string-no-properties 2)))
                  (when (string= "expand-env" (match-string-no-properties 1))
@@ -1227,12 +1244,12 @@ content of the file is the template."
   "Remove the all active snippet keybindings."
   (interactive)
   (dolist (keybinding yas/active-keybindings)
-    (define-key (car keybinding) (cdr keybinding) nil))
+    (define-key (symbol-value (first keybinding)) (second keybinding) nil))
   (setq yas/active-keybindings nil))
 
-(defun yas/reload-all ()
+(defun yas/reload-all (&optional reset-root-directory)
   "Reload all snippets and rebuild the YASnippet menu. "
-  (interactive)
+  (interactive "P")
   ;; Turn off global modes and minor modes, save their state though
   ;;
   (let ((restore-global-mode (prog1 yas/global-mode
@@ -1258,6 +1275,9 @@ content of the file is the template."
 
     ;; Now, clean up the other keymaps we might have cluttered up.
     (yas/kill-snippet-keybindings)
+
+    (when reset-root-directory
+      (setq yas/root-directory nil))
 
     ;; Reload the directories listed in `yas/root-directory' or prompt
     ;; the user to select one.
@@ -1470,23 +1490,22 @@ its parent modes."
         (condition-case err
             (when keybinding
               (setq keybinding (read (eighth snippet)))
-              (let* ((mode-map-symbol (intern (concat (symbol-name mode) "-map")))
+              (let* ((this-mode-map-symbol (intern (concat (symbol-name mode) "-map")))
                      (keys (or (and (consp keybinding)
                                     (read-kbd-macro (cdr keybinding)))
                                (read-kbd-macro keybinding)))
-                     (keymap (or (and (consp keybinding)
-                                      (boundp (car keybinding))
-                                      (symbol-value (car keybinding)))
-                                 (and (boundp mode-map-symbol)
-                                      (symbol-value mode-map-symbol)))))
-                (if (keymapp keymap)
-                    (progn
-                      (setq keybinding (cons keymap keys))
-                      (push keybinding yas/active-keybindings))
-                  (setq keybinding nil))))
+                     (keymap-symbol (or (and (consp keybinding)
+                                             (car keybinding))
+                                        this-mode-map-symbol)))
+                (if (and (boundp keymap-symbol)
+                         (keymapp (symbol-value keymap-symbol)))
+                    (setq keybinding (list keymap-symbol
+                                           keys
+                                           name))
+                  (error "that keymap does not exit"))))
           (error
-           (message "[yas] warning: could not read keybinding %s for snippet \"%s\""
-                    keybinding name)
+           (message "[yas] warning: keybinding \"%s\" invalid for snippet \"%s\""
+                    (key-description keybinding) name)
            (setf keybinding nil)))
 
         ;; Create the `yas/template' object and store in the
@@ -1509,14 +1528,21 @@ its parent modes."
         ;; If we have a keybinding, register it if it does not
         ;; conflict!
         ;;
-        (unless (or (not (consp keybinding))
-                    (lookup-key (car keybinding) (cdr keybinding)))
-          (define-key
-            (car keybinding)
-            (cdr keybinding)
-            `(lambda (&optional yas/prefix)
-               (interactive "P")
-               (yas/expand-snippet ,(second snippet)))))
+        (when keybinding
+          (if (lookup-key (symbol-value (first keybinding)) (second keybinding))
+              (message "[yas] warning: won't overwrite keybinding \"%s\" for snippet \"%s\" in `%s'"
+                       (key-description (second keybinding)) name (first keybinding))
+            (define-key
+              (symbol-value (first keybinding))
+              (second keybinding)
+              `(lambda (&optional yas/prefix)
+                 (interactive "P")
+                 (when (yas/template-can-expand-p ,(yas/template-condition template))
+                   (yas/expand-snippet ,(yas/template-content template)
+                                       nil
+                                       nil
+                                       ,(yas/template-expand-env template)))))
+            (add-to-list 'yas/active-keybindings keybinding)))
 
         ;; Setup the menu groups, reorganizing from group to group if
         ;; necessary
@@ -1620,7 +1646,7 @@ will only be expanded when the condition evaluated to non-nil."
 conditions to filter out potential expansions."
   (if (eq 'always yas/buffer-local-condition)
       'always
-    (let ((local-condition (yas/template-condition-predicate
+    (let ((local-condition (yas/eval-condition
                             yas/buffer-local-condition)))
       (when local-condition
         (if (eq local-condition t)
@@ -1653,7 +1679,7 @@ defined in `yas/fallback-behavior'"
             (yas/expand-snippet (yas/template-content template)
                                 start
                                 end
-                                (yas/template-env template))))
+                                (yas/template-expand-env template))))
       (cond ((eq yas/fallback-behavior 'return-nil)
              ;; return nil
              nil)
@@ -1715,7 +1741,7 @@ by condition."
         (yas/expand-snippet (yas/template-content template)
                             (car where)
                             (cdr where)
-                            (yas/template-env template))
+                            (yas/template-expand-env template))
       (message "[yas] No snippets can be inserted here!"))))
 
 (defun yas/visit-snippet-file ()
@@ -1914,7 +1940,7 @@ With optional prefix argument KILL quit the window and buffer."
              (yas/expand-snippet (yas/template-content template)
                                  (point-min)
                                  (point-max)
-                                 (yas/template-env template))
+                                 (yas/template-expand-env template))
              (when debug
                (add-hook 'post-command-hook 'yas/debug-snippet-vars 't 'local))))
           (t
@@ -2054,7 +2080,7 @@ for this field, apply it. Otherwise, returned nil."
          (transformed (and transform
                            (save-excursion
                              (goto-char start-point)
-                             (yas/eval-string transform)))))
+                             (yas/read-and-eval-string transform)))))
     transformed))
 
 (defsubst yas/replace-all (from to &optional text)
@@ -2148,7 +2174,7 @@ delegate to `yas/next-field'."
              (text yas/text)
              (yas/modified-p (yas/field-modified-p active-field)))
         ;;; primary field transform: exit call to field-transform
-        (yas/eval-string (yas/field-transform active-field))))
+        (yas/read-and-eval-string (yas/field-transform active-field))))
     ;; Now actually move...
     (cond ((>= target-pos (length live-fields))
            (yas/exit-snippet snippet))
@@ -2946,7 +2972,7 @@ With optional string TEXT do it in string instead of the buffer."
   "Replace all the \"`(lisp-expression)`\"-style expression
   with their evaluated value"
   (while (re-search-forward yas/backquote-lisp-expression-regexp nil t)
-  (let ((transformed (yas/eval-string (yas/restore-escapes (match-string 1)))))
+  (let ((transformed (yas/read-and-eval-string (yas/restore-escapes (match-string 1)))))
     (goto-char (match-end 0))
     (when transformed (insert transformed))
     (delete-region (match-beginning 0) (match-end 0)))))
@@ -3265,6 +3291,7 @@ When multiple expressions are found, only the last one counts."
   (interactive)
   (yas/global-mode -1)
   (yas/minor-mode -1)
+  (yas/kill-snippet-keybindings)
   (mapatoms #'(lambda (atom)
                 (when (string-match "yas/" (symbol-name atom))
                   (unintern atom)))))
@@ -3291,12 +3318,11 @@ When multiple expressions are found, only the last one counts."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; `locate-dominating-file' is added for compatibility in emacs < 23
-(eval-when-compile 
-  (unless (or (eq emacs-major-version 23)
-              (fboundp 'locate-dominating-file))
-    (defvar locate-dominating-stop-dir-regexp
-      "\\`\\(?:[\\/][\\/][^\\/]+[\\/]\\|/\\(?:net\\|afs\\|\\.\\.\\.\\)/\\)\\'"
-      "Regexp of directory names which stop the search in `locate-dominating-file'.
+(unless (or (eq emacs-major-version 23)
+            (fboundp 'locate-dominating-file))
+  (defvar locate-dominating-stop-dir-regexp
+    "\\`\\(?:[\\/][\\/][^\\/]+[\\/]\\|/\\(?:net\\|afs\\|\\.\\.\\.\\)/\\)\\'"
+    "Regexp of directory names which stop the search in `locate-dominating-file'.
 Any directory whose name matches this regexp will be treated like
 a kind of root directory by `locate-dominating-file' which will stop its search
 when it bumps into it.
@@ -3304,44 +3330,44 @@ The default regexp prevents fruitless and time-consuming attempts to find
 special files in directories in which filenames are interpreted as hostnames,
 or mount points potentially requiring authentication as a different user.")
 
-    (defun locate-dominating-file (file name)
-      "Look up the directory hierarchy from FILE for a file named NAME.
+  (defun locate-dominating-file (file name)
+    "Look up the directory hierarchy from FILE for a file named NAME.
 Stop at the first parent directory containing a file NAME,
 and return the directory.  Return nil if not found."
-      ;; We used to use the above locate-dominating-files code, but the
-      ;; directory-files call is very costly, so we're much better off doing
-      ;; multiple calls using the code in here.
-      ;;
-      ;; Represent /home/luser/foo as ~/foo so that we don't try to look for
-      ;; `name' in /home or in /.
-      (setq file (abbreviate-file-name file))
-      (let ((root nil)
-            (prev-file file)
-            ;; `user' is not initialized outside the loop because
-            ;; `file' may not exist, so we may have to walk up part of the
-            ;; hierarchy before we find the "initial UID".
-            (user nil)
-            try)
-        (while (not (or root
-                        (null file)
-                        ;; FIXME: Disabled this heuristic because it is sometimes
-                        ;; inappropriate.
-                        ;; As a heuristic, we stop looking up the hierarchy of
-                        ;; directories as soon as we find a directory belonging
-                        ;; to another user.  This should save us from looking in
-                        ;; things like /net and /afs.  This assumes that all the
-                        ;; files inside a project belong to the same user.
-                        ;; (let ((prev-user user))
-                        ;;   (setq user (nth 2 (file-attributes file)))
-                        ;;   (and prev-user (not (equal user prev-user))))
-                        (string-match locate-dominating-stop-dir-regexp file)))
-          (setq try (file-exists-p (expand-file-name name file)))
-          (cond (try (setq root file))
-                ((equal file (setq prev-file file
-                                   file (file-name-directory
-                                         (directory-file-name file))))
-                 (setq file nil))))
-        root))))
+    ;; We used to use the above locate-dominating-files code, but the
+    ;; directory-files call is very costly, so we're much better off doing
+    ;; multiple calls using the code in here.
+    ;;
+    ;; Represent /home/luser/foo as ~/foo so that we don't try to look for
+    ;; `name' in /home or in /.
+    (setq file (abbreviate-file-name file))
+    (let ((root nil)
+          (prev-file file)
+          ;; `user' is not initialized outside the loop because
+          ;; `file' may not exist, so we may have to walk up part of the
+          ;; hierarchy before we find the "initial UID".
+          (user nil)
+          try)
+      (while (not (or root
+                      (null file)
+                      ;; FIXME: Disabled this heuristic because it is sometimes
+                      ;; inappropriate.
+                      ;; As a heuristic, we stop looking up the hierarchy of
+                      ;; directories as soon as we find a directory belonging
+                      ;; to another user.  This should save us from looking in
+                      ;; things like /net and /afs.  This assumes that all the
+                      ;; files inside a project belong to the same user.
+                      ;; (let ((prev-user user))
+                      ;;   (setq user (nth 2 (file-attributes file)))
+                      ;;   (and prev-user (not (equal user prev-user))))
+                      (string-match locate-dominating-stop-dir-regexp file)))
+        (setq try (file-exists-p (expand-file-name name file)))
+        (cond (try (setq root file))
+              ((equal file (setq prev-file file
+                                 file (file-name-directory
+                                       (directory-file-name file))))
+               (setq file nil))))
+      root)))
 
 (provide 'yasnippet)
 
