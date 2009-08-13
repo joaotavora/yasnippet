@@ -135,9 +135,10 @@
 (require 'assoc)
 (require 'easymenu)
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; User customizable variables
-;;
+
 
 (defgroup yasnippet nil
   "Yet Another Snippet extension"
@@ -335,10 +336,9 @@ This cafn only work when snippets are loaded from files."
   "The face used for debugging some overlays normally hidden"
   :group 'yasnippet)
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; User semi-customizable variables
-;;
-
+;; User can also customize these
 (defvar yas/keymap (make-sparse-keymap)
   "The keymap active while a snippet expansion is in progress.")
 
@@ -432,9 +432,10 @@ Here's an example:
                        t))))")
 (make-variable-buffer-local 'yas/buffer-local-condition)
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables
-;;
+
 (defvar yas/version "0.6.1b")
 
 (defvar yas/snippet-tables (make-hash-table)
@@ -482,10 +483,11 @@ Here's an example:
     (incf yas/snippet-id-seed)
     id))
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Minor mode stuff
-;;
-;; TODO: XXX: This is somehow needed in Carbon Emacs for MacOSX
+
+;; XXX: `last-buffer-undo-list' is somehow needed in Carbon Emacs for MacOSX
 (defvar last-buffer-undo-list nil)
 
 (defvar yas/minor-mode-map (make-sparse-keymap)
@@ -718,7 +720,6 @@ Key bindings:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal structs for template management
-;;
 
 (defstruct (yas/template (:constructor yas/make-template
                                        (content name condition expand-env file keybinding)))
@@ -737,8 +738,8 @@ Key bindings:
   (parents nil))
 
 
-;;;; Filtering/condition login
-;;;; 
+;; Filtering/condition logic
+
 (defun yas/eval-condition (condition)
   (condition-case err
       (save-excursion
@@ -762,9 +763,25 @@ This function implements the rules described in
   (let ((requirement (yas/require-template-specific-condition-p)))
     (if (eq requirement 'always)
         templates
-      (remove-if-not #'(lambda (pair)
+p      (remove-if-not #'(lambda (pair)
                          (yas/template-can-expand-p (yas/template-condition (cdr pair)) requirement))
                      templates))))
+
+(defun yas/require-template-specific-condition-p ()
+  "Decides if this buffer requests/requires snippet-specific
+conditions to filter out potential expansions."
+  (if (eq 'always yas/buffer-local-condition)
+      'always
+    (let ((local-condition (or (and (consp yas/buffer-local-condition)
+                                    (yas/eval-condition yas/buffer-local-condition))
+                               yas/buffer-local-condition)))
+      (when local-condition
+        (if (eq local-condition t)
+            t
+          (and (consp local-condition)
+               (eq 'require-snippet-condition (car local-condition))
+               (symbolp (cdr local-condition))
+               (cdr local-condition)))))))
 
 (defun yas/template-can-expand-p (condition &optional requirement)
   "Evaluates CONDITION and REQUIREMENT and returns a boolean"
@@ -864,9 +881,9 @@ the template of a snippet in the current snippet-table."
                              template)
            (yas/snippet-table-hash table)))
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal functions
-;;
 
 (defun yas/real-mode? (mode)
   "Try to find out if MODE is a real mode. The MODE bound to
@@ -1641,21 +1658,6 @@ will only be expanded when the condition evaluated to non-nil."
     (undo 1)
     nil))
 
-(defun yas/require-template-specific-condition-p ()
-  "Decides if this buffer requests/requires snippet-specific
-conditions to filter out potential expansions."
-  (if (eq 'always yas/buffer-local-condition)
-      'always
-    (let ((local-condition (yas/eval-condition
-                            yas/buffer-local-condition)))
-      (when local-condition
-        (if (eq local-condition t)
-            t
-          (and (consp local-condition)
-               (eq 'require-snippet-condition (car local-condition))
-               (symbolp (cdr local-condition))
-               (cdr local-condition)))))))
-
 (defun yas/expand ()
   "Expand a snippet before point.
 
@@ -1701,6 +1703,10 @@ defined in `yas/fallback-behavior'"
             (t
              ;; also return nil if all the other fallbacks have failed
              nil)))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Snippet development
 
 (defun yas/all-templates (tables)
   "Return all snippet tables applicable for the current buffer.
@@ -1946,9 +1952,9 @@ With optional prefix argument KILL quit the window and buffer."
           (t
            (message "[yas] Cannot test snippet for unknown major mode")))))
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; User convenience functions, for using in snippet definitions
-;;;
 
 (defvar yas/modified-p nil
   "Non-nil if field has been modified by user or transformation.")
@@ -2005,6 +2011,10 @@ Otherwise throw exception."
     (when field
       (yas/field-text-for-display field))))
 
+(defun yas/inside-string ()
+  (equal 'font-lock-string-face (get-char-property (1- (point)) 'face)))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Snippet expansion and field management
 
