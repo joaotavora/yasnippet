@@ -763,7 +763,7 @@ This function implements the rules described in
   (let ((requirement (yas/require-template-specific-condition-p)))
     (if (eq requirement 'always)
         templates
-p      (remove-if-not #'(lambda (pair)
+      (remove-if-not #'(lambda (pair)
                          (yas/template-can-expand-p (yas/template-condition (cdr pair)) requirement))
                      templates))))
 
@@ -2234,7 +2234,7 @@ Also create some protection overlays"
             (yas/check-commit-snippet))
         (yas/snippets-at-point)))
 
-
+
 ;;; Apropos markers-to-points:
 ;;;
 ;;; This was found useful for performance reasons, so that an
@@ -2472,7 +2472,7 @@ progress."
                                       (yas/field-start field))))
                (yas/skip-and-clear field))
              (setf (yas/field-modified-p field) t))))))
-
+
 ;;; Apropos protection overlays:
 ;;;
 ;;; These exist for nasty users who will try to delete parts of the
@@ -2542,6 +2542,7 @@ The error should be ignored in `debug-ignored-errors'"
 
 (add-to-list 'debug-ignored-errors "^Exit the snippet first!$")
 
+
 ;;; Apropos stacked expansion:
 ;;;
 ;;; the parent snippet does not run its fields modification hooks
@@ -2719,7 +2720,7 @@ Returns the newly created snippet."
     snippet))
 
 
-;;; apropos adjacencies: Once the $-constructs bits like "$n" and
+;;; Apropos adjacencies: Once the $-constructs bits like "$n" and
 ;;; "${:n" are deleted in the recently expanded snippet, we might
 ;;; actually have many fields, mirrors (and the snippet exit) in the
 ;;; very same position in the buffer. Therefore we need to single-link
@@ -2814,10 +2815,10 @@ If it does, also call `yas/advance-end-maybe' on FOM."
     (set-marker (yas/fom-start fom) newstart)
     (yas/advance-end-maybe fom newstart)))
 
-
 (defvar yas/dollar-regions nil
   "When expanding the snippet the \"parse-create\" functions add
   cons cells to this var")
+
 (defun yas/snippet-parse-create (snippet)
   "Parse a recently inserted snippet template, creating all
 necessary fields, mirrors and exit points.
@@ -2834,8 +2835,8 @@ Meant to be called in a narrowed buffer, does various passes"
     ;;
     (goto-char parse-start)
     (yas/replace-backquotes)
-    ;; protect escapes again since previous stepds might have
-    ;; generated more characters needing escapinge
+    ;; protect escapes again since previous steps might have generated
+    ;; more characters needing escaping
     ;;
     (goto-char parse-start)
     (yas/protect-escapes)
@@ -2903,6 +2904,9 @@ Meant to be called in a narrowed buffer, does various passes"
                ;;
                ;; This would also happen if we had used overlays with
                ;; the `front-advance' property set to nil.
+               ;;
+               ;; This is why I have these `trouble-markers', which
+               ;; are restored after indentation happens.
                ;;
                (while (and (zerop (if indent-first-line-p
                                       (prog1
@@ -3170,6 +3174,7 @@ When multiple expressions are found, only the last one counts."
         (yas/advance-start-maybe (yas/field-next field) (point)))
       t))))
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Pre- and post-command hooks
 ;;
