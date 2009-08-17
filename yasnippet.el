@@ -654,10 +654,19 @@ Key bindings:
         (define-key yas/minor-mode-map (read-kbd-macro yas/trigger-key) 'yas/expand)
       (yas/init-minor-keymap))))
 
+(defvar yas/dont-activate nil
+  "If non-nil don't let `yas/minor-mode-on' active yas for this buffer.
+
+`yas/minor-mode-on' is usually called by `yas/global-mode' so
+this effectively lets you define exceptions to the \"global\"
+behaviour.")
+(make-variable-buffer-local 'yas/dont-activate)
+
 (defun yas/minor-mode-on ()
   "Turn on YASnippet minor mode."
   (interactive)
-  (yas/minor-mode 1))
+  (unless yas/dont-activate
+    (yas/minor-mode 1)))
 
 (defun yas/minor-mode-off ()
   "Turn off YASnippet minor mode."
@@ -2936,14 +2945,10 @@ Meant to be called in a narrowed buffer, does various passes"
         (indent-according-to-mode))))
   (save-excursion
     (cond ((eq yas/indent-line 'fixed)
-           (let* ((indent (if indent-tabs-mode
-                              (concat (make-string (/ column tab-width) ?\t)
-                                      (make-string (% column tab-width) ?\ ))
-                            (make-string (current-column) ?\ ))))
-             (goto-char (point-min))
-             (while (and (zerop (forward-line))
-                         (= (current-column) 0))
-               (insert indent))))
+           (goto-char (point-min))
+           (while (and (zerop (forward-line))
+                       (zerop (current-column)))
+             (indent-to-column column)))
           ((eq yas/indent-line 'auto)
            (let ((end (set-marker (make-marker) (point-max)))
                  (indent-first-line-p yas/also-auto-indent-first-line)
