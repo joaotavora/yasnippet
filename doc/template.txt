@@ -14,7 +14,13 @@
         <a title="" href="index.html">Home</a>
       </li>
       <li>
-        <a title="" href="define_snippet.html">Howto</a>
+        <a title="" href="snippet-organization.html">Organize</a>
+      </li>
+      <li>
+        <a title="" href="snippet-expansion.html">Expand</a>
+      </li>
+      <li>
+        <a title="" href="snippet-development.html">Write</a>
       </li>
       <li>
         <a title="" href="faq.html">FAQ</a>

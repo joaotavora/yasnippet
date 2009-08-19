@@ -24,7 +24,6 @@ is much cleaner and more powerful than smart-snippet.
 
 .. _smart-snippet: http://code.google.com/p/smart-snippet/
 
-
 Video Demo
 ==========
 
@@ -83,6 +82,36 @@ customization group.
 
 .. image:: images/customization-group.png
    :align: right
+
+How to use YASnippet
+====================
+
+Since version 0.6, YASnippet contains more functionality. You don't
+need to know all of it to use it sucessfully, but you it can improve
+your snippeting experience.
+
+Hence this section has been split into separate documents:
+
+1. `Organizing snippets <snippet-organization.html>`_
+
+Describes ways to organize your snippets in the hard disk, or not
+organize them at all and just use plain old elisp.
+
+Also explains how to use the YASnippet menu to explore and learn new
+snippets.
+
+2. `Controlling snippet expansion <snippet-expansion.html>`_
+
+Maybe, you'll want some snippets to be expanded in a particular mode,
+or only under certain conditions. Also you might want snippets to wrap
+themselves around a region of selected text, use a direct keybinding,
+control indenting, etc... 
+
+3. `Defining your own snippets <snippet-development.html>`_
+
+Describes the YASnippet definition syntax, which is similar, but not
+equivalent to Textmate's. Includes a section about converting Textmate
+snippets.
 
 Customization group
 ===================

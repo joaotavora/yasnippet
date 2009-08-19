@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="Docutils 0.5: http://docutils.sourceforge.net/" />
+<meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
 <title>Yet Another Snippet extension</title>
 <meta name="author" content="pluskid" />
 <meta name="date" content="2008-03-20" />
@@ -23,7 +23,13 @@
         <a title="" href="index.html">Home</a>
       </li>
       <li>
-        <a title="" href="define_snippet.html">Howto</a>
+        <a title="" href="snippet-organization.html">Organize</a>
+      </li>
+      <li>
+        <a title="" href="snippet-expansion.html">Expand</a>
+      </li>
+      <li>
+        <a title="" href="snippet-development.html">Write</a>
       </li>
       <li>
         <a title="" href="faq.html">FAQ</a>
@@ -49,8 +55,9 @@
 <li><a class="reference internal" href="#normal-install" id="id4">Normal Install</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#customization-group" id="id5">Customization group</a></li>
-<li><a class="reference internal" href="#bugs-contribution-and-support" id="id6">Bugs, Contribution and Support</a></li>
+<li><a class="reference internal" href="#how-to-use-yasnippet" id="id5">How to use YASnippet</a></li>
+<li><a class="reference internal" href="#customization-group" id="id6">Customization group</a></li>
+<li><a class="reference internal" href="#bugs-contribution-and-support" id="id7">Bugs, Contribution and Support</a></li>
 </ul>
 </div>
 <p>Yasnippet is a template system for emacs. It allows you to type a
@@ -113,8 +120,35 @@ customization group.</p>
 <img align="right" alt="images/customization-group.png" class="align-right" src="images/customization-group.png" />
 </div>
 </div>
+<div class="section" id="how-to-use-yasnippet">
+<h1><a class="toc-backref" href="#id5">How to use YASnippet</a></h1>
+<p>Since version 0.6, YASnippet contains more functionality. You don't
+need to know all of it to use it sucessfully, but you it can improve
+your snippeting experience.</p>
+<p>Hence this section has been split into separate documents:</p>
+<ol class="arabic simple">
+<li><a class="reference external" href="snippet-organization.html">Organizing snippets</a></li>
+</ol>
+<p>Describes ways to organize your snippets in the hard disk, or not
+organize them at all and just use plain old elisp.</p>
+<p>Also explains how to use the YASnippet menu to explore and learn new
+snippets.</p>
+<ol class="arabic simple" start="2">
+<li><a class="reference external" href="snippet-expansion.html">Controlling snippet expansion</a></li>
+</ol>
+<p>Maybe, you'll want some snippets to be expanded in a particular mode,
+or only under certain conditions. Also you might want snippets to wrap
+themselves around a region of selected text, use a direct keybinding,
+control indenting, etc...</p>
+<ol class="arabic simple" start="3">
+<li><a class="reference external" href="snippet-development.html">Defining your own snippets</a></li>
+</ol>
+<p>Describes the YASnippet definition syntax, which is similar, but not
+equivalent to Textmate's. Includes a section about converting Textmate
+snippets.</p>
+</div>
 <div class="section" id="customization-group">
-<h1><a class="toc-backref" href="#id5">Customization group</a></h1>
+<h1><a class="toc-backref" href="#id6">Customization group</a></h1>
 <p>From version 0.6 onwards, there is a customization group that you can
 access with:</p>
 <p><tt class="docutils literal"><span class="pre">M-x</span> <span class="pre">customize-group</span> <span class="pre">RET</span> <span class="pre">yasnippet</span> <span class="pre">RET</span></tt></p>
@@ -125,7 +159,7 @@ use, whether to expand snippets inside snippets, etc...</p>
 to explain what it does.</p>
 </div>
 <div class="section" id="bugs-contribution-and-support">
-<h1><a class="toc-backref" href="#id6">Bugs, Contribution and Support</a></h1>
+<h1><a class="toc-backref" href="#id7">Bugs, Contribution and Support</a></h1>
 <ul class="simple">
 <li>If you find a bug, please report it at <a class="reference external" href="http://code.google.com/p/yasnippet/issues/list">Issue List</a>.</li>
 <li>If you have problem using YASnippet, or have some new ideas, please
