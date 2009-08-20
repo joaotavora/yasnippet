@@ -11,16 +11,19 @@
     </div>
     <ul class="primary-links">
       <li>
-        <a title="" href="index.html">Home</a>
+        <a title="" href="index.html">Intro and tutorial</a>
       </li>
       <li>
-        <a title="" href="snippet-organization.html">Organize</a>
+        <a title="" href="snippet-organization.html">Howto: organize</a>
       </li>
       <li>
-        <a title="" href="snippet-expansion.html">Expand</a>
+        <a title="" href="snippet-expansion.html">Howto: expand</a>
       </li>
       <li>
-        <a title="" href="snippet-development.html">Write</a>
+        <a title="" href="snippet-development.html">Howto: write </a>
+      </li>
+      <li>
+        <a title="" href="snippet-menu.html">Howto: menu </a>
       </li>
       <li>
         <a title="" href="faq.html">FAQ</a>

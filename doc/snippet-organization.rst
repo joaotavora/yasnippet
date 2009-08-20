@@ -8,300 +8,205 @@ Organizing snippets
 
 .. contents::
 
-There are three ways to keep your snippets:
+Loading snippets
+================
+
+Snippet definitions are stored in files in the filesystem and you have
+to arrange for YASnippet to load them (unless you use a `YASnippet
+bundle <index.html@bundle-install>`_ (see `No storage (bundle)`_),
+
+The non-bundle version of YASsnippet, once unpacked, comes with a full
+directory of snippets, which you can copy somewhere and use. You can
+also create or download, one or more directories.
+
+Once these are in place reference them in the variable
+``yas/root-directory`` and then load them with ``yas/load-directory``:
+
+.. sourcecode:: common-lisp
+
+  ;; Develop and keep personal snippets under ~/emacs.d/mysnippets
+  (setq yas/root-directory "~/emacs.d/mysnippets")
+
+  ;; Load the snippets
+  (yas/load-directory yas/root-directory)
+
+The point in using ``yas/root-directory`` (as opposed to calling
+``yas/load-directory`` directly) is considering "~/emacs.d/mysnippets"
+for snippet development, so you can use commands like
+``yas/new-snippet`` and others described `here
+<snippet-development.html>`_)
+
+If you make this variable a list and store more items into it...
+
+.. sourcecode:: common-lisp
+   :align: right
+
+  ;; Develop in ~/emacs.d/mysnippets, but also
+  ;; try out snippets in ~/Downloads/interesting-snippets
+  (setq yas/root-directory '("~/emacs.d/mysnippets"
+                             "~/Downloads/interesting-snippets"))
+
+  ;; Map `yas/load-directory' to every element
+  (mapc 'yas/load-directory yas/root-directory)
+
+, the directories after the first are loaded, their snippets
+considered for expansion, but development still happens in
+"~/emacs.d/mysnippets"
+
+Organizing snippets
+===================
+
+Once you've setup ``yas/root-directory`` , you can store snippets
+inside subdirectories of these directories.
+
+Common to *both* cases, snippet definitions are put in plain text
+files. They are arranged by subdirectories, and the name of these
+directories correspond to the Emacs mode where you want expansion to
+take place. For example, snippets for ``c-mode`` are put in the
+``c-mode`` subdirectory. You can also skip snippet storage altogether
+and use the bundle (see `No storage (bundle)`_).
+
+Nested organization
+-------------------
+
+Here is an excerpt of a directory hierarchy containing snippets
+for some modes:
+
+.. sourcecode:: text
+
+  $ tree
+  .
+  `-- text-mode
+      |-- cc-mode
+      |   |-- c-mode
+      |   |   `-- printf
+      |   |-- for
+      |   |-- java-mode
+      |   |   `-- println
+      |   `-- while
+      |-- email
+      |-- perl-mode
+      |   |-- cperl-mode
+      |   `-- for
+      `-- time
+
+The parent directory acts as the *parent mode*. This is the way of
+YASnippet to share snippet definitions among different modes. As you
+can see above, ``c-mode`` and ``java-mode`` share the same parents
+``cc-mode``, while all modes are derived from ``text-mode``. This can
+be also used to as an *alias* -- ``cperl-mode`` is an empty directory
+whose parent is ``perl-mode``.
+
+The ``.yas-parents`` file
+------------------------------
+
+If you place a plain text file ``.yas-parents`` inside one of the
+subdirectories you can bypass nesting and still have parent modes. In
+this file you just write whitespace-separated names of modes. This
+allows more flexibility and readability of your snippet hierarchy.
+
+.. sourcecode:: text
+
+  $ tree
+  .
+  |-- c-mode
+  |   |-- .yas-parents    # contains "cc-mode text-mode" 
+  |   `-- printf
+  |-- cc-mode
+  |   |-- for
+  |   `-- while
+  |-- java-mode
+  |   |-- .yas-parents    # contains "cc-mode text-mode"
+  |   `-- println
+  `-- text-mode
+      |-- email
+      `-- time
+
+The ``.yas-make-groups`` file
+-----------------------------
+
+.. image:: images/group.png
+   :align: right
+
+If you place an empty plain text file ``.yas-make-groups`` inside one
+of the mode directories, the names of these subdirectories are
+considered groups of snippets and the `YASsnippet menu` is organized
+much more cleanly, as you can see in the image.
+
+Another alternative way to achieve this is to place a ``# group:``
+directive inside the snippet definition. See `Writing snippets
+<snippet-development.html>`_
+
+.. sourcecode:: text
+
+  $ tree ruby-mode/
+  ruby-mode/
+  |-- .yas-make-groups
+  |-- collections
+  |   |-- each
+  |   `-- ...
+  |-- control structure
+  |   |-- forin
+  |   `-- ...
+  |-- definitions
+  |   `-- ...
+  `-- general
+      `-- ...
 
 
-New-style storage (recommended)
-===============================
+Using plain file names
+----------------------
 
-Hehe
+Normally, file names act as the snippet trigger *key*, see `Expanding
+snippets <snippet-expansion.html>`_. However, if you customize the
+variable ``yas/ignore-filenames-as-triggers`` to be true *or* place an
+empty file ``.yas-ignore-filename-triggers`` you can use much more
+descriptive file names. This is useful (but not mandatory) if many
+snippets within a mode share the same trigger key.
 
-Old-style storage (pre 0.6)
-===========================
+.. sourcecode:: text
 
-Blabla
+  $ tree rails-mode/
+  rails-mode/
+  |-- .yas-make-groups
+  |-- .yas-ignore-filename-triggers
+  |-- Insert ERb's <% __ %> or <%= __ %>.yasnippet
+  |-- asserts
+  |   |-- assert(var = assigns(%3Avar)).yasnippet
+  |   |-- assert_difference.yasnippet
+  |   |-- assert_no_difference.yasnippet
+  |   |-- assert_redirected_to (nested path plural).yasnippet
+  |   |-- assert_redirected_to (nested path).yasnippet
+  |   |-- assert_redirected_to (path plural).yasnippet
+  |   |-- assert_redirected_to (path).yasnippet
+  |   |-- assert_rjs.yasnippet
+  |   `-- assert_select.yasnippet
+
+
 
 No storage (bundle)
 ===================
 
 The most convenient way to define snippets for YASnippet is to put
 them in a directory arranged by the mode and use
-``yas/load-directory`` to load them. 
+``yas/load-directory`` to load them.
 
 However, this might slow down the Emacs startup speed if you have many
 snippets. You can use ``yas/define-snippets`` to define a bunch of
-snippets for a perticular mode. But this is hard to maintain! So,
-there's a better way: define your snippets in directory and use
-``yas/compile-bundle`` to compile it into a bundle file when you
-modified your snippets.
+snippets for a particular mode in an emacs-lisp file.
+
+Since this is hard to maintain, there's a better way: define your
+snippets in directory and then call ``M-x yas/compile-bundle`` to
+compile it into a bundle file when you modified your snippets.
 
 The release bundle of YASnippet is produced by
-``yas/compile-bundle``. The bundle use ``yas/define-snippets`` to
-define snippets. This avoid the IO and parsing overhead when loading
+``yas/compile-bundle``. The bundle uses ``yas/define-snippets`` to
+define snippets. This avoids the IO and parsing overhead when loading
 snippets.
 
-Finally, you can use ``yas/define`` to define a single snippet at your
-convenience. I ofthen use this to do some testing.
+Further more, the generated bundle is a stand-alone file not depending
+on ``yasnippet.el``. The released bundles of YASnippet are all
+generated this way.
 
-Define snippets in files
-========================
-
-Directory hierarchy
--------------------
-
-Here's the directory hierarchy of the ``snippets`` directory comes
-with YASnippet:
-
-.. sourcecode:: text
-
-  snippets
-  `-- text-mode/
-      |-- cc-mode/
-      |   |-- c++-mode/
-      |   |   |-- beginend
-      |   |   |-- class
-      |   |   `-- using
-      |   |-- c-mode/
-      |   |   `-- fopen
-      |   |-- do
-      |   |-- for
-      |   |-- if
-      |   |-- inc
-      |   |-- inc.1
-      |   |-- main
-      |   |-- once
-      |   `-- struct
-      |-- css-mode/
-      |   |-- background
-      |   |-- background.1
-      |   `-- border
-      |-- email
-      |-- html-mode/
-      |   |-- div
-      |   |-- doctype
-      |   |-- doctype.xhml1
-      |   |-- doctype.xhtml1_1
-      |   |-- doctype.xhtml1_strict
-      |   `-- doctype.xhtml1_transitional
-      |-- objc-mode/
-      |   `-- prop
-      |-- perl-mode/
-      |   |-- cperl-mode/
-      |   |-- eval
-      |   |-- for
-      |   |-- fore
-      |   |-- if
-      |   |-- ife
-      |   |-- ifee
-      |   |-- sub
-      |   |-- unless
-      |   |-- while
-      |   |-- xfore
-      |   |-- xif
-      |   |-- xunless
-      |   `-- xwhile
-      |-- python-mode/
-      |   |-- __
-      |   |-- class
-      |   |-- def
-      |   |-- for
-      |   |-- ifmain
-      |   `-- while
-      |-- rst-mode/
-      |   |-- chapter
-      |   |-- section
-      |   `-- title
-      |-- ruby-mode/
-      |   |-- #
-      |   |-- =b
-      |   |-- Comp
-      |   |-- all
-      |   |-- am
-      |   |-- any
-      |   |-- app
-      |   |-- bm
-      |   |-- case
-      |   |-- cla
-      |   |-- classify
-      |   |-- cls
-      |   |-- collect
-      |   |-- dee
-      |   |-- deli
-      |   |-- det
-      |   |-- ea
-      |   |-- eac
-      |   |-- eai
-      |   |-- eav
-      |   |-- eawi
-      |   |-- forin
-      |   |-- if
-      |   |-- ife
-      |   |-- inject
-      |   |-- mm
-      |   |-- r
-      |   |-- rb
-      |   |-- reject
-      |   |-- req
-      |   |-- rreq
-      |   |-- rw
-      |   |-- select
-      |   |-- w
-      |   |-- y
-      |   `-- zip
-      `-- time
-
-Snippet definitions are put in plain text files. They are arranged by
-subdirectories. For example, snippets for ``c-mode`` are put in the
-``c-mode`` directory.
-
-The parent directory acts as the *parent mode*. This is the way of
-YASnippet to share snippet definitions among different modes. As you
-can see above, ``c-mode`` and ``c++-mode`` share the same parents
-``cc-mode``, while all modes are derived from ``text-mode``. This can
-be also used to as an *alias* -- ``cperl-mode`` is an empty directory
-whose parent is ``perl-mode``.
-
-File names act as the snippet trigger key. Note files starting with a
-dot (``.``) are ignored.
-
-Define snippets using elisp code
---------------------------------
-
-As I mentioned above, you can define snippets directly by writing
-elisp code.
-
-yas/define-snippets
-~~~~~~~~~~~~~~~~~~~
-
-The basic syntax of ``yas/define-snippets`` is
-
-.. sourcecode:: common-lisp
-
-  (yas/define-snippets MODE SNIPPETS &optional PARENT)
-
-The parameters are self-descriptive. If you specify a ``PARENT``, then
-the snippets of the parents may be shared by ``MODE``. Note if you use
-this function several times, the later specified ``PARENT`` will
-overwrite the original one. However, not specifying a ``PARENT`` won't
-erase the original parent.
-
-The ``SNIPPETS`` parameter is a list of snippet definitions. Each
-element should have the following form:
-
-.. sourcecode:: common-lisp
-
-  (KEY TEMPLATE NAME CONDITION GROUP)
-
-The ``NAME``, ``CONDITION`` and ``GROUP`` can be omitted if you don't
-want to provide one. Here's an example:
-
-.. sourcecode:: common-lisp
-
-  (yas/define-snippets 'c++-mode
-  '(
-    ("using" "using namespace ${std};
-  $0" "using namespace ... " nil)
-    ("class" "class ${1:Name}
-  {
-  public:
-      $1($2);
-      virtual ~$1();
-  };" "class ... { ... }" nil)
-    ("beginend" "${1:v}.begin(), $1.end" "v.begin(), v.end()" nil)
-    )
-  'cc-mode)
-
-The example above is auto-generated code by ``yas/compile-bundle``.
-
-
-yas/define
-~~~~~~~~~~
-
-The basic syntax for ``yas/define`` is
-
-.. sourcecode:: common-lisp
-
-  (yas/define mode key template &optional name condition group)
-
-This is only a syntax sugar for
-
-.. sourcecode:: common-lisp
-
-  (yas/define-snippets mode
-                       (list (list key template name condition group)))
-
-yas/compile-bundle
-~~~~~~~~~~~~~~~~~~
-
-``yas/compile-bundle`` can be used to parse the snippets from a
-directory hierarchy and translate them into the elisp form. The
-translated code is faster to load. Further more, the generated bundle
-is a stand-alone file not depending on ``yasnippet.el``. The released
-bundles of YASnippet are all generated this way.
-
-
-
-The Menu
-~~~~~~~~
-
-YASnippet will setup a menu just after the *Buffers* Menu in the
-menubar. The snippets for all *real* modes are listed there under the
-menu. You can select a snippet from the menu to expand it. Since you
-select manually from the menu, you can expand any snippet. For
-example, you can expand a snippet defined for ``python-mode`` in a
-``c-mode`` buffer by selecting it from the menu:
-
-.. image:: images/menubar.png
-   :align: right
-
-* Condition system is ignored since you select to expand it
-  explicitly.
-* There will be no muliple candidates since they are listed in the
-  menu as different items.
-
-This can be convenient sometimes. However, if you don't like the
-menubar of Emacs and never use it. You can tell YASnippet don't boring
-to build a menu by setting ``yas/use-menu`` to nil.
-
-Another thing to note is that only *real* modes are listed under the
-menu. As you know, common snippets can be shared by making up a
-*virtual* parent mode. It's too bad if the menu is floored by those
-*virtual* modes. So YASnippet only show menus for those *real*
-modes. But the snippets fo the *virtual* modes can still be accessed
-through the ``parent`` submenu of some *real* mode.
-
-YASnippet use a simple way to check whether a mode is *real* or
-*virtual*: ``(fboundp mode)``. For example, the symbol ``c-mode`` is
-bound to a function while ``cc-mode`` is not. But this is not enough,
-some modes aren't part of Emacs, and maybe when initializing
-YASnippet, those modes haven't been initialized. So YASnippet also
-maintain a list of known modes (``yas/known-modes``). You can add item
-to that list if you need.
-
-The basic syntax of ``yas/compile-bundle`` is
-
-.. sourcecode:: common-lisp
-
-  (yas/compile-bundle &optional yasnippet yasnippet-bundle snippet-roots code dropdown)
-
-As you can see, all the parameters are optional. The default values
-for those parameters are convenient for me to produce the default
-release bundle:
-
-.. sourcecode:: common-lisp
-
-  (yas/compile-bundle "yasnippet.el"
-                      "./yasnippet-bundle.el"
-                      '("snippets")
-                      "(yas/initialize)"
-		      "dropdown-list.el")
-
-The ``snippet-roots`` can be a list of root directories. This is
-useful when you have multiple snippet directories (maybe from other
-users). The ``code`` parameter can be used to specify your own
-customization code instead of the default ``(yas/initialize)``. For
-example, you can set ``yas/trigger-key`` to ``(kbd "SPC")`` here if
-you like.
-
-From release 0.6 you have to specify the ``dropdown-list.el`` file if
-you want it to be a part of the generated bundle.
+See the internal documentation for the functions
+``yas/define-snippets`` and ``yas/compile-bundle``.

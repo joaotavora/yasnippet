@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
+<title>The menu</title>
+<meta name="author" content="pluskid, joaotavora" />
+<meta name="date" content="2009-08-18" />
+<link rel="stylesheet" href="styles.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="the-menu">
+<div id="header-region" class="clear-block"></div>
+<div id="wrapper">
+  <div id="container" class="clear-block">
+    <div id="header">
+    <div id="logo-floater">
+    <h1 class="title">The menu</h1>
+    </div>
+    <ul class="primary-links">
+      <li>
+        <a title="" href="index.html">Intro and tutorial</a>
+      </li>
+      <li>
+        <a title="" href="snippet-organization.html">Howto: organize</a>
+      </li>
+      <li>
+        <a title="" href="snippet-expansion.html">Howto: expand</a>
+      </li>
+      <li>
+        <a title="" href="snippet-development.html">Howto: write </a>
+      </li>
+      <li>
+        <a title="" href="snippet-menu.html">Howto: menu </a>
+      </li>
+      <li>
+        <a title="" href="faq.html">FAQ</a>
+      </li>
+      <li>
+        <a title="" href="changelog.html">ChangeLog</a>
+      </li>
+      <li>
+        <a title="" href="http://code.google.com/p/yasnippet/downloads/list">Download</a>
+      </li>
+    </ul>
+    </div>
+    <div id="center">
+      <div id="squeeze">
+        <div class="right-corner">
+          <div class="left-corner">
+	  <p>YASnippet will setup a menu just after the <em>Buffers</em> Menu in the
+menubar. The snippets for all <em>real</em> modes are listed there under the
+menu. You can select a snippet from the menu to expand it. Since you
+select manually from the menu, you can expand any snippet. For
+example, you can expand a snippet defined for <tt class="docutils literal"><span class="pre">python-mode</span></tt> in a
+<tt class="docutils literal"><span class="pre">c-mode</span></tt> buffer by selecting it from the menu:</p>
+<img align="right" alt="images/menubar.png" class="align-right" src="images/menubar.png" />
+<ul class="simple">
+<li>Condition system is ignored since you select to expand it
+explicitly.</li>
+<li>There will be no muliple candidates since they are listed in the
+menu as different items.</li>
+</ul>
+<p>This can be convenient sometimes. However, if you don't like the
+menubar of Emacs and never use it. You can tell YASnippet don't boring
+to build a menu by setting <tt class="docutils literal"><span class="pre">yas/use-menu</span></tt> to nil.</p>
+<p>Another thing to note is that only <em>real</em> modes are listed under the
+menu. As you know, common snippets can be shared by making up a
+<em>virtual</em> parent mode. It's too bad if the menu is floored by those
+<em>virtual</em> modes. So YASnippet only show menus for those <em>real</em>
+modes. But the snippets fo the <em>virtual</em> modes can still be accessed
+through the <tt class="docutils literal"><span class="pre">parent</span></tt> submenu of some <em>real</em> mode.</p>
+<p>YASnippet use a simple way to check whether a mode is <em>real</em> or
+<em>virtual</em>: <tt class="docutils literal"><span class="pre">(fboundp</span> <span class="pre">mode)</span></tt>. For example, the symbol <tt class="docutils literal"><span class="pre">c-mode</span></tt> is
+bound to a function while <tt class="docutils literal"><span class="pre">cc-mode</span></tt> is not. But this is not enough,
+some modes aren't part of Emacs, and maybe when initializing
+YASnippet, those modes haven't been initialized. So YASnippet also
+maintain a list of known modes (<tt class="docutils literal"><span class="pre">yas/known-modes</span></tt>). You can add item
+to that list if you need.</p>
+	  </div>
+	</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</body>
+</html>

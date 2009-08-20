@@ -20,16 +20,19 @@
     </div>
     <ul class="primary-links">
       <li>
-        <a title="" href="index.html">Home</a>
+        <a title="" href="index.html">Intro and tutorial</a>
       </li>
       <li>
-        <a title="" href="snippet-organization.html">Organize</a>
+        <a title="" href="snippet-organization.html">Howto: organize</a>
       </li>
       <li>
-        <a title="" href="snippet-expansion.html">Expand</a>
+        <a title="" href="snippet-expansion.html">Howto: expand</a>
       </li>
       <li>
-        <a title="" href="snippet-development.html">Write</a>
+        <a title="" href="snippet-development.html">Howto: write </a>
+      </li>
+      <li>
+        <a title="" href="snippet-menu.html">Howto: menu </a>
       </li>
       <li>
         <a title="" href="faq.html">FAQ</a>
@@ -49,270 +52,179 @@
 	  <div class="contents topic" id="contents">
 <p class="topic-title first">Contents</p>
 <ul class="simple">
-<li><a class="reference internal" href="#new-style-storage-recommended" id="id1">New-style storage (recommended)</a></li>
-<li><a class="reference internal" href="#old-style-storage-pre-0-6" id="id2">Old-style storage (pre 0.6)</a></li>
-<li><a class="reference internal" href="#no-storage-bundle" id="id3">No storage (bundle)</a></li>
-<li><a class="reference internal" href="#define-snippets-in-files" id="id4">Define snippets in files</a><ul>
-<li><a class="reference internal" href="#directory-hierarchy" id="id5">Directory hierarchy</a></li>
-<li><a class="reference internal" href="#define-snippets-using-elisp-code" id="id6">Define snippets using elisp code</a><ul>
-<li><a class="reference internal" href="#yas-define-snippets" id="id7">yas/define-snippets</a></li>
-<li><a class="reference internal" href="#yas-define" id="id8">yas/define</a></li>
-<li><a class="reference internal" href="#yas-compile-bundle" id="id9">yas/compile-bundle</a></li>
-<li><a class="reference internal" href="#the-menu" id="id10">The Menu</a></li>
+<li><a class="reference internal" href="#loading-snippets" id="id2">Loading snippets</a></li>
+<li><a class="reference internal" href="#id1" id="id3">Organizing snippets</a><ul>
+<li><a class="reference internal" href="#nested-organization" id="id4">Nested organization</a></li>
+<li><a class="reference internal" href="#the-yas-parents-file" id="id5">The <tt class="docutils literal"><span class="pre">.yas-parents</span></tt> file</a></li>
+<li><a class="reference internal" href="#the-yas-make-groups-file" id="id6">The <tt class="docutils literal"><span class="pre">.yas-make-groups</span></tt> file</a></li>
+<li><a class="reference internal" href="#using-plain-file-names" id="id7">Using plain file names</a></li>
 </ul>
 </li>
-</ul>
-</li>
+<li><a class="reference internal" href="#no-storage-bundle" id="id8">No storage (bundle)</a></li>
 </ul>
 </div>
-<p>There are three ways to keep your snippets:</p>
-<div class="section" id="new-style-storage-recommended">
-<h1><a class="toc-backref" href="#id1">New-style storage (recommended)</a></h1>
-<p>Hehe</p>
+<div class="section" id="loading-snippets">
+<h1><a class="toc-backref" href="#id2">Loading snippets</a></h1>
+<p>Snippet definitions are stored in files in the filesystem and you have
+to arrange for YASnippet to load them (unless you use a <a class="reference external" href="mailto:index.html&#64;bundle-install">YASnippet
+bundle</a> (see <a class="reference internal" href="#no-storage-bundle">No storage (bundle)</a>),</p>
+<p>The non-bundle version of YASsnippet, once unpacked, comes with a full
+directory of snippets, which you can copy somewhere and use. You can
+also create or download, one or more directories.</p>
+<p>Once these are in place reference them in the variable
+<tt class="docutils literal"><span class="pre">yas/root-directory</span></tt> and then load them with <tt class="docutils literal"><span class="pre">yas/load-directory</span></tt>:</p>
+<div class="highlight"><pre><span style="color: #408080; font-style: italic">;; Develop and keep personal snippets under ~/emacs.d/mysnippets</span>
+(<span style="color: #008000; font-weight: bold">setq</span> <span style="color: #19177C">yas/root-directory</span> <span style="color: #BA2121">&quot;~/emacs.d/mysnippets&quot;</span>)
+
+<span style="color: #408080; font-style: italic">;; Load the snippets</span>
+(<span style="color: #19177C">yas/load-directory</span> <span style="color: #19177C">yas/root-directory</span>)
+</pre></div>
+<p>The point in using <tt class="docutils literal"><span class="pre">yas/root-directory</span></tt> (as opposed to calling
+<tt class="docutils literal"><span class="pre">yas/load-directory</span></tt> directly) is considering &quot;~/emacs.d/mysnippets&quot;
+for snippet development, so you can use commands like
+<tt class="docutils literal"><span class="pre">yas/new-snippet</span></tt> and others described <a class="reference external" href="snippet-development.html">here</a>)</p>
+<p>If you make this variable a list and store more items into it...</p>
+<div class="highlight"><pre>;; Develop in ~/emacs.d/mysnippets, but also
+;; try out snippets in ~/Downloads/interesting-snippets
+(setq yas/root-directory &#39;(&quot;~/emacs.d/mysnippets&quot;
+                           &quot;~/Downloads/interesting-snippets&quot;))
+
+;; Map `yas/load-directory&#39; to every element
+(mapc &#39;yas/load-directory yas/root-directory)
+</pre></div>
+<p>, the directories after the first are loaded, their snippets
+considered for expansion, but development still happens in
+&quot;~/emacs.d/mysnippets&quot;</p>
 </div>
-<div class="section" id="old-style-storage-pre-0-6">
-<h1><a class="toc-backref" href="#id2">Old-style storage (pre 0.6)</a></h1>
-<p>Blabla</p>
+<div class="section" id="id1">
+<h1><a class="toc-backref" href="#id3">Organizing snippets</a></h1>
+<p>Once you've setup <tt class="docutils literal"><span class="pre">yas/root-directory</span></tt> , you can store snippets
+inside subdirectories of these directories.</p>
+<p>Common to <em>both</em> cases, snippet definitions are put in plain text
+files. They are arranged by subdirectories, and the name of these
+directories correspond to the Emacs mode where you want expansion to
+take place. For example, snippets for <tt class="docutils literal"><span class="pre">c-mode</span></tt> are put in the
+<tt class="docutils literal"><span class="pre">c-mode</span></tt> subdirectory. You can also skip snippet storage altogether
+and use the bundle (see <a class="reference internal" href="#no-storage-bundle">No storage (bundle)</a>).</p>
+<div class="section" id="nested-organization">
+<h2><a class="toc-backref" href="#id4">Nested organization</a></h2>
+<p>Here is an excerpt of a directory hierarchy containing snippets
+for some modes:</p>
+<div class="highlight"><pre>$ tree
+.
+`-- text-mode
+    |-- cc-mode
+    |   |-- c-mode
+    |   |   `-- printf
+    |   |-- for
+    |   |-- java-mode
+    |   |   `-- println
+    |   `-- while
+    |-- email
+    |-- perl-mode
+    |   |-- cperl-mode
+    |   `-- for
+    `-- time
+</pre></div>
+<p>The parent directory acts as the <em>parent mode</em>. This is the way of
+YASnippet to share snippet definitions among different modes. As you
+can see above, <tt class="docutils literal"><span class="pre">c-mode</span></tt> and <tt class="docutils literal"><span class="pre">java-mode</span></tt> share the same parents
+<tt class="docutils literal"><span class="pre">cc-mode</span></tt>, while all modes are derived from <tt class="docutils literal"><span class="pre">text-mode</span></tt>. This can
+be also used to as an <em>alias</em> -- <tt class="docutils literal"><span class="pre">cperl-mode</span></tt> is an empty directory
+whose parent is <tt class="docutils literal"><span class="pre">perl-mode</span></tt>.</p>
+</div>
+<div class="section" id="the-yas-parents-file">
+<h2><a class="toc-backref" href="#id5">The <tt class="docutils literal"><span class="pre">.yas-parents</span></tt> file</a></h2>
+<p>If you place a plain text file <tt class="docutils literal"><span class="pre">.yas-parents</span></tt> inside one of the
+subdirectories you can bypass nesting and still have parent modes. In
+this file you just write whitespace-separated names of modes. This
+allows more flexibility and readability of your snippet hierarchy.</p>
+<div class="highlight"><pre>$ tree
+.
+|-- c-mode
+|   |-- .yas-parents    # contains &quot;cc-mode text-mode&quot;
+|   `-- printf
+|-- cc-mode
+|   |-- for
+|   `-- while
+|-- java-mode
+|   |-- .yas-parents    # contains &quot;cc-mode text-mode&quot;
+|   `-- println
+`-- text-mode
+    |-- email
+    `-- time
+</pre></div>
+</div>
+<div class="section" id="the-yas-make-groups-file">
+<h2><a class="toc-backref" href="#id6">The <tt class="docutils literal"><span class="pre">.yas-make-groups</span></tt> file</a></h2>
+<img align="right" alt="images/group.png" class="align-right" src="images/group.png" />
+<p>If you place an empty plain text file <tt class="docutils literal"><span class="pre">.yas-make-groups</span></tt> inside one
+of the mode directories, the names of these subdirectories are
+considered groups of snippets and the <cite>YASsnippet menu</cite> is organized
+much more cleanly, as you can see in the image.</p>
+<p>Another alternative way to achieve this is to place a <tt class="docutils literal"><span class="pre">#</span> <span class="pre">group:</span></tt>
+directive inside the snippet definition. See <a class="reference external" href="snippet-development.html">Writing snippets</a></p>
+<div class="highlight"><pre>$ tree ruby-mode/
+ruby-mode/
+|-- .yas-make-groups
+|-- collections
+|   |-- each
+|   `-- ...
+|-- control structure
+|   |-- forin
+|   `-- ...
+|-- definitions
+|   `-- ...
+`-- general
+    `-- ...
+</pre></div>
+</div>
+<div class="section" id="using-plain-file-names">
+<h2><a class="toc-backref" href="#id7">Using plain file names</a></h2>
+<p>Normally, file names act as the snippet trigger <em>key</em>, see <a class="reference external" href="snippet-expansion.html">Expanding
+snippets</a>. However, if you customize the
+variable <tt class="docutils literal"><span class="pre">yas/ignore-filenames-as-triggers</span></tt> to be true <em>or</em> place an
+empty file <tt class="docutils literal"><span class="pre">.yas-ignore-filename-triggers</span></tt> you can use much more
+descriptive file names. This is useful (but not mandatory) if many
+snippets within a mode share the same trigger key.</p>
+<div class="highlight"><pre>$ tree rails-mode/
+rails-mode/
+|-- .yas-make-groups
+|-- .yas-ignore-filename-triggers
+|-- Insert ERb&#39;s &lt;% __ %&gt; or &lt;%= __ %&gt;.yasnippet
+|-- asserts
+|   |-- assert(var = assigns(%3Avar)).yasnippet
+|   |-- assert_difference.yasnippet
+|   |-- assert_no_difference.yasnippet
+|   |-- assert_redirected_to (nested path plural).yasnippet
+|   |-- assert_redirected_to (nested path).yasnippet
+|   |-- assert_redirected_to (path plural).yasnippet
+|   |-- assert_redirected_to (path).yasnippet
+|   |-- assert_rjs.yasnippet
+|   `-- assert_select.yasnippet
+</pre></div>
+</div>
 </div>
 <div class="section" id="no-storage-bundle">
-<h1><a class="toc-backref" href="#id3">No storage (bundle)</a></h1>
+<h1><a class="toc-backref" href="#id8">No storage (bundle)</a></h1>
 <p>The most convenient way to define snippets for YASnippet is to put
 them in a directory arranged by the mode and use
 <tt class="docutils literal"><span class="pre">yas/load-directory</span></tt> to load them.</p>
 <p>However, this might slow down the Emacs startup speed if you have many
 snippets. You can use <tt class="docutils literal"><span class="pre">yas/define-snippets</span></tt> to define a bunch of
-snippets for a perticular mode. But this is hard to maintain! So,
-there's a better way: define your snippets in directory and use
-<tt class="docutils literal"><span class="pre">yas/compile-bundle</span></tt> to compile it into a bundle file when you
-modified your snippets.</p>
+snippets for a particular mode in an emacs-lisp file.</p>
+<p>Since this is hard to maintain, there's a better way: define your
+snippets in directory and then call <tt class="docutils literal"><span class="pre">M-x</span> <span class="pre">yas/compile-bundle</span></tt> to
+compile it into a bundle file when you modified your snippets.</p>
 <p>The release bundle of YASnippet is produced by
-<tt class="docutils literal"><span class="pre">yas/compile-bundle</span></tt>. The bundle use <tt class="docutils literal"><span class="pre">yas/define-snippets</span></tt> to
-define snippets. This avoid the IO and parsing overhead when loading
+<tt class="docutils literal"><span class="pre">yas/compile-bundle</span></tt>. The bundle uses <tt class="docutils literal"><span class="pre">yas/define-snippets</span></tt> to
+define snippets. This avoids the IO and parsing overhead when loading
 snippets.</p>
-<p>Finally, you can use <tt class="docutils literal"><span class="pre">yas/define</span></tt> to define a single snippet at your
-convenience. I ofthen use this to do some testing.</p>
-</div>
-<div class="section" id="define-snippets-in-files">
-<h1><a class="toc-backref" href="#id4">Define snippets in files</a></h1>
-<div class="section" id="directory-hierarchy">
-<h2><a class="toc-backref" href="#id5">Directory hierarchy</a></h2>
-<p>Here's the directory hierarchy of the <tt class="docutils literal"><span class="pre">snippets</span></tt> directory comes
-with YASnippet:</p>
-<div class="highlight"><pre>snippets
-`-- text-mode/
-    |-- cc-mode/
-    |   |-- c++-mode/
-    |   |   |-- beginend
-    |   |   |-- class
-    |   |   `-- using
-    |   |-- c-mode/
-    |   |   `-- fopen
-    |   |-- do
-    |   |-- for
-    |   |-- if
-    |   |-- inc
-    |   |-- inc.1
-    |   |-- main
-    |   |-- once
-    |   `-- struct
-    |-- css-mode/
-    |   |-- background
-    |   |-- background.1
-    |   `-- border
-    |-- email
-    |-- html-mode/
-    |   |-- div
-    |   |-- doctype
-    |   |-- doctype.xhml1
-    |   |-- doctype.xhtml1_1
-    |   |-- doctype.xhtml1_strict
-    |   `-- doctype.xhtml1_transitional
-    |-- objc-mode/
-    |   `-- prop
-    |-- perl-mode/
-    |   |-- cperl-mode/
-    |   |-- eval
-    |   |-- for
-    |   |-- fore
-    |   |-- if
-    |   |-- ife
-    |   |-- ifee
-    |   |-- sub
-    |   |-- unless
-    |   |-- while
-    |   |-- xfore
-    |   |-- xif
-    |   |-- xunless
-    |   `-- xwhile
-    |-- python-mode/
-    |   |-- __
-    |   |-- class
-    |   |-- def
-    |   |-- for
-    |   |-- ifmain
-    |   `-- while
-    |-- rst-mode/
-    |   |-- chapter
-    |   |-- section
-    |   `-- title
-    |-- ruby-mode/
-    |   |-- #
-    |   |-- =b
-    |   |-- Comp
-    |   |-- all
-    |   |-- am
-    |   |-- any
-    |   |-- app
-    |   |-- bm
-    |   |-- case
-    |   |-- cla
-    |   |-- classify
-    |   |-- cls
-    |   |-- collect
-    |   |-- dee
-    |   |-- deli
-    |   |-- det
-    |   |-- ea
-    |   |-- eac
-    |   |-- eai
-    |   |-- eav
-    |   |-- eawi
-    |   |-- forin
-    |   |-- if
-    |   |-- ife
-    |   |-- inject
-    |   |-- mm
-    |   |-- r
-    |   |-- rb
-    |   |-- reject
-    |   |-- req
-    |   |-- rreq
-    |   |-- rw
-    |   |-- select
-    |   |-- w
-    |   |-- y
-    |   `-- zip
-    `-- time
-</pre></div>
-<p>Snippet definitions are put in plain text files. They are arranged by
-subdirectories. For example, snippets for <tt class="docutils literal"><span class="pre">c-mode</span></tt> are put in the
-<tt class="docutils literal"><span class="pre">c-mode</span></tt> directory.</p>
-<p>The parent directory acts as the <em>parent mode</em>. This is the way of
-YASnippet to share snippet definitions among different modes. As you
-can see above, <tt class="docutils literal"><span class="pre">c-mode</span></tt> and <tt class="docutils literal"><span class="pre">c++-mode</span></tt> share the same parents
-<tt class="docutils literal"><span class="pre">cc-mode</span></tt>, while all modes are derived from <tt class="docutils literal"><span class="pre">text-mode</span></tt>. This can
-be also used to as an <em>alias</em> -- <tt class="docutils literal"><span class="pre">cperl-mode</span></tt> is an empty directory
-whose parent is <tt class="docutils literal"><span class="pre">perl-mode</span></tt>.</p>
-<p>File names act as the snippet trigger key. Note files starting with a
-dot (<tt class="docutils literal"><span class="pre">.</span></tt>) are ignored.</p>
-</div>
-<div class="section" id="define-snippets-using-elisp-code">
-<h2><a class="toc-backref" href="#id6">Define snippets using elisp code</a></h2>
-<p>As I mentioned above, you can define snippets directly by writing
-elisp code.</p>
-<div class="section" id="yas-define-snippets">
-<h3><a class="toc-backref" href="#id7">yas/define-snippets</a></h3>
-<p>The basic syntax of <tt class="docutils literal"><span class="pre">yas/define-snippets</span></tt> is</p>
-<div class="highlight"><pre>(<span style="color: #19177C">yas/define-snippets</span> <span style="color: #19177C">MODE</span> <span style="color: #19177C">SNIPPETS</span> <span style="color: #008000; font-weight: bold">&amp;optional</span> <span style="color: #19177C">PARENT</span>)
-</pre></div>
-<p>The parameters are self-descriptive. If you specify a <tt class="docutils literal"><span class="pre">PARENT</span></tt>, then
-the snippets of the parents may be shared by <tt class="docutils literal"><span class="pre">MODE</span></tt>. Note if you use
-this function several times, the later specified <tt class="docutils literal"><span class="pre">PARENT</span></tt> will
-overwrite the original one. However, not specifying a <tt class="docutils literal"><span class="pre">PARENT</span></tt> won't
-erase the original parent.</p>
-<p>The <tt class="docutils literal"><span class="pre">SNIPPETS</span></tt> parameter is a list of snippet definitions. Each
-element should have the following form:</p>
-<div class="highlight"><pre>(<span style="color: #19177C">KEY</span> <span style="color: #19177C">TEMPLATE</span> <span style="color: #19177C">NAME</span> <span style="color: #19177C">CONDITION</span> <span style="color: #19177C">GROUP</span>)
-</pre></div>
-<p>The <tt class="docutils literal"><span class="pre">NAME</span></tt>, <tt class="docutils literal"><span class="pre">CONDITION</span></tt> and <tt class="docutils literal"><span class="pre">GROUP</span></tt> can be omitted if you don't
-want to provide one. Here's an example:</p>
-<div class="highlight"><pre>(<span style="color: #19177C">yas/define-snippets</span> <span style="color: #19177C">&#39;c++-mode</span>
-<span style="color: #666666">&#39;</span>(
-  (<span style="color: #BA2121">&quot;using&quot;</span> <span style="color: #BA2121">&quot;using namespace ${std};</span>
-<span style="color: #BA2121">$0&quot;</span> <span style="color: #BA2121">&quot;using namespace ... &quot;</span> <span style="color: #880000">nil</span>)
-  (<span style="color: #BA2121">&quot;class&quot;</span> <span style="color: #BA2121">&quot;class ${1:Name}</span>
-<span style="color: #BA2121">{</span>
-<span style="color: #BA2121">public:</span>
-<span style="color: #BA2121">    $1($2);</span>
-<span style="color: #BA2121">    virtual ~$1();</span>
-<span style="color: #BA2121">};&quot;</span> <span style="color: #BA2121">&quot;class ... { ... }&quot;</span> <span style="color: #880000">nil</span>)
-  (<span style="color: #BA2121">&quot;beginend&quot;</span> <span style="color: #BA2121">&quot;${1:v}.begin(), $1.end&quot;</span> <span style="color: #BA2121">&quot;v.begin(), v.end()&quot;</span> <span style="color: #880000">nil</span>)
-  )
-<span style="color: #19177C">&#39;cc-mode</span>)
-</pre></div>
-<p>The example above is auto-generated code by <tt class="docutils literal"><span class="pre">yas/compile-bundle</span></tt>.</p>
-</div>
-<div class="section" id="yas-define">
-<h3><a class="toc-backref" href="#id8">yas/define</a></h3>
-<p>The basic syntax for <tt class="docutils literal"><span class="pre">yas/define</span></tt> is</p>
-<div class="highlight"><pre>(<span style="color: #19177C">yas/define</span> <span style="color: #19177C">mode</span> <span style="color: #19177C">key</span> <span style="color: #19177C">template</span> <span style="color: #008000; font-weight: bold">&amp;optional</span> <span style="color: #19177C">name</span> <span style="color: #B00040">condition</span> <span style="color: #19177C">group</span>)
-</pre></div>
-<p>This is only a syntax sugar for</p>
-<div class="highlight"><pre>(<span style="color: #19177C">yas/define-snippets</span> <span style="color: #19177C">mode</span>
-                     (<span style="color: #008000">list</span> (<span style="color: #008000">list</span> <span style="color: #19177C">key</span> <span style="color: #19177C">template</span> <span style="color: #19177C">name</span> <span style="color: #B00040">condition</span> <span style="color: #19177C">group</span>)))
-</pre></div>
-</div>
-<div class="section" id="yas-compile-bundle">
-<h3><a class="toc-backref" href="#id9">yas/compile-bundle</a></h3>
-<p><tt class="docutils literal"><span class="pre">yas/compile-bundle</span></tt> can be used to parse the snippets from a
-directory hierarchy and translate them into the elisp form. The
-translated code is faster to load. Further more, the generated bundle
-is a stand-alone file not depending on <tt class="docutils literal"><span class="pre">yasnippet.el</span></tt>. The released
-bundles of YASnippet are all generated this way.</p>
-</div>
-<div class="section" id="the-menu">
-<h3><a class="toc-backref" href="#id10">The Menu</a></h3>
-<p>YASnippet will setup a menu just after the <em>Buffers</em> Menu in the
-menubar. The snippets for all <em>real</em> modes are listed there under the
-menu. You can select a snippet from the menu to expand it. Since you
-select manually from the menu, you can expand any snippet. For
-example, you can expand a snippet defined for <tt class="docutils literal"><span class="pre">python-mode</span></tt> in a
-<tt class="docutils literal"><span class="pre">c-mode</span></tt> buffer by selecting it from the menu:</p>
-<img align="right" alt="images/menubar.png" class="align-right" src="images/menubar.png" />
-<ul class="simple">
-<li>Condition system is ignored since you select to expand it
-explicitly.</li>
-<li>There will be no muliple candidates since they are listed in the
-menu as different items.</li>
-</ul>
-<p>This can be convenient sometimes. However, if you don't like the
-menubar of Emacs and never use it. You can tell YASnippet don't boring
-to build a menu by setting <tt class="docutils literal"><span class="pre">yas/use-menu</span></tt> to nil.</p>
-<p>Another thing to note is that only <em>real</em> modes are listed under the
-menu. As you know, common snippets can be shared by making up a
-<em>virtual</em> parent mode. It's too bad if the menu is floored by those
-<em>virtual</em> modes. So YASnippet only show menus for those <em>real</em>
-modes. But the snippets fo the <em>virtual</em> modes can still be accessed
-through the <tt class="docutils literal"><span class="pre">parent</span></tt> submenu of some <em>real</em> mode.</p>
-<p>YASnippet use a simple way to check whether a mode is <em>real</em> or
-<em>virtual</em>: <tt class="docutils literal"><span class="pre">(fboundp</span> <span class="pre">mode)</span></tt>. For example, the symbol <tt class="docutils literal"><span class="pre">c-mode</span></tt> is
-bound to a function while <tt class="docutils literal"><span class="pre">cc-mode</span></tt> is not. But this is not enough,
-some modes aren't part of Emacs, and maybe when initializing
-YASnippet, those modes haven't been initialized. So YASnippet also
-maintain a list of known modes (<tt class="docutils literal"><span class="pre">yas/known-modes</span></tt>). You can add item
-to that list if you need.</p>
-<p>The basic syntax of <tt class="docutils literal"><span class="pre">yas/compile-bundle</span></tt> is</p>
-<div class="highlight"><pre>(<span style="color: #19177C">yas/compile-bundle</span> <span style="color: #008000; font-weight: bold">&amp;optional</span> <span style="color: #19177C">yasnippet</span> <span style="color: #19177C">yasnippet-bundle</span> <span style="color: #19177C">snippet-roots</span> <span style="color: #19177C">code</span> <span style="color: #19177C">dropdown</span>)
-</pre></div>
-<p>As you can see, all the parameters are optional. The default values
-for those parameters are convenient for me to produce the default
-release bundle:</p>
-<div class="highlight"><pre>(<span style="color: #19177C">yas/compile-bundle</span> <span style="color: #BA2121">&quot;yasnippet.el&quot;</span>
-                    <span style="color: #BA2121">&quot;./yasnippet-bundle.el&quot;</span>
-                    <span style="color: #666666">&#39;</span>(<span style="color: #BA2121">&quot;snippets&quot;</span>)
-                    <span style="color: #BA2121">&quot;(yas/initialize)&quot;</span>
-                    <span style="color: #BA2121">&quot;dropdown-list.el&quot;</span>)
-</pre></div>
-<p>The <tt class="docutils literal"><span class="pre">snippet-roots</span></tt> can be a list of root directories. This is
-useful when you have multiple snippet directories (maybe from other
-users). The <tt class="docutils literal"><span class="pre">code</span></tt> parameter can be used to specify your own
-customization code instead of the default <tt class="docutils literal"><span class="pre">(yas/initialize)</span></tt>. For
-example, you can set <tt class="docutils literal"><span class="pre">yas/trigger-key</span></tt> to <tt class="docutils literal"><span class="pre">(kbd</span> <span class="pre">&quot;SPC&quot;)</span></tt> here if
-you like.</p>
-<p>From release 0.6 you have to specify the <tt class="docutils literal"><span class="pre">dropdown-list.el</span></tt> file if
-you want it to be a part of the generated bundle.</p>
-</div>
-</div>
+<p>Further more, the generated bundle is a stand-alone file not depending
+on <tt class="docutils literal"><span class="pre">yasnippet.el</span></tt>. The released bundles of YASnippet are all
+generated this way.</p>
+<p>See the internal documentation for the functions
+<tt class="docutils literal"><span class="pre">yas/define-snippets</span></tt> and <tt class="docutils literal"><span class="pre">yas/compile-bundle</span></tt>.</p>
 </div>
 	  </div>
 	</div>
