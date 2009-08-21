@@ -17,13 +17,15 @@
 #     -d, --snippet-dir=PATH           Tells the program the directory to find the TextMate Snippets
 #     -o, --output-dir=PATH            What directory to write the new YASnippets to
 #     -f, --file=SNIPPET FILE NAME     A specific snippet that you want to copy or a glob for various files
-#     -p, --pretty-print               Pretty prints multiple snippets when printing to standard out
+#     -p, --print-pretty               Pretty prints multiple snippets when printing to standard out
+#     -b, --convert-bindings           TextMate "keyEquivalent" keys are translated to YASnippet "# binding :" directives 
 #
 # Common options:
 #         --help                       Show this message
 require 'rubygems'
 require 'plist'
 require 'choice'
+require 'ruby-debug' if $DEBUG
 
 Choice.options do
   header ''
@@ -49,10 +51,16 @@ Choice.options do
     default '*.{tmSnippet,plist}'
   end
 
-  option :pretty_print do
+  option :print_pretty do
     short '-p'
     long '--pretty-print'
     desc 'Pretty prints multiple snippets when printing to standard out'
+  end
+
+  option :convert_bindings do
+    short '-b'
+    long '--convert-bindings'
+    desc "TextMate \"keyEquivalent\" keys are translated to YASnippet \"# binding :\" directives"
   end
 
   separator ''
@@ -99,6 +107,7 @@ class TmSnippet
     doc << "#key: #{self.tab_trigger}\n" if self.tab_trigger
     doc << "#contributor : Translated from TextMate Snippet\n"
     doc << "#name : #{self.name}\n"
+    doc << "#" unless Choice.choices.convert_bindings
     doc << "#binding : \"#{self.key_equivalent}\"\n" if self.key_equivalent
     doc << "# --\n"
     @@known_substitutions.each_pair { |k, v| self.content.gsub!(k,v) }
@@ -136,17 +145,22 @@ def yasnippet_dir_and_name(dir, file)
   [dir, file]
 end
 
-snippet_files_glob = File.join(Choice.choices.snippet_dir, "**", Choice.choices.snippet)
+original_dir = Dir.pwd
+Dir.chdir Choice.choices.snippet_dir
+snippet_files_glob = File.join("**", Choice.choices.snippet)
 snippet_files = Dir.glob(snippet_files_glob)
 
 puts "Will try to convert #{snippet_files.length} snippets...\n"
 
 snippet_files.each do |file|
-  puts "Processing #{file}\n"
+  puts "Processing \"#{File.join(Choice.choices.snippet_dir,file)}\"\n"
   snippet = TmSnippet.new(file)
   if Choice.choices.output_dir
     begin
-      ( dir_to_create, file_to_create ) = yasnippet_dir_and_name(Choice.choices.output_dir, file)
+      ( dir_to_create, file_to_create ) =
+        yasnippet_dir_and_name(File.join(original_dir,
+                                         Choice.choices.output_dir),
+                               file)
       FileUtils.mkdir_p(dir_to_create)
       File.open(File.join(dir_to_create,file_to_create), 'w') do |f|
         f.write(snippet.to_yasnippet)
@@ -155,11 +169,11 @@ snippet_files.each do |file|
       $stderr.print error.message + "\n"
     end
   else
-    if Choice.choices.pretty_print
+    if Choice.choices.print_pretty
       puts "--------------------------------------------"
     end
     puts snippet.to_yasnippet
-    if Choice.choices.pretty_print
+    if Choice.choices.print_pretty
       puts "--------------------------------------------"
     end
     puts "\n\n"
