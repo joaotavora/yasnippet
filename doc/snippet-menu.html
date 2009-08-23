@@ -3,20 +3,18 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
-<title>The menu</title>
-<meta name="author" content="pluskid, joaotavora" />
-<meta name="date" content="2009-08-18" />
+<meta name="generator" content="Docutils 0.5: http://docutils.sourceforge.net/" />
+<title>YASnippet menu</title>
 <link rel="stylesheet" href="styles.css" type="text/css" />
 </head>
 <body>
-<div class="document" id="the-menu">
+<div class="document" id="yasnippet-menu">
 <div id="header-region" class="clear-block"></div>
 <div id="wrapper">
   <div id="container" class="clear-block">
     <div id="header">
     <div id="logo-floater">
-    <h1 class="title">The menu</h1>
+    <h1 class="title">YASnippet menu</h1>
     </div>
     <ul class="primary-links">
       <li>
@@ -49,35 +47,72 @@
       <div id="squeeze">
         <div class="right-corner">
           <div class="left-corner">
-	  <p>YASnippet will setup a menu just after the <em>Buffers</em> Menu in the
-menubar. The snippets for all <em>real</em> modes are listed there under the
-menu. You can select a snippet from the menu to expand it. Since you
-select manually from the menu, you can expand any snippet. For
-example, you can expand a snippet defined for <tt class="docutils literal"><span class="pre">python-mode</span></tt> in a
-<tt class="docutils literal"><span class="pre">c-mode</span></tt> buffer by selecting it from the menu:</p>
-<img align="right" alt="images/menubar.png" class="align-right" src="images/menubar.png" />
+	  <div class="contents topic" id="contents">
+<p class="topic-title first">Contents</p>
 <ul class="simple">
-<li>Condition system is ignored since you select to expand it
-explicitly.</li>
-<li>There will be no muliple candidates since they are listed in the
-menu as different items.</li>
+<li><a class="reference internal" href="#loading-snippets-from-menu" id="id1">Loading snippets from menu</a></li>
+<li><a class="reference internal" href="#snippet-menu-behavior" id="id2">Snippet menu behavior</a></li>
+<li><a class="reference internal" href="#controlling-indenting" id="id3">Controlling indenting</a></li>
+<li><a class="reference internal" href="#prompting-method" id="id4">Prompting method</a></li>
+<li><a class="reference internal" href="#misc" id="id5">Misc</a></li>
 </ul>
-<p>This can be convenient sometimes. However, if you don't like the
-menubar of Emacs and never use it. You can tell YASnippet don't boring
-to build a menu by setting <tt class="docutils literal"><span class="pre">yas/use-menu</span></tt> to nil.</p>
-<p>Another thing to note is that only <em>real</em> modes are listed under the
-menu. As you know, common snippets can be shared by making up a
-<em>virtual</em> parent mode. It's too bad if the menu is floored by those
-<em>virtual</em> modes. So YASnippet only show menus for those <em>real</em>
-modes. But the snippets fo the <em>virtual</em> modes can still be accessed
-through the <tt class="docutils literal"><span class="pre">parent</span></tt> submenu of some <em>real</em> mode.</p>
-<p>YASnippet use a simple way to check whether a mode is <em>real</em> or
-<em>virtual</em>: <tt class="docutils literal"><span class="pre">(fboundp</span> <span class="pre">mode)</span></tt>. For example, the symbol <tt class="docutils literal"><span class="pre">c-mode</span></tt> is
-bound to a function while <tt class="docutils literal"><span class="pre">cc-mode</span></tt> is not. But this is not enough,
-some modes aren't part of Emacs, and maybe when initializing
-YASnippet, those modes haven't been initialized. So YASnippet also
-maintain a list of known modes (<tt class="docutils literal"><span class="pre">yas/known-modes</span></tt>). You can add item
-to that list if you need.</p>
+</div>
+<p>When <tt class="docutils literal"><span class="pre">yas/minor-mode</span></tt> is active, YASnippet will setup a menu just
+after the Buffers Menu in the menubar.</p>
+<p>In this menu, you can find</p>
+<ul class="simple">
+<li>The currently loaded snippet definitions, organized by major mode,
+and optional grouping.</li>
+<li>A rundown of the most common commands, (followed by their
+keybindings) including commands to load directories and reload all
+snippet definitions.</li>
+<li>A series of submenus for customizing and exploring YASnippet
+behavior.</li>
+</ul>
+<img align="right" alt="images/menu-1.png" class="align-right" src="images/menu-1.png" />
+<div class="section" id="loading-snippets-from-menu">
+<h1><a class="toc-backref" href="#id1">Loading snippets from menu</a></h1>
+<p>Invoking &quot;Load snippets...&quot; from the menu invokes
+<tt class="docutils literal"><span class="pre">yas/load-directory</span></tt> and prompts you for a snippet directory
+hierarchy to load.</p>
+<p>Also useful is the &quot;Reload all&quot; options which uncondionally reloads
+all the snippets directories defined in <tt class="docutils literal"><span class="pre">yas/root-directory</span></tt> and
+rebuilds the menus.</p>
+</div>
+<div class="section" id="snippet-menu-behavior">
+<h1><a class="toc-backref" href="#id2">Snippet menu behavior</a></h1>
+<p>YASnippet will list in this section all the loaded snippet definitions
+organized by snippet table name.</p>
+<p>You can use this section to explore currently loaded snippets. If you
+click on one of them, the default behavior is to expand it,
+unconditionally, inside the current buffer.</p>
+<p>You can however, customize variable <tt class="docutils literal"><span class="pre">yas/visit-from-menu</span></tt> to be
+<tt class="docutils literal"><span class="pre">t</span></tt> which will take you to the snippet definition file when you
+select it from the menu.</p>
+<p>If you want the menu show only snippet tables whose name corresponds
+to a &quot;real&quot; major mode. You do this by setting <tt class="docutils literal"><span class="pre">yas/use-menu</span></tt> to
+<tt class="docutils literal"><span class="pre">'real-modes</span></tt>.</p>
+<p>Finally, to have the menu show only the tables for the currently
+active mode, set <tt class="docutils literal"><span class="pre">yas/use-menu</span></tt> to <tt class="docutils literal"><span class="pre">abbreviate</span></tt>.</p>
+<p>These customizations can also be found in the menu itself, under the
+&quot;Snippet menu behavior&quot; submenu.</p>
+</div>
+<div class="section" id="controlling-indenting">
+<h1><a class="toc-backref" href="#id3">Controlling indenting</a></h1>
+<p>The &quot;Indenting&quot; submenu contains options to control the values of
+<tt class="docutils literal"><span class="pre">yas/indent-line</span></tt> and <tt class="docutils literal"><span class="pre">yas/also-auto-indent-first-line</span></tt>. See
+<a class="reference external" href="snippet-development.html">Writing snippets</a> .</p>
+</div>
+<div class="section" id="prompting-method">
+<h1><a class="toc-backref" href="#id4">Prompting method</a></h1>
+<p>The &quot;Prompting method&quot; submenu contains options to control the value
+of <tt class="docutils literal"><span class="pre">yas/prompt-functions</span></tt>. See <a class="reference external" href="snippet-expansion.html">Expanding snippets</a> .</p>
+</div>
+<div class="section" id="misc">
+<h1><a class="toc-backref" href="#id5">Misc</a></h1>
+<p>The &quot;Misc&quot; submenu contains options to control the values of more
+variables.</p>
+</div>
 	  </div>
 	</div>
       </div>

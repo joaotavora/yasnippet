@@ -2,9 +2,10 @@
 Organizing snippets
 ===================
 
-:Author: pluskid, joaotavora
-:Contact: pluskid@gmail.com
-:Date: 2009-08-18
+.. _Organizing Snippets: snippet-organization.html
+.. _Expanding Snippets: snippet-expansion.html
+.. _Writing Snippets: snippet-development.html
+.. _The YASnippet Menu: snippet-menu.html
 
 .. contents::
 
@@ -13,13 +14,16 @@ Loading snippets
 
 Snippet definitions are stored in files in the filesystem and you have
 to arrange for YASnippet to load them (unless you use a `YASnippet
-bundle <index.html@bundle-install>`_ (see `No storage (bundle)`_),
+bundle <index.html@bundle-install>`_) into *snippet tables*.
 
-The non-bundle version of YASsnippet, once unpacked, comes with a full
+The triggering mechanisms (see `Expanding snippets`_) will look up
+these snippet tables and (hopefully) expand your intended snippet.
+
+The non-bundle version of YASnippet, once unpacked, comes with a full
 directory of snippets, which you can copy somewhere and use. You can
 also create or download, one or more directories.
 
-Once these are in place reference them in the variable
+Once these directories are in place reference them in the variable
 ``yas/root-directory`` and then load them with ``yas/load-directory``:
 
 .. sourcecode:: common-lisp
@@ -33,13 +37,12 @@ Once these are in place reference them in the variable
 The point in using ``yas/root-directory`` (as opposed to calling
 ``yas/load-directory`` directly) is considering "~/emacs.d/mysnippets"
 for snippet development, so you can use commands like
-``yas/new-snippet`` and others described `here
-<snippet-development.html>`_)
+``yas/new-snippet`` and others described in section `Writing
+Snippets`_.
 
-If you make this variable a list and store more items into it...
+You can make this variable a list and store more items into it:
 
 .. sourcecode:: common-lisp
-   :align: right
 
   ;; Develop in ~/emacs.d/mysnippets, but also
   ;; try out snippets in ~/Downloads/interesting-snippets
@@ -49,7 +52,7 @@ If you make this variable a list and store more items into it...
   ;; Map `yas/load-directory' to every element
   (mapc 'yas/load-directory yas/root-directory)
 
-, the directories after the first are loaded, their snippets
+Here the directories after the first are loaded, their snippets
 considered for expansion, but development still happens in
 "~/emacs.d/mysnippets"
 
@@ -57,14 +60,15 @@ Organizing snippets
 ===================
 
 Once you've setup ``yas/root-directory`` , you can store snippets
-inside subdirectories of these directories.
+inside sub-directories of these directories.
 
-Common to *both* cases, snippet definitions are put in plain text
-files. They are arranged by subdirectories, and the name of these
-directories correspond to the Emacs mode where you want expansion to
+Snippet definitions are put in plain text files. They are arranged by
+sub-directories, and the snippet tables are named after these directories.
+
+The name corresponds to the Emacs mode where you want expansion to
 take place. For example, snippets for ``c-mode`` are put in the
-``c-mode`` subdirectory. You can also skip snippet storage altogether
-and use the bundle (see `No storage (bundle)`_).
+``c-mode`` sub-directory. You can also skip snippet storage altogether
+and use the bundle (see `YASnippet bundle`_).
 
 Nested organization
 -------------------
@@ -90,19 +94,24 @@ for some modes:
       |   `-- for
       `-- time
 
-The parent directory acts as the *parent mode*. This is the way of
-YASnippet to share snippet definitions among different modes. As you
-can see above, ``c-mode`` and ``java-mode`` share the same parents
-``cc-mode``, while all modes are derived from ``text-mode``. This can
-be also used to as an *alias* -- ``cperl-mode`` is an empty directory
-whose parent is ``perl-mode``.
+A parent directory acts as a *parent table* of any of its
+sub-directories. This is one of the ways YASnippet can share snippet
+definitions among different modes. As you can see above, ``c-mode``
+and ``java-mode`` share the same parents ``cc-mode``, while all modes
+are derived from ``text-mode``.
+
+This can be also used to as an *alias* -- ``cperl-mode`` is an empty
+directory whose parent is ``perl-mode``.
+
+.. image:: images/menu-parent.png
+   :align: right
 
 The ``.yas-parents`` file
 ------------------------------
 
 If you place a plain text file ``.yas-parents`` inside one of the
-subdirectories you can bypass nesting and still have parent modes. In
-this file you just write whitespace-separated names of modes. This
+sub-directories you can bypass nesting and still have parent modes. In
+this file you just write white-space-separated names of modes. This
 allows more flexibility and readability of your snippet hierarchy.
 
 .. sourcecode:: text
@@ -125,17 +134,16 @@ allows more flexibility and readability of your snippet hierarchy.
 The ``.yas-make-groups`` file
 -----------------------------
 
-.. image:: images/group.png
+.. image:: images/menu-groups.png
    :align: right
 
 If you place an empty plain text file ``.yas-make-groups`` inside one
-of the mode directories, the names of these subdirectories are
-considered groups of snippets and the `YASsnippet menu` is organized
+of the mode directories, the names of these sub-directories are
+considered groups of snippets and `The YASnippet Menu`_ is organized
 much more cleanly, as you can see in the image.
 
 Another alternative way to achieve this is to place a ``# group:``
-directive inside the snippet definition. See `Writing snippets
-<snippet-development.html>`_
+directive inside the snippet definition. See `Writing Snippets`_.
 
 .. sourcecode:: text
 
@@ -157,12 +165,15 @@ directive inside the snippet definition. See `Writing snippets
 Using plain file names
 ----------------------
 
-Normally, file names act as the snippet trigger *key*, see `Expanding
-snippets <snippet-expansion.html>`_. However, if you customize the
-variable ``yas/ignore-filenames-as-triggers`` to be true *or* place an
-empty file ``.yas-ignore-filename-triggers`` you can use much more
-descriptive file names. This is useful (but not mandatory) if many
-snippets within a mode share the same trigger key.
+Normally, file names act as the snippet expansion *abbreviation* (also
+known as the *snippet key* or *snippet trigger*, see `Expanding
+Snippets`_).
+
+However, if you customize the variable
+``yas/ignore-filenames-as-triggers`` to be true *or* place an empty
+file ``.yas-ignore-filename-triggers`` you can use much more
+descriptive file names. This is useful if many snippets within a mode
+share the same trigger key.
 
 .. sourcecode:: text
 
@@ -183,17 +194,16 @@ snippets within a mode share the same trigger key.
   |   `-- assert_select.yasnippet
 
 
-
-No storage (bundle)
-===================
+YASnippet bundle
+================
 
 The most convenient way to define snippets for YASnippet is to put
 them in a directory arranged by the mode and use
 ``yas/load-directory`` to load them.
 
-However, this might slow down the Emacs startup speed if you have many
+However, this might slow down the Emacs start-up speed if you have many
 snippets. You can use ``yas/define-snippets`` to define a bunch of
-snippets for a particular mode in an emacs-lisp file.
+snippets for a particular mode in an Emacs-lisp file.
 
 Since this is hard to maintain, there's a better way: define your
 snippets in directory and then call ``M-x yas/compile-bundle`` to
@@ -208,5 +218,34 @@ Further more, the generated bundle is a stand-alone file not depending
 on ``yasnippet.el``. The released bundles of YASnippet are all
 generated this way.
 
-See the internal documentation for the functions
-``yas/define-snippets`` and ``yas/compile-bundle``.
+See the internal documentation for these functions
+
+* ``M-x describe-function RET yas/define-snippets RET`` 
+* ``M-x describe-function RET yas/compile-bundle RET``.
+
+Customizable variables
+======================
+
+``yas/root-directory``
+----------------------
+
+Root directory that stores the snippets for each major mode.
+
+Can also be a list of strings, for multiple root directories. If
+you make this a list, the first element is always the
+user-created snippets directory. 
+
+Other directories are used for bulk reloading of all snippets using
+``yas/reload-all``
+
+``yas/ignore-filenames-as-triggers``
+------------------------------------
+  
+If non-nil, don't derive tab triggers from filenames.
+
+This means a snippet without a ``# key:`` directive wont have a tab
+trigger.
+
+..  LocalWords:  html YASnippet filesystem yas sourcecode setq mapc printf perl
+..  LocalWords:  println cperl forin filenames filename ERb's yasnippet Avar el
+..  LocalWords:  rjs RET

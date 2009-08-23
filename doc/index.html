@@ -3,10 +3,8 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
+<meta name="generator" content="Docutils 0.5: http://docutils.sourceforge.net/" />
 <title>Yet Another Snippet extension</title>
-<meta name="author" content="pluskid" />
-<meta name="date" content="2008-03-20" />
 <link rel="stylesheet" href="styles.css" type="text/css" />
 </head>
 <body>
@@ -53,36 +51,44 @@
 <p class="topic-title first">Contents</p>
 <ul class="simple">
 <li><a class="reference internal" href="#video-demo" id="id1">Video Demo</a></li>
-<li><a class="reference internal" href="#brief-install-instruction" id="id2">Brief Install Instruction</a><ul>
+<li><a class="reference internal" href="#installation" id="id2">Installation</a><ul>
 <li><a class="reference internal" href="#bundle-install" id="id3">Bundle Install</a></li>
 <li><a class="reference internal" href="#normal-install" id="id4">Normal Install</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#how-to-use-yasnippet" id="id5">How to use YASnippet</a></li>
-<li><a class="reference internal" href="#customization-group" id="id6">Customization group</a></li>
-<li><a class="reference internal" href="#bugs-contribution-and-support" id="id7">Bugs, Contribution and Support</a></li>
+<li><a class="reference internal" href="#bugs-contribution-and-support" id="id6">Bugs, Contribution and Support</a></li>
 </ul>
 </div>
-<p>Yasnippet is a template system for emacs. It allows you to type a
-abbrevation and automatically expand the abbreviation into function
+<p>YASnippet is a template system for Emacs. It allows you to type a
+abbreviation and automatically expand the abbreviation into function
 templates.</p>
 <p>Bundled language templates includes: C, C++, C#, Perl, Python, Ruby,
 SQL, LaTeX, HTML, CSS and more.</p>
-<p>Yasnippet system is inspired from TextMate's template system. You can
+<p>YASnippet system is inspired from TextMate's template system. You can
 use <a class="reference external" href="https://groups.google.com/group/smart-snippet/browse_thread/thread/691fbdd33412d86e?pli=1">a tool</a>
-to import any TextMate template you have to Yasnippet. It is a
-re-design and re-write of my original extension <a class="reference external" href="http://code.google.com/p/smart-snippet/">smart-snippet</a>. It
-is much cleaner and more powerful than smart-snippet.</p>
+to import any TextMate template you have to YASnippet.</p>
+<p>YASnippet is a re-write of the extension <a class="reference external" href="http://code.google.com/p/smart-snippet/">smart-snippet</a>. Both are
+original creations of <a class="reference external" href="http://pluskid.lifegoo.org">pluskid</a>.</p>
 <div class="section" id="video-demo">
 <h1><a class="toc-backref" href="#id1">Video Demo</a></h1>
+<object type="application/x-shockwave-flash"
+        width="425"
+        height="344"
+        align="right"
+        class="youtube-embed"
+        data="http://www.youtube.com/v/vOj7btx3ATg">
+    <param name="movie" value="http://www.youtube.com/v/vOj7btx3ATg"></param>
+    <param name="wmode" value="transparent"></param>
+</object>
 <p>Watch the <a class="reference external" href="http://www.youtube.com/watch?v=vOj7btx3ATg">demo at YouTube</a> (download a higher
 resolution version: <a class="reference external" href="http://yasnippet.googlecode.com/files/yasnippet.avi">yasnippet.avi</a>).</p>
 </div>
-<div class="section" id="brief-install-instruction">
-<h1><a class="toc-backref" href="#id2">Brief Install Instruction</a></h1>
+<div class="section" id="installation">
+<h1><a class="toc-backref" href="#id2">Installation</a></h1>
 <p>There are two archives of YASnippet. One is a single file compiled
 “bundle”, and the other is normal. If all you need is to use the
-builtin templates, download the bundle one. If you want to add your
+built-in templates, download the bundle one. If you want to add your
 own templates, download the normal one.</p>
 <div class="section" id="bundle-install">
 <h2><a class="toc-backref" href="#id3">Bundle Install</a></h2>
@@ -95,7 +101,7 @@ own templates, download the normal one.</p>
 <p>That's it. Now open any one of your language file, you'll see a menu
 YASnippet. you can pull the menu to insert a template. Or, you can
 type the pre-defined abbrev and press <tt class="docutils literal"><span class="pre">TAB</span></tt> to expand it.</p>
-<p>To have emacs load YASnippet automatically when it starts, put the
+<p>To have Emacs load YASnippet automatically when it starts, put the
 following in your <tt class="docutils literal"><span class="pre">~/.emacs</span></tt> file:</p>
 <blockquote>
 <div class="highlight"><pre>(<span style="color: #19177C">add-to-list</span> <span style="color: #19177C">&#39;load-path</span>
@@ -120,62 +126,52 @@ following in your <tt class="docutils literal"><span class="pre">.emacs</span></
 </blockquote>
 <p>Please refer to the documentation for full customization, or use the
 customization group.</p>
-<img align="right" alt="images/customization-group.png" class="align-right" src="images/customization-group.png" />
 </div>
 </div>
 <div class="section" id="how-to-use-yasnippet">
 <h1><a class="toc-backref" href="#id5">How to use YASnippet</a></h1>
 <p>Since version 0.6, YASnippet contains more functionality. You don't
-need to know all of it to use it sucessfully, but you it can improve
+need to know all of it to use it successfully, but you it can improve
 your snippeting experience.</p>
 <p>Hence this section has been split into separate documents:</p>
 <ol class="arabic simple">
-<li><a class="reference external" href="snippet-organization.html">Organizing snippets</a></li>
+<li><a class="reference external" href="snippet-organization.html">Organizing Snippets</a></li>
 </ol>
-<p>Describes ways to organize your snippets in the hard disk, or not
-organize them at all and just use plain old elisp.</p>
-<p>Also explains how to use the YASnippet menu to explore and learn new
-snippets.</p>
+<blockquote>
+Describes ways to organize your snippets in the hard disk (or not
+organize them at all and just use <tt class="docutils literal"><span class="pre">yasnippet-bundle.el</span></tt>.</blockquote>
 <ol class="arabic simple" start="2">
-<li><a class="reference external" href="snippet-expansion.html">Controlling snippet expansion</a></li>
+<li><a class="reference external" href="snippet-expansion.html">Expanding Snippets</a></li>
 </ol>
-<p>Maybe, you'll want some snippets to be expanded in a particular mode,
-or only under certain conditions. Also you might want snippets to wrap
-themselves around a region of selected text, use a direct keybinding,
-control indenting, etc...</p>
+<blockquote>
+<p>Describes how YASnippet chooses snippets for expansion at point.</p>
+<p>Maybe, you'll want some snippets to be expanded in a particular
+mode, or only under certain conditions, or be prompted using
+<tt class="docutils literal"><span class="pre">ido</span></tt>, etc...</p>
+</blockquote>
 <ol class="arabic simple" start="3">
-<li><a class="reference external" href="snippet-development.html">Defining your own snippets</a></li>
+<li><a class="reference external" href="snippet-development.html">Writing Snippets</a></li>
 </ol>
-<p>Describes the YASnippet definition syntax, which is similar, but not
-equivalent to Textmate's. Includes a section about converting Textmate
-snippets.</p>
-</div>
-<div class="section" id="customization-group">
-<h1><a class="toc-backref" href="#id6">Customization group</a></h1>
-<p>From version 0.6 onwards, there is a customization group that you can
-access with:</p>
-<p><tt class="docutils literal"><span class="pre">M-x</span> <span class="pre">customize-group</span> <span class="pre">RET</span> <span class="pre">yasnippet</span> <span class="pre">RET</span></tt></p>
-<p>Each customization variable affects how some part of YASnippet works,
-for example automatic snippet indentation, what prompting method to
-use, whether to expand snippets inside snippets, etc...</p>
-<p>Inside the customization group, each variable is reasonably documented
-to explain what it does.</p>
+<blockquote>
+Describes the YASnippet definition syntax, which is very close (but
+not equivalent) to Textmate's. Includes a section about converting
+TextMate snippets.</blockquote>
+<ol class="arabic simple" start="4">
+<li><a class="reference external" href="snippet-menu.html">The YASnippet menu</a></li>
+</ol>
+<blockquote>
+Explains how to use the YASnippet menu to explore and learn new
+snippets.</blockquote>
 </div>
 <div class="section" id="bugs-contribution-and-support">
-<h1><a class="toc-backref" href="#id7">Bugs, Contribution and Support</a></h1>
+<h1><a class="toc-backref" href="#id6">Bugs, Contribution and Support</a></h1>
 <ul class="simple">
 <li>If you find a bug, please report it at <a class="reference external" href="http://code.google.com/p/yasnippet/issues/list">Issue List</a>.</li>
-<li>If you have problem using YASnippet, or have some new ideas, please
-post to the <a class="reference external" href="http://groups.google.com/group/smart-snippet">discussion group</a>. Especially, there's a <a class="reference external" href="http://code.google.com/p/yasnippet/wiki/WishList">wish list</a>
-wiki page. I'll collect ideas from the <a class="reference external" href="http://groups.google.com/group/smart-snippet">discussion group</a> to the
-<a class="reference external" href="http://code.google.com/p/yasnippet/wiki/WishList">wish list</a>. So you might want to look at the <a class="reference external" href="http://code.google.com/p/yasnippet/wiki/WishList">wish list</a> before
-you post something.</li>
-<li>If you want to contribute some snippets, you can also post them to
-the <a class="reference external" href="http://groups.google.com/group/smart-snippet">discussion group</a>. Some common snippets may be added to
-YASnippet, while others will be collected at the
-<a class="reference external" href="http://code.google.com/p/yasnippet/wiki/UserContributedSnippets">UserContributedSnippets wiki page</a>.</li>
+<li>If you have problem using YASnippet, or have some new ideas,
+including snippets, please post to the <a class="reference external" href="http://groups.google.com/group/smart-snippet">discussion group</a>.</li>
 </ul>
 <p>Thank you very much for using YASnippet!</p>
+<!-- LocalWords:  YASnippet SQL LaTeX CSS yasnippet el eval html ido RET wiki -->
 </div>
 	  </div>
 	</div>

@@ -160,7 +160,29 @@ bulk reloading of all snippets using `yas/reload-all'"
                                   yas/completing-prompt
                                   yas/ido-prompt
                                   yas/no-prompt)
-  "Functions to prompt for keys, templates, etc interactively."
+  "Functions to prompt for keys, templates, etc interactively.
+
+These functions are called with the following arguments:
+
+* PROMPT: A string to prompt the user
+
+* CHOICES: a list of strings or objects.
+
+* optional DISPLAY-FN : A function that, when applied to each of
+the objects in CHOICES will return a string.
+
+The return value of any function you put here should be one of
+the objects in CHOICES, properly formatted with DISPLAY-FN (if
+that is passed).
+
+* To signal that your particular style of prompting is
+unavailable at the moment, you can also have the function return
+nil.
+
+* To signal that the user quit the prompting process, you can
+signal `quit' with
+
+  (signal 'quit \"user quit!\")."
   :type 'list
   :group 'yasnippet)
 
@@ -237,9 +259,6 @@ field"
 
 (defcustom yas/fallback-behavior 'call-other-command
   "How to act when `yas/trigger-key' does *not* expand a snippet.
-
-The fall back behavior of YASnippet when it can't find a snippet
-to expand.
 
 `call-other-command' means try to temporarily disable YASnippet
     and call the next command bound to `yas/trigger-key'.
@@ -528,7 +547,7 @@ Here's an example:
         :active t :style radio   :selected (eq yas/use-menu 'real-modes)]
        ["Show all modes" (setq yas/use-menu 't)
         :help "Show one snippet submenu for each loaded table"
-        :active t :style radio   :selected (eq yas/use-menu 'y)]
+        :active t :style radio   :selected (eq yas/use-menu 't)]
        ["Abbreviate according to current mode" (setq yas/use-menu 'abbreviate)
         :help "Show only snippet submenus for the current active modes"
         :active t :style radio   :selected (eq yas/use-menu 'abbreviate)])
@@ -1271,6 +1290,8 @@ TEMPLATES is a list of `yas/template'."
                                      (yas/compute-major-mode-and-parents (concat directory "/dummy")
                                                                          nil
                                                                          no-hierarchy-parents)))
+           (yas/ignore-filenames-as-triggers (or yas/ignore-filenames-as-triggers
+                                                 (file-exists-p (concat directory "/" ".yas-ignore-filenames-as-triggers"))))
            (mode-sym (and major-mode-and-parents
                           (car major-mode-and-parents)))
            (parents (if making-groups-sym
@@ -1397,18 +1418,21 @@ YASNIPPET-BUNDLE is the output file of the compile result.
 SNIPPET-ROOTS is a list of root directories that contains the
 snippets definition.
 
-CODE is the code you would like to used to initialize yasnippet.
+CODE is the code to be placed at the end of the generated file
+and that can initialize the YASnippet bundle.
 
 Last optional argument DROPDOWN is the filename of the
 dropdown-list.el library.
 
 Here's the default value for all the parameters:
 
- (yas/compile-bundle \"yasnippet.el\"
-                     \"./yasnippet-bundle.el\"
-                     '(\"snippets\")
-                     \"(yas/initialize-bundle)\"
-                     \"dropdown-list.el\")
+  (yas/compile-bundle \"yasnippet.el\"
+                      \"yasnippet-bundle.el\"
+                      \"snippets\")
+                      \"(yas/initialize-bundle)
+                        ### autoload
+                        (require 'yasnippet-bundle)`\"
+                      \"dropdown-list.el\")
 "
   (interactive "ffind the yasnippet.el file: \nFTarget bundle file: \nDSnippet directory to bundle: \nMExtra code? \nfdropdown-library: ")
   
@@ -1503,16 +1527,22 @@ Here's the default value for all the parameters:
 SNIPPETS is a list of snippet definitions, each taking the
 following form:
 
- (KEY TEMPLATE NAME CONDITION GROUP VARS FILE KEYBINDING)
+ (KEY TEMPLATE NAME CONDITION GROUP EXPAND-ENV FILE KEYBINDING)
 
 Within these, only TEMPLATE is actually mandatory.
 
-Optional PARENT-MODE can be used to specify the parent modes of
-MODE. It can be a mode symbol of a list of mode symbols. It does
-not need to be a real mode.
+All the elelements are strings, including CONDITION, EXPAND-ENV
+and KEYBINDING which will be `read' and eventually `eval'-ed.
 
-That is, when looking a snippet in MODE failed, it can refer to
-its parent modes."
+FILE is probably of very little use if you're programatically
+defining snippets.
+
+You can use `yas/parse-template' to return such lists based on
+the current buffers contents.
+
+Optional PARENT-MODE can be used to specify the parent tables of
+MODE. It can be a mode symbol of a list of mode symbols. It does
+not need to be a real mode."
   (let ((snippet-table (yas/snippet-table-get-create mode))
         (parent-tables (mapcar #'yas/snippet-table-get-create
                                (if (listp parent-mode)

@@ -2,9 +2,31 @@
 ChangeLog
 =========
 
-:Author: pluskid
-:Contact: pluskid@gmail.com
-:Date: 2008-03-22
+.. _Organizing Snippets: snippet-organization.html
+.. _Expanding Snippets: snippet-expansion.html
+.. _Writing Snippets: snippet-development.html
+.. _The YASnippet Menu: snippet-menu.html
+
+0.6.1b / 2009-08-23
+===================
+
+* Much more powerful menu. See `The YASnippet menu`_.
+* New ways to organize snippets. See `Organizing snippets`_.
+* Added ``yas/also-auto-indent-first-line`` customization variable.
+* Renamed directive ``# env:`` to ``# expand-env:``
+* Rewrote much of the documentation.
+* Added ``textmate-import.rb`` to svn repository.
+* Many random bugs fixed.
+* Fixed `Issue 72
+  <http://code.google.com/p/yasnippet/issues/detail?id=72>`_ (thanks
+  rmartin.k...@gmail.com)
+* Fixed `Issue 74
+  <http://code.google.com/p/yasnippet/issues/detail?id=74>`_
+* Fixed `Issue 70
+  <http://code.google.com/p/yasnippet/issues/detail?id=70>`_
+* Fixed `Issue 69
+  <http://code.google.com/p/yasnippet/issues/detail?id=69>`_
+
 
 0.6.0c / 2009-07-27
 ===================
