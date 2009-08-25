@@ -18,7 +18,8 @@
 #     -o, --output-dir=PATH            What directory to write the new YASnippets to
 #     -f, --file=SNIPPET FILE NAME     A specific snippet that you want to copy or a glob for various files
 #     -p, --print-pretty               Pretty prints multiple snippets when printing to standard out
-#     -b, --convert-bindings           TextMate "keyEquivalent" keys are translated to YASnippet "# binding :" directives 
+#     -b, --convert-bindings           TextMate "keyEquivalent" keys are translated to YASnippet "# binding :" directives
+#     -g, --info-plist=INFO            Attempt to derive group information from "info.plist" type-file PLIST
 #
 # Common options:
 #         --help                       Show this message
@@ -63,6 +64,12 @@ Choice.options do
     desc "TextMate \"keyEquivalent\" keys are translated to YASnippet \"# binding :\" directives"
   end
 
+  option :info_plist do
+    short '-g'
+    long '--info-plist'
+    desc "Attempt to derive group information from \"info.plist\" type-file PLIST"
+  end
+
   separator ''
   separator 'Common options: '
 
@@ -82,12 +89,27 @@ class TmSnippet
   "${TM_RAILS_TEMPLATE_END_RUBY_BLOCK}"    => "end" ,
    /$\{TM_SELECTED_TEXT.*\}/               => "`yas/selected-text`" }
   
-  def initialize(file)
+  def initialize(file,info=nil)
     @snippet = Plist::parse_xml(file)
+    @info=info
   end
 
   def name
     @snippet["name"]
+  end
+
+  def group
+    if @info
+      submenus = @info["mainMenu"]["submenus"]
+      container = submenus.keys.find do |submenu|
+        submenus[submenu]["items"].member?(uuid)
+      end
+      submenus[container]["name"] if container;
+    end
+  end
+
+  def uuid
+    @snippet["uuid"]
   end
 
   def tab_trigger
@@ -115,35 +137,13 @@ class TmSnippet
   end
 end
 
-# def yasnippet_file_name(dir, snippet, ext=nil)
-#   begin
-#     file = ""
-#     shortname = (snippet.tab_trigger or
-#                  snippet.name.gsub(/[^a-z0-9_-].*/,""))
-#     if ext
-#       file = File.join(dir, shortname + "." + ext.to_s)
-#     else
-#       file =  File.join(dir, shortname)
-#     end
-#     if File.exist?(file)
-#       if ext
-#         file = yasnippet_file_name(dir,snippet, ext+1)
-#       else
-#         file = yasnippet_file_name(dir,snippet, 1)
-#       end
-#     end
-#     # puts "returning #{file} since shortname is #{shortname}\n"
-#     file
-#   rescue TypeError
-#     raise "Cannot convert " + snippet.name + " (probably no tab-trigger)"
-#   end
-# end
-
 def yasnippet_dir_and_name(dir, file)
   dir = File.join(dir,File.dirname(file))
   file = File.join(File.basename(file, File.extname(file))) << ".yasnippet"
   [dir, file]
 end
+
+info_plist = Plist::parse_xml(Choice.choices.info_plist) if Choice.choices.info_plist
 
 original_dir = Dir.pwd
 Dir.chdir Choice.choices.snippet_dir
@@ -154,12 +154,13 @@ puts "Will try to convert #{snippet_files.length} snippets...\n"
 
 snippet_files.each do |file|
   puts "Processing \"#{File.join(Choice.choices.snippet_dir,file)}\"\n"
-  snippet = TmSnippet.new(file)
+  snippet = TmSnippet.new(file,info_plist)
   if Choice.choices.output_dir
     begin
       ( dir_to_create, file_to_create ) =
         yasnippet_dir_and_name(File.join(original_dir,
-                                         Choice.choices.output_dir),
+                                         Choice.choices.output_dir,
+                                         (snippet.group or "")),
                                file)
       FileUtils.mkdir_p(dir_to_create)
       File.open(File.join(dir_to_create,file_to_create), 'w') do |f|
