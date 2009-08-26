@@ -7,8 +7,7 @@ ChangeLog
 .. _Writing Snippets: snippet-development.html
 .. _The YASnippet Menu: snippet-menu.html
 
-0.6.1b / 2009-08-23
-===================
+**Upcoming** release:
 
 * Much more powerful menu. See `The YASnippet menu`_.
 * New ways to organize snippets. See `Organizing snippets`_.

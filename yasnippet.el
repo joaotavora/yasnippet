@@ -1863,34 +1863,15 @@ visited file in `snippet-mode'."
            (message "This snippet was not loaded from a file!")))))
 
 (defun yas/guess-snippet-directory ()
-  "Try to guess suitable directories based on `major-mode' and
-also the current active tables."
+  "Try to guess suitable directories based on the current active
+tables."
   (let ((main-dir (or (and (listp yas/root-directory)
                            (first yas/root-directory))
                       yas/root-directory
-                      "~/.emacs.d/snippets"))
-        (mode major-mode)
-        (options))
-    ;; Lookup main mode and add that to the options
-    ;;
-    (push (format "%s/%s" main-dir mode) options)
-    ;; Next lookup the main active table
-    ;;
-    (let ((active-tables (first (yas/get-snippet-tables)))
-          other-path-alternative)
-      (when active-tables
-        (setq active-tables (cons active-tables
-                                  (yas/snippet-table-get-all-parents active-tables))))
-      (dolist (table (reverse active-tables))
-        (setq other-path-alternative
-              (concat main-dir "/" (yas/snippet-table-name table))))
-      (when other-path-alternative
-        (push other-path-alternative options)))
-    ;; Finally add to the options the guessed parent of major-mode
-    ;;  (this is almost never works out)
-    (when (get mode 'derived-mode-parent)
-      (push (format "%s/%s" main-dir (get mode 'derived-mode-parent)) options))
-    (reverse options)))
+                      "~/.emacs.d/snippets")))
+    (mapcar #'(lambda (table)
+                (concat main-dir "/" (yas/snippet-table-name table)))
+            (yas/get-snippet-tables))))
 
 (defun yas/new-snippet (&optional same-window)
   "Create a new snippet in guessed current mode's directory."
@@ -1899,14 +1880,14 @@ also the current active tables."
                      (read-from-minibuffer "Enter snippet name: ")))
 
 
-(defun yas/find-snippets (&optional same-window file-name)
+(defun yas/find-snippets (&optional same-window snippet-name )
   "Look for user snippets in guessed current mode's directory.
 
 Calls `find-file' interactively in the guessed directory.
 
 With prefix arg SAME-WINDOW opens the buffer in the same window.
 
-With optional FILE-NAME, finds the file directly, i.e. `find-file' is
+With optional SNIPPET-NAME, finds the file directly, i.e. `find-file' is
 called non-interactively.
 
 Because snippets can be loaded from many different locations,
@@ -1936,10 +1917,10 @@ otherwise, proposes to create the first option returned by
 
     (when target-directory
       (let ((default-directory target-directory))
-        (setq buffer (if file-name
+        (setq buffer (if snippet-name
                          (if same-window
-                             (find-file file-name)
-                           (find-file-other-window file-name))
+                             (find-file snippet-name)
+                           (find-file-other-window snippet-name))
                        (call-interactively (if same-window
                                                'find-file
                                              'find-file-other-window))))
