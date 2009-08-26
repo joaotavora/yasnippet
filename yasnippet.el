@@ -2948,40 +2948,57 @@ Meant to be called in a narrowed buffer, does various passes"
     (goto-char parse-start)
     (yas/indent snippet)))
 
+(defun yas/indent-according-to-mode (snippet-markers)
+  "Indent current line according to mode, preserving
+SNIPPET-MARKERS."
+  ;; XXX: Here seems to be the indent problem:
+  ;;
+  ;; `indent-according-to-mode' uses whatever
+  ;; `indent-line-function' is available. Some
+  ;; implementations of these functions delete text
+  ;; before they insert. If there happens to be a marker
+  ;; just after the text being deleted, the insertion
+  ;; actually happens after the marker, which misplaces
+  ;; it.
+  ;;
+  ;; This would also happen if we had used overlays with
+  ;; the `front-advance' property set to nil.
+  ;;
+  ;; This is why I have these `trouble-markers', they are the ones at
+  ;; they are the ones at the first non-whitespace char at the line
+  ;; (i.e. at `yas/real-line-beginning'. After indentation takes place
+  ;; we should be at the correct to restore them to. All other
+  ;; non-trouble-markers have been *pushed* and don't need special
+  ;; attention.
+  ;;
+  (goto-char (yas/real-line-beginning))
+  (let ((trouble-markers (remove-if-not #'(lambda (marker)
+                                            (= marker (point)))
+                                        snippet-markers)))
+    (save-restriction
+      (widen)
+      (indent-according-to-mode))
+    (mapc #'(lambda (marker)
+              (set-marker marker (point)))
+          trouble-markers)))
+
 (defun yas/indent (snippet)
-  (save-excursion
-    (while (re-search-forward "$>" nil t)
-      (delete-region (match-beginning 0) (match-end 0))
-      (when (not (eq yas/indent-line 'auto))
-        (indent-according-to-mode))))
-  (save-excursion
-    (cond ((eq yas/indent-line 'fixed)
-           (goto-char (point-min))
-           (while (and (zerop (forward-line))
-                       (zerop (current-column)))
-             (indent-to-column column)))
-          ((eq yas/indent-line 'auto)
-           (let ((end (set-marker (make-marker) (point-max)))
-                 (indent-first-line-p yas/also-auto-indent-first-line)
-                 (snippet-markers (yas/collect-snippet-markers snippet)))
-             (save-restriction
-               (widen)
-               ;; XXX: Here seems to be the indent problem:
-               ;;
-               ;; `indent-according-to-mode' uses whatever
-               ;; `indent-line-function' is available. Some
-               ;; implementations of these functions delete text
-               ;; before they insert. If there happens to be a marker
-               ;; just after the text being deleted, the insertion
-               ;; actually happens after the marker, which misplaces
-               ;; it.
-               ;;
-               ;; This would also happen if we had used overlays with
-               ;; the `front-advance' property set to nil.
-               ;;
-               ;; This is why I have these `trouble-markers', which
-               ;; are restored after indentation happens.
-               ;;
+  (let ((snippet-markers (yas/collect-snippet-markers snippet)))
+    ;; Look for those $>
+    (save-excursion
+      (while (re-search-forward "$>" nil t)
+        (delete-region (match-beginning 0) (match-end 0))
+        (when (not (eq yas/indent-line 'auto))
+          (yas/indent-according-to-mode snippet-markers))))
+    ;; Now do stuff for 'fixed and 'auto
+    (save-excursion
+      (cond ((eq yas/indent-line 'fixed)
+             (while (and (zerop (forward-line))
+                         (zerop (current-column)))
+               (indent-to-column column)))
+            ((eq yas/indent-line 'auto)
+             (let ((end (set-marker (make-marker) (point-max)))
+                   (indent-first-line-p yas/also-auto-indent-first-line))
                (while (and (zerop (if indent-first-line-p
                                       (prog1
                                           (forward-line 0)
@@ -2989,17 +3006,9 @@ Meant to be called in a narrowed buffer, does various passes"
                                     (forward-line 1)))
                            (not (eobp))
                            (<= (point) end))
-                 (goto-char (yas/real-line-beginning))
-                 (let ((trouble-markers (remove-if-not #'(lambda (marker)
-                                                           (= marker (point)))
-                                                       snippet-markers)))
-                   (indent-according-to-mode)
-                   (mapc #'(lambda (marker)
-                             (set-marker marker (point)))
-                         trouble-markers)))
-               (set-marker end nil))))
-          (t
-           nil))))
+                 (yas/indent-according-to-mode snippet-markers))))
+            (t
+             nil)))))
 
 (defun yas/collect-snippet-markers (snippet)
   "Make a list of all the markers used by SNIPPET."
