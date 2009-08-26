@@ -82,16 +82,24 @@ end
 
 class TmSnippet
   @@known_substitutions = {
-  "${TM_RAILS_TEMPLATE_START_RUBY_EXPR}"   => "<%= ",
-  "${TM_RAILS_TEMPLATE_END_RUBY_EXPR}"     => " %>",
-  "${TM_RAILS_TEMPLATE_START_RUBY_INLINE}" => "<% ",
-  "${TM_RAILS_TEMPLATE_END_RUBY_INLINE}"   => " -%>",
-  "${TM_RAILS_TEMPLATE_END_RUBY_BLOCK}"    => "end" ,
-   /$\{TM_SELECTED_TEXT.*\}/               => "`yas/selected-text`" }
+    "${TM_RAILS_TEMPLATE_START_RUBY_EXPR}"   => "<%= ",
+    "${TM_RAILS_TEMPLATE_END_RUBY_EXPR}"     => " %>",
+    "${TM_RAILS_TEMPLATE_START_RUBY_INLINE}" => "<% ",
+    "${TM_RAILS_TEMPLATE_END_RUBY_INLINE}"   => " -%>",
+    "${TM_RAILS_TEMPLATE_END_RUBY_BLOCK}"    => "end" ,
+    /$\{TM_SELECTED_TEXT.*\}/               => "`yas/selected-text`" }
   
+  attr_reader :file
+
+  # Makes a TmSnippet
+  #
+  # * file is the .tmsnippet/.plist file path relative to cwd 
+  # * optional info is a Plist.parsed info.plist found in the bundle dir
+  #
   def initialize(file,info=nil)
+    @file    = file
+    @info    = info
     @snippet = Plist::parse_xml(file)
-    @info=info
   end
 
   def name
@@ -135,48 +143,48 @@ class TmSnippet
     @@known_substitutions.each_pair { |k, v| self.content.gsub!(k,v) }
     doc << "#{self.content}"
   end
+
+  def yasnippet_dir(dir)
+    dir = File.join(dir,File.dirname(@file))
+    dir = File.join(dir,group) if group
+  end
+
 end
 
-def yasnippet_dir_and_name(dir, file)
-  dir = File.join(dir,File.dirname(file))
-  file = File.join(File.basename(file, File.extname(file))) << ".yasnippet"
-  [dir, file]
-end
 
-info_plist = Plist::parse_xml(Choice.choices.info_plist) if Choice.choices.info_plist
 
-original_dir = Dir.pwd
-Dir.chdir Choice.choices.snippet_dir
-snippet_files_glob = File.join("**", Choice.choices.snippet)
-snippet_files = Dir.glob(snippet_files_glob)
+if $0 == __FILE__ 
+  info_plist = Plist::parse_xml(Choice.choices.info_plist) if Choice.choices.info_plist
+  
+  original_dir = Dir.pwd
+  Dir.chdir Choice.choices.snippet_dir
+  snippet_files_glob = File.join("**", Choice.choices.snippet)
+  snippet_files = Dir.glob(snippet_files_glob)
 
-puts "Will try to convert #{snippet_files.length} snippets...\n"
+  puts "Will try to convert #{snippet_files.length} snippets...\n"
 
-snippet_files.each do |file|
-  puts "Processing \"#{File.join(Choice.choices.snippet_dir,file)}\"\n"
-  snippet = TmSnippet.new(file,info_plist)
-  if Choice.choices.output_dir
-    begin
-      ( dir_to_create, file_to_create ) =
-        yasnippet_dir_and_name(File.join(original_dir,
-                                         Choice.choices.output_dir,
-                                         (snippet.group or "")),
-                               file)
-      FileUtils.mkdir_p(dir_to_create)
-      File.open(File.join(dir_to_create,file_to_create), 'w') do |f|
-        f.write(snippet.to_yasnippet)
+  snippet_files.each do |file|
+    puts "Processing \"#{File.join(Choice.choices.snippet_dir,file)}\"\n"
+    snippet = TmSnippet.new(file,info_plist)
+    if Choice.choices.output_dir
+      begin
+        dir_to_create = snippet.yasnippet_dir(File.join(original_dir, Choice.choices.output_dir))
+        FileUtils.mkdir_p(dir_to_create)
+        File.open(File.join(dir_to_create,file_to_create), 'w') do |f|
+          f.write(snippet.to_yasnippet)
+        end
+      rescue RuntimeError => e
+        $stderr.puts "Oops... #{e.class}:#{e.message}"
       end
-    rescue RuntimeError => error
-      $stderr.print error.message + "\n"
+    else
+      if Choice.choices.print_pretty
+        puts "--------------------------------------------"
+      end
+      puts snippet.to_yasnippet
+      if Choice.choices.print_pretty
+        puts "--------------------------------------------"
+      end
+      puts "\n\n"
     end
-  else
-    if Choice.choices.print_pretty
-      puts "--------------------------------------------"
-    end
-    puts snippet.to_yasnippet
-    if Choice.choices.print_pretty
-      puts "--------------------------------------------"
-    end
-    puts "\n\n"
   end
 end
