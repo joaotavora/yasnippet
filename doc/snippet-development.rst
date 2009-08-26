@@ -183,7 +183,7 @@ your hard work. You can then use:
           |  | |  |
           +--+-+--+
 
-``# binding:``: direct keybinding
+``# binding:`` direct keybinding
 ---------------------------------
 
 You can use this directive to expand a snippet directly from a normal
@@ -225,7 +225,7 @@ modes and it is hard to undefine them. In particular, the variable
 active and the function ``yas/kill-snippet-keybindings`` will try to
 undefine all the keybindings.
 
-``# contributor:``: snippet author
+``# contributor:`` snippet author
 ---------------------------------------------------
 
 This is optional and has no effect whatsoever on snippet
@@ -590,6 +590,58 @@ snippet and after exiting the snippet. If you find any strange but
 functional use for them, that's probably a design flaw in YASnippet,
 so let us know.
 
+Importing TextMate snippets
+===========================
+
+There are a couple of tools that take TextMate's ".tmSnippet" xml
+files and create YASnippet definitions:
+
+ * `a python script by Jeff Wheeler
+   <http://code.nokrev.com/?p=snippet-copier.git;a=blob_plain;f=snippet_copier.py>`_
+
+ * a `ruby tool
+   <http://yasnippet.googlecode.com/svn/trunk/extras/textmate_import.rb>`_
+   , ``textmate_import.rb`` adapted from `Rob Christie's
+   <http://www.neutronflux.net/2009/07/28/shoulda-snippets-for-emacs/>`_,
+   which I have uploaded to the repository.
+
+In this section, i'll shortly cover the **second** option. 
+
+Download the ``textmate_import.rb`` tool and the TextMate
+bundle you're interested in.
+
+.. sourcecode:: text
+
+  $ curl -O http://yasnippet.googlecode.com/svn/trunk/extras/textmate_import.rb
+  $ svn export http://svn.textmate.org/trunk/Bundles/HTML.tmbundle/
+
+
+Then invoke ``textmate_import.rb`` like this:
+
+.. sourcecode:: text
+
+  $ ./textmate_import.rb -d HTML.tmbundle/Snippets/ -o html-mode -g HTML.tmbundle/info.plist
+
+You should end up with a ``html-mode`` subdir containing snippets
+exported from textmate.
+
+.. sourcecode:: text 
+
+  $ tree html-mode # to view dir contents, if you have 'tree' installed
+
+The ``-g`` is optional but helps the tool figure out the grouping.
+According to `Organizing Snippets`_, don't forget to touch
+``.yas-make-groups`` and ``.yas-ignore-filename-triggers`` inside the
+``html-mode`` dir.
+
+Also try ``textmate_import.rb --help`` for a list of options.
+
+Please note that snippet importation is not yet perfect. You'll
+probably have some adjustments to some/many snippets. Please
+contribute these adjustments to the google group or, better yet, patch
+the ``textmate_import.rb`` to automatically perform them and submit
+that.
+ 
 ..  LocalWords:  html YASnippet yas sourcecode pluskid init filenames filename
 ..  LocalWords:  env varlist keybinding keymap rinari ifndef upcase endif
 ..  LocalWords:  nondirectory autorelease aValue inline

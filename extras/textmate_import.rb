@@ -134,19 +134,19 @@ class TmSnippet
 
   def to_yasnippet
     doc = "# -*- mode: snippet -*-\n"
-    doc << "#key: #{self.tab_trigger}\n" if self.tab_trigger
-    doc << "#contributor : Translated from TextMate Snippet\n"
-    doc << "#name : #{self.name}\n"
+    doc << "# key: #{self.tab_trigger}\n" if self.tab_trigger
+    doc << "# contributor: Translated from TextMate Snippet\n"
+    doc << "# name: #{self.name}\n"
     doc << "#" unless Choice.choices.convert_bindings
-    doc << "#binding : \"#{self.key_equivalent}\"\n" if self.key_equivalent
+    doc << "# binding: \"#{self.key_equivalent}\"\n" if self.key_equivalent
     doc << "# --\n"
     @@known_substitutions.each_pair { |k, v| self.content.gsub!(k,v) }
     doc << "#{self.content}"
   end
 
-  def yasnippet_dir(dir)
-    dir = File.join(dir,File.dirname(@file))
-    dir = File.join(dir,group) if group
+  def yasnippet_file(basedir)
+    basedir = File.join(basedir,group) if group
+    File.join(basedir,@file).gsub(/#{File.extname(@file)}$/,".yasnippet")
   end
 
 end
@@ -164,27 +164,27 @@ if $0 == __FILE__
   puts "Will try to convert #{snippet_files.length} snippets...\n"
 
   snippet_files.each do |file|
-    puts "Processing \"#{File.join(Choice.choices.snippet_dir,file)}\"\n"
-    snippet = TmSnippet.new(file,info_plist)
-    if Choice.choices.output_dir
-      begin
-        dir_to_create = snippet.yasnippet_dir(File.join(original_dir, Choice.choices.output_dir))
-        FileUtils.mkdir_p(dir_to_create)
-        File.open(File.join(dir_to_create,file_to_create), 'w') do |f|
+    begin
+      puts "Processing \"#{File.join(Choice.choices.snippet_dir,file)}\"\n"
+      snippet = TmSnippet.new(file,info_plist)
+      if Choice.choices.output_dir
+        file_to_create = snippet.yasnippet_file(File.join(original_dir, Choice.choices.output_dir))
+        FileUtils.mkdir_p(File.dirname(file_to_create))
+        File.open(file_to_create, 'w') do |f|
           f.write(snippet.to_yasnippet)
         end
-      rescue RuntimeError => e
-        $stderr.puts "Oops... #{e.class}:#{e.message}"
+      else
+        if Choice.choices.print_pretty
+          puts "--------------------------------------------"
+        end
+        puts snippet.to_yasnippet
+        if Choice.choices.print_pretty
+          puts "--------------------------------------------"
+        end
+        puts "\n\n"
       end
-    else
-      if Choice.choices.print_pretty
-        puts "--------------------------------------------"
-      end
-      puts snippet.to_yasnippet
-      if Choice.choices.print_pretty
-        puts "--------------------------------------------"
-      end
-      puts "\n\n"
+    rescue Exception => e
+      $stderr.puts "Oops... #{e.class}:#{e.message}"
     end
   end
 end

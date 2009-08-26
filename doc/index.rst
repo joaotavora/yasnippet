@@ -9,16 +9,15 @@ Yet Another Snippet extension
 
 .. contents::
 
-YASnippet is a template system for Emacs. It allows you to type a
+**YASnippet** is a template system for Emacs. It allows you to type a
 abbreviation and automatically expand the abbreviation into function
 templates.
 
 Bundled language templates includes: C, C++, C#, Perl, Python, Ruby,
 SQL, LaTeX, HTML, CSS and more.
 
-YASnippet system is inspired from TextMate's template system. You can
-use `a tool
-<http://yasnippet.googlecode.com/svn/trunk/textmate-import.rb> to
+The snippet syntax is inspired from TextMate's syntax, you can
+even `import <snippet-development.html#importing-textmate-snippets>`_
 import most TextMate templates to YASnippet.
 
 YASnippet is a re-write of the extension `smart-snippet`_. Both are
