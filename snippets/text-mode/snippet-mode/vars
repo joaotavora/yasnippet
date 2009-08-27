@@ -3,7 +3,7 @@
 # --
 # name : $1${2:
 # key : ${3:expand-key}}${4:
-# key : ${5:group}} 
+# group : ${5:group}} 
 # contributor : $6
 # --
 $0

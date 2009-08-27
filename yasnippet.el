@@ -1862,73 +1862,136 @@ visited file in `snippet-mode'."
           (t
            (message "This snippet was not loaded from a file!")))))
 
-(defun yas/guess-snippet-directory ()
+(defun yas/guess-snippet-directories-1 (table &optional suffix)
+  "Guesses possible snippet subdirsdirectories for TABLE."
+  (unless suffix
+    (setq suffix (yas/snippet-table-name table))) 
+  (cons suffix
+        (mapcan #'(lambda (parent)
+                    (yas/guess-snippet-directories-1
+                     parent
+                     (concat (yas/snippet-table-name parent) "/" suffix)))
+                (yas/snippet-table-parents table))))
+
+(defun yas/guess-snippet-directories ()
   "Try to guess suitable directories based on the current active
-tables."
+tables.
+
+Returns a a list of options alist TABLE -> DIRS where DIRS are
+all the possibly directories where snippets of table might be
+lurking."
   (let ((main-dir (or (and (listp yas/root-directory)
                            (first yas/root-directory))
                       yas/root-directory
                       "~/.emacs.d/snippets")))
     (mapcar #'(lambda (table)
-                (concat main-dir "/" (yas/snippet-table-name table)))
+                (cons table
+                      (mapcar #'(lambda (subdir)
+                                  (concat main-dir "/" subdir))
+                              (yas/guess-snippet-directories-1 table))))
             (yas/get-snippet-tables))))
 
-(defun yas/new-snippet (&optional same-window)
-  "Create a new snippet in guessed current mode's directory."
-  (interactive)
-  (yas/find-snippets same-window
-                     (read-from-minibuffer "Enter snippet name: ")))
+(defun yas/make-directory-maybe (table-and-dirs &optional main-table-p)
+  "Returns a dir inside  TABLE-AND-DIRS, prompts for creation if none exists."
+  (or (some #'(lambda (dir) (when (file-directory-p dir) dir)) (cdr table-and-dirs))
+      (let ((candidate (first (cdr table-and-dirs))))
+        (if (y-or-n-p (format "Guessed directory (%s) for %s table \"%s\" does not exist! Create? "
+                              candidate
+                              (or main-table-p
+                                  "")
+                              (yas/snippet-table-name (car table-and-dirs))))
+            (progn
+              (make-directory candidate 'also-make-parents)
+              ;; create the .yas-parents file here...
+              candidate)))))
 
+(defun yas/new-snippet (&optional choose-instead-of-guess)
+  ""
+  (interactive "P")
+  (let* ((guessed-directories (yas/guess-snippet-directories))
+         (option (or (and choose-instead-of-guess
+                          (some #'(lambda (fn)
+                                    (funcall fn "Choose a snippet table: "
+                                             guessed-directories
+                                             #'(lambda (option)
+                                                 (yas/snippet-table-name (car option)))))
+                                yas/prompt-functions))
+                     (first guessed-directories)))
+         (chosen))
+    (setq chosen (yas/make-directory-maybe option))
+    (unless (or chosen
+                choose-instead-of-guess)
+      (if (y-or-n-p (format "Continue guessing for other active tables %s? "
+                            (mapcar #'(lambda (table-and-dirs)
+                                        (yas/snippet-table-name (car table-and-dirs)))
+                                    (rest guessed-directories))))
+          (setq chosen (some #'yas/make-directory-maybe
+                             (rest guessed-directories)))))
+    (unless (or chosen
+                choose-instead-of-guess)
+      (when (y-or-n-p "Having trouble... use snippet root dir? ")
+        (setq chosen (if (listp yas/root-directory)
+                         (first yas/root-directory)
+                       yas/root-directory))))
+    (if chosen
+        (let ((default-directory chosen)
+              (name (read-from-minibuffer "Enter a snippet name: ")))
+          (find-file-other-window (concat name
+                                          ".yasnippet"))
+          (snippet-mode)
+          (yas/expand-snippet (format 
+                               "\
+# -*- mode: snippet -*-
+# name: %s
+# key: $1${2:
+# binding: \"${3:keybinding}\"}${4:
+# expand-env: ((${5:some-var} ${6:some-value}))}
+# --
+$0" name))))))
 
-(defun yas/find-snippets (&optional same-window snippet-name )
+(defun yas/find-snippets (&optional same-window )
   "Look for user snippets in guessed current mode's directory.
 
 Calls `find-file' interactively in the guessed directory.
 
 With prefix arg SAME-WINDOW opens the buffer in the same window.
 
-With optional SNIPPET-NAME, finds the file directly, i.e. `find-file' is
-called non-interactively.
-
 Because snippets can be loaded from many different locations,
 this has to guess the correct directory using
-`yas/guess-directory', which returns a list of options. If any
-one of these exists, it is taken and `find-file' is called there,
-otherwise, proposes to create the first option returned by
-`yas/guess-directory'."
+`yas/guess-snippet-directories', which returns a list of
+options. 
+
+If any one of these exists, it is taken and `find-file' is called
+there, otherwise, proposes to create the first option returned by
+`yas/guess-snippet-directories'."
   (interactive "P")
-  (let* ((guessed-directories (append (yas/guess-snippet-directory)
-                                      (if (listp yas/root-directory)
-                                          yas/root-directory
-                                        (list yas/root-directory))))
-         (target-directory (first guessed-directories))
+  (let* ((guessed-directories (yas/guess-snippet-directories))
+         (chosen)
          (buffer))
-
-    (while (and guessed-directories
-                (or (not target-directory)
-                    (not (file-exists-p target-directory))))
-      (if (y-or-n-p (format "Guessed directory (%s) does not exist! Create? "
-                            (first guessed-directories)))
-          (progn
-            (setq target-directory (first guessed-directories))
-            (make-directory target-directory 'also-make-parents))
-        (setq guessed-directories (cdr guessed-directories))
-        (setq target-directory (first guessed-directories))))
-
-    (when target-directory
-      (let ((default-directory target-directory))
-        (setq buffer (if snippet-name
-                         (if same-window
-                             (find-file snippet-name)
-                           (find-file-other-window snippet-name))
-                       (call-interactively (if same-window
+    (setq chosen (yas/make-directory-maybe (first guessed-directories) "main"))
+    (unless chosen
+      (if (y-or-n-p (format "Continue guessing for other active tables %s? "
+                            (mapcar #'(lambda (table-and-dirs)
+                                        (yas/snippet-table-name (car table-and-dirs)))
+                                    (rest guessed-directories))))
+          (setq chosen (some #'yas/make-directory-maybe
+                             (rest guessed-directories)))))
+    (unless chosen
+      (when (y-or-n-p "Having trouble... go to snippet root dir? ")
+        (setq chosen (if (listp yas/root-directory)
+                         (first yas/root-directory)
+                       yas/root-directory))))
+    (if chosen
+        (let ((default-directory chosen))
+          (setq buffer (call-interactively (if same-window
                                                'find-file
-                                             'find-file-other-window))))
-        (when buffer
-          (save-excursion
-            (set-buffer buffer)
-            (when (eq major-mode 'fundamental-mode)
-              (snippet-mode))))))))
+                                             'find-file-other-window)))
+          (when buffer
+            (save-excursion
+              (set-buffer buffer)
+              (when (eq major-mode 'fundamental-mode)
+                (snippet-mode)))))
+      (message "Could not guess snippet dir!"))))
 
 (defun yas/compute-major-mode-and-parents (file &optional prompt-if-failed no-hierarchy-parents)
   (let* ((file-dir (and file
