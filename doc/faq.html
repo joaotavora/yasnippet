@@ -5,8 +5,6 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
 <title>Frequently Asked Questions</title>
-<meta name="author" content="pluskid" />
-<meta name="date" content="2008-03-20" />
 <link rel="stylesheet" href="styles.css" type="text/css" />
 </head>
 <body>
@@ -68,10 +66,10 @@ newline for you automatically.</p>
 </div>
 <div class="section" id="why-tab-key-doesn-t-expand-a-snippet">
 <h1>Why TAB key doesn't expand a snippet?</h1>
-<p>First check the mode line to see if there's <tt class="docutils literal"><span class="pre">yas</span></tt>. If no, then try
-<tt class="docutils literal"><span class="pre">M-x</span> <span class="pre">yas/minor-mode-on</span></tt> to manually turn on <tt class="docutils literal"><span class="pre">yas/minor-mode</span></tt> and
-try to expand the snippet again. If it works, then, you can add the
-following code to your <tt class="docutils literal"><span class="pre">.emacs</span></tt> <em>before</em> loading YASnippet:</p>
+<p>First check the mode line to see if there's <tt class="docutils literal"><span class="pre">yas</span></tt>. If not, then try
+<tt class="docutils literal"><span class="pre">M-x</span> <span class="pre">yas/minor-mode</span></tt> to manually turn on the minor mode and try to
+expand the snippet again. If it works, then, you can add the following
+code to your <tt class="docutils literal"><span class="pre">.emacs</span></tt> <em>before</em> loading YASnippet:</p>
 <div class="highlight"><pre>(add-hook &#39;the-major-mode-hook &#39;yas/minor-mode-on)
 </pre></div>
 <p>where <tt class="docutils literal"><span class="pre">the-major-mode</span></tt> is the major mode in which <tt class="docutils literal"><span class="pre">yas/minor-mode</span></tt>
@@ -89,16 +87,32 @@ latter has priority. If you see <tt class="docutils literal"><span class="pre">&
 than <tt class="docutils literal"><span class="pre">yas/expand</span></tt>, (e.g. in <tt class="docutils literal"><span class="pre">org-mode</span></tt>) you can try the following
 code to work around:</p>
 <div class="highlight"><pre>(add-hook &#39;org-mode-hook
-          &#39;(lambda ()
-             (make-variable-buffer-local &#39;yas/trigger-key)
-             (setq yas/trigger-key [tab])))
+          #&#39;(lambda ()
+              (local-set-key [tab] &#39;yas/expand)))
 </pre></div>
 <p>replace <tt class="docutils literal"><span class="pre">org-mode-hook</span></tt> with the major mode hook you are dealing
 with (<tt class="docutils literal"><span class="pre">C-h</span> <span class="pre">m</span></tt> to see what major mode you are in).</p>
-<p>If it says <tt class="docutils literal"><span class="pre">TAB</span></tt> but YASnippet still doesn't work, check your
-configuration and you may also ask for help on the <a class="reference external" href="http://groups.google.com/group/smart-snippet">discussion group</a>. Don't forget to
-attach the information on what command is bound to TAB as well as the
-mode information (Can be obtained by <tt class="docutils literal"><span class="pre">C-h</span> <span class="pre">m</span></tt>).</p>
+<p>If this doesn't work, you can also try</p>
+<div class="highlight"><pre>(defun yas/advise-indent-function (function-symbol)
+  (eval `(defadvice ,function-symbol (around yas/try-expand-first activate)
+           ,(format
+             &quot;Try to expand a snippet before point, then call `%s&#39; as usual&quot;
+             function-symbol)
+           (let ((yas/fallback-behavior nil))
+             (unless (and (interactive-p)
+                          (yas/expand))
+               ad-do-it)))))
+
+(yas/advise-indent-function &#39;ruby-indent-line)
+</pre></div>
+<p>To <em>advise</em> the modes indentation function bound to TAB, (in this case
+<tt class="docutils literal"><span class="pre">ruby-indent-line</span></tt>) to first try to run <tt class="docutils literal"><span class="pre">yas/expand</span></tt>.</p>
+<p>If The output of <tt class="docutils literal"><span class="pre">C-h</span> <span class="pre">k</span> <span class="pre">RET</span> <span class="pre">&lt;tab&gt;</span></tt> tells you that <tt class="docutils literal"><span class="pre">&lt;tab&gt;</span></tt> is
+indeed bound to <tt class="docutils literal"><span class="pre">yas/expand</span></tt> but YASnippet still doesn't work, check
+your configuration and you may also ask for help on the <a class="reference external" href="http://groups.google.com/group/smart-snippet">discussion
+group</a>.</p>
+<p>Don't forget to attach the information on what command is bound to TAB
+as well as the mode information (Can be obtained by <tt class="docutils literal"><span class="pre">C-h</span> <span class="pre">m</span></tt>).</p>
 </div>
 <div class="section" id="how-to-define-snippets-with-named-by-characters-not-supported-by-the-filesystem">
 <h1>How to define snippets with named by characters not supported by the filesystem?</h1>

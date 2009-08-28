@@ -1,4 +1,4 @@
 #contributor : rejeep <johan.rejeep@gmail.com>
 #name : display: block
 # --
-dislpay: block;
+display: block;

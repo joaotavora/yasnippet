@@ -164,22 +164,22 @@ bulk reloading of all snippets using `yas/reload-all'"
 
 These functions are called with the following arguments:
 
-* PROMPT: A string to prompt the user
+- PROMPT: A string to prompt the user
 
-* CHOICES: a list of strings or objects.
+- CHOICES: a list of strings or objects.
 
-* optional DISPLAY-FN : A function that, when applied to each of
+- optional DISPLAY-FN : A function that, when applied to each of
 the objects in CHOICES will return a string.
 
 The return value of any function you put here should be one of
 the objects in CHOICES, properly formatted with DISPLAY-FN (if
 that is passed).
 
-* To signal that your particular style of prompting is
+- To signal that your particular style of prompting is
 unavailable at the moment, you can also have the function return
 nil.
 
-* To signal that the user quit the prompting process, you can
+- To signal that the user quit the prompting process, you can
 signal `quit' with
 
   (signal 'quit \"user quit!\")."
@@ -191,9 +191,9 @@ signal `quit' with
 
 The following values are possible:
 
-`fixed' Indent the snippet to the current column;
+- `fixed' Indent the snippet to the current column;
 
-`auto' Indent each line of the snippet with `indent-according-to-mode'
+- `auto' Indent each line of the snippet with `indent-according-to-mode'
 
 Every other value means don't apply any snippet-side indendation
 after expansion (the manual per-line \"$>\" indentation still
@@ -260,14 +260,15 @@ field"
 (defcustom yas/fallback-behavior 'call-other-command
   "How to act when `yas/trigger-key' does *not* expand a snippet.
 
-`call-other-command' means try to temporarily disable YASnippet
+- `call-other-command' means try to temporarily disable YASnippet
     and call the next command bound to `yas/trigger-key'.
 
-`return-nil' means return do nothing.
+- nil or the symbol `return-nil' mean do nothing. (and
+  `yas/expand-returns' nil)
 
-An entry (apply COMMAND . ARGS) means interactively call COMMAND,
-if ARGS is non-nil, call COMMAND non-interactively with ARGS as
-arguments."
+- An entry (apply COMMAND . ARGS) means interactively call
+  COMMAND, if ARGS is non-nil, call COMMAND non-interactively
+  with ARGS as arguments."
   :type '(choice (const :tag "Call previous command"  'call-other-command)
                  (const :tag "Do nothing"    'return-nil))
   :group 'yasnippet)
@@ -297,10 +298,10 @@ This affects `yas/insert-snippet', `yas/visit-snippet-file'"
 When non-nil, submenus for each snippet table will be listed
 under the menu \"Yasnippet\".
 
-If set to `real-modes' only submenus whose name more or less
+- If set to `real-modes' only submenus whose name more or less
 corresponds to a major mode are listed.
 
-If set to `abbreviate', only the current major-mode
+- If set to `abbreviate', only the current major-mode
 menu and the modes set in `yas/mode-symbol' are listed.
 
 Any other non-nil value, every submenu is listed."
@@ -634,10 +635,9 @@ Here's an example:
        :help "Display some information about YASsnippet"]))
   ;; Now for the stuff that has direct keybindings
   ;;
-  (define-key yas/minor-mode-map (when yas/trigger-key
-                                   (read-kbd-macro
-                                    yas/trigger-key))
-    'yas/expand)
+  (when  (and yas/trigger-key
+              (stringp yas/trigger-key))
+    (define-key yas/minor-mode-map (read-kbd-macro yas/trigger-key) 'yas/expand))
   (define-key yas/minor-mode-map "\C-c&\C-s" 'yas/insert-snippet)
   (define-key yas/minor-mode-map "\C-c&\C-n" 'yas/new-snippet)
   (define-key yas/minor-mode-map "\C-c&\C-v" 'yas/visit-snippet-file)
@@ -669,7 +669,8 @@ Key bindings:
     ;; if a `yas/minor-mode-map' is already built. Else, call
     ;; `yas/init-minor-keymap' to build it
     (if (and (cdr yas/minor-mode-map)
-             yas/trigger-key)
+             yas/trigger-key
+             (stringp yas/trigger-key))
         (define-key yas/minor-mode-map (read-kbd-macro yas/trigger-key) 'yas/expand)
       (yas/init-minor-keymap))))
 
@@ -1772,7 +1773,11 @@ defined in `yas/fallback-behavior'"
              nil)
             ((eq yas/fallback-behavior 'call-other-command)
              (let* ((yas/minor-mode nil)
-                    (command (key-binding (read-kbd-macro yas/trigger-key))))
+                    (keys (or (this-command-keys-vector)
+                              (and yas/trigger-key
+                                   (stringp yas/trigger-key)
+                                   (read-kbd-macro yas/trigger-key))))
+                    (command (key-binding keys)))
                (when (commandp command)
                  (setq this-command command)
                  (call-interactively command))))
@@ -1883,21 +1888,36 @@ lurking."
   (let ((main-dir (or (and (listp yas/root-directory)
                            (first yas/root-directory))
                       yas/root-directory
-                      "~/.emacs.d/snippets")))
+                      (setq yas/root-directory "~/.emacs.d/snippets")))
+        (tables (yas/get-snippet-tables)))
+    ;; HACK! the snippet table created here is a dummy table that
+    ;; holds the correct name so that `yas/make-directory-maybe' can
+    ;; work. The real table, if it does not exist in
+    ;; yas/snippet-tables will be created when the first snippet for
+    ;; that mode is loaded.
+    ;; 
+    (unless (gethash major-mode yas/snippet-tables)
+      (setq tables (cons (yas/make-snippet-table (symbol-name major-mode))
+                         tables)))
+    
     (mapcar #'(lambda (table)
                 (cons table
                       (mapcar #'(lambda (subdir)
                                   (concat main-dir "/" subdir))
                               (yas/guess-snippet-directories-1 table))))
-            (yas/get-snippet-tables))))
+            tables)))
 
-(defun yas/make-directory-maybe (table-and-dirs &optional main-table-p)
+(defun yas/make-directory-maybe (table-and-dirs &optional main-table-string)
   "Returns a dir inside  TABLE-AND-DIRS, prompts for creation if none exists."
   (or (some #'(lambda (dir) (when (file-directory-p dir) dir)) (cdr table-and-dirs))
       (let ((candidate (first (cdr table-and-dirs))))
-        (if (y-or-n-p (format "Guessed directory (%s) for %s table \"%s\" does not exist! Create? "
+        (if (y-or-n-p (format "Guessed directory (%s) for%s%s table \"%s\" does not exist! Create? "
                               candidate
-                              (or main-table-p
+                              (if (gethash (intern (yas/snippet-table-name (car table-and-dirs)))
+                                           yas/snippet-tables)
+                                  ""
+                                " brand new")
+                              (or main-table-string
                                   "")
                               (yas/snippet-table-name (car table-and-dirs))))
             (progn
@@ -1918,7 +1938,8 @@ lurking."
                                 yas/prompt-functions))
                      (first guessed-directories)))
          (chosen))
-    (setq chosen (yas/make-directory-maybe option))
+    (setq chosen (yas/make-directory-maybe option (unless choose-instead-of-guess
+                                                    " main")))
     (unless (or chosen
                 choose-instead-of-guess)
       (if (y-or-n-p (format "Continue guessing for other active tables %s? "
@@ -1939,15 +1960,18 @@ lurking."
           (find-file-other-window (concat name
                                           ".yasnippet"))
           (snippet-mode)
-          (yas/expand-snippet (format 
-                               "\
+          (unless (and choose-instead-of-guess
+                       (not (y-or-n-p "Insert a snippet with useful headers? ")))
+            (yas/expand-snippet (format 
+                                 "\
 # -*- mode: snippet -*-
 # name: %s
 # key: $1${2:
 # binding: \"${3:keybinding}\"}${4:
 # expand-env: ((${5:some-var} ${6:some-value}))}
 # --
-$0" name))))))
+$0" name))))
+      (message "[yas] aborted snippet creation."))))
 
 (defun yas/find-snippets (&optional same-window )
   "Look for user snippets in guessed current mode's directory.
@@ -1968,7 +1992,7 @@ there, otherwise, proposes to create the first option returned by
   (let* ((guessed-directories (yas/guess-snippet-directories))
          (chosen)
          (buffer))
-    (setq chosen (yas/make-directory-maybe (first guessed-directories) "main"))
+    (setq chosen (yas/make-directory-maybe (first guessed-directories) " main"))
     (unless chosen
       (if (y-or-n-p (format "Continue guessing for other active tables %s? "
                             (mapcar #'(lambda (table-and-dirs)

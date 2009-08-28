@@ -2,10 +2,6 @@
 Frequently Asked Questions
 ==========================
 
-:Author: pluskid
-:Contact: pluskid@gmail.com
-:Date: 2008-03-20
-
 Why there's an extra newline?
 =============================
 
@@ -21,10 +17,10 @@ newline for you automatically.
 Why TAB key doesn't expand a snippet?
 =====================================
 
-First check the mode line to see if there's ``yas``. If no, then try
-``M-x yas/minor-mode-on`` to manually turn on ``yas/minor-mode`` and
-try to expand the snippet again. If it works, then, you can add the
-following code to your ``.emacs`` *before* loading YASnippet:
+First check the mode line to see if there's ``yas``. If not, then try
+``M-x yas/minor-mode`` to manually turn on the minor mode and try to
+expand the snippet again. If it works, then, you can add the following
+code to your ``.emacs`` *before* loading YASnippet:
 
 .. sourcecode:: lisp
 
@@ -51,18 +47,38 @@ code to work around:
 .. sourcecode:: lisp
 
   (add-hook 'org-mode-hook
-            '(lambda ()
-               (make-variable-buffer-local 'yas/trigger-key)
-               (setq yas/trigger-key [tab])))
+            #'(lambda ()
+                (local-set-key [tab] 'yas/expand))) 
 
 replace ``org-mode-hook`` with the major mode hook you are dealing
 with (``C-h m`` to see what major mode you are in).
 
-If it says ``TAB`` but YASnippet still doesn't work, check your
-configuration and you may also ask for help on the `discussion group
-<http://groups.google.com/group/smart-snippet>`_. Don't forget to
-attach the information on what command is bound to TAB as well as the
-mode information (Can be obtained by ``C-h m``).
+If this doesn't work, you can also try
+
+.. sourcecode:: lisp
+
+  (defun yas/advise-indent-function (function-symbol)
+    (eval `(defadvice ,function-symbol (around yas/try-expand-first activate)
+             ,(format
+               "Try to expand a snippet before point, then call `%s' as usual"
+               function-symbol)
+             (let ((yas/fallback-behavior nil))
+               (unless (and (interactive-p)
+                            (yas/expand))
+                 ad-do-it)))))
+
+  (yas/advise-indent-function 'ruby-indent-line)
+
+To *advise* the modes indentation function bound to TAB, (in this case
+``ruby-indent-line``) to first try to run ``yas/expand``.
+
+If The output of ``C-h k RET <tab>`` tells you that ``<tab>`` is
+indeed bound to ``yas/expand`` but YASnippet still doesn't work, check
+your configuration and you may also ask for help on the `discussion
+group <http://groups.google.com/group/smart-snippet>`_. 
+
+Don't forget to attach the information on what command is bound to TAB
+as well as the mode information (Can be obtained by ``C-h m``).
 
 How to define snippets with named by characters not supported by the filesystem?
 ================================================================================
