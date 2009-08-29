@@ -19,8 +19,8 @@ ChangeLog
   repository (see "extras/")
 * Added *experimental* bundle of textmate snippets
   ``yasnippet-textmate-bundle.el``
-* Fixed `Issue 72
-  <http://code.google.com/p/yasnippet/issues/detail?id=72>`_ (thanks
+* Fixed `Issue 74
+  <http://code.google.com/p/yasnippet/issues/detail?id=74>`_ (thanks
   rmartin.k...@gmail.com)
 * Fixed `Issues 80 through 84
   <http://code.google.com/p/yasnippet/issues/detail?id=80>`_ (thanks
@@ -36,6 +36,7 @@ ChangeLog
   <http://code.google.com/p/yasnippet/issues/detail?id=68>`_ with
   mouse-clicking alternatives in ``ido-mode``.
 * Added ``yas/also-auto-indent-first-line`` customization variable.
+
 
 0.6.0b / 2009-07-25
 ===================
