@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# key: lam
+# contributor: Translated from TextMate Snippet
+# name: lambda { |args| .. }
+# --
+lambda { ${1/(^(?<var>\s*(?:\*|\*?[a-z_])[a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:|)/}${1:args}${1/(^(?<var>\s*(?:\*|\*?[a-z_])[a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:| )/}$0 }

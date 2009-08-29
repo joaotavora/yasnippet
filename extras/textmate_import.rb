@@ -81,13 +81,17 @@ end
 
 
 class TmSnippet
-  @@known_substitutions = {
-    "${TM_RAILS_TEMPLATE_START_RUBY_EXPR}"   => "<%= ",
-    "${TM_RAILS_TEMPLATE_END_RUBY_EXPR}"     => " %>",
-    "${TM_RAILS_TEMPLATE_START_RUBY_INLINE}" => "<% ",
-    "${TM_RAILS_TEMPLATE_END_RUBY_INLINE}"   => " -%>",
-    "${TM_RAILS_TEMPLATE_END_RUBY_BLOCK}"    => "end" ,
-    /$\{TM_SELECTED_TEXT.*\}/               => "`yas/selected-text`" }
+  @@known_substitutions=[
+                         {
+                           "${TM_RAILS_TEMPLATE_START_RUBY_EXPR}"   => "<%= ",
+                           "${TM_RAILS_TEMPLATE_END_RUBY_EXPR}"     => " %>",
+                           "${TM_RAILS_TEMPLATE_START_RUBY_INLINE}" => "<% ",
+                           "${TM_RAILS_TEMPLATE_END_RUBY_INLINE}"   => " -%>",
+                           "${TM_RAILS_TEMPLATE_END_RUBY_BLOCK}"    => "end" ,
+                           "${0:$TM_SELECTED_TEXT}"                 => "$TM_SELECTED_TEXT$0",
+                         },
+                         { "$TM_SELECTED_TEXT"                      => "`yas/selected-text`" }
+                        ]
   
   attr_reader :file
 
@@ -137,10 +141,12 @@ class TmSnippet
     doc << "# key: #{self.tab_trigger}\n" if self.tab_trigger
     doc << "# contributor: Translated from TextMate Snippet\n"
     doc << "# name: #{self.name}\n"
-    doc << "#" unless Choice.choices.convert_bindings
-    doc << "# binding: \"#{self.key_equivalent}\"\n" if self.key_equivalent
+    if self.key_equivalent
+      doc << "#" unless Choice.choices.convert_bindings
+      doc << "# binding: \"#{self.key_equivalent}\"\n"
+    end
     doc << "# --\n"
-    @@known_substitutions.each_pair { |k, v| self.content.gsub!(k,v) }
+    @@known_substitutions.each {|level| level.each_pair { |k, v| self.content.gsub!(k,v) }}
     doc << "#{self.content}"
   end
 
@@ -155,6 +161,12 @@ end
 
 if $0 == __FILE__ 
   info_plist = Plist::parse_xml(Choice.choices.info_plist) if Choice.choices.info_plist
+
+  if Choice.choices.output_dir
+    FileUtils.mkdir_p Choice.choices.output_dir
+    FileUtils.touch File.join(Choice.choices.output_dir, ".yas-make-groups")
+    FileUtils.touch File.join(Choice.choices.output_dir, ".yas-ignore-filenames-as-triggers")
+  end
   
   original_dir = Dir.pwd
   Dir.chdir Choice.choices.snippet_dir
@@ -162,7 +174,6 @@ if $0 == __FILE__
   snippet_files = Dir.glob(snippet_files_glob)
 
   puts "Will try to convert #{snippet_files.length} snippets...\n"
-
   snippet_files.each do |file|
     begin
       puts "Processing \"#{File.join(Choice.choices.snippet_dir,file)}\"\n"

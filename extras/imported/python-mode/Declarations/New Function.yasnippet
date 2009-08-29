@@ -1,0 +1,12 @@
+# -*- mode: snippet -*-
+# key: def
+# contributor: Translated from TextMate Snippet
+# name: New Function
+# --
+def ${1:fname}(${2:`if [ "$TM_CURRENT_LINE" != "" ]
+				# poor man's way ... check if there is an indent or not
+				# (cuz we would have lost the class scope by this point)
+				then
+					echo "self"
+				fi`}):
+	${3/.+/"""/}${3:docstring for $1}${3/.+/"""\n/}${3/.+/\t/}${0:pass}

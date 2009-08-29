@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# key: ope
+# contributor: Translated from TextMate Snippet
+# name: open("path/or/url", "w") { |io| .. }
+# --
+open(${1:"${2:path/or/url/or/pipe}"}${3/(^[rwab+]+$)|.*/(?1:, ")/}${3:w}${3/(^[rwab+]+$)|.*/(?1:")/}) { |${4:io}| $0 }

@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# key: xml-
+# contributor: Translated from TextMate Snippet
+# name: xmlread(..)
+# --
+REXML::Document.new(File.read(${1:"${2:path/to/file}"}))

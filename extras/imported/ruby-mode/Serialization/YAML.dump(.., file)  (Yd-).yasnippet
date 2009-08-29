@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# key: Yd-
+# contributor: Translated from TextMate Snippet
+# name: YAML.dump(.., file)
+# --
+File.open(${1:"${2:path/to/file}.yaml"}, "w") { |${3:file}| YAML.dump(${4:obj}, ${3:file}) }

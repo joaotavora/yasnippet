@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# key: cla
+# contributor: Translated from TextMate Snippet
+# name: class .. end
+# --
+class ${1:${TM_FILENAME/(?:\A|_)([A-Za-z0-9]+)(?:\.rb)?/(?2::\u$1)/g}}
+	$0
+end

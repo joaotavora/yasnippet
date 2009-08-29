@@ -6,7 +6,7 @@
 ;; Version: 0.6.1
 ;; Package-version: 0.6.1b
 ;; X-URL: http://code.google.com/p/yasnippet/
-;; Keywords: snippet, textmate
+;; Keywords: convenience, emulation
 ;; URL: http://code.google.com/p/yasnippet/
 ;; EmacsWiki: YaSnippetMode
 
@@ -1438,7 +1438,7 @@ Here's the default value for all the parameters:
   (interactive "ffind the yasnippet.el file: \nFTarget bundle file: \nDSnippet directory to bundle: \nMExtra code? \nfdropdown-library: ")
   
   (let* ((yasnippet (or yasnippet
-                        ("yasnippet.el")))
+                        "yasnippet.el"))
          (yasnippet-bundle (or yasnippet-bundle
                                "./yasnippet-bundle.el"))
          (snippet-roots (or snippet-roots
@@ -1454,8 +1454,7 @@ Here's the default value for all the parameters:
          (dirs (or (and (listp snippet-roots) snippet-roots)
                    (list snippet-roots)))
          (bundle-buffer nil))
-    (with-temp-buffer
-      (setq bundle-buffer (current-buffer))
+    (with-temp-file yasnippet-bundle
       (insert ";;; yasnippet-bundle.el --- "
               "Yet another snippet extension (Auto compiled bundle)\n")
       (insert-file-contents yasnippet)
@@ -1472,30 +1471,29 @@ Here's the default value for all the parameters:
               "  (yas/global-mode 1)\n")
       (flet ((yas/define-snippets
               (mode snippets &optional parent-or-parents)
-              (with-current-buffer bundle-buffer
-                (insert ";;; snippets for " (symbol-name mode) "\n")
-                (let ((literal-snippets (list)))
-                  (dolist (snippet snippets)
-                    (let ((key                    (first   snippet))
-                          (template-content       (second  snippet))
-                          (name                   (third   snippet))
-                          (condition              (fourth  snippet))
-                          (group                  (fifth   snippet))
-                          (expand-env             (sixth   snippet))
-                          ;; Omit the file on purpose
-                          (file                   nil);; (seventh snippet)) 
-                          (binding                (eighth  snippet)))
-                      (push `(,key
-                              ,template-content
-                              ,name
-                              ,condition
-                              ,group
-                              ,expand-env
-                              ,file
-                              ,binding)
-                            literal-snippets)))
-                  (insert (pp-to-string `(yas/define-snippets ',mode ',literal-snippets ',parent-or-parents)))
-                  (insert "\n\n")))))
+              (insert ";;; snippets for " (symbol-name mode) "\n")
+              (let ((literal-snippets (list)))
+                (dolist (snippet snippets)
+                  (let ((key                    (first   snippet))
+                        (template-content       (second  snippet))
+                        (name                   (third   snippet))
+                        (condition              (fourth  snippet))
+                        (group                  (fifth   snippet))
+                        (expand-env             (sixth   snippet))
+                        ;; Omit the file on purpose
+                        (file                   nil) ;; (seventh snippet)) 
+                        (binding                (eighth  snippet)))
+                    (push `(,key
+                            ,template-content
+                            ,name
+                            ,condition
+                            ,group
+                            ,expand-env
+                            ,file
+                            ,binding)
+                          literal-snippets)))
+                (insert (pp-to-string `(yas/define-snippets ',mode ',literal-snippets ',parent-or-parents)))
+                (insert "\n\n"))))
         (dolist (dir dirs)
           (dolist (subdir (yas/subdirs dir))
             (yas/load-directory-1 subdir nil 'no-hierarchy-parents))))
@@ -1508,9 +1506,17 @@ Here's the default value for all the parameters:
               ")\n")
       (insert ";;; "
               (file-name-nondirectory yasnippet-bundle)
-              " ends here\n")
-      (setq buffer-file-name yasnippet-bundle)
-      (save-buffer))))
+              " ends here\n"))))
+
+(defun yas/compile-textmate-bundle ()
+  (interactive)
+  (yas/compile-bundle "yasnippet.el"
+                      "./yasnippet-textmate-bundle.el"
+                      "extras/imported/"
+                      (concat "(yas/initialize-bundle)"
+                              "\n;;;###autoload" ; break through so that won't
+                              "(require 'yasnippet-textmate-bundle)")
+                      "dropdown-list.el"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Some user level functions
@@ -3045,7 +3051,7 @@ SNIPPET-MARKERS."
   ;; implementations of these functions delete text
   ;; before they insert. If there happens to be a marker
   ;; just after the text being deleted, the insertion
-  ;; actually happens after the marker, which misplaces
+  ;; actually happens  after the marker, which misplaces
   ;; it.
   ;;
   ;; This would also happen if we had used overlays with
@@ -3064,7 +3070,10 @@ SNIPPET-MARKERS."
                                         snippet-markers)))
     (save-restriction
       (widen)
-      (indent-according-to-mode))
+      (condition-case err
+          (indent-according-to-mode)
+        (error (message "[yas] warning: yas/indent-according-to-mode habing problems running %s" indent-line-function)
+               nil)))
     (mapc #'(lambda (marker)
               (set-marker marker (point)))
           trouble-markers)))

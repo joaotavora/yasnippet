@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# key: begin
+# contributor: Translated from TextMate Snippet
+# name: \begin{}…\end{}
+# --
+\\begin{${1:env}}
+	${1/(enumerate|itemize|list)|(description)|.*/(?1:\item )(?2:\item)/}$0
+\\end{${1:env}}

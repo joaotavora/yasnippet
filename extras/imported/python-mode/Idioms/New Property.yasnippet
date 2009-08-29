@@ -1,0 +1,15 @@
+# -*- mode: snippet -*-
+# key: property
+# contributor: Translated from TextMate Snippet
+# name: New Property
+# --
+def ${1:foo}():
+    doc = "${2:The $1 property.}"
+    def fget(self):
+        ${3:return self._$1}
+    def fset(self, value):
+        ${4:self._$1 = value}
+    def fdel(self):
+        ${5:del self._$1}
+    return locals()
+$1 = property(**$1())$0

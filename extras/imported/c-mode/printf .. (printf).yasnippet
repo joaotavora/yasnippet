@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# key: printf
+# contributor: Translated from TextMate Snippet
+# name: printf …
+# --
+printf("${1:%s}\\n"${1/([^%]|%%)*(%.)?.*/(?2:, :\);)/}$2${1/([^%]|%%)*(%.)?.*/(?2:\);)/}

@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# key: tas
+# contributor: Translated from TextMate Snippet
+# name: task :task_name => [:dependent, :tasks] do .. end
+# --
+desc "${1:Task description}"
+task :${2:${3:task_name} => ${4:[:${5:dependent, :tasks}]}} do
+	$0
+end

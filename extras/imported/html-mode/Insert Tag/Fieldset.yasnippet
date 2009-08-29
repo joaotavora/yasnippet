@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# key: fieldset
+# contributor: Translated from TextMate Snippet
+# name: Fieldset
+# --
+<fieldset id="${1/[[:alpha:]]+|( )/(?1:_:\L$0)/g}" ${2:class="${3:}"}>
+	<legend>${1:`yas/selected-text`}</legend>
+	
+	$0
+</fieldset>

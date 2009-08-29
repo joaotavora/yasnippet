@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# key: form
+# contributor: Translated from TextMate Snippet
+# name: Form
+# --
+<form action="${1:${TM_FILENAME/(.*?)\..*/$1_submit/}}" method="${2:get}" accept-charset="utf-8">
+	$0
+
+	<p><input type="submit" value="Continue &rarr;"${TM_XHTML}></p>
+</form>

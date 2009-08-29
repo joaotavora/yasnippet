@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# key: def
+# contributor: Translated from TextMate Snippet
+# name: #ifndef … #define … #endif
+# --
+#ifndef ${1/([A-Za-z0-9_]+).*/$1/}
+#define ${1:SYMBOL} ${2:value}
+#endif

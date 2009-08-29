@@ -9,17 +9,23 @@ end
 find_version
 FileUtils.mkdir_p('pkg')
 
-desc "generate the bundle file."
+desc "generate bundle file for classic snippets."
 task :bundle do
   sh 'emacs --batch -l yasnippet.el --eval "(yas/compile-bundle)"'
   sh "tar czf pkg/yasnippet-bundle-#{$version}.el.tgz yasnippet-bundle.el"
+end
+
+desc "generate bundle file for textmate snippets."
+task :textmate_bundle do
+  sh 'emacs --batch -l yasnippet.el --eval "(yas/compile-textmate-bundle)"'
+  sh "tar czf pkg/yasnippet-textmate-bundle-#{$version}.el.tgz yasnippet-textmate-bundle.el"
 end
 
 desc "create a release package"
 task :package do
   release_dir = "pkg/yasnippet-#{$version}"
   FileUtils.mkdir_p(release_dir)
-  files = ['snippets', 'yasnippet.el', 'dropdown-list.el']
+  files = ['extras', 'snippets', 'yasnippet.el', 'dropdown-list.el']
   FileUtils.cp_r files, release_dir
   FileUtils.rm_r Dir[release_dir + "/**/.svn"]
   FileUtils.cd 'pkg'

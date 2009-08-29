@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# key: temp
+# contributor: Translated from TextMate Snippet
+# name: Tempfile
+# --
+${1:TMPFILE}="$(mktemp -t ${2:`echo "${TM_FILENAME%.*}" | sed -e 's/[^a-zA-Z]/_/g' -e 's/^$/untitled/'`})"
+${3:${4/(.+)/trap "/}${4:rm -f '\$${1/.*\s//}'}${4/(.+)/" 0               # EXIT
+/}${5/(.+)/trap "/}${5:rm -f '\$${1/.*\s//}'; exit 1}${5/(.+)/" 2       # INT
+/}${6/(.+)/trap "/}${6:rm -f '\$${1/.*\s//}'; exit 1}${6/(.+)/" 1 15    # HUP TERM
+/}}

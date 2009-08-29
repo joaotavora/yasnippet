@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# key: open
+# contributor: Translated from TextMate Snippet
+# name: Output File
+# --
+open(unit=${1:iounit}, file=${2:name}, iostat=${3:ios}, status="${4:new}", action="${5:write}")
+if ( $3 /= 0 ) stop "Error opening file ${2/[\"\'](.*)[\"\']/$1/}"

@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# key: ns
+# contributor: Translated from TextMate Snippet
+# name: Namespace
+# --
+namespace${1/.+/ /m}${1:${TM_FILENAME/^((.*?)\..*)?$/(?1:\L$2:my)/}}
+{
+	$0
+}${1/.+/ \/* /m}$1${1/.+/ *\/ /m}

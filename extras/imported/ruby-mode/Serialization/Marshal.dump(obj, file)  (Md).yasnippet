@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# key: Md
+# contributor: Translated from TextMate Snippet
+# name: Marshal.dump(.., file)
+# --
+File.open(${1:"${2:path/to/file}.dump"}, "wb") { |${3:file}| Marshal.dump(${4:obj}, ${3:file}) }

@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# key: Ml
+# contributor: Translated from TextMate Snippet
+# name: Marshal.load(obj)
+# --
+File.open(${1:"${2:path/to/file}.dump"}, "rb") { |${3:file}| Marshal.load(${3:file}) }

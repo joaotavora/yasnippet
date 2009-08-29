@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# key: st
+# contributor: Translated from TextMate Snippet
+# name: Struct
+# --
+struct ${1:${TM_FILENAME/(.+)\..+|.*/(?1:\L$1_t:name)/}}
+{
+	${0:/* data */}
+};

@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# key: write
+# contributor: Translated from TextMate Snippet
+# name: Write
+# --
+write(unit=${1:iounit}, fmt="(${2:format string})", iostat=${3:ios}${4:, advance='NO'}) ${5:variables}
+if ( $3 /= 0 ) stop "Write error in file unit $1"

@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# key: read
+# contributor: Translated from TextMate Snippet
+# name: Read
+# --
+read(unit=${1:iounit}, fmt="(${2:format string})", iostat=${3:istat}) ${4:variables}
+if ( $3 /= 0 ) stop "Read error in file unit $1"

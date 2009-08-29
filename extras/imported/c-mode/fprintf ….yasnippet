@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# key: fprintf
+# contributor: Translated from TextMate Snippet
+# name: fprintf …
+# --
+fprintf(${1:stderr}, "${2:%s}\\n"${2/([^%]|%%)*(%.)?.*/(?2:, :\);)/}$3${2/([^%]|%%)*(%.)?.*/(?2:\);)/}

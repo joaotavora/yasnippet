@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# key: part
+# contributor: Translated from TextMate Snippet
+# name: Part
+# --
+\part{${1:part name}} % (fold)
+\label{prt:${2:${1/(\w+)|\W+/(?1:\L$0:_)/g}}}
+`yas/selected-text`$0
+% part $2 (end)

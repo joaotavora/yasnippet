@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# key: as
+# contributor: Translated from TextMate Snippet
+# name: assert
+# --
+assert ${1:test}${2/(.+)/(?1: \: ")/}${2:Failure message}${2/(.+)/(?1:")/};$0

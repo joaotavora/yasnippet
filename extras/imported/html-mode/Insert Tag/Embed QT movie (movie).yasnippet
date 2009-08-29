@@ -1,0 +1,16 @@
+# -*- mode: snippet -*-
+# key: movie
+# contributor: Translated from TextMate Snippet
+# name: Embed QT Movie
+# --
+<object width="$2" height="$3" classid="clsid:02BF25D5-8C17-4B23-BC80-D3488ABDDC6B" codebase="http://www.apple.com/qtactivex/qtplugin.cab">
+	<param name="src" value="$1"${TM_XHTML}>
+	<param name="controller" value="$4"${TM_XHTML}>
+	<param name="autoplay" value="$5"${TM_XHTML}>
+	<embed src="${1:movie.mov}"
+		width="${2:320}" height="${3:240}"
+		controller="${4:true}" autoplay="${5:true}"
+		scale="tofit" cache="true"
+		pluginspage="http://www.apple.com/quicktime/download/"
+	${TM_XHTML}>
+</object>

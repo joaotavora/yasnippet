@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# key: sub
+# contributor: Translated from TextMate Snippet
+# name: sub(/../) { |match| .. }
+# --
+sub(/${1:pattern}/) { ${2/(^(?<var>\s*(?:\*|\*?[a-z_])[a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:|)/}${2:match}${2/(^(?<var>\s*(?:\*|\*?[a-z_])[a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:| )/}$0 }
