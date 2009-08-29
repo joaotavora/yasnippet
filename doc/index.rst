@@ -70,16 +70,16 @@ Normal Install
 
 For full install of the normal archive, just download and unpack the
 latest ``yasnippet-x.y.z.tar.bz2``. You'll get a directory named
-``yasnippet``, put it in your ``~/.emacs.d/plugins`` and add the
+``yasnippet-x.y.z``, put it in your ``~/.emacs.d/plugins`` and add the
 following in your ``.emacs`` file:
 
    .. sourcecode:: common-lisp
 
      (add-to-list 'load-path
-                   "~/.emacs.d/plugins")
+                   "~/.emacs.d/plugins/yasnippet-x.y.z")
      (require 'yasnippet) ;; not yasnippet-bundle
      (yas/initialize)
-     (yas/load-directory "~/.emacs.d/plugins/yasnippet/snippets")
+     (yas/load-directory "~/.emacs.d/plugins/yasnippet-x.y.z/snippets")
 
 Please refer to the documentation for full customization, or use the
 customization group.
