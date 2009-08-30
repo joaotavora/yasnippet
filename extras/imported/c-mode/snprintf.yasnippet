@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# key: sprintf
+# name: s(n)printf …
+# --
+s${2:$(if (string= text "") "" "n")}printf (${1:string}${2:$(if (string= text "") "" ",")}${2:size}, "${3:%s}\\n"${3:$(if (string-match "%[^%]" text) "," "\);")}$4${3:$(if (string-match "%" text) "\);" "")}

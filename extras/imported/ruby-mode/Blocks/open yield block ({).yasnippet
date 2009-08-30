@@ -2,5 +2,6 @@
 # key: {
 # contributor: Translated from TextMate Snippet
 # name: Insert { |variable| … }
+# expand-env: ((yas/wrap-around-region t))
 # --
-{ ${1/(^(?<var>\s*[a-z_][a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:|)/}${1:variable}${1/(^(?<var>\s*[a-z_][a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:| )/}${2:`yas/selected-text`} 
+{ ${1:$(if (string= yas/text "") "" "|")}${1:variable}${1:$(if (string= yas/text "") "" "|")} $0 } 

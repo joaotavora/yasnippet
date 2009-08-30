@@ -1,6 +1,5 @@
 # -*- mode: snippet -*-
 # key: fprintf
-# contributor: Translated from TextMate Snippet
-# name: fprintf …
+# name: fprintf (...)
 # --
-fprintf(${1:stderr}, "${2:%s}\\n"${2/([^%]|%%)*(%.)?.*/(?2:, :\);)/}$3${2/([^%]|%%)*(%.)?.*/(?2:\);)/}
+fprintf (${1:stderr}, "${2:%s}\\n"${2:$(if (string-match "%[^%]" text) "," "\);")}$3${2:$(if (string-match "%" text) "\);" "")}

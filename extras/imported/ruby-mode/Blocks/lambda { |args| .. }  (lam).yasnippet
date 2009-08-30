@@ -2,5 +2,6 @@
 # key: lam
 # contributor: Translated from TextMate Snippet
 # name: lambda { |args| .. }
+# expand-env: ((yas/wrap-around-region t))
 # --
-lambda { ${1/(^(?<var>\s*(?:\*|\*?[a-z_])[a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:|)/}${1:args}${1/(^(?<var>\s*(?:\*|\*?[a-z_])[a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:| )/}$0 }
+lambda { ${1:$(if (string= yas/text "") "" "|")}${1:variable}${1:$(if (string= yas/text "") "" "|")} $0 }
