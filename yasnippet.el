@@ -1,6 +1,7 @@
 ;;; Yasnippet.el --- Yet another snippet extension for Emacs.
 
 ;; Copyright 2008 pluskid
+;;           2009 pluskid, joaotavora
 
 ;; Authors: pluskid <pluskid@gmail.com>, joaotavora <joaotavora@gmail.com>
 ;; Version: 0.6.1
@@ -126,6 +127,11 @@
 ;;
 ;;        M-x customize-group RET yasnippet RET
 ;;
+;;   If you use the customization group to set variables
+;;   `yas/root-directory' or `yas/global-mode', make sure the path to
+;;   "yasnippet.el" is present in the `load-path' *before* the
+;;   `custom-set-variables' is executed in your .emacs file.
+;;
 ;;   For more information and detailed usage, refer to the project page:
 ;;      http://code.google.com/p/yasnippet/
 
@@ -153,7 +159,12 @@ user-created snippets directory. Other directories are used for
 bulk reloading of all snippets using `yas/reload-all'"
 
   :type '(string)
-  :group 'yasnippet)
+  :group 'yasnippet
+  :set #'(lambda (symbol roots)
+           (set-default symbol roots)
+           (if (require 'yasnippet nil t)
+               (yas/reload-all)
+             (message "[yas] warning: could set `yas/root-directory' since yasnippet is missing"))))
 
 (defcustom yas/prompt-functions '(yas/x-prompt
                                   yas/dropdown-prompt
@@ -694,7 +705,8 @@ behaviour.")
   (yas/minor-mode -1))
 
 (define-globalized-minor-mode yas/global-mode yas/minor-mode yas/minor-mode-on
-  :group 'yasnippet)
+  :group 'yasnippet
+  :require 'yasnippet)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Major mode stuff
