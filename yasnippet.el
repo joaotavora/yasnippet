@@ -150,6 +150,7 @@
   "Yet Another Snippet extension"
   :group 'editing)
 
+;;;###autoload
 (defcustom yas/root-directory nil
   "Root directory that stores the snippets for each major mode.
 
@@ -160,11 +161,11 @@ bulk reloading of all snippets using `yas/reload-all'"
 
   :type '(string)
   :group 'yasnippet
+  :require 'yasnippet
   :set #'(lambda (symbol roots)
            (set-default symbol roots)
-           (if (require 'yasnippet nil t)
-               (yas/reload-all)
-             (message "[yas] warning: could set `yas/root-directory' since yasnippet is missing"))))
+           (if (fboundp 'yas/reload-all)
+               (yas/reload-all))))
 
 (defcustom yas/prompt-functions '(yas/x-prompt
                                   yas/dropdown-prompt
@@ -654,6 +655,7 @@ Here's an example:
   (define-key yas/minor-mode-map "\C-c&\C-v" 'yas/visit-snippet-file)
   (define-key yas/minor-mode-map "\C-c&\C-f" 'yas/find-snippets))
 
+;;;### eval this on require!
 (progn
   (yas/init-minor-keymap))
 
@@ -747,6 +749,7 @@ behaviour.")
                    (list "Load this snippet" 'yas/load-snippet-buffer "\C-c\C-c")
                    (list "Try out this snippet" 'yas/tryout-snippet "\C-c\C-t"))))))
 
+;;;### eval this on require! 
 (progn
   (yas/init-major-keymap))
 
@@ -1403,6 +1406,11 @@ content of the file is the template."
       (yas/global-mode 1))
 
     (message "done.")))
+
+;;;### eval this on require!
+(progn
+  (when yas/root-directory
+    (yas/reload-all)))
 
 (defun yas/quote-string (string)
   "Escape and quote STRING.
