@@ -164,7 +164,8 @@ directories are used for bulk reloading of all snippets using
   :group 'yasnippet
   :require 'yasnippet
   :set #'(lambda (symbol new)
-           (let ((old (symbol-value symbol)))
+           (let ((old (and (boundp symbol)
+                           (symbol-value symbol))))
              (set-default symbol new)
              (unless (or (not (fboundp 'yas/reload-all))
                          (equal old new))
@@ -238,7 +239,8 @@ representation using `read-kbd-macro'."
   :type 'string
   :group 'yasnippet
   :set #'(lambda (symbol key)
-           (let ((old (symbol-value symbol)))
+           (let ((old (and (boundp symbol)
+                           (symbol-value symbol))))
              (set-default symbol key)
              (if (fboundp 'yas/trigger-key-reload)
                  (yas/trigger-key-reload old)))))
