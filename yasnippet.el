@@ -717,9 +717,13 @@ behaviour.")
 (make-variable-buffer-local 'yas/dont-activate)
 
 (defun yas/minor-mode-on ()
-  "Turn on YASnippet minor mode."
+  "Turn on YASnippet minor mode.
+
+Do this unless `yas/dont-activate' is t or the function
+`yas/get-snippet-tables' (which see), returns an empty list."
   (interactive)
-  (unless yas/dont-activate
+  (unless (or yas/dont-activate
+              (null (yas/get-snippet-tables)))
     (yas/minor-mode 1)))
 
 (defun yas/minor-mode-off ()
@@ -1052,10 +1056,15 @@ already have such a property."
 (defun yas/get-snippet-tables (&optional mode-symbol dont-search-parents)
   "Get snippet tables for current buffer.
 
-Return tables in this order: optional MODE-SYMBOL, then
+Return a list of 'yas/snippet-table' objects indexed by mode.
+
+The modes are tried in this order: optional MODE-SYMBOL, then
 `yas/mode-symbol', then `major-mode' then, unless
 DONT-SEARCH-PARENTS is non-nil, the guessed parent mode of either
-MODE-SYMBOL or `major-mode'."
+MODE-SYMBOL or `major-mode'.
+
+Guessing is done by looking up the MODE-SYMBOL's
+`derived-mode-parent' property, see also `derived-mode-p'."
   (let ((mode-tables
          (mapcar #'(lambda (mode)
                      (gethash mode yas/snippet-tables))
