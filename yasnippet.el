@@ -510,7 +510,7 @@ Here's an example:
   "A regexp to recognize a \"`lisp-expression`\" expression." )
 
 (defconst yas/transform-mirror-regexp
-  "${\\(?:\\([0-9]+\\):\\)?$\\(([^}]*\\)"
+  "${\\(?:\\([0-9]+\\):\\)?$\\([ \t\n]*([^}]*\\)"
   "A regexp to *almost* recognize a mirror with a transform.")
 
 (defconst yas/simple-mirror-regexp
