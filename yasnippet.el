@@ -5,7 +5,7 @@
 
 ;; Authors: pluskid <pluskid@gmail.com>, joaotavora <joaotavora@gmail.com>
 ;; Version: 0.6.1
-;; Package-version: 0.6.1b
+;; Package-version: 0.6.1c
 ;; X-URL: http://code.google.com/p/yasnippet/
 ;; Keywords: convenience, emulation
 ;; URL: http://code.google.com/p/yasnippet/
@@ -154,18 +154,21 @@
 (defcustom yas/root-directory nil
   "Root directory that stores the snippets for each major mode.
 
-Can also be a list of strings, for multiple root directories. If
-you make this a list, the first element is always the
-user-created snippets directory. Other directories are used for
-bulk reloading of all snippets using `yas/reload-all'"
+If you set this from your .emacs, can also be a list of strings,
+for multiple root directories. If you make this a list, the first
+element is always the user-created snippets directory. Other
+directories are used for bulk reloading of all snippets using
+`yas/reload-all'"
 
-  :type '(string)
+  :type 'string
   :group 'yasnippet
   :require 'yasnippet
-  :set #'(lambda (symbol roots)
-           (set-default symbol roots)
-           (if (fboundp 'yas/reload-all)
-               (yas/reload-all))))
+  :set #'(lambda (symbol new)
+           (let ((old (symbol-value symbol)))
+             (set-default symbol new)
+             (unless (or (not (fboundp 'yas/reload-all))
+                         (equal old new))
+               (yas/reload-all)))))
 
 (defcustom yas/prompt-functions '(yas/x-prompt
                                   yas/dropdown-prompt
@@ -233,8 +236,13 @@ Naturally this is only valid when `yas/indent-line' is `auto'"
 Value is a string that is converted to the internal Emacs key
 representation using `read-kbd-macro'."
   :type 'string
-  :group 'yasnippet)
-
+  :group 'yasnippet
+  :set #'(lambda (symbol key)
+           (let ((old (symbol-value symbol)))
+             (set-default symbol key)
+             (if (fboundp 'yas/trigger-key-reload)
+                 (yas/trigger-key-reload old)))))
+  
 (defcustom yas/next-field-key "TAB"
   "The key to navigate to next field when a snippet is active.
 
@@ -647,18 +655,27 @@ Here's an example:
        :help "Display some information about YASsnippet"]))
   ;; Now for the stuff that has direct keybindings
   ;;
-  (when  (and yas/trigger-key
-              (stringp yas/trigger-key))
-    (define-key yas/minor-mode-map (read-kbd-macro yas/trigger-key) 'yas/expand))
+  (yas/trigger-key-reload)
   (define-key yas/minor-mode-map "\C-c&\C-s" 'yas/insert-snippet)
   (define-key yas/minor-mode-map "\C-c&\C-n" 'yas/new-snippet)
   (define-key yas/minor-mode-map "\C-c&\C-v" 'yas/visit-snippet-file)
   (define-key yas/minor-mode-map "\C-c&\C-f" 'yas/find-snippets))
 
-;;;### eval this on require!
-(progn
-  (yas/init-minor-keymap))
 
+(defun yas/trigger-key-reload (&optional unbind-key)
+  "Rebind `yas/expand' to the new value of `yas/trigger-key'.
+
+With optional UNBIND-KEY, try to unbind that key from
+`yas/minor-mode-map'."
+  (when (and unbind-key
+             (stringp unbind-key)
+             (not (string= unbind-key "")))
+    (define-key yas/minor-mode-map (read-kbd-macro unbind-key) nil)) 
+  (when  (and yas/trigger-key
+              (stringp yas/trigger-key)
+              (not (string= yas/trigger-key "")))
+    (define-key yas/minor-mode-map (read-kbd-macro yas/trigger-key) 'yas/expand)))
+  
 (define-minor-mode yas/minor-mode
   "Toggle YASnippet mode.
 
@@ -678,14 +695,18 @@ Key bindings:
   " yas"
   :group 'yasnippet
   (when yas/minor-mode
-    ;; when turning on theminor mode, re-read the `yas/trigger-key'
-    ;; if a `yas/minor-mode-map' is already built. Else, call
-    ;; `yas/init-minor-keymap' to build it
-    (if (and (cdr yas/minor-mode-map)
-             yas/trigger-key
-             (stringp yas/trigger-key))
-        (define-key yas/minor-mode-map (read-kbd-macro yas/trigger-key) 'yas/expand)
-      (yas/init-minor-keymap))))
+    ;; when turning on the minor mode.
+    ;;
+    ;; re-read the `yas/trigger-key' if a `yas/minor-mode-map' is
+    ;; already built. Else, call `yas/init-minor-keymap' to build it
+    (unless (and (cdr yas/minor-mode-map)
+                 (yas/trigger-key-reload))
+      (yas/init-minor-keymap))
+    ;; load all snippets definitions unless we still don't have a
+    ;; root-directory or some snippets have already been loaded.
+    (unless (or (null yas/root-directory)
+                (> (hash-table-count yas/snippet-tables) 0))
+      (yas/reload-all))))
 
 (defvar yas/dont-activate nil
   "If non-nil don't let `yas/minor-mode-on' active yas for this buffer.
@@ -748,10 +769,6 @@ behaviour.")
                   (list
                    (list "Load this snippet" 'yas/load-snippet-buffer "\C-c\C-c")
                    (list "Try out this snippet" 'yas/tryout-snippet "\C-c\C-t"))))))
-
-;;;### eval this on require! 
-(progn
-  (yas/init-major-keymap))
 
 (define-derived-mode snippet-mode text-mode "Snippet"
   "A mode for editing yasnippets"
@@ -1406,11 +1423,6 @@ content of the file is the template."
       (yas/global-mode 1))
 
     (message "done.")))
-
-;;;### eval this on require!
-(progn
-  (when yas/root-directory
-    (yas/reload-all)))
 
 (defun yas/quote-string (string)
   "Escape and quote STRING.
@@ -3407,6 +3419,23 @@ When multiple expressions are found, only the last one counts."
         ((not (yas/undo-in-progress))
          ;; When not in an undo, check if we must commit the snippet (use exited it).
          (yas/check-commit-snippet))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Evaluated on load or require
+;;
+;; ;;;### eval this on require!
+;; (progn
+;;   (yas/init-minor-keymap))
+
+;; ;;;### eval this on require! 
+;; (progn
+;;   (yas/init-major-keymap))
+
+;; ;;;### eval this on require!
+;; (progn
+;;   (when yas/root-directory
+;;     (yas/reload-all)))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Debug functions.  Use (or change) at will whenever needed.
