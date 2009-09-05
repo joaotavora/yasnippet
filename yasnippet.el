@@ -1857,7 +1857,7 @@ defined in `yas/fallback-behavior'"
                     (command-2 (and keys-2(key-binding keys-2)))
                     (command (or (and (not (eq' command-1 'yas/expand))
                                       command-1)
-                                 command2)))
+                                 command-2)))
                (when (and (commandp command)
                           (not (eq 'yas/expand command)))
                  (setq this-command command)
