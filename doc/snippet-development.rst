@@ -213,16 +213,18 @@ cell where the first element specifies the name of the keymap where
 you want to record the keybinding.
 
 .. sourcecode:: text
+
   #name : <p>...</p>
   #binding: (rinari-minor-mode-map . "C-c C-c C-m")
   # --
   <p>`(when yas/prefix "\n")`$0`(when yas/prefix "\n")`</p>
 
-Note that this feature is still experimental and should be used with
-caution: It is easy to override important keybindings for many basic
-modes and it is hard to undefine them. In particular, the variable
+*Note* that this feature is still **experimental**, it might go away,
+be changed in future release, and should be used with caution: It is
+easy to override important keybindings for many basic modes and it is
+hard to undefine them. For the moment, the variable
 ``yas/active-keybinding`` can tell you what snippet keybindings are
-active and the function ``yas/kill-snippet-keybindings`` will try to
+active and the function ``yas/kill-snippet-keybindings`` will attempt to
 undefine all the keybindings.
 
 ``# contributor:`` snippet author
@@ -339,11 +341,13 @@ as the field and others mirrors.
 Mirrors with transformations
 ----------------------------
 
-If the default value of a field starts with ``$``, then it is interpreted
-as the transformation code instead of default value. A transformation
-is some arbitrary Emacs-lisp code that will get evaluated in an environment
-when the variable text is bind to the inputted text of the
-field. Here's an example for Objective-C:
+If the value of an ``${n:``-construct starts with and contains ``$(``,
+then it is interpreted as a mirror for field ``n`` with a
+transformation. The mirror's text content is calculated according to
+this transformation, which is Emacs-lisp code that gets evaluated in
+an environment where the variable ``text`` (or ``yas/text``) is bound
+to the text content (string) contained in the field ``n``.Here's an
+example for Objective-C:
 
 .. sourcecode:: text
 
@@ -359,13 +363,13 @@ field. Here's an example for Objective-C:
   }
   $0
 
-Look at ``${2:$(capitalize text)}``, it is a transformation instead of
-a placeholder. The actual placeholder is at the first line:
-``${2:foo}``. When you type text in ``${2:foo}``, the transformation
-will be evaluated and the result will be placed there as the
-transformed text. So in this example, if you type "baz" in the field,
-the transformed text will be "Baz". This example is also available in
-the screencast.
+Look at ``${2:$(capitalize text)}``, it is a mirror with
+transformation instead of a field. The actual field is at the first
+line: ``${2:foo}``. When you type text in ``${2:foo}``, the
+transformation will be evaluated and the result will be placed there
+as the transformed text. So in this example, if you type "baz" in the
+field, the transformed text will be "Baz". This example is also
+available in the screencast.
 
 Another example is for ``rst-mode``. In reStructuredText, the document
 title can be some text surrounded by "===" below and above. The "==="

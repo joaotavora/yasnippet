@@ -2,8 +2,8 @@
 Frequently Asked Questions
 ==========================
 
-Why there's an extra newline?
-=============================
+Why is there an extra newline?
+==============================
 
 If you have a newline at the end of the snippet definition file, then
 YASnippet will add a newline when you expanding a snippet. Please
@@ -14,8 +14,8 @@ Note some editors will automatically add a newline for you. In Emacs,
 if you set ``require-final-newline`` to ``t``, it will add the final
 newline for you automatically.
 
-Why TAB key doesn't expand a snippet?
-=====================================
+Why doesn't TAB expand a snippet?
+=================================
 
 First check the mode line to see if there's ``yas``. If not, then try
 ``M-x yas/minor-mode`` to manually turn on the minor mode and try to
@@ -48,12 +48,15 @@ code to work around:
 
   (add-hook 'org-mode-hook
             #'(lambda ()
-                (local-set-key [tab] 'yas/expand))) 
+                (setq yas/fallback-behavior
+                      `(apply ,(lookup-key org-mode-map [tab]))) 
+                (local-set-key [tab] 'yas/expand)))
 
-replace ``org-mode-hook`` with the major mode hook you are dealing
-with (``C-h m`` to see what major mode you are in).
+replace ``org-mode-hook`` and ``org-mode-map`` with the major mode
+hook you are dealing with (``C-h m`` to see what major mode you are
+in).
 
-If this doesn't work, you can also try
+As an alternative, you can also try
 
 .. sourcecode:: lisp
 
@@ -80,16 +83,36 @@ group <http://groups.google.com/group/smart-snippet>`_.
 Don't forget to attach the information on what command is bound to TAB
 as well as the mode information (Can be obtained by ``C-h m``).
 
-How to define snippets with named by characters not supported by the filesystem?
-================================================================================
-For example, you want to define a snippet by the key ``<`` which is not a
-valid character for filename on Windows. In this case, you may use
-``yas/define`` to define the snippet. If you want to enjoy defining
-snippets in a file, you can use the ``key`` property to specify the key of
-the defined snippet explicitly.
+Why doesn't TAB navigation work with flyspell
+=============================================
 
-Just name your snippet with an arbitrary valid filename, ``lt`` for
-example. and specify ``<`` for the ``key`` property:
+A workaround is to inhibit flyspell overlays while the snippet is active:
+
+.. sourcecode:: lisp
+  
+  (add-hook 'flyspell-incorrect-hook
+          #'(lambda (dummy1 dummy2 dymmy3)
+              (and yas/active-field-overlay
+                   (overlay-buffer yas/active-field-overlay))))
+
+This is apparently related to overlay priorities. For some reason, the
+``keymap`` property of flyspell's overlays always takes priority over
+the same property in yasnippet's overlays, even if one sets the
+latter's ``priority`` property to something big. If you know
+emacs-lisp and can solve this problem, drop a line in the `discussion
+group`_.
+
+How do I define an abbrev key containing characters not supported by the filesystem?
+====================================================================================
+
+For example, you want to define a snippet by the key ``<`` which is
+not a valid character for filename on Windows. This means you can't
+use the filename as a trigger key in this case.
+
+You should rather use the ``# key:`` directive to specify the key of
+the defined snippet explicitly and name your snippet with an arbitrary
+valid filename, ``lt.yasnippet`` for example, using ``<`` for the
+``# key:`` directive:
 
 .. sourcecode:: text
 
@@ -98,3 +121,4 @@ example. and specify ``<`` for the ``key`` property:
   # --
   <${1:div}>$0</$1>
 
+.. _discussion group: http://groups.google.com/group/smart-snippet

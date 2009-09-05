@@ -314,6 +314,7 @@ field"
   :type '(choice (const :tag "Call previous command"  call-other-command)
                  (const :tag "Do nothing"             return-nil))
   :group 'yasnippet)
+(make-variable-buffer-local 'yas/fallback-behavior)
 
 (defcustom yas/choose-keys-first nil
   "If non-nil, prompt for snippet key first, then for template.
@@ -700,7 +701,8 @@ With optional UNBIND-KEY, try to unbind that key from
               (stringp yas/trigger-key)
               (not (string= yas/trigger-key "")))
     (define-key yas/minor-mode-map (read-kbd-macro yas/trigger-key) 'yas/expand)))
-  
+
+;;;###autoload
 (define-minor-mode yas/minor-mode
   "Toggle YASnippet mode.
 
@@ -740,6 +742,7 @@ Key bindings:
 this effectively lets you define exceptions to the \"global\"
 behaviour.")
 (make-variable-buffer-local 'yas/dont-activate)
+
 
 (defun yas/minor-mode-on ()
   "Turn on YASnippet minor mode.
@@ -1846,11 +1849,15 @@ defined in `yas/fallback-behavior'"
              nil)
             ((eq yas/fallback-behavior 'call-other-command)
              (let* ((yas/minor-mode nil)
-                    (keys (or (and yas/trigger-key
-                                   (stringp yas/trigger-key)
-                                   (read-kbd-macro yas/trigger-key))
-                              (this-command-keys-vector)))
-                    (command (key-binding keys)))
+                    (keys-1 (this-command-keys-vector))
+                    (keys-2 (and yas/trigger-key
+                                 (stringp yas/trigger-key)
+                                 (read-kbd-macro yas/trigger-key))) 
+                    (command-1 (and keys-1 (key-binding keys-1)))
+                    (command-2 (and keys-2(key-binding keys-2)))
+                    (command (or (and (not (eq' command-1 'yas/expand))
+                                      command-1)
+                                 command2)))
                (when (and (commandp command)
                           (not (eq 'yas/expand command)))
                  (setq this-command command)
@@ -2680,6 +2687,7 @@ Move the overlay, or create it if it does not exit."
           (make-overlay (yas/field-start field)
                         (yas/field-end field)
                         nil nil t))
+    (overlay-put yas/active-field-overlay 'priority 100)
     (overlay-put yas/active-field-overlay 'face 'yas/field-highlight-face)
     (overlay-put yas/active-field-overlay 'yas/snippet snippet)
     (overlay-put yas/active-field-overlay 'modification-hooks '(yas/on-field-overlay-modification))
@@ -3067,9 +3075,9 @@ Meant to be called in a narrowed buffer, does various passes"
     ;; Reset the yas/dollar-regions
     ;;
     (setq yas/dollar-regions nil)
-    ;; protect quote and backquote escapes
+    ;; protect escaped quote, backquotes and backslashes
     ;;
-    (yas/protect-escapes nil '(?` ?'))
+    (yas/protect-escapes nil '(?\\ ?` ?'))
     ;; replace all backquoted expressions
     ;;
     (goto-char parse-start)
