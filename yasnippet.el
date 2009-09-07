@@ -687,7 +687,6 @@ Here's an example:
   (define-key yas/minor-mode-map "\C-c&\C-v" 'yas/visit-snippet-file)
   (define-key yas/minor-mode-map "\C-c&\C-f" 'yas/find-snippets))
 
-
 (defun yas/trigger-key-reload (&optional unbind-key)
   "Rebind `yas/expand' to the new value of `yas/trigger-key'.
 
@@ -701,6 +700,9 @@ With optional UNBIND-KEY, try to unbind that key from
               (stringp yas/trigger-key)
               (not (string= yas/trigger-key "")))
     (define-key yas/minor-mode-map (read-kbd-macro yas/trigger-key) 'yas/expand)))
+
+;;; eval'ed on require/load
+(yas/init-minor-keymap)
 
 ;;;###autoload
 (define-minor-mode yas/minor-mode
@@ -1458,7 +1460,7 @@ content of the file is the template."
     (when restore-global-mode
       (yas/global-mode 1))
 
-    (message "done.")))
+    (message "[yas] Reloading everything... Done.")))
 
 (defun yas/quote-string (string)
   "Escape and quote STRING.
@@ -1535,8 +1537,7 @@ Here's the default value for all the parameters:
       (insert ";;;;      Auto-generated code         ;;;;\n")
       (insert ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;\n")
       (insert "(defun yas/initialize-bundle ()\n"
-              "  \"Initialize YASnippet and load snippets in the bundle.\""
-              "  (yas/global-mode 1)\n")
+              "  \"Initialize YASnippet and load snippets in the bundle.\"")
       (flet ((yas/define-snippets
               (mode snippets &optional parent-or-parents)
               (insert ";;; snippets for " (symbol-name mode) "\n")
@@ -1566,7 +1567,9 @@ Here's the default value for all the parameters:
           (dolist (subdir (yas/subdirs dir))
             (yas/load-directory-1 subdir nil 'no-hierarchy-parents))))
 
+      (insert "  (yas/global-mode 1)\n")
       (insert ")\n\n" code "\n")
+      
       (insert "(provide '"
               (file-name-nondirectory
                (file-name-sans-extension
@@ -1854,8 +1857,8 @@ defined in `yas/fallback-behavior'"
                                  (stringp yas/trigger-key)
                                  (read-kbd-macro yas/trigger-key))) 
                     (command-1 (and keys-1 (key-binding keys-1)))
-                    (command-2 (and keys-2(key-binding keys-2)))
-                    (command (or (and (not (eq' command-1 'yas/expand))
+                    (command-2 (and keys-2 (key-binding keys-2)))
+                    (command (or (and (not (eq command-1 'yas/expand))
                                       command-1)
                                  command-2)))
                (when (and (commandp command)
@@ -3463,23 +3466,6 @@ When multiple expressions are found, only the last one counts."
         ((not (yas/undo-in-progress))
          ;; When not in an undo, check if we must commit the snippet (use exited it).
          (yas/check-commit-snippet))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Evaluated on load or require
-;;
-;; ;;;### eval this on require!
-;; (progn
-;;   (yas/init-minor-keymap))
-
-;; ;;;### eval this on require! 
-;; (progn
-;;   (yas/init-major-keymap))
-
-;; ;;;### eval this on require!
-;; (progn
-;;   (when yas/root-directory
-;;     (yas/reload-all)))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Debug functions.  Use (or change) at will whenever needed.
