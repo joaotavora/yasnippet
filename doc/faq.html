@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="Docutils 0.5: http://docutils.sourceforge.net/" />
+<meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
 <title>Frequently Asked Questions</title>
 <link rel="stylesheet" href="styles.css" type="text/css" />
 </head>
@@ -132,8 +132,26 @@ latter's <tt class="docutils literal"><span class="pre">priority</span></tt> pro
 emacs-lisp and can solve this problem, drop a line in the <a class="reference external" href="http://groups.google.com/group/smart-snippet">discussion
 group</a>.</p>
 </div>
+<div class="section" id="how-do-i-turn-off-the-minor-mode-where-in-some-buffers">
+<h1>How do I turn off the minor mode where in some buffers</h1>
+<p>The best way, since version 0.6.1c, is to set the default value of the
+variable <tt class="docutils literal"><span class="pre">yas/dont-activate</span></tt> to a lambda function like so:</p>
+<div class="highlight"><pre>(set-default &#39;yas/dont-activate
+           #&#39;(lambda ()
+               (and yas/root-directory
+                    (null (yas/get-snippet-tables)))))
+</pre></div>
+<p>This is also the default value starting for that version. It skips the
+minor mode in buffers where it is not applicable (no snippet tables),
+but only once you have setup your yas/root-directory.</p>
+</div>
 <div class="section" id="how-do-i-define-an-abbrev-key-containing-characters-not-supported-by-the-filesystem">
 <h1>How do I define an abbrev key containing characters not supported by the filesystem?</h1>
+<dl class="docutils">
+<dt><strong>Note</strong>: This question applies if you're still defining snippets</dt>
+<dd>whose key <em>is</em> the filename. This is behavior stil provided by
+version 0.6 for backward compatibilty, but is somewhat deprecated...</dd>
+</dl>
 <p>For example, you want to define a snippet by the key <tt class="docutils literal"><span class="pre">&lt;</span></tt> which is
 not a valid character for filename on Windows. This means you can't
 use the filename as a trigger key in this case.</p>
@@ -153,6 +171,16 @@ valid filename, <tt class="docutils literal"><span class="pre">lt.yasnippet</spa
     </div>
   </div>
 </div>
+<script type="text/javascript">
+  var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+  document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+  try {
+  var pageTracker = _gat._getTracker("UA-10536822-1");
+  pageTracker._trackPageview();
+  } catch(err) {}
+</script>
 </div>
 </body>
 </html>

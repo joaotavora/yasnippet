@@ -649,27 +649,27 @@ Here's an example:
        ["Wrap region in exit marker" 
         (setq yas/wrap-around-region
               (not yas/wrap-around-region))
-        :help "If t automatically wrap the selected text in the $0 snippet exit"
+        :help "If non-nil automatically wrap the selected text in the $0 snippet exit"
         :style toggle :selected yas/wrap-around-region]
        ["Allow stacked expansions " 
         (setq yas/triggers-in-field
               (not yas/triggers-in-field))
-        :help "If t allow snippets to be triggered inside other snippet fields"
+        :help "If non-nil allow snippets to be triggered inside other snippet fields"
         :style toggle :selected yas/triggers-in-field]
        ["Revive snippets on undo " 
         (setq yas/snippet-revival
               (not yas/snippet-revival))
-        :help "If t allow snippets to become active again after undo"
+        :help "If non-nil allow snippets to become active again after undo"
         :style toggle :selected yas/snippet-revival]
        ["Good grace " 
         (setq yas/good-grace
               (not yas/good-grace))
-        :help "If t don't raise errors in bad embedded eslip in snippets"
+        :help "If non-nil don't raise errors in bad embedded eslip in snippets"
         :style toggle :selected yas/good-grace]
        ["Ignore filenames as triggers" 
         (setq yas/ignore-filenames-as-triggers
               (not yas/ignore-filenames-as-triggers))
-        :help "If t don't derive tab triggers from filenames"
+        :help "If non-nil don't derive tab triggers from filenames"
         :style toggle :selected yas/ignore-filenames-as-triggers]
        )
       "----"
@@ -737,7 +737,9 @@ Key bindings:
                 (> (hash-table-count yas/snippet-tables) 0))
       (yas/reload-all))))
 
-(defvar yas/dont-activate nil
+(defvar yas/dont-activate #'(lambda ()
+                              (and yas/root-directory
+                                   (null (yas/get-snippet-tables))))
   "If non-nil don't let `yas/minor-mode-on' active yas for this buffer.
 
 `yas/minor-mode-on' is usually called by `yas/global-mode' so
@@ -752,8 +754,10 @@ behaviour.")
 Do this unless `yas/dont-activate' is t or the function
 `yas/get-snippet-tables' (which see), returns an empty list."
   (interactive)
-  (unless (or yas/dont-activate
-              (null (yas/get-snippet-tables)))
+  (unless (or (and (functionp yas/dont-activate)
+                   (funcall yas/dont-activate))
+              (and (not (functionp yas/dont-activate))
+                   yas/dont-activate))
     (yas/minor-mode 1)))
 
 (defun yas/minor-mode-off ()
