@@ -7,6 +7,17 @@ ChangeLog
 .. _Writing Snippets: snippet-development.html
 .. _The YASnippet Menu: snippet-menu.html
 
+Upcoming 0.6.1c
+===============
+
+* Fixed `issues <http://code.google.com/p/yasnippet/issues>`_ 99, 98, 93,
+  90, 91, 88, 87. Thanks everybody.
+* More compliant customization group `Issue94
+  <http://code.google.com/p/yasnippet/issues/detail?id=94>`_, (thanks
+  wyuenho).
+* Added workaround for issue 97 in the FAQ
+* Small updates to documentation.
+
 0.6.1b / 2009-08-29
 ===================
 
