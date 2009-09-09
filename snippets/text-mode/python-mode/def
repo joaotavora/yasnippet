@@ -5,7 +5,6 @@
 # --
 def ${1:name}($2):
     """$3
-    the comments dont enter into it stupid
     ${2:$
       (let* 
         ((indent
