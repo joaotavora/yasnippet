@@ -245,7 +245,7 @@ representation using `read-kbd-macro'."
              (if (fboundp 'yas/trigger-key-reload)
                  (yas/trigger-key-reload old)))))
   
-(defcustom yas/next-field-key "TAB"
+(defcustom yas/next-field-key '("TAB" "<tab>")
   "The key to navigate to next field when a snippet is active.
 
 Value is a string that is converted to the internal Emacs key
@@ -3672,9 +3672,8 @@ handle the end-of-buffer error fired in it by calling
 ;; disable c-electric-* serial command in YAS fields
 (add-hook 'c-mode-common-hook
           '(lambda ()
-          (make-variable-buffer-local 'yas/keymap)
           (dolist (k '(":" ">" ";" "<" "{" "}"))
-            (define-key yas/keymap
+            (define-key (make-local-variable 'yas/keymap)
               k 'self-insert-command))))
 
 
