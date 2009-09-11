@@ -3673,7 +3673,7 @@ handle the end-of-buffer error fired in it by calling
 (add-hook 'c-mode-common-hook
           '(lambda ()
           (dolist (k '(":" ">" ";" "<" "{" "}"))
-            (define-key (make-local-variable 'yas/keymap)
+            (define-key (symbol-value (make-local-variable 'yas/keymap))
               k 'self-insert-command))))
 
 
