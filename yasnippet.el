@@ -1563,14 +1563,20 @@ Here's the default value for all the parameters:
           (dolist (subdir (yas/subdirs dir))
             (yas/load-directory-1 subdir nil 'no-hierarchy-parents))))
 
-      (insert "  (yas/global-mode 1)\n")
+      (insert (pp-to-string `(yas/global-mode 1)))
       (insert ")\n\n" code "\n")
+
+      ;; bundle-specific provide and value for yas/dont-activate
+      (let ((bundle-feature-name (file-name-nondirectory
+                                  (file-name-sans-extension
+                                   yasnippet-bundle)))) 
+        (insert (pp-to-string `(set-default 'yas/dont-activate
+                                            #'(lambda ()
+                                                (and (or yas/root-directory
+                                                         (featurep ',(make-symbol bundle-feature-name)))
+                                                     (null (yas/get-snippet-tables)))))))
+        (insert (pp-to-string `(provide ',(make-symbol bundle-feature-name)))))
       
-      (insert "(provide '"
-              (file-name-nondirectory
-               (file-name-sans-extension
-                yasnippet-bundle))
-              ")\n")
       (insert ";;; "
               (file-name-nondirectory yasnippet-bundle)
               " ends here\n"))))
