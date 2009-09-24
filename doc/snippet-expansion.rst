@@ -15,9 +15,10 @@ Triggering expansion
 
 You can use YASnippet to expand snippets in different ways:
 
-* By typing a snippet abbrev and then pressing the key defined in
-  ``yas/trigger-key`` (which defaults to "TAB"). This works in a
-  buffer where the minor mode ``yas/minor-mode`` is active;
+* By typing an abbrev, the snippet *trigger key*, and then pressing
+  the key defined in ``yas/trigger-key`` (which defaults to
+  "TAB"). This works in buffers where the minor mode
+  ``yas/minor-mode`` is active;
 
 * By invoking the command ``yas/insert-snippet`` (either by typing
   ``M-x yas/insert-snippet`` or its keybinding). This does *not*
@@ -115,13 +116,13 @@ prefer.
 Expanding from emacs-lisp code
 ------------------------------
 
-Sometimes you might want to expand a snippet directly by calling a
-functin from elisp code. You should call ``yas/expand-snippet``
-instead of ``yas/expand`` in this case.
+Sometimes you might want to expand a snippet directly from you own
+elisp code. You should call ``yas/expand-snippet`` instead of
+``yas/expand`` in this case.
 
-As with expanding from the menubar, condition system and multiple
-candidates won't exists here. In fact, expanding from menubar has the
-same effect of evaluating the follow code:
+As with expanding from the menubar, the condition system and multiple
+candidates doesn't affect expansion. In fact, expanding from the
+YASnippet menu has the same effect of evaluating the follow code:
 
 .. sourcecode:: common-lisp
 
@@ -137,7 +138,7 @@ Eligible snippets
 -----------------
 
 YASnippet does quite a bit of filtering to find out which snippets are
-eligible for expanding at point.
+eligible for expanding at the current cursor position.
 
 In particular, the following things matter:
 
@@ -149,15 +150,16 @@ In particular, the following things matter:
 
 * Major mode of the current buffer
 
-  If it matches one of the loaded snippet tables, then all that
-  table's snippets are considered for expansion. Use ``M-x
-  describe-variable RET major-mode RET`` to find out which mode you
-  are in currently.
+  If the currrent major mode matches one of the loaded snippet tables,
+  then all that table's snippets are considered for expansion. Use
+  ``M-x describe-variable RET major-mode RET`` to find out which major
+  mode you are in currently.
 
 * Parent tables
 
-  Snippet tables defined as parent of some other table considered in
-  the previous step are also considered.
+  Snippet tables defined as the parent of some other eligible table
+  are also considered. This works recursively, i.e. parents of parents
+  of eligible tables are also considered.
 
 * Buffer-local ``yas/mode-symbol`` variable
 
@@ -165,7 +167,7 @@ In particular, the following things matter:
   correspond to a major mode. If you set this variable to a name ,
   like ``rinari-minor-mode``, you can have some snippets expand only
   in that minor mode. Naturally, you want to set this conditionally,
-  i.e. only when entering that minor mode, using a hook is a good
+  i.e. only when entering that minor mode, so using a hook is a good
   idea.
 
 .. sourcecode:: common-lisp
@@ -178,10 +180,10 @@ In particular, the following things matter:
 
 * Buffer-local ``yas/buffer-local-condition`` variable
 
-  This variable provides more fine grained control over what snippets
-  can be expanded in the current buffer. The default value, won't let
-  you expand snippets inside comments or string literals for
-  example. See `The condition system`_ for more info.
+  This variable provides finer grained control over what snippets can
+  be expanded in the current buffer. The default value won't let you
+  expand snippets inside comments or string literals for example. See
+  `The condition system`_ for more info.
 
 The condition system
 --------------------
@@ -260,9 +262,9 @@ The rules outlined `above <Eligible snippets>`_ can return more than
 one snippet to be expanded at point.
 
 When there are multiple candidates, YASnippet will let you select
-one. The UI for selecting multiple candidate can be customized. A
-customization variable, called ``yas/prompt-functions`` defines your
-preferred method of being prompted for snippets.
+one. The UI for selecting multiple candidate can be customized through
+``yas/prompt-functions`` , which defines your preferred methods of
+being prompted for snippets.
 
 You can customize it with ``M-x customize-variable RET
 yas/prompt-functions RET``. Alternatively you can put in your
@@ -293,8 +295,8 @@ which means:
 .. image:: images/ido-menu.png
    :align: right
 
-Use built-in Emacs selection methods
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Minibuffer prompting
+~~~~~~~~~~~~~~~~~~~~
 
 You can use functions ``yas/completing-prompt`` for the classic emacs
 completion method or ``yas/ido-prompt`` for a much nicer looking
@@ -323,7 +325,6 @@ Customizable Variables
 
 ``yas/prompt-functions``
 ------------------------
-
 
 You can write a function and add it to the ``yas/prompt-functions``
 list. These functions are called with the following arguments:
@@ -383,11 +384,11 @@ This affects ``yas/insert-snippet``, ``yas/visit-snippet-file``
 --------------------
 
 The default searching strategy is quite powerful. For example, in
-``c-mode``, ``"bar"``, ``"foo_bar"``, ``"#foo_bar"`` can all be
-recognized as a snippet key. Furthermore, the searching is in that
-order. In other words, if ``"bar"`` is found to be a key to some
-*valid* snippet, then ``"foo_bar"`` and ``"#foobar"`` won't be
-searched.
+``c-mode``, ``bar``, ``foo_bar``, ``"#foo_bar"`` can all be recognized
+as a snippet key. Furthermore, the searching is in that order. In
+other words, if ``bar`` is found to be a key to some *valid* snippet,
+then that snippet is expanded and replaces the ``bar``. Snippets
+pointed to by ``foo_bar`` and ``"#foobar`` won't be considered.
 
 However, this strategy can also be customized easily from the
 ``yas/key-syntaxes`` variable. It is a list of syntax rules, the
@@ -399,7 +400,7 @@ following thing until found one:
 * a sequence of characters of either word, symbol or punctuation.
 * a sequence of characters of non-whitespace characters.
 
-But you'd better keep the default value unless you understand what
-Emacs's syntax rule mean.
+But you'd better keep the default value unless you want to understand
+how Emacs's syntax rules work...
 
 

@@ -12,19 +12,19 @@ Organizing snippets
 Loading snippets
 ================
 
-Snippet definitions are stored in files in the filesystem and you have
-to arrange for YASnippet to load them (unless you use a `YASnippet
-bundle <index.html@bundle-install>`_) into *snippet tables*.
-
-The triggering mechanisms (see `Expanding snippets`_) will look up
-these snippet tables and (hopefully) expand your intended snippet.
+Snippet definitions are stored in files in the filesystem. Unless you
+use the simpler `bundle version <index.html@installation>`_), these
+are arranged so that YASnippet can load them into *snippet
+tables*. The triggering mechanisms (see `Expanding snippets`_) will
+look up these snippet tables and (hopefully) expand the snippet you
+intended.
 
 The non-bundle version of YASnippet, once unpacked, comes with a full
 directory of snippets, which you can copy somewhere and use. You can
-also create or download, one or more directories.
+also create or download more directories.
 
 Once these directories are in place reference them in the variable
-``yas/root-directory`` and then load them with ``yas/load-directory``:
+``yas/root-directory`` and load them with ``yas/load-directory``:
 
 .. sourcecode:: common-lisp
 
@@ -52,9 +52,9 @@ You can make this variable a list and store more items into it:
   ;; Map `yas/load-directory' to every element
   (mapc 'yas/load-directory yas/root-directory)
 
-Here the directories after the first are loaded, their snippets
-considered for expansion, but development still happens in
-"~/emacs.d/mysnippets"
+In this last example, the all the directories are loaded and their
+snippets considered for expansion. However development still happens
+in the first element, "~/emacs.d/mysnippets".
 
 Organizing snippets
 ===================
@@ -95,10 +95,11 @@ for some modes:
       `-- time
 
 A parent directory acts as a *parent table* of any of its
-sub-directories. This is one of the ways YASnippet can share snippet
-definitions among different modes. As you can see above, ``c-mode``
-and ``java-mode`` share the same parents ``cc-mode``, while all modes
-are derived from ``text-mode``.
+sub-directories. This is one of the ways different Emacs major modes
+can share snippet definitions. As you can see above, ``c-mode`` and
+``java-mode`` share the same parent ``cc-mode`` and its ``while``
+snipepts, while all modes are share the ``time`` snippet from
+``text-mode``.
 
 This can be also used to as an *alias* -- ``cperl-mode`` is an empty
 directory whose parent is ``perl-mode``.
@@ -109,10 +110,12 @@ directory whose parent is ``perl-mode``.
 The ``.yas-parents`` file
 ------------------------------
 
-If you place a plain text file ``.yas-parents`` inside one of the
-sub-directories you can bypass nesting and still have parent modes. In
-this file you just write white-space-separated names of modes. This
-allows more flexibility and readability of your snippet hierarchy.
+An alternate (and preferred) way of setting up parent tables consists
+of placing a plain text file ``.yas-parents`` inside one of the
+sub-directories. By doing this, you avoid complex directory
+nesting. In the ``.yas-parents`` file you just write
+whitespace-separated names of modes. This allows more flexibility and
+readability of your snippet hierarchy.
 
 .. sourcecode:: text
 
@@ -231,11 +234,10 @@ Customizable variables
 
 Root directory that stores the snippets for each major mode.
 
-Can also be a list of strings, for multiple root directories. If
-you make this a list, the first element is always the
-user-created snippets directory. 
-
-Other directories are used for bulk reloading of all snippets using
+If you set this from your .emacs, can also be a list of strings,
+for multiple root directories. If you make this a list, the first
+element is always the user-created snippets directory. Other
+directories are used for bulk reloading of all snippets using
 ``yas/reload-all``
 
 ``yas/ignore-filenames-as-triggers``

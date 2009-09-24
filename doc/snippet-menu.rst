@@ -5,7 +5,7 @@ YASnippet menu
 .. contents::
 
 When ``yas/minor-mode`` is active, YASnippet will setup a menu just
-after the Buffers Menu in the menubar. 
+after the "Buffers" menu in the menubar. 
 
 In this menu, you can find
 

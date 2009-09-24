@@ -59,7 +59,7 @@
 <ul class="simple">
 <li><a class="reference internal" href="#video-demo" id="id1">Video Demo</a></li>
 <li><a class="reference internal" href="#installation" id="id2">Installation</a><ul>
-<li><a class="reference internal" href="#bundle-install" id="id3">Bundle Install</a></li>
+<li><a class="reference internal" href="#install-with-yasnippet-bundle-el" id="id3">Install with <tt class="docutils literal"><span class="pre">yasnippet-bundle.el</span></tt></a></li>
 <li><a class="reference internal" href="#normal-install" id="id4">Normal Install</a></li>
 </ul>
 </li>
@@ -67,16 +67,14 @@
 <li><a class="reference internal" href="#bugs-contribution-and-support" id="id6">Bugs, Contribution and Support</a></li>
 </ul>
 </div>
-<p><strong>YASnippet</strong> is a template system for Emacs. It allows you to type a
-abbreviation and automatically expand the abbreviation into function
-templates.</p>
-<p>Bundled language templates includes: C, C++, C#, Perl, Python, Ruby,
-SQL, LaTeX, HTML, CSS and more.</p>
-<p>The snippet syntax is inspired from TextMate's syntax, you can
-even <a class="reference external" href="snippet-development.html#importing-textmate-snippets">import</a>
-import most TextMate templates to YASnippet.</p>
-<p>YASnippet is a re-write of the extension <a class="reference external" href="http://code.google.com/p/smart-snippet/">smart-snippet</a>. Both are
-original creations of <a class="reference external" href="http://pluskid.lifegoo.org">pluskid</a>.</p>
+<p><strong>YASnippet</strong> is a template system for Emacs. It allows you to type an
+abbreviation and automatically expand it into function
+templates. Bundled language templates includes: C, C++, C#, Perl,
+Python, Ruby, SQL, LaTeX, HTML, CSS and more.</p>
+<p>The snippet syntax is inspired from TextMate's syntax, you can even
+<a class="reference external" href="snippet-development.html#importing-textmate-snippets">import</a>
+import most TextMate templates. YASnippet is a re-write of the
+extension <a class="reference external" href="http://code.google.com/p/smart-snippet/">smart-snippet</a>. Both are original creations of <a class="reference external" href="http://pluskid.lifegoo.org">pluskid</a>.</p>
 <div class="section" id="video-demo">
 <h1><a class="toc-backref" href="#id1">Video Demo</a></h1>
 <object type="application/x-shockwave-flash"
@@ -84,21 +82,21 @@ original creations of <a class="reference external" href="http://pluskid.lifegoo
         height="344"
         align="right"
         class="youtube-embed"
-        data="http://www.youtube.com/v/vOj7btx3ATg">
-    <param name="movie" value="http://www.youtube.com/v/vOj7btx3ATg"></param>
+        data="http://www.youtube.com/v/76Ygeg9miao">
+    <param name="movie" value="http://www.youtube.com/v/76Ygeg9miao"></param>
     <param name="wmode" value="transparent"></param>
 </object>
-<p>Watch the <a class="reference external" href="http://www.youtube.com/watch?v=vOj7btx3ATg">demo at YouTube</a> (download a higher
+<p>Watch the <a class="reference external" href="http://www.youtube.com/watch?v=76Ygeg9miao">demo at YouTube</a> (download a higher
 resolution version: <a class="reference external" href="http://yasnippet.googlecode.com/files/yasnippet.avi">yasnippet.avi</a>).</p>
 </div>
 <div class="section" id="installation">
 <h1><a class="toc-backref" href="#id2">Installation</a></h1>
-<p>There are two archives of YASnippet. One is a single file compiled
-“bundle”, and the other is normal. If all you need is to use the
-built-in templates, download the bundle one. If you want to add your
-own templates, download the normal one.</p>
-<div class="section" id="bundle-install">
-<h2><a class="toc-backref" href="#id3">Bundle Install</a></h2>
+<p>There are two archives you can download. To quickly tryout YASnippet,
+download the simpler &quot;bundle&quot; version. If you plan to modify the
+bundled templates and/or build your own, download the &quot;normal&quot;
+package.</p>
+<div class="section" id="install-with-yasnippet-bundle-el">
+<h2><a class="toc-backref" href="#id3">Install with <tt class="docutils literal"><span class="pre">yasnippet-bundle.el</span></tt></a></h2>
 <ol class="arabic simple">
 <li>Download the latest <tt class="docutils literal"><span class="pre">yasnippet-bundle-x.y.z.el.tgz</span></tt> and unpack it.</li>
 <li>You'll get a file named <tt class="docutils literal"><span class="pre">yasnippet-bundle.el</span></tt>, put it under
@@ -107,7 +105,7 @@ own templates, download the normal one.</p>
 </ol>
 <p>That's it. Now open any one of your language file, you'll see a menu
 YASnippet. you can pull the menu to insert a template. Or, you can
-type the pre-defined abbrev and press <tt class="docutils literal"><span class="pre">TAB</span></tt> to expand it.</p>
+type the a <em>trigger key</em> then press <tt class="docutils literal"><span class="pre">TAB</span></tt> to expand it.</p>
 <p>To have Emacs load YASnippet automatically when it starts, put the
 following in your <tt class="docutils literal"><span class="pre">~/.emacs</span></tt> file:</p>
 <blockquote>
@@ -116,13 +114,15 @@ following in your <tt class="docutils literal"><span class="pre">~/.emacs</span>
 (<span style="color: #008000">require</span> <span style="color: #19177C">&#39;yasnippet-bundle</span>)
 </pre></div>
 </blockquote>
+<p>The <a class="reference external" href="http://www.youtube.com/watch?v=76Ygeg9miao">youtube video</a>
+demonstrates this quick installation.</p>
 </div>
 <div class="section" id="normal-install">
 <h2><a class="toc-backref" href="#id4">Normal Install</a></h2>
-<p>For full install of the normal archive, just download and unpack the
-latest <tt class="docutils literal"><span class="pre">yasnippet-x.y.z.tar.bz2</span></tt>. You'll get a directory named
-<tt class="docutils literal"><span class="pre">yasnippet-x.y.z</span></tt>, put it in your <tt class="docutils literal"><span class="pre">~/.emacs.d/plugins</span></tt> and add the
-following in your <tt class="docutils literal"><span class="pre">.emacs</span></tt> file:</p>
+<p>To install YASnippet as a normal emacs package, download and unpack
+the latest <tt class="docutils literal"><span class="pre">yasnippet-x.y.z.tar.bz2</span></tt>. You'll get a directory named
+<tt class="docutils literal"><span class="pre">yasnippet-x.y.z</span></tt>, which you can put it in your
+<tt class="docutils literal"><span class="pre">~/.emacs.d/plugins</span></tt> and add the following in your <tt class="docutils literal"><span class="pre">.emacs</span></tt> file:</p>
 <blockquote>
 <div class="highlight"><pre>(<span style="color: #19177C">add-to-list</span> <span style="color: #19177C">&#39;load-path</span>
               <span style="color: #BA2121">&quot;~/.emacs.d/plugins/yasnippet-x.y.z&quot;</span>)
@@ -167,7 +167,7 @@ TextMate snippets.</blockquote>
 <li><a class="reference external" href="snippet-menu.html">The YASnippet menu</a></li>
 </ol>
 <blockquote>
-Explains how to use the YASnippet menu to explore and learn new
+Explains how to use the YASnippet menu to explore, learn and modify
 snippets.</blockquote>
 </div>
 <div class="section" id="bugs-contribution-and-support">

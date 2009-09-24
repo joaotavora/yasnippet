@@ -15,9 +15,7 @@ Snippet development
 Quickly finding snippets
 ------------------------
 
-There are some ways you can quickly find a snippet file. Once you find
-this file it will be set to ``snippet-mode`` (see ahead) and you can
-start editing your snippet.
+There are some ways you can quickly find a snippet file:
 
 * ``M-x yas/new-snippet``
 
@@ -29,13 +27,17 @@ start editing your snippet.
 * ``M-x yas/find-snippets``
 
   Lets you find the snippet file in the directory the snippet was
-  loaded from (if it exists) like ``find-file-other-window``.
+  loaded from (if it exists) like ``find-file-other-window``. The
+  directory searching logic is similar to ``M-x yas/new-snippet``.
 
 * ``M-x yas/visit-snippet-file``
 
   Prompts you for possible snippet expansions like
   ``yas/insert-snippet``, but instead of expanding it, takes you
   directly to the snippet definition's file, if it exists.
+
+Once you find this file it will be set to ``snippet-mode`` (see ahead)
+and you can start editing your snippet.
 
 
 Using the ``snippet-mode`` major mode
@@ -60,22 +62,20 @@ Two commands are defined in this mode:
     can see what it looks like. This is bound to ``C-c C-t`` while in
     ``snippet-mode``.
 
-There are also snippets for making snippets: ``vars``, ``field`` and
-``mirror``.
+There are also *snippets for writing snippets*: ``vars``, ``$f`` and
+``$m`` :-).
 
 File content
 ============
 
-A file defining a snippet may just contain the template for the
-snippet. Optionally it can also contains some meta data for the
-snippet as well as comments.
+A file defining a snippet generally contains the template to be
+expanded.
 
-Generally speaking, if the file contains a line of ``# --``, then all
-contents above that line are considered directives (meta data) and
-comments; below that line lies the snippet template.
-
-If no ``# --`` is found, the whole file content is considered as the
-template.
+Optionally, if the file contains a line of ``# --``, the lines above
+it count as comments, some of which can be *directives* (or meta
+data). Snippet directives look like ``# property: value`` and tweak
+certain snippets properties described below. If no ``# --`` is found,
+the whole file is considered the snippet template.
 
 Here's a typical example:
 
@@ -86,14 +86,7 @@ Here's a typical example:
   # --
   __${init}__
 
-Meta data are specified in the syntax of
-
-.. sourcecode:: text
-
-  #data-name : data value
-
-Any other text above ``# --`` is considered as comment and
-ignored. Here's a list of currently supported directives:
+Here's a list of currently supported directives:
 
 ``# key:`` snippet abbrev
 --------------------------
@@ -122,7 +115,6 @@ snippet -- especially distinguishable among similar snippets.
 If you omit this name it will default to the file name the snippet was
 loaded from.
 
-
 ``# condition:`` snippet condition
 ----------------------------------
 This is a piece of Emacs-lisp code. If a snippet has a condition, then it
@@ -132,8 +124,8 @@ value.
 See also ``yas/buffer-local-condition`` in `Expanding snippets`_
 
 
-
-``# group`` snippet menu grouping
+``# group:`` snippet menu grouping
+----------------------------------
 
 When expanding/visiting snippets from the menu-bar menu, snippets for a
 given mode can be grouped into sub-menus . This is useful if one has
@@ -154,13 +146,13 @@ which is under the ``control structure`` group.
 ``# expand-env:`` expand environment
 ------------------------------------
 
-This is another piece of Emacs-lisp code in the form of a ``let`` *varlist*
-form, i.e. a list of lists assigning values to variables. It can be
-used to override variable values while the snippet is being expanded.
+This is another piece of Emacs-lisp code in the form of a ``let``
+*varlist form*, i.e. a list of lists assigning values to variables. It
+can be used to override variable values while the snippet is being
+expanded.
 
 Interesting variables to override are ``yas/wrap-around-region`` and
 ``yas/indent-line`` (see `Expanding Snippets`_).
-
 
 As an example, you might normally have ``yas/indent-line`` set to
 ``'auto`` and ``yas/wrap-around-region`` set to ``t``, but for this
@@ -219,13 +211,13 @@ you want to record the keybinding.
   # --
   <p>`(when yas/prefix "\n")`$0`(when yas/prefix "\n")`</p>
 
-*Note* that this feature is still **experimental**, it might go away,
-be changed in future release, and should be used with caution: It is
-easy to override important keybindings for many basic modes and it is
-hard to undefine them. For the moment, the variable
-``yas/active-keybinding`` can tell you what snippet keybindings are
-active and the function ``yas/kill-snippet-keybindings`` will attempt to
-undefine all the keybindings.
+**Note**: this feature is still **experimental**, it might go away, be
+changed in future release, and should be used with caution: It is easy
+to override important keybindings for many basic modes and it is hard
+to undefine them. For the moment, the variable
+``yas/active-keybindings`` can tell you what snippet keybindings are
+active and the function ``yas/kill-snippet-keybindings`` will attempt
+to undefine all the keybindings.
 
 ``# contributor:`` snippet author
 ---------------------------------------------------
@@ -251,12 +243,13 @@ needed to be escaped as ``\\`` sometimes.
 Embedded Emacs-lisp code
 ------------------------
 
-Emacs-Lisp code can be embedded inside the template. They are written
-inside back-quotes (`````):
+Emacs-Lisp code can be embedded inside the template, written inside
+back-quotes (`````). The lisp forms are evaluated when the snippet is
+being expanded. The evaluation is done in the same buffer as the
+snippet being expanded. 
 
-They are evaluated when the snippet is being expanded. The evaluation
-is done in the same buffer as the snippet being expanded. Here's an
-example for ``c-mode`` to calculate the header file guard dynamically:
+Here's an example for ``c-mode`` to calculate the header file guard
+dynamically:
 
 .. sourcecode:: text
 
@@ -267,7 +260,7 @@ example for ``c-mode`` to calculate the header file guard dynamically:
 
   #endif /* $1 */
 
-From version 0.6.0, snippets expansions are run with some special
+From version 0.6, snippets expansions are run with some special
 Emacs-lisp variables bound. One of this is ``yas/selected-text``. You
 can therefore define a snippet like:
 
@@ -432,8 +425,8 @@ the value of the field and sets it its internal modification state to
 ``true``. As a consequence, the auto-deletion behaviour of normal
 fields does not take place. This is by design.
 
-Choosing fields value from a list
----------------------------------
+Choosing fields value from a list and other tricks
+--------------------------------------------------
 
 As mentioned, the field transformation is invoked just after you enter
 the field, and with some useful variables bound, notably
@@ -445,13 +438,28 @@ The ``yas/choose-value`` does this work for you. For example:
 
 .. sourcecode:: text
 
-   <div align="${2:$$(yas/choose-value '("right" "center" "left"))}">
-     $0
-   </div>
+  <div align="${2:$$(yas/choose-value '("right" "center" "left"))}">
+    $0
+  </div>
 
 See the definition of ``yas/choose-value`` to see how it was written
-using the two variables. Also check out ``yas/verify-value`` for
-another neat trick.
+using the two variables.
+
+Here's another use, for LaTeX-mode, which calls reftex-label just as
+you enter snippet field 2. This one makes use of ``yas/modified-p``
+directly.
+
+.. sourcecode:: text 
+
+  \section{${1:"Titel der Tour"}}%
+  \index{$1}%
+  \label{{2:"waiting for reftex-label call..."$(unless yas/modified-p (reftex-label nil 'dont-
+  insert))}}%  
+
+The function ``yas/verify-value`` has another neat trick, and makes
+use of ``yas/moving-away-p``. Try it and see! Also, check out this
+`thread
+<http://groups.google.com/group/smart-snippet/browse_thread/thread/282a90a118e1b662>`_
 
 Nested placeholder fields
 -------------------------

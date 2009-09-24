@@ -9,43 +9,40 @@ Yet Another Snippet extension
 
 .. contents::
 
-**YASnippet** is a template system for Emacs. It allows you to type a
-abbreviation and automatically expand the abbreviation into function
-templates.
+**YASnippet** is a template system for Emacs. It allows you to type an
+abbreviation and automatically expand it into function
+templates. Bundled language templates includes: C, C++, C#, Perl,
+Python, Ruby, SQL, LaTeX, HTML, CSS and more.
 
-Bundled language templates includes: C, C++, C#, Perl, Python, Ruby,
-SQL, LaTeX, HTML, CSS and more.
-
-The snippet syntax is inspired from TextMate's syntax, you can
-even `import <snippet-development.html#importing-textmate-snippets>`_
-import most TextMate templates to YASnippet.
-
-YASnippet is a re-write of the extension `smart-snippet`_. Both are
-original creations of `pluskid <http://pluskid.lifegoo.org>`_.
+The snippet syntax is inspired from TextMate's syntax, you can even
+`import <snippet-development.html#importing-textmate-snippets>`_
+import most TextMate templates. YASnippet is a re-write of the
+extension `smart-snippet`_. Both are original creations of `pluskid
+<http://pluskid.lifegoo.org>`_.
 
 .. _smart-snippet: http://code.google.com/p/smart-snippet/
 
 Video Demo
 ==========
 
-.. youtube:: vOj7btx3ATg
+.. youtube:: 76Ygeg9miao
    :align: right
 
 Watch the `demo at YouTube
-<http://www.youtube.com/watch?v=vOj7btx3ATg>`_ (download a higher
+<http://www.youtube.com/watch?v=76Ygeg9miao>`_ (download a higher
 resolution version: `yasnippet.avi
 <http://yasnippet.googlecode.com/files/yasnippet.avi>`_).
 
 Installation
 ============
 
-There are two archives of YASnippet. One is a single file compiled
-“bundle”, and the other is normal. If all you need is to use the
-built-in templates, download the bundle one. If you want to add your
-own templates, download the normal one.
+There are two archives you can download. To quickly tryout YASnippet,
+download the simpler "bundle" version. If you plan to modify the
+bundled templates and/or build your own, download the "normal"
+package.
 
-Bundle Install
---------------
+Install with ``yasnippet-bundle.el``
+------------------------------------
 
 1. Download the latest ``yasnippet-bundle-x.y.z.el.tgz`` and unpack it.
 2. You'll get a file named ``yasnippet-bundle.el``, put it under
@@ -54,7 +51,7 @@ Bundle Install
 
 That's it. Now open any one of your language file, you'll see a menu
 YASnippet. you can pull the menu to insert a template. Or, you can
-type the pre-defined abbrev and press ``TAB`` to expand it.
+type the a *trigger key* then press ``TAB`` to expand it.
 
 To have Emacs load YASnippet automatically when it starts, put the
 following in your ``~/.emacs`` file:
@@ -65,13 +62,16 @@ following in your ``~/.emacs`` file:
                    "~/.emacs.d/plugins")
      (require 'yasnippet-bundle)
 
+The `youtube video <http://www.youtube.com/watch?v=76Ygeg9miao>`_
+demonstrates this quick installation.
+
 Normal Install
 --------------
 
-For full install of the normal archive, just download and unpack the
-latest ``yasnippet-x.y.z.tar.bz2``. You'll get a directory named
-``yasnippet-x.y.z``, put it in your ``~/.emacs.d/plugins`` and add the
-following in your ``.emacs`` file:
+To install YASnippet as a normal emacs package, download and unpack
+the latest ``yasnippet-x.y.z.tar.bz2``. You'll get a directory named
+``yasnippet-x.y.z``, which you can put it in your
+``~/.emacs.d/plugins`` and add the following in your ``.emacs`` file:
 
    .. sourcecode:: common-lisp
 
@@ -114,7 +114,7 @@ Hence this section has been split into separate documents:
 
 4. `The YASnippet menu`_
 
-  Explains how to use the YASnippet menu to explore and learn new
+  Explains how to use the YASnippet menu to explore, learn and modify
   snippets.
 
 Bugs, Contribution and Support

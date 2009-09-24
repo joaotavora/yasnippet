@@ -7,8 +7,8 @@ ChangeLog
 .. _Writing Snippets: snippet-development.html
 .. _The YASnippet Menu: snippet-menu.html
 
-Upcoming 0.6.1c
-===============
+0.6.1c / 2009-08-13
+===================
 
 * Fixed `issues <http://code.google.com/p/yasnippet/issues>`_ 99, 98, 93,
   90, 91, 88, 87. Thanks everybody.

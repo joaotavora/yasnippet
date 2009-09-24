@@ -74,7 +74,7 @@
 <li><a class="reference internal" href="#the-condition-system" id="id12">The condition system</a></li>
 <li><a class="reference internal" href="#multiples-snippet-with-the-same-key" id="id13">Multiples snippet with the same key</a><ul>
 <li><a class="reference internal" href="#use-the-x-window-system" id="id14">Use the X window system</a></li>
-<li><a class="reference internal" href="#use-built-in-emacs-selection-methods" id="id15">Use built-in Emacs selection methods</a></li>
+<li><a class="reference internal" href="#minibuffer-prompting" id="id15">Minibuffer prompting</a></li>
 <li><a class="reference internal" href="#use-dropdown-menu-el" id="id16">Use <tt class="docutils literal"><span class="pre">dropdown-menu.el</span></tt></a></li>
 <li><a class="reference internal" href="#roll-your-own" id="id17">Roll your own</a></li>
 </ul>
@@ -95,9 +95,10 @@
 <h1><a class="toc-backref" href="#id2">Triggering expansion</a></h1>
 <p>You can use YASnippet to expand snippets in different ways:</p>
 <ul class="simple">
-<li>By typing a snippet abbrev and then pressing the key defined in
-<tt class="docutils literal"><span class="pre">yas/trigger-key</span></tt> (which defaults to &quot;TAB&quot;). This works in a
-buffer where the minor mode <tt class="docutils literal"><span class="pre">yas/minor-mode</span></tt> is active;</li>
+<li>By typing an abbrev, the snippet <em>trigger key</em>, and then pressing
+the key defined in <tt class="docutils literal"><span class="pre">yas/trigger-key</span></tt> (which defaults to
+&quot;TAB&quot;). This works in buffers where the minor mode
+<tt class="docutils literal"><span class="pre">yas/minor-mode</span></tt> is active;</li>
 <li>By invoking the command <tt class="docutils literal"><span class="pre">yas/insert-snippet</span></tt> (either by typing
 <tt class="docutils literal"><span class="pre">M-x</span> <span class="pre">yas/insert-snippet</span></tt> or its keybinding). This does <em>not</em>
 require <tt class="docutils literal"><span class="pre">yas/minor-mode</span></tt> to be active.</li>
@@ -171,12 +172,12 @@ prefer.</p>
 </div>
 <div class="section" id="expanding-from-emacs-lisp-code">
 <h2><a class="toc-backref" href="#id9">Expanding from emacs-lisp code</a></h2>
-<p>Sometimes you might want to expand a snippet directly by calling a
-functin from elisp code. You should call <tt class="docutils literal"><span class="pre">yas/expand-snippet</span></tt>
-instead of <tt class="docutils literal"><span class="pre">yas/expand</span></tt> in this case.</p>
-<p>As with expanding from the menubar, condition system and multiple
-candidates won't exists here. In fact, expanding from menubar has the
-same effect of evaluating the follow code:</p>
+<p>Sometimes you might want to expand a snippet directly from you own
+elisp code. You should call <tt class="docutils literal"><span class="pre">yas/expand-snippet</span></tt> instead of
+<tt class="docutils literal"><span class="pre">yas/expand</span></tt> in this case.</p>
+<p>As with expanding from the menubar, the condition system and multiple
+candidates doesn't affect expansion. In fact, expanding from the
+YASnippet menu has the same effect of evaluating the follow code:</p>
 <div class="highlight"><pre>(<span style="color: #19177C">yas/expand-snippet</span> <span style="color: #19177C">template</span>)
 </pre></div>
 <p>See the internal documentation on <tt class="docutils literal"><span class="pre">yas/expand-snippet</span></tt> for more
@@ -188,7 +189,7 @@ information.</p>
 <div class="section" id="eligible-snippets">
 <h2><a class="toc-backref" href="#id11">Eligible snippets</a></h2>
 <p>YASnippet does quite a bit of filtering to find out which snippets are
-eligible for expanding at point.</p>
+eligible for expanding at the current cursor position.</p>
 <p>In particular, the following things matter:</p>
 <ul>
 <li><p class="first">Currently loaded snippets tables</p>
@@ -197,21 +198,22 @@ eligible for expanding at point.</p>
 <tt class="docutils literal"><span class="pre">html-mode</span></tt>, <tt class="docutils literal"><span class="pre">ruby-mode</span></tt>, etc...</p>
 </li>
 <li><p class="first">Major mode of the current buffer</p>
-<p>If it matches one of the loaded snippet tables, then all that
-table's snippets are considered for expansion. Use <tt class="docutils literal"><span class="pre">M-x</span>
-<span class="pre">describe-variable</span> <span class="pre">RET</span> <span class="pre">major-mode</span> <span class="pre">RET</span></tt> to find out which mode you
-are in currently.</p>
+<p>If the currrent major mode matches one of the loaded snippet tables,
+then all that table's snippets are considered for expansion. Use
+<tt class="docutils literal"><span class="pre">M-x</span> <span class="pre">describe-variable</span> <span class="pre">RET</span> <span class="pre">major-mode</span> <span class="pre">RET</span></tt> to find out which major
+mode you are in currently.</p>
 </li>
 <li><p class="first">Parent tables</p>
-<p>Snippet tables defined as parent of some other table considered in
-the previous step are also considered.</p>
+<p>Snippet tables defined as the parent of some other eligible table
+are also considered. This works recursively, i.e. parents of parents
+of eligible tables are also considered.</p>
 </li>
 <li><p class="first">Buffer-local <tt class="docutils literal"><span class="pre">yas/mode-symbol</span></tt> variable</p>
 <p>This can be used to consider snippet tables whose name does not
 correspond to a major mode. If you set this variable to a name ,
 like <tt class="docutils literal"><span class="pre">rinari-minor-mode</span></tt>, you can have some snippets expand only
 in that minor mode. Naturally, you want to set this conditionally,
-i.e. only when entering that minor mode, using a hook is a good
+i.e. only when entering that minor mode, so using a hook is a good
 idea.</p>
 </li>
 </ul>
@@ -223,10 +225,10 @@ idea.</p>
 </pre></div>
 <ul>
 <li><p class="first">Buffer-local <tt class="docutils literal"><span class="pre">yas/buffer-local-condition</span></tt> variable</p>
-<p>This variable provides more fine grained control over what snippets
-can be expanded in the current buffer. The default value, won't let
-you expand snippets inside comments or string literals for
-example. See <a class="reference internal" href="#the-condition-system">The condition system</a> for more info.</p>
+<p>This variable provides finer grained control over what snippets can
+be expanded in the current buffer. The default value won't let you
+expand snippets inside comments or string literals for example. See
+<a class="reference internal" href="#the-condition-system">The condition system</a> for more info.</p>
 </li>
 </ul>
 </div>
@@ -294,9 +296,9 @@ other snippets like <tt class="docutils literal"><span class="pre">if</span></tt
 <p>The rules outlined <a class="reference external" href="Eligiblesnippets">above</a> can return more than
 one snippet to be expanded at point.</p>
 <p>When there are multiple candidates, YASnippet will let you select
-one. The UI for selecting multiple candidate can be customized. A
-customization variable, called <tt class="docutils literal"><span class="pre">yas/prompt-functions</span></tt> defines your
-preferred method of being prompted for snippets.</p>
+one. The UI for selecting multiple candidate can be customized through
+<tt class="docutils literal"><span class="pre">yas/prompt-functions</span></tt> , which defines your preferred methods of
+being prompted for snippets.</p>
 <p>You can customize it with <tt class="docutils literal"><span class="pre">M-x</span> <span class="pre">customize-variable</span> <span class="pre">RET</span>
 <span class="pre">yas/prompt-functions</span> <span class="pre">RET</span></tt>. Alternatively you can put in your
 emacs-file:</p>
@@ -318,8 +320,8 @@ support, this menu will be rendered with your gtk theme.</li>
 </ul>
 <img align="right" alt="images/ido-menu.png" class="align-right" src="images/ido-menu.png" />
 </div>
-<div class="section" id="use-built-in-emacs-selection-methods">
-<h3><a class="toc-backref" href="#id15">Use built-in Emacs selection methods</a></h3>
+<div class="section" id="minibuffer-prompting">
+<h3><a class="toc-backref" href="#id15">Minibuffer prompting</a></h3>
 <p>You can use functions <tt class="docutils literal"><span class="pre">yas/completing-prompt</span></tt> for the classic emacs
 completion method or <tt class="docutils literal"><span class="pre">yas/ido-prompt</span></tt> for a much nicer looking
 method. The best way is to try it. This works in a terminal.</p>
@@ -390,11 +392,11 @@ eligible tables.</p>
 <div class="section" id="yas-key-syntaxes">
 <h2><a class="toc-backref" href="#id23"><tt class="docutils literal"><span class="pre">yas/key-syntaxes</span></tt></a></h2>
 <p>The default searching strategy is quite powerful. For example, in
-<tt class="docutils literal"><span class="pre">c-mode</span></tt>, <tt class="docutils literal"><span class="pre">&quot;bar&quot;</span></tt>, <tt class="docutils literal"><span class="pre">&quot;foo_bar&quot;</span></tt>, <tt class="docutils literal"><span class="pre">&quot;#foo_bar&quot;</span></tt> can all be
-recognized as a snippet key. Furthermore, the searching is in that
-order. In other words, if <tt class="docutils literal"><span class="pre">&quot;bar&quot;</span></tt> is found to be a key to some
-<em>valid</em> snippet, then <tt class="docutils literal"><span class="pre">&quot;foo_bar&quot;</span></tt> and <tt class="docutils literal"><span class="pre">&quot;#foobar&quot;</span></tt> won't be
-searched.</p>
+<tt class="docutils literal"><span class="pre">c-mode</span></tt>, <tt class="docutils literal"><span class="pre">bar</span></tt>, <tt class="docutils literal"><span class="pre">foo_bar</span></tt>, <tt class="docutils literal"><span class="pre">&quot;#foo_bar&quot;</span></tt> can all be recognized
+as a snippet key. Furthermore, the searching is in that order. In
+other words, if <tt class="docutils literal"><span class="pre">bar</span></tt> is found to be a key to some <em>valid</em> snippet,
+then that snippet is expanded and replaces the <tt class="docutils literal"><span class="pre">bar</span></tt>. Snippets
+pointed to by <tt class="docutils literal"><span class="pre">foo_bar</span></tt> and <tt class="docutils literal"><span class="pre">&quot;#foobar</span></tt> won't be considered.</p>
 <p>However, this strategy can also be customized easily from the
 <tt class="docutils literal"><span class="pre">yas/key-syntaxes</span></tt> variable. It is a list of syntax rules, the
 default value is <tt class="docutils literal"><span class="pre">(&quot;w&quot;</span> <span class="pre">&quot;w_&quot;</span> <span class="pre">&quot;w_.&quot;</span> <span class="pre">&quot;^</span> <span class="pre">&quot;)</span></tt>. Which means search the
@@ -405,8 +407,8 @@ following thing until found one:</p>
 <li>a sequence of characters of either word, symbol or punctuation.</li>
 <li>a sequence of characters of non-whitespace characters.</li>
 </ul>
-<p>But you'd better keep the default value unless you understand what
-Emacs's syntax rule mean.</p>
+<p>But you'd better keep the default value unless you want to understand
+how Emacs's syntax rules work...</p>
 </div>
 </div>
 	  </div>
