@@ -47,14 +47,15 @@ code to work around:
 .. sourcecode:: lisp
 
   (add-hook 'org-mode-hook
-            #'(lambda ()
-                (setq yas/fallback-behavior
-                      `(apply ,(lookup-key org-mode-map [tab]))) 
-                (local-set-key [tab] 'yas/expand)))
+            (let ((original-command (lookup-key org-mode-map [tab])))
+              `(lambda ()
+                 (setq yas/fallback-behavior
+                       '(apply ,original-command))
+                 (local-set-key [tab] 'yas/expand))))
 
 replace ``org-mode-hook`` and ``org-mode-map`` with the major mode
-hook you are dealing with (``C-h m`` to see what major mode you are
-in).
+hook you are dealing with (Use ``C-h m`` to see what major mode you
+are in).
 
 As an alternative, you can also try
 
@@ -75,10 +76,13 @@ As an alternative, you can also try
 To *advise* the modes indentation function bound to TAB, (in this case
 ``ruby-indent-line``) to first try to run ``yas/expand``.
 
-If The output of ``C-h k RET <tab>`` tells you that ``<tab>`` is
+If the output of ``C-h k RET <tab>`` tells you that ``<tab>`` is
 indeed bound to ``yas/expand`` but YASnippet still doesn't work, check
 your configuration and you may also ask for help on the `discussion
-group <http://groups.google.com/group/smart-snippet>`_. 
+group <http://groups.google.com/group/smart-snippet>`_. See this
+particular `thread
+<http://code.google.com/p/yasnippet/issues/detail?id=93&can=1>`_ for
+quite some solutions and alternatives.
 
 Don't forget to attach the information on what command is bound to TAB
 as well as the mode information (Can be obtained by ``C-h m``).
