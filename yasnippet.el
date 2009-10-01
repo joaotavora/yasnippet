@@ -512,22 +512,10 @@ snippet itself contains a condition that returns the symbol
 
 ;;; Internal variables
 
-(defvar yas/version "0.6.1b")
+(defvar yas/version "0.7.0")
 
 (defvar yas/menu-table (make-hash-table)
   "A hash table of MAJOR-MODE symbols to menu keymaps.")
-
-(defvar yas/snippet-keymap-alist nil
-  "Local one-element alist supporting for direct snippet keybindings.
-
-This variable is automatically buffer local and placed in
-`emulation-mode-map-alists'.
-
-Its only element looks like (t . KEYMAP) and is calculated when
-entering `yas/minor-mode' or loading snippet definitions. KEYMAP
-binds key sequences to the sole `yas/expand-from-keymap', which
-acts similarly to `yas/expand'")
-(make-variable-buffer-local 'yas/snippet-keymap-alist)
 
 (defun teste ()
   (interactive)
@@ -719,19 +707,38 @@ With optional UNBIND-KEY, try to unbind that key from
               (not (string= yas/trigger-key "")))
     (define-key yas/minor-mode-map (read-kbd-macro yas/trigger-key) 'yas/expand)))
 
-(defun yas/snippet-keybindings-reload ()
-  (setq yas/snippet-keymap-alist
-        (list
-         `(t . ,(let ((map (make-sparse-keymap)))
-                  (mapc #'(lambda (table)
-                            (maphash #'(lambda (k v)
-                                         (if (and (vectorp k)
-                                                  (hash-table-p v)
-                                                  (> (hash-table-count v) 0))
-                                             (define-key map k 'yas/expand-from-keymap)))
-                                     (yas/snippet-table-hash table)))
-                        (yas/get-snippet-tables))
-                  map)))))
+
+;; (defvar yas/snippet-keymaps nil
+;;   "")
+;; (make-variable-buffer-local 'yas/snippet-keymaps)
+;; (defun yas/snippet-keymaps-reload ()
+;;   (setq yas/snippet-keymaps nil)
+;;   (mapc #'(lambda (table)
+;;             (push (cons t
+;;                         (yas/snippet-table-keymap table))
+;;                   yas/snippet-keymaps))
+;;         (yas/get-snippet-tables)))
+
+(defvar yas/snippet-keymaps nil
+  "Keymap alist supporting direct snippet keybindings.
+
+This variable is is placed `emulation-mode-map-alists'.
+
+Its elements looks like (TABLE-NAME . KEYMAP) and are
+calculated when loading snippets. TABLE-NAME is a variable
+set buffer-locally when entering `yas/minor-mode'. KEYMAP binds
+all defined direct keybindings to the command
+`yas/expand-from-keymap', which acts similarly to `yas/expand'")
+(defun yas/snippet-keymaps-reload ()
+  (interactive)
+  (setq yas/snippet-keymaps nil) 
+  (maphash #'(lambda (name table)
+               (mapc #'(lambda (table)
+                         (push (cons name
+                                     (yas/snippet-table-keymap table))
+                               yas/snippet-keymaps))
+                     (cons table (yas/snippet-table-get-all-parents table))))
+           yas/snippet-tables))
 
 ;;;###autoload
 (define-minor-mode yas/minor-mode
@@ -752,17 +759,34 @@ Key bindings:
   ;; The indicator for the mode line.
   " yas"
   :group 'yasnippet
-  (if yas/minor-mode
-      (progn
-        (add-hook 'emulation-mode-map-alists 'yas/snippet-keymap-alist nil 'local)
-        (yas/snippet-keybindings-reload)
-        (yas/trigger-key-reload)
-        ;; load all snippets definitions unless we still don't have a
-        ;; root-directory or some snippets have already been loaded.
-        (unless (or (null yas/root-directory)
-                    (> (hash-table-count yas/snippet-tables) 0))
-          (yas/reload-all)))
-    (remove-hook 'emulation-mode-map-alists 'yas/snippet-keymap-alist 'local)))
+  (cond (yas/minor-mode
+         ;; Reload the trigger key
+         ;;
+         (yas/trigger-key-reload)
+         ;; Load all snippets definitions unless we still don't have a
+         ;; root-directory or some snippets have already been loaded.
+         ;; 
+         (unless (or (null yas/root-directory)
+                     (> (hash-table-count yas/snippet-tables) 0))
+           (yas/reload-all))
+         ;; Install the direct keymaps in `emulation-mode-map-alists'
+         ;; (we use `add-hook' even though it's not technically a hook,
+         ;; but it works). Then define variables named after modes to
+         ;; index `yas/snippet-keymaps'. 
+         ;; 
+         (add-hook 'emulation-mode-map-alists 'yas/snippet-keymaps nil 'local)
+         (let ((modes-to-activate (list major-mode))
+               (mode major-mode))
+           (while (setq mode (get mode 'derived-mode-parent))
+             (push mode modes-to-activate))
+           (dolist (mode modes-to-activate)
+             (unless (and (boundp mode)
+                          (symbol-value mode))
+               (set (make-local-variable mode) t)))))
+        (t
+         ;; Uninstall the direct keymaps.
+         ;; 
+         (remove-hook 'emulation-mode-map-alists 'yas/snippet-keymaps 'local))))
 
 (defvar yas/dont-activate #'(lambda ()
                               (and yas/root-directory
@@ -773,7 +797,6 @@ Key bindings:
 this effectively lets you define exceptions to the \"global\"
 behaviour.")
 (make-variable-buffer-local 'yas/dont-activate)
-
 
 (defun yas/minor-mode-on ()
   "Turn on YASnippet minor mode.
@@ -883,10 +906,19 @@ Has the following fields:
 `yas/snippet-table-parents'
 
   A list of tables considered parents of this table: i.e. when
-  searching for expansions they are searched as well."
+  searching for expansions they are searched as well.
+
+`yas/snippet-keymap'
+
+  A keymap for the snippets in this table that have direct
+  keybindings. This is kept in sync with the keyhash, i.e., all
+  the elements of the keyhash that are vectors appear here as
+  bindings to `yas/expand-from-keymap'.
+"
   name
   (hash (make-hash-table :test 'equal))
-  (parents nil))
+  (parents nil)
+  (keymap (make-sparse-keymap)))
 
 ;; Apropos storing/updating, this is works with two steps:
 ;;
@@ -926,20 +958,24 @@ Has the following fields:
   "If non-nil `yas/store' guesses snippet replacements \"better\".")
 
 (defun yas/remove-snippet (table name key template type-fn)
-  (dolist (existing-namehash (remove nil (list (gethash key (yas/snippet-table-hash table))
-                                               (when yas/better-guess-for-replacements
-                                                 (let (a)
-                                                   ;; "cand" means "candidate for removal"
-                                                   (maphash #'(lambda (cand namehash)
-                                                                (when (and (gethash name namehash)
-                                                                           (funcall type-fn cand))
-                                                                  (setq a namehash)))
-                                                            (yas/snippet-table-hash table))
-                                                   a)))))
-    (let ((existing-template (gethash name existing-namehash)))
-      (when existing-template
-        (remhash name existing-namehash)))))
-  
+  (let ((key-and-namehash-alist '())
+        (namehash-for-key (gethash key (yas/snippet-table-hash table))))
+    (when namehash-for-key 
+      (push (cons key namehash-for-key) key-and-namehash-alist))
+    (when yas/better-guess-for-replacements
+      ;; "cand" means "candidate for removal"
+      (maphash #'(lambda (cand namehash)
+                   (when (and (gethash name namehash)
+                              (funcall type-fn cand))
+                     (push (cons cand namehash) key-and-namehash-alist)))
+               (yas/snippet-table-hash table)))
+    (dolist (elem key-and-namehash-alist)
+      (remhash name (cdr elem))
+      (when (= 0 (hash-table-count (cdr elem)))
+        (remhash (car elem) (yas/snippet-table-hash table))
+        (when (vectorp (car elem))
+          (define-key (yas/snippet-table-keymap table) (car elem) nil))))))
+
 (defun yas/add-snippet (table name key template)
   "Store in TABLE the snippet NAME indexed by KEY and expanding TEMPLATE.
 
@@ -955,7 +991,9 @@ keybinding)."
                           (yas/snippet-table-hash table))
                  (puthash key
                           (make-hash-table :test 'equal)
-                          (yas/snippet-table-hash table))))))
+                          (yas/snippet-table-hash table))))
+    (when (vectorp key)
+      (define-key (yas/snippet-table-keymap table) key 'yas/expand-from-keymap)))) 
 
 (defun yas/fetch (table key)
   "Fetch snippets in TABLE by KEY. "
@@ -1034,6 +1072,7 @@ conditions to filter out potential expansions."
            (eq requirement result)))))
 
 (defun yas/snippet-table-get-all-parents (table)
+  "Returns a list of all parent tables of TABLE" 
   (let ((parents (yas/snippet-table-parents table)))
     (when parents
       (append (copy-list parents)
@@ -1456,7 +1495,7 @@ content of the file is the template."
   (dolist (dir (yas/subdirs directory))
     (yas/load-directory-1 dir nil 'no-hierarchy-parents))
   (when (interactive-p)
-    (message "done.")))
+    (message "[yas] Loaded snippets from %s." directory)))
 
 (defun yas/reload-all (&optional reset-root-directory)
   "Reload all snippets and rebuild the YASnippet menu. "
@@ -1490,7 +1529,9 @@ content of the file is the template."
               (yas/load-directory directory))
           (yas/load-directory yas/root-directory))
       (call-interactively 'yas/load-directory))
-
+    ;; Reload the direct keybindings
+    ;;
+    (yas/snippet-keymaps-reload)
     ;; Restore the mode configuration
     ;;
     (when restore-minor-mode
@@ -1740,7 +1781,7 @@ not need to be a real mode."
           ;; The trigger key (key can be null if we removed the key) 
           (yas/remove-snippet snippet-table name key template #'stringp)
           (when key
-            (yas/add-snippet snippet-table name keybinding template)))
+            (yas/add-snippet snippet-table name key template)))
 
         ;; Setup the menu groups, reorganizing from group to group if
         ;; necessary
@@ -1859,7 +1900,7 @@ object satisfying `yas/field-p' to restrict the expansion to."
       (yas/fallback 'trigger-key))))
 
 (defun yas/expand-from-keymap ()
-  "Directly expand some snippets, searching `yas/snippet-keymap-alist'.
+  "Directly expand some snippets, searching `yas/snippet-keymaps'.
 
 If expansion fails, execute the previous binding for this key"
   (interactive)
@@ -1897,7 +1938,7 @@ Common gateway for `yas/expand-from-trigger-key' and
          nil)
         ((eq yas/fallback-behavior 'call-other-command)
          (let* ((yas/minor-mode nil)
-                (yas/snippet-keymap-alist nil)
+                (yas/snippet-keymaps nil)
                 (keys-1 (this-command-keys-vector))
                 (keys-2 (and yas/trigger-key
                              from-trigger-key-p
@@ -3512,6 +3553,50 @@ When multiple expressions are found, only the last one counts."
         ((not (yas/undo-in-progress))
          ;; When not in an undo, check if we must commit the snippet (use exited it).
          (yas/check-commit-snippet))))
+
+;;; Fancy docs:
+
+(put 'yas/expand  'function-documentation '(yas/expand-from-trigger-key-doc))
+(defun yas/expand-from-trigger-key-doc ()
+  "A doc synthethizer for `yas/expand-from-trigger-key-doc'."
+  (let ((which-means (cond ((eq yas/fallback-behavior 'call-other-command)
+                            (concat ", which means that if no snippets are eligible then this\nfalls back to "
+                                    (let* ((yas/minor-mode nil)
+                                           (fallback (key-binding (read-kbd-macro yas/trigger-key))))
+                                      (or (and fallback
+                                               (format "the command `%s'." (pp-to-string fallback)))
+                                          "nothing, in this case."))))
+                           ((eq yas/fallback-behavior 'return-nil)
+                            ", which means nothing is done if no snippets are eligible.")
+                           (t
+                            ", which means I hope you know what you're doing :-)"))))
+    (concat "Expand a snippet before point.
+
+If no snippet expansion is possible, fall back to the behaviour
+defined in `yas/fallback-behavior' which in this case would be:\n\n"
+          (pp-to-string yas/fallback-behavior)
+          "\n\n"
+          which-means
+"\n\nOptional argument FIELD is for non-interactive use and is an
+object satisfying `yas/field-p' to restrict the expansion to.")))
+
+(put 'yas/expand-from-keymap  'function-documentation '(yas/expand-from-keymap-doc))
+(defun yas/expand-from-keymap-doc ()
+  "A doc synthethizer for `yas/expand-from-keymap-doc'."
+  (concat "Expand some snippets from keymaps.\n\n"
+          (when (eq this-command 'describe-key)
+            (let* ((vec (this-single-command-keys))
+                   (templates (mapcan #'(lambda (table)
+                                          (yas/fetch table vec))
+                                      (yas/get-snippet-tables))))
+              (concat "In this particular case my guess it is would expand the snippets:\n\n"
+                      (mapconcat #'car templates "\n"))))
+          "\n\nIf no snippet expansion is possible then this falls back to \n"
+          (let* ((yas/minor-mode nil)
+                 (fallback (key-binding (read-kbd-macro yas/trigger-key))))
+            (or (and fallback
+                     (format "the command `%s'." (pp-to-string fallback)))
+                "nothing, in this case."))))
 
 
 ;;; Debug functions.  Use (or change) at will whenever needed.
@@ -3724,3 +3809,6 @@ handle the end-of-buffer error fired in it by calling
 (provide 'yasnippet)
 
 ;;; yasnippet.el ends here
+
+
+
