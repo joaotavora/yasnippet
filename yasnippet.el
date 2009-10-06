@@ -922,7 +922,8 @@ Has the following fields:
 
 ;; Apropos storing/updating, this is works with two steps:
 ;;
-;; 1. Remove any existing mappings, with two searches:
+;; 1. `yas/remove-snippet' to remove any existing mappings, with two
+;;    searches:
 ;;
 ;;    a) Try to get the existing namehash from TABLE using key.
 ;;    
@@ -940,7 +941,7 @@ Has the following fields:
 ;;    If any existing namesomething is found it is deleted, and is
 ;;    maybe added later on:
 ;;
-;; 2. Add the mappings again
+;; 2. `yas/add-snippet' to add the mappings again:
 ;;
 ;;    Create or index the entry in TABLES's `yas/snippet-table-hash'
 ;;    linking KEY to a namehash. That namehash links NAME to
@@ -953,7 +954,6 @@ Has the following fields:
 ;; fails if both the key and the name have changed. In that case,
 ;; it's as if a brand new snippet had been created.
 ;;
-
 (defvar yas/better-guess-for-replacements nil
   "If non-nil `yas/store' guesses snippet replacements \"better\".")
 
@@ -3613,19 +3613,19 @@ object satisfying `yas/field-p' to restrict the expansion to.")))
 (defun yas/debug-tables ()
   (interactive)
   (with-output-to-temp-buffer "*YASnippet tables*"
-    (dolist (symbol (remove nil (append (list major-mode)
-                                        (if (listp yas/mode-symbol)
-                                            yas/mode-symbol
-                                          (list yas/mode-symbol)))))
-      (princ (format "Snippet table hash keys for %s:\n\n" symbol))
+    (dolist (table (yas/get-snippet-tables))
+      (princ (format "Table hash keys for %s:\n\n" (yas/snippet-table-name table))
       (let ((keys))
         (maphash #'(lambda (k v)
                      (push k keys))
-                 (yas/snippet-table-hash (gethash symbol yas/snippet-tables)))
-        (princ keys))
-
-      (princ (format "Keymap for  %s:\n\n" symbol))
-      (princ (gethash symbol yas/menu-table)))))
+                 (yas/snippet-table-hash table))
+        (dolist (key keys)
+          (princ (format "   key %s maps snippets: %s\n" key
+                         (let ((names))
+                           (maphash #'(lambda (k v)
+                                        (push k names))
+                                    (gethash key (yas/snippet-table-hash table)))
+                           names)))))))))
 
 (defun yas/debug-snippet-vars ()
   "Debug snippets, fields, mirrors and the `buffer-undo-list'."
