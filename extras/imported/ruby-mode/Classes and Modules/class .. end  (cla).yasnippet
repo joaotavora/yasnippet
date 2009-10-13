@@ -2,7 +2,8 @@
 # key: cla
 # contributor: Translated from TextMate Snippet
 # name: class .. end
+## condition: "source.ruby"
 # --
-class ${1:${TM_FILENAME/(?:\A|_)([A-Za-z0-9]+)(?:\.rb)?/(?2::\u$1)/g}}
+class ${1:`(yas/ruby-infer-class-name)`}
 	$0
 end

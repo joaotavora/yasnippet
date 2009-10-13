@@ -2,5 +2,6 @@
 # key: fil
 # contributor: Translated from TextMate Snippet
 # name: fill(range) { |i| .. }
+## condition: "source.ruby"
 # --
-fill(${1:range}) { ${2/(^(?<var>\s*(?:\*|\*?[a-z_])[a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:|)/}${2:i}${2/(^(?<var>\s*(?:\*|\*?[a-z_])[a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:| )/}$0 }
+fill(${1:range}) { ${2:$(if (string= yas/text "") "" "|")}${2:variable}${2:$(if (string= yas/text "") "" "|")} $0 }

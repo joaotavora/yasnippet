@@ -2,5 +2,6 @@
 # key: Array
 # contributor: Translated from TextMate Snippet
 # name: Array.new(10) { |i| .. }
+## condition: "source.ruby"
 # --
-Array.new(${1:10}) { ${2/(^(?<var>\s*(?:\*|\*?[a-z_])[a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:|)/}${2:i}${2/(^(?<var>\s*(?:\*|\*?[a-z_])[a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:| )/}$0 }
+Array.new(${1:10}) { ${2:$(if (string= yas/text "") "" "|")}${2:i}${2:$(if (string= yas/text "") "" "|")} $0 }

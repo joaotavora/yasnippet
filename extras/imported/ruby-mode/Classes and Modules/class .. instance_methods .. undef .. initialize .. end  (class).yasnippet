@@ -2,18 +2,19 @@
 # key: cla
 # contributor: Translated from TextMate Snippet
 # name: class BlankSlate .. initialize .. end
+## condition: "source.ruby"
 # --
 class ${1:BlankSlate}
 	instance_methods.each { |meth| undef_method(meth) unless meth =~ /\A__/ }
 	
-	def initialize${2/(^.*?\S.*)|.*/(?1:\()/}${2:args}${2/(^.*?\S.*)|.*/(?1:\))/}
+	def initialize${2:$(if (string= yas/text "") "" "(")}${2:args}${2:$(if (string= yas/text "") "" ")")}
 		@${3:delegate} = ${4:delegate_object}
 		
 		$0
 	end
 	
 	def method_missing(meth, *args, &block)
-		@${3:delegate}.send(meth, *args, &block)
+		@$3.send(meth, *args, &block)
 	end
 	
 	

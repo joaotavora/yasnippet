@@ -136,6 +136,10 @@ class TmSnippet
     @snippet["content"]
   end
 
+  def scope
+    @snippet["scope"]
+  end
+
   def to_yasnippet
     doc = "# -*- mode: snippet -*-\n"
     doc << "# key: #{self.tab_trigger}\n" if self.tab_trigger
@@ -144,6 +148,10 @@ class TmSnippet
     if self.key_equivalent
       doc << "#" unless Choice.choices.convert_bindings
       doc << "# binding: \"#{self.key_equivalent}\"\n"
+    end
+    if self.scope
+      doc << "#" 
+      doc << "# condition: \"#{self.scope}\"\n"
     end
     doc << "# --\n"
     @@known_substitutions.each {|level| level.each_pair { |k, v| self.content.gsub!(k,v) }}

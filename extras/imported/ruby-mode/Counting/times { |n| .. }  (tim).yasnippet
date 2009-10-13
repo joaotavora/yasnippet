@@ -2,5 +2,6 @@
 # key: tim
 # contributor: Translated from TextMate Snippet
 # name: times { |n| .. }
+## condition: "source.ruby"
 # --
-times { ${1/(^(?<var>\s*(?:\*|\*?[a-z_])[a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:|)/}${1:n}${1/(^(?<var>\s*(?:\*|\*?[a-z_])[a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:| )/}$0 }
+times { ${1:$(if (string= yas/text "") "" "|")}${1:n}${1:$(if (string= yas/text "") "" "|")} $0 }

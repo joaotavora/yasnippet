@@ -2,10 +2,11 @@
 # key: begin
 # contributor: Translated from TextMate Snippet
 # name: begin … rescue … end
-# binding: "^W"
+## binding: "^W"
+## condition: "source.ruby - comment"
 # --
-${TM_SELECTED_TEXT/([\t ]*).*/$1/m}begin
-	${3:${TM_SELECTED_TEXT/(\A.*)|(.+)|\n\z/(?1:$0:(?2:\t$0))/g}}
-${TM_SELECTED_TEXT/([\t ]*).*/$1/m}rescue ${1:Exception}${2/.+/ => /}${2:e}
-${TM_SELECTED_TEXT/([\t ]*).*/$1/m}	$0
-${TM_SELECTED_TEXT/([\t ]*).*/$1/m}end
+begin
+  `(or yas/selected-text (car kill-ring))`$3
+rescue ${1:Exception}${2:$(if (string= yas/text "") "" " => ")}${2:e}
+  $0
+end

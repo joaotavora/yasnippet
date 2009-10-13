@@ -1,6 +1,7 @@
 # -*- mode: snippet -*-
 # contributor: Translated from TextMate Snippet
 # name: Embedded Code — #{…}
-# binding: "#"
+## binding: "C-#"
+## condition: "(string.quoted.double.ruby|string.interpolated.ruby) - string source"
 # --
-#{${1:`yas/selected-text`}}
+{${1:`yas/selected-text`}}

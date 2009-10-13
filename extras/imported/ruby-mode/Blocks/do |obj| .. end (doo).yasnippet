@@ -2,7 +2,8 @@
 # key: do
 # contributor: Translated from TextMate Snippet
 # name: Insert do |variable| … end
+## condition: "source.ruby"
 # --
-do ${1:$(if (string= yas/text "") "" "|")}${1:variable}${1:$(if (string= yas/text "") "" "|")}
-  $0
+do${1/(^(?<var>\s*[a-z_][a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1: |)/}${1:variable}${1/(^(?<var>\s*[a-z_][a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:|)/}
+	$0
 end

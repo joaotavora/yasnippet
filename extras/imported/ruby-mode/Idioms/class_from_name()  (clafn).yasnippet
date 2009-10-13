@@ -2,5 +2,6 @@
 # key: clafn
 # contributor: Translated from TextMate Snippet
 # name: class_from_name()
+## condition: "source.ruby"
 # --
 split("::").inject(Object) { |par, const| par.const_get(const) }

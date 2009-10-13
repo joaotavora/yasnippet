@@ -2,13 +2,11 @@
 # key: cla-
 # contributor: Translated from TextMate Snippet
 # name: class .. < DelegateClass .. initialize .. end
+## condition: "source.ruby"
 # --
-class ${1:${TM_FILENAME/(?:\A|_)([A-Za-z0-9]+)(?:\.rb)?/(?2::\u$1)/g}} < DelegateClass(${2:ParentClass})
-	def initialize${3/(^.*?\S.*)|.*/(?1:\()/}${3:args}${3/(^.*?\S.*)|.*/(?1:\))/}
-		super(${4:del_obj})
-		
-		$0
-	end
-	
-	
+class ${1:`(yas/ruby-infer-class-name)`} < DelegateClass(${2:ParentClass})
+  def initialize${3:$(if (string= yas/text "") "" "(")}${3:args}${3:$(if (string= yas/text "") "" ")")}
+    super(${4:del_obj})
+      $0
+  end
 end

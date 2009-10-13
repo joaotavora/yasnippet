@@ -2,5 +2,6 @@
 # key: inj
 # contributor: Translated from TextMate Snippet
 # name: inject(init) { |mem, var| .. }
+## condition: "source.ruby"
 # --
 inject${1/.+/(/}${1:init}${1/.+/)/} { |${2:mem}, ${3:var}| $0 }

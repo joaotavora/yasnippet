@@ -2,5 +2,6 @@
 # key: ste
 # contributor: Translated from TextMate Snippet
 # name: step(2) { |e| .. }
+## condition: "source.ruby"
 # --
-step(${1:2}) { ${2/(^(?<var>\s*(?:\*|\*?[a-z_])[a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:|)/}${2:n}${2/(^(?<var>\s*(?:\*|\*?[a-z_])[a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:| )/}$0 }
+step(${1:2}) { ${2:$(if (string= yas/text "") "" "|")}${2:n}${2:$(if (string= yas/text "") "" "|")} $0 }
