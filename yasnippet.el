@@ -707,17 +707,8 @@ With optional UNBIND-KEY, try to unbind that key from
               (not (string= yas/trigger-key "")))
     (define-key yas/minor-mode-map (read-kbd-macro yas/trigger-key) 'yas/expand)))
 
-
-;; (defvar yas/snippet-keymaps nil
-;;   "")
-;; (make-variable-buffer-local 'yas/snippet-keymaps)
-;; (defun yas/snippet-keymaps-reload ()
-;;   (setq yas/snippet-keymaps nil)
-;;   (mapc #'(lambda (table)
-;;             (push (cons t
-;;                         (yas/snippet-table-keymap table))
-;;                   yas/snippet-keymaps))
-;;         (yas/get-snippet-tables)))
+(defvar yas/snippet-tables (make-hash-table)
+  "A hash table of MAJOR-MODE symbols to `yas/snippet-table' objects.")
 
 (defvar yas/snippet-keymaps nil
   "Keymap alist supporting direct snippet keybindings.
@@ -729,6 +720,7 @@ calculated when loading snippets. TABLE-NAME is a variable
 set buffer-locally when entering `yas/minor-mode'. KEYMAP binds
 all defined direct keybindings to the command
 `yas/expand-from-keymap', which acts similarly to `yas/expand'")
+
 (defun yas/snippet-keymaps-reload ()
   (interactive)
   (setq yas/snippet-keymaps nil) 
@@ -879,9 +871,6 @@ Do this unless `yas/dont-activate' is t or the function
   expand-env
   file
   keybinding)
-
-(defvar yas/snippet-tables (make-hash-table)
-  "A hash table of MAJOR-MODE symbols to `yas/snippet-table' objects.")
 
 (defstruct (yas/snippet-table (:constructor yas/make-snippet-table (name)))
   "A table to store snippets for a particular mode.
@@ -1136,27 +1125,43 @@ a list of modes like this to help the judgement."
   (or (fboundp mode)
       (find mode yas/known-modes)))
 
-(defun yas/read-and-eval-string (string)
-  ;; TODO: This is a possible optimization point, the expression could
-  ;; be stored in cons format instead of string,
-  "Evaluate STRING and convert the result to string."
+(defun yas/eval-lisp (form)
+  "Evaluate FORM and convert the result to string."
   (let ((retval (catch 'yas/exception
                   (condition-case err
                       (save-excursion
                         (save-restriction
                           (save-match-data
                             (widen)
-                            (let ((result (eval (read string))))
+                            (let ((result (eval form)))
                               (when result
                                 (format "%s" result))))))
                     (error (if yas/good-grace
-                               "[yas] elisp error!"
+                               (format "[yas] elisp error! %s" (error-message-string err))
                              (error (format "[yas] elisp error: %s"
                                             (error-message-string err)))))))))
     (when (and (consp retval)
                (eq 'yas/exception (car retval)))
       (error (cdr retval)))
     retval))
+
+(defun yas/eval-lisp-no-saves (form)
+  (condition-case err
+      (eval form)
+    (error (if yas/good-grace
+               (format "[yas] elisp error! %s" (error-message-string err))
+             (error (format "[yas] elisp error: %s"
+                            (error-message-string err)))))))
+
+(defun yas/read-lisp (string &optional nil-on-error)
+  "Read STRING as a elisp expression and return it.
+
+In case STRING in an invalid expression and NIL-ON-ERROR is nil,
+return an expression that when evaluated will issue an error."
+  (condition-case err
+      (read string)
+    (error (and (not nil-on-error)
+                `(error (error-message-string err))))))
 
 (defvar yas/mode-symbol nil
   "If non-nil, lookup snippets using this instead of `major-mode'.")
@@ -1236,6 +1241,7 @@ Here's a list of currently recognized variables:
  * key
  * group
  * expand-env
+ * binding
 
 #name: #include \"...\"
 # --
@@ -1266,16 +1272,19 @@ Here's a list of currently recognized variables:
                    (setq name (match-string-no-properties 2)))
                  (when (string= "condition" (match-string-no-properties 1))
                    (setq condition (match-string-no-properties 2)))
+                 (when (string= "key" (match-string-no-properties 1))
+                   (setq key (match-string-no-properties 2)))
                  (when (string= "group" (match-string-no-properties 1))
                    (setq group (match-string-no-properties 2)))
                  (when (string= "expand-env" (match-string-no-properties 1))
-                   (setq expand-env (match-string-no-properties 2)))
-                 (when (string= "key" (match-string-no-properties 1))
-                   (setq key (match-string-no-properties 2)))
+                   (setq expand-env (yas/read-lisp (match-string-no-properties 2)
+                                                   'nil-on-error)))
                  (when (string= "binding" (match-string-no-properties 1))
                    (setq binding (match-string-no-properties 2)))))
       (setq template
             (buffer-substring-no-properties (point-min) (point-max))))
+    (when (aget expand-env 'yas/command)
+      (setq template (yas/read-lisp (concat "(progn" template ")"))))
     (list key template name condition group expand-env file binding)))
 
 (defun yas/calculate-group (file)
@@ -1449,9 +1458,9 @@ TEMPLATES is a list of `yas/template'."
 (defun yas/load-directory-1 (directory &optional parents no-hierarchy-parents making-groups-sym)
   "Recursively load snippet templates from DIRECTORY."
   ;; TODO: Rewrite this horrible, horrible monster I created
-  ;; TODO: Temp hack, load a setup.el file if its exists
-  (let ((file (concat directory "/" "setup.el")))
-    (when (file-exists-p file)
+  ;; TODO: Temp hack, load a .yas-setup.el file if its exists
+  (let ((file (concat directory "/" ".yas-setup.el")))
+    (when (file-readable-p file)
       (load file)))
   
   (unless (file-exists-p (concat directory "/" ".yas-skip"))
@@ -2426,7 +2435,7 @@ for this field, apply it. Otherwise, returned nil."
          (transformed (and transform
                            (save-excursion
                              (goto-char start-point)
-                             (yas/read-and-eval-string transform)))))
+                             (yas/eval-lisp transform)))))
     transformed))
 
 (defsubst yas/replace-all (from to &optional text)
@@ -2520,7 +2529,7 @@ delegate to `yas/next-field'."
              (text yas/text)
              (yas/modified-p (yas/field-modified-p active-field)))
         ;; primary field transform: exit call to field-transform
-        (yas/read-and-eval-string (yas/field-transform active-field))))
+        (yas/eval-lisp (yas/field-transform active-field))))
     ;; Now actually move...
     (cond ((>= target-pos (length live-fields))
            (yas/exit-snippet snippet))
@@ -2927,15 +2936,12 @@ will be deleted before inserting template."
   (when start
     (goto-char start))
 
-  ;; stacked expansion: shoosh the overlay modification hooks
   ;;
   (let ((to-delete (and start end (buffer-substring-no-properties start end)))
         (start (or start (point)))
         (end (or end (point)))
-        (inhibit-modification-hooks t)
         (column (current-column))
         snippet)
-
     ;; Delete the region to delete, this *does* get undo-recorded.
     ;;
     (when (and to-delete
@@ -2943,60 +2949,67 @@ will be deleted before inserting template."
       (delete-region start end)
       (setq yas/deleted-text to-delete))
 
-    ;; Narrow the region down to the template, shoosh the
-    ;; `buffer-undo-list', and create the snippet, the new snippet
-    ;; updates its mirrors once, so we are left with some plain text.
-    ;; The undo action for deleting this plain text will get recorded
-    ;; at the end of this function.
-    (save-restriction
-      (narrow-to-region start start)
-      (let ((buffer-undo-list t))
-        ;; snippet creation might evaluate users elisp, which
-        ;; might generate errors, so we have to be ready to catch
-        ;; them mostly to make the undo information
-        ;;
-        (setq yas/start-column (save-restriction (widen) (current-column)))
-        (insert template)
+    (cond ((listp template)
+           ;; x) This is a snippet-command
+           ;; 
+           (yas/eval-lisp-no-saves template))
+          (t
+           ;; x) This is a snippet-snippet :-)
+           ;;
+           ;;    Narrow the region down to the template, shoosh the
+           ;;    `buffer-undo-list', and create the snippet, the new
+           ;;    snippet updates its mirrors once, so we are left with
+           ;;    some plain text.  The undo action for deleting this
+           ;;    plain text will get recorded at the end.
+           ;;
+           ;;    stacked expansion: also shoosh the overlay modification hooks
+           (save-restriction
+             (narrow-to-region start start)
+             (let ((inhibit-modification-hooks t)
+                   (buffer-undo-list t))
+               ;; snippet creation might evaluate users elisp, which
+               ;; might generate errors, so we have to be ready to catch
+               ;; them mostly to make the undo information
+               ;;
+               (setq yas/start-column (save-restriction (widen) (current-column)))
+               (insert template)
 
-        (setq snippet
-              (if expand-env
-                  (let ((read-vars (condition-case err
-                                       (read expand-env)
-                                     (error nil))))
-                    (eval `(let ,read-vars
-                             (yas/snippet-create (point-min) (point-max)))))
-                (yas/snippet-create (point-min) (point-max))))))
+               (setq snippet
+                     (if expand-env
+                         (eval `(let ,expand-env
+                                  (yas/snippet-create (point-min) (point-max))))
+                       (yas/snippet-create (point-min) (point-max))))))
 
-    ;; stacked-expansion: This checks for stacked expansion, save the
-    ;; `yas/previous-active-field' and advance its boudary.
-    ;;
-    (let ((existing-field (and yas/active-field-overlay
-                               (overlay-buffer yas/active-field-overlay)
-                               (overlay-get yas/active-field-overlay 'yas/field))))
-      (when existing-field
-        (setf (yas/snippet-previous-active-field snippet) existing-field)
-        (yas/advance-end-maybe existing-field (overlay-end yas/active-field-overlay))))
+           ;; stacked-expansion: This checks for stacked expansion, save the
+           ;; `yas/previous-active-field' and advance its boudary.
+           ;;
+           (let ((existing-field (and yas/active-field-overlay
+                                      (overlay-buffer yas/active-field-overlay)
+                                      (overlay-get yas/active-field-overlay 'yas/field))))
+             (when existing-field
+               (setf (yas/snippet-previous-active-field snippet) existing-field)
+               (yas/advance-end-maybe existing-field (overlay-end yas/active-field-overlay))))
 
-    ;; Exit the snippet immediately if no fields
-    ;;
-    (unless (yas/snippet-fields snippet)
-      (yas/exit-snippet snippet))
+           ;; Exit the snippet immediately if no fields
+           ;;
+           (unless (yas/snippet-fields snippet)
+             (yas/exit-snippet snippet))
 
-    ;; Push two undo actions: the deletion of the inserted contents of
-    ;; the new snippet (without the "key") followed by an apply of
-    ;; `yas/take-care-of-redo' on the newly inserted snippet boundaries
-    ;;
-    (let ((start (overlay-start (yas/snippet-control-overlay snippet)))
-          (end (overlay-end (yas/snippet-control-overlay snippet))))
-      (push (cons start end) buffer-undo-list)
-      (push `(apply yas/take-care-of-redo ,start ,end ,snippet)
-            buffer-undo-list))
-    ;; Now, move to the first field
-    ;;
-    (let ((first-field (car (yas/snippet-fields snippet))))
-      (when first-field
-        (yas/move-to-field snippet first-field))))
-  (message "[yas] snippet expanded."))
+           ;; Push two undo actions: the deletion of the inserted contents of
+           ;; the new snippet (without the "key") followed by an apply of
+           ;; `yas/take-care-of-redo' on the newly inserted snippet boundaries
+           ;;
+           (let ((start (overlay-start (yas/snippet-control-overlay snippet)))
+                 (end (overlay-end (yas/snippet-control-overlay snippet))))
+             (push (cons start end) buffer-undo-list)
+             (push `(apply yas/take-care-of-redo ,start ,end ,snippet)
+                   buffer-undo-list))
+           ;; Now, move to the first field
+           ;;
+           (let ((first-field (car (yas/snippet-fields snippet))))
+             (when first-field
+               (yas/move-to-field snippet first-field)))))
+    (message "[yas] snippet expanded.")))
 
 (defun yas/take-care-of-redo (beg end snippet)
   "Commits SNIPPET, which in turn pushes an undo action for
@@ -3338,7 +3351,7 @@ With optional string TEXT do it in string instead of the buffer."
   "Replace all the \"`(lisp-expression)`\"-style expression
   with their evaluated value"
   (while (re-search-forward yas/backquote-lisp-expression-regexp nil t)
-    (let ((transformed (yas/read-and-eval-string (yas/restore-escapes (match-string 1)))))
+    (let ((transformed (yas/eval-lisp (yas/read-lisp (yas/restore-escapes (match-string 1))))))
       (goto-char (match-end 0))
       (when transformed (insert transformed))
       (delete-region (match-beginning 0) (match-end 0)))))
@@ -3417,7 +3430,8 @@ When multiple expressions are found, only the last one counts."
                                   yas/dollar-regions)))
             (let ((lisp-expression-string (buffer-substring-no-properties (match-beginning 1)
                                                                           real-match-end-1)))
-              (setf (yas/field-transform parent-field) (yas/restore-escapes lisp-expression-string)))
+              (setf (yas/field-transform parent-field)
+                    (yas/restore-escapes (yas/read-lisp lisp-expression-string))))
             (push (cons (match-beginning 0) real-match-end-1)
                   yas/dollar-regions)))))))
 
@@ -3433,9 +3447,9 @@ When multiple expressions are found, only the last one counts."
                  field)
         (push (yas/make-mirror (yas/make-marker (match-beginning 0))
                                (yas/make-marker (match-beginning 0))
-                               (yas/restore-escapes
-                                (buffer-substring-no-properties (match-beginning 2)
-                                                                (1- real-match-end-0))))
+                               (yas/read-lisp (yas/restore-escapes
+                                               (buffer-substring-no-properties (match-beginning 2)
+                                                                               (1- real-match-end-0)))))
               (yas/field-mirrors field))
         (push (cons (match-beginning 0) real-match-end-0) yas/dollar-regions)))))
 
