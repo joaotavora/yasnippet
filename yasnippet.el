@@ -1449,6 +1449,11 @@ TEMPLATES is a list of `yas/template'."
 (defun yas/load-directory-1 (directory &optional parents no-hierarchy-parents making-groups-sym)
   "Recursively load snippet templates from DIRECTORY."
   ;; TODO: Rewrite this horrible, horrible monster I created
+  ;; TODO: Temp hack, load a setup.el file if its exists
+  (let ((file (concat directory "/" "setup.el")))
+    (when (file-exists-p file)
+      (load file)))
+  
   (unless (file-exists-p (concat directory "/" ".yas-skip"))
     (let* ((major-mode-and-parents (unless making-groups-sym
                                      (yas/compute-major-mode-and-parents (concat directory "/dummy")

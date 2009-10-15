@@ -2,11 +2,16 @@
 # key: begin
 # contributor: Translated from TextMate Snippet
 # name: begin … rescue … end
-## binding: "^W"
-## condition: "source.ruby - comment"
+## binding: "C-c C-w"
+# condition: (not (yas/ruby-in-comment-p))
 # --
 begin
-  `(or yas/selected-text (car kill-ring))`$3
+  `(or yas/selected-text
+       (and cua-mode
+            (prog1
+               (get-register ?0)
+               (set-register ?0 nil)))
+       (car kill-ring))`$3
 rescue ${1:Exception}${2:$(if (string= yas/text "") "" " => ")}${2:e}
   $0
 end
