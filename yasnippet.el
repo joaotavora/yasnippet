@@ -1235,6 +1235,7 @@ line through the syntax:
 
 Here's a list of currently recognized variables:
 
+ * type
  * name
  * contributor
  * condition
@@ -1249,7 +1250,8 @@ Here's a list of currently recognized variables:
   ;;
   ;;
   (goto-char (point-min))
-  (let* ((name (and file
+  (let* ((type 'snippet)
+         (name (and file
                     (file-name-nondirectory file)))
          (key (unless yas/ignore-filenames-as-triggers
                 (and name
@@ -1268,12 +1270,16 @@ Here's a list of currently recognized variables:
                (setq bound (point))
                (goto-char (point-min))
                (while (re-search-forward "^# *\\([^ ]+?\\) *: *\\(.*\\)$" bound t)
+                 (when (string= "type" (match-string-no-properties 1))
+                   (setq type (if (string= "command" (match-string-no-properties 2))
+                                  'command
+                                'snippet)))
+                 (when (string= "key" (match-string-no-properties 1))
+                   (setq key (match-string-no-properties 2)))
                  (when (string= "name" (match-string-no-properties 1))
                    (setq name (match-string-no-properties 2)))
                  (when (string= "condition" (match-string-no-properties 1))
                    (setq condition (match-string-no-properties 2)))
-                 (when (string= "key" (match-string-no-properties 1))
-                   (setq key (match-string-no-properties 2)))
                  (when (string= "group" (match-string-no-properties 1))
                    (setq group (match-string-no-properties 2)))
                  (when (string= "expand-env" (match-string-no-properties 1))
@@ -1283,7 +1289,7 @@ Here's a list of currently recognized variables:
                    (setq binding (match-string-no-properties 2)))))
       (setq template
             (buffer-substring-no-properties (point-min) (point-max))))
-    (when (aget expand-env 'yas/command)
+    (when (eq type 'command)
       (setq template (yas/read-lisp (concat "(progn" template ")"))))
     (list key template name condition group expand-env file binding)))
 
