@@ -1,6 +1,8 @@
 # -*- mode: snippet -*-
+# type: command
 # contributor: Translated from TextMate Snippet
 # name: Strong
-# binding: "@b"
+# binding: "A-b"
+## condition: "text.html"
 # --
-${0:${TM_SELECTED_TEXT/\A<strong>(.*)<\/strong>\z|.*/(?1:$1:<strong>$0<\/strong>)/m}}
+(yas/html-wrap-selection-if-not-wrapped-already "strong")

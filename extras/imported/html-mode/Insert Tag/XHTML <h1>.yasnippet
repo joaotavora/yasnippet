@@ -2,5 +2,6 @@
 # key: h1
 # contributor: Translated from TextMate Snippet
 # name: Heading
+## condition: "text.html"
 # --
 <h1 id="${1/[[:alpha:]]+|( )/(?1:_:\L$0)/g}">${1:`yas/selected-text`}</h1>

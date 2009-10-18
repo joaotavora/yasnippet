@@ -1,6 +1,7 @@
 # -*- mode: snippet -*-
 # contributor: Translated from TextMate Snippet
 # name: Emphasize
-# binding: "@i"
+# binding: "A-i"
+## condition: "text.html"
 # --
-${0:${TM_SELECTED_TEXT/\A<em>(.*)<\/em>\z|.*/(?1:$1:<em>$0<\/em>)/m}}
+(yas/html-wrap-selection-if-not-wrapped-already "em")
