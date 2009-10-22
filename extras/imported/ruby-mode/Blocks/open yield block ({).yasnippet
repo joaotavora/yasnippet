@@ -1,7 +1,9 @@
 # -*- mode: snippet -*-
 # key: {
 # contributor: Translated from TextMate Snippet
+# assumes some sort of autopairing of the braces such as autopair.el or ruby electric
+# that would have added the closing brace.
 # name: Insert { |variable| … }
 ## condition: "source.ruby - string - comment"
 # --
-{ ${1/(^(?<var>\s*[a-z_][a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:|)/}${1:variable}${1/(^(?<var>\s*[a-z_][a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:| )/}${2:`yas/selected-text`} 
+{ ${1:$(if (string= yas/text "") "" "|")}${1:variable}${1:$(if (string= yas/text "") "" "|")}${2:`yas/selected-text`} 
