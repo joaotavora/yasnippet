@@ -1,7 +1,7 @@
 # -*- mode: snippet -*-
-# contributor: Translated from TextMate Snippet
+# contributor: joaotavora, adapted from TextMate HTML bundle
 # name: Wrap Selection in Open/Close Tag
-## binding: "^W"
-## condition: "text.html,"
+# binding: "C-S-w"
+# condition: mark-active
 # --
-<${1:p}>`yas/selected-text`</${1/\s.*//}>
+<${1:p}>`yas/selected-text`</${1:$(yas/html-first-word yas/text)}>

@@ -3294,7 +3294,8 @@ SNIPPET-MARKERS."
                                     (forward-line 1)))
                            (not (eobp))
                            (<= (point) end))
-                 (yas/indent-according-to-mode snippet-markers))))
+                 (yas/indent-according-to-mode snippet-markers))
+               (yas/indent-according-to-mode snippet-markers)))
             (t
              nil)))))
 
@@ -3584,44 +3585,47 @@ When multiple expressions are found, only the last one counts."
 (put 'yas/expand  'function-documentation '(yas/expand-from-trigger-key-doc))
 (defun yas/expand-from-trigger-key-doc ()
   "A doc synthethizer for `yas/expand-from-trigger-key-doc'."
-  (let ((which-means (cond ((eq yas/fallback-behavior 'call-other-command)
-                            (concat ", which means that if no snippets are eligible then this\nfalls back to "
-                                    (let* ((yas/minor-mode nil)
-                                           (fallback (key-binding (read-kbd-macro yas/trigger-key))))
-                                      (or (and fallback
-                                               (format "the command `%s'." (pp-to-string fallback)))
-                                          "nothing, in this case."))))
+  (let ((fallback-description (cond ((eq yas/fallback-behavior 'call-other-command)
+                                     (let* ((yas/minor-mode nil)
+                                            (fallback (key-binding (read-kbd-macro yas/trigger-key))))
+                                       (or (and fallback
+                                                (format " call command `%s'." (pp-to-string fallback)))
+                                           " do nothing.")))
                            ((eq yas/fallback-behavior 'return-nil)
-                            ", which means nothing is done if no snippets are eligible.")
+                            ", do nothing.")
                            (t
-                            ", which means I hope you know what you're doing :-)"))))
-    (concat "Expand a snippet before point.
-
-If no snippet expansion is possible, fall back to the behaviour
-defined in `yas/fallback-behavior' which in this case would be:\n\n"
-          (pp-to-string yas/fallback-behavior)
-          "\n\n"
-          which-means
-"\n\nOptional argument FIELD is for non-interactive use and is an
+                            ", defer to `yas/fallback-behaviour' :-)"))))
+    (concat "Expand a snippet before point. If no snippet
+expansion is possible,"
+            fallback-description
+            "\n\nOptional argument FIELD is for non-interactive use and is an
 object satisfying `yas/field-p' to restrict the expansion to.")))
 
 (put 'yas/expand-from-keymap  'function-documentation '(yas/expand-from-keymap-doc))
 (defun yas/expand-from-keymap-doc ()
   "A doc synthethizer for `yas/expand-from-keymap-doc'."
-  (concat "Expand some snippets from keymaps.\n\n"
+  (concat "Expand some snippets from keymaps.\n\nMay fall back to original binding."
           (when (eq this-command 'describe-key)
             (let* ((vec (this-single-command-keys))
                    (templates (mapcan #'(lambda (table)
                                           (yas/fetch table vec))
-                                      (yas/get-snippet-tables))))
-              (concat "In this particular case my guess it is would expand the snippets:\n\n"
-                      (mapconcat #'car templates "\n"))))
-          "\n\nIf no snippet expansion is possible then this falls back to \n"
-          (let* ((yas/minor-mode nil)
-                 (fallback (key-binding (read-kbd-macro yas/trigger-key))))
-            (or (and fallback
-                     (format "the command `%s'." (pp-to-string fallback)))
-                "nothing, in this case."))))
+                                      (yas/get-snippet-tables)))
+                   (yas/snippet-keymaps nil)
+                   (fallback (key-binding vec)))
+              (concat "In this particular case\nmy guess is it would "
+                      (when templates
+                        (concat "expand the snippets:\n"
+                                (yas/template-pretty-list templates)
+                                "\n\nIf no expansion possible, "))
+                      (or (and fallback
+                               (format "call command `%s'." (pp-to-string fallback)))
+                          "do nothing."))))))
+
+(defun yas/template-pretty-list (templates)
+  (let ((acc))
+    (dolist (plate templates)
+      (setq acc (concat acc "\n*) " (car plate))))
+    acc))
 
 
 ;;; Debug functions.  Use (or change) at will whenever needed.

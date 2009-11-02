@@ -1,48 +1,9 @@
 # -*- mode: snippet -*-
 # type: command
-# contributor: joaotavora, adapted from TextMate HTML bundle, work in progress
+# contributor: joaotavora, adapted from TextMate HTML bundle
 # name: Insert Open/Close Tag (With Current Word)
+# expand-env: ((yas/wrap-around-region t))
 # binding: "^<"
 ## condition: "text.html,"
 # --
-(let* ((tag yas/selected-text) 
-       (single-no-arg "\\(br\\|hr\\)")
-       (single        "\\(img\\|meta\\|link\\|input\\|base\\|area\\|col\\|frame\\|param\\)"))
-  (cond ((string-match single-no-arg yas/selected-text))))
-# This script will expand the current word into: &lt;word&gt;&lt;/word&gt;
-# It will recognize HTML 4.0 tags that need no close tag.
-#
-# With no current word, it will insert: &lt;p&gt;&lt;/p&gt; and allows you
-# to overwrite the tag name and add potential arguments.
-#
-# The result is inserted as a snippet, so it's
-# possible to tab through the place holders.
-
-# single tags
-single_no_arg = /^(?:br|hr)$/i
-single        = /^(?:img|meta|link|input|base|area|col|frame|param)$/i
-
-# we are not in HTML mode, so let's scrap the above hardcoded tag lists
-unless ENV.has_key? 'TM_HTML_EMPTY_TAGS' then
-  single_no_arg = /(?=not)possible/
-  single        = /(?=not)possible/
-end
-
-# handle the case where caret is in the middle of a word, assume only the left part is the tag
-index = ENV['TM_LINE_INDEX'].to_i - ENV['TM_INPUT_START_LINE_INDEX'].to_i
-tag, suffix = STDIN.read, ''
-if index &lt; tag.length &amp;&amp; !ENV['TM_SELECTED_TEXT']
-  tag, suffix = tag[0...index], tag[index..-1]
-end
-
-xhtml = ENV['TM_XHTML'].to_s
-
-print case tag
-  when single_no_arg then "&lt;#{tag}#{xhtml}&gt;"
-  when single then        "&lt;#{tag} $1#{xhtml}&gt;"
-  when '' then            "&lt;${1:#{ENV['TM_DEFAULT_TAG'] || 'p'}}&gt;$2&lt;/${1/\\s.*//}&gt;"
-  else                    "&lt;#{tag}&gt;$1&lt;/#{tag.strip[/^\S+/]}&gt;"
-end
-
-print suffix
-
+(yas/html-insert-tag-pair-snippet)
