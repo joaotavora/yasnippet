@@ -9,7 +9,7 @@ require "optparse"
 options = {${1::default => "args"}}
 
 ARGV.options do |opts|
-	opts.banner = "Usage:  #{File.basename(\$PROGRAM_NAME)} [OPTIONS]${2/^\s*$|(.*\S.*)/(?1: )/}${2:OTHER_ARGS}"
+	opts.banner = "Usage:  #{File.basename(\$PROGRAM_NAME)} [OPTIONS]${2:$(if (string= yas/text "") "" " ")}${2:OTHER_ARGS}"
 	
 	opts.separator ""
 	opts.separator "Specific Options:"
