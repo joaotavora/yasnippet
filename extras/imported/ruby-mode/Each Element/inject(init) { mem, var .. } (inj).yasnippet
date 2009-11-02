@@ -4,4 +4,4 @@
 # name: inject(init) { |mem, var| .. }
 ## condition: "source.ruby"
 # --
-inject${1/.+/(/}${1:init}${1/.+/)/} { |${2:mem}, ${3:var}| $0 }
+inject${1:$(if (string= yas/text "") "" "(")}${1:init}${1:$(if (string= yas/text "") "" ")")} { |${2:mem}, ${3:var}| $0 }
