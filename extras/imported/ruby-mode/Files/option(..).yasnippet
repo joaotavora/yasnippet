@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# key: opt
+# contributor: Translated from TextMate Snippet
+# name: option(..)
+## condition: "source.ruby"
+# --
+opts.on( "-${1:o}", "--${2:long-option-name}"${3:$(if (string= yas/text "") "" ", ")}${3:String},
+         "${4:Option description.}" ) do |${6:opt}|
+	$0
+end
