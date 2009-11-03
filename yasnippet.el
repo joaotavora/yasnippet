@@ -764,7 +764,12 @@ Key bindings:
          ;; Install the direct keymaps in `emulation-mode-map-alists'
          ;; (we use `add-hook' even though it's not technically a hook,
          ;; but it works). Then define variables named after modes to
-         ;; index `yas/snippet-keymaps'. 
+         ;; index `yas/snippet-keymaps'.
+         ;;
+         ;; FIXME: this is quite wrong and breaks cua-mode for
+         ;; example. It is either `yas/snippet-keymaps' that needs to
+         ;; have a buffer-local value, or those little indicator vars
+         ;; need to be set and unset buffer-locally (preferred).
          ;; 
          (add-hook 'emulation-mode-map-alists 'yas/snippet-keymaps nil 'local)
          (let ((modes-to-activate (list major-mode))
@@ -1776,7 +1781,11 @@ not need to be a real mode."
         ;;
         (when keybinding
           (condition-case err
-              (setq keybinding (read-kbd-macro (read (eighth snippet)) 'need-vector))
+              (let ((keybinding-string (or (and (string-match "\".*\"" (eighth snippet))
+                                                 (read (eighth snippet)))
+                                            ;; "KEY-DESC" with quotes is deprecated..., but supported
+                                            (eighth snippet))))
+                (setq keybinding (read-kbd-macro keybinding-string 'need-vector)))
             (error
              (message "[yas] warning: keybinding \"%s\" invalid for snippet \"%s\" since %s."
                       keybinding name (error-message-string err))
@@ -1831,8 +1840,9 @@ not need to be a real mode."
               `(menu-item ,(yas/template-name template)
                           ,(yas/make-menu-binding template)
                           :help ,name
-                          :keys ,(when (and key name)
-                                   (concat key yas/trigger-symbol))))))))))
+                          :keys ,(or (and key name
+                                          (concat key yas/trigger-symbol))
+                                     (and keybinding (key-description keybinding)))))))))))
 
 (defun yas/show-menu-p (mode)
   (cond ((eq yas/use-menu 'abbreviate)
@@ -2216,6 +2226,9 @@ there, otherwise, proposes to create the first option returned by
   (let* ((file-dir (and file
                         (directory-file-name (or (locate-dominating-file file ".yas-make-groups")
                                                  (directory-file-name (file-name-directory file))))))
+         (extra-parents-file-name (concat file-dir "/.yas-parents"))
+         (no-hierarchy-parents (or no-hierarchy-parents
+                                   (file-readable-p extra-parents-file-name)))
          (major-mode-name (and file-dir
                                (file-name-nondirectory file-dir)))
          (parent-file-dir (and file-dir
@@ -2230,7 +2243,6 @@ there, otherwise, proposes to create the first option returned by
                                 "[yas] Cannot auto-detect major mode! Enter a major mode: "))))
          (parent-mode-sym (and parent-mode-name
                                (intern parent-mode-name)))
-         (extra-parents-file-name (concat file-dir "/.yas-parents"))
          (more-parents (when (file-readable-p extra-parents-file-name)
                          (mapcar #'intern
                                  (split-string
@@ -2250,7 +2262,9 @@ With optional prefix argument KILL quit the window and buffer."
   (if buffer-file-name
       (let ((major-mode-and-parent (yas/compute-major-mode-and-parents buffer-file-name)))
         (if major-mode-and-parent
-            (let* ((parsed (yas/parse-template buffer-file-name))
+            (let* ((yas/ignore-filenames-as-triggers (or yas/ignore-filenames-as-triggers
+                                                         (locate-dominating-file buffer-file-name ".yas-ignore-filenames-as-triggers")))
+                   (parsed (yas/parse-template buffer-file-name))
                    (name (and parsed
                               (third parsed))))
               (when name
@@ -2259,7 +2273,7 @@ With optional prefix argument KILL quit the window and buffer."
                                        (list parsed)
                                        (cdr major-mode-and-parent)))
                 (when (and (buffer-modified-p)
-                           (y-or-n-p "Save snippet? "))
+                           (y-or-n-p "Also save snippet buffer? "))
                   (save-buffer))
                 (if kill
                     (quit-window kill)
@@ -3294,8 +3308,7 @@ SNIPPET-MARKERS."
                                     (forward-line 1)))
                            (not (eobp))
                            (<= (point) end))
-                 (yas/indent-according-to-mode snippet-markers))
-               (yas/indent-according-to-mode snippet-markers)))
+                 (yas/indent-according-to-mode snippet-markers))))
             (t
              nil)))))
 
