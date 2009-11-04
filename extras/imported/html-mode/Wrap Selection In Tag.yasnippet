@@ -1,7 +1,8 @@
 # -*- mode: snippet -*-
 # contributor: joaotavora, adapted from TextMate HTML bundle
 # name: Wrap Selection in Open/Close Tag
-# binding: "C-S-w"
+# binding: C-S-w
 # condition: mark-active
+# expand-env: ((yas/html-wrap-newline (when (string-match "\n" yas/selected-text) "\n")))
 # --
-<${1:p}>`yas/selected-text`</${1:$(yas/html-first-word yas/text)}>
+<${1:p}>`(concat yas/html-wrap-newline yas/selected-text yas/html-wrap-newline)`</${1:$(yas/html-first-word yas/text)}>

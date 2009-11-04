@@ -17,7 +17,7 @@
       (setq word-begin (point))
       (forward-word 1)
       (setq word-end (point)))
-    (when (and (> word-end word-begin)
+    (when (and (< word-begin orig-point)
                (>= word-end (point)))
       (setq retval
             (cons
@@ -57,11 +57,18 @@
 
 (defun yas/html-wrap-each-line-in-openclose-tag ()
   (let* ((mirror "${1:$(yas/html-first-word yas/text)}")
+         (yas/html-wrap-newline (when (string-match "\n" yas/selected-text) "\n"))
          (template (concat (format "<${1:%s}>" (or yas/html-default-tag "p"))
                            yas/selected-text
                            "</" mirror ">")))
-    (setq template (replace-regexp-in-string "\n" (concat "</" mirror ">\n<" mirror ">") template))
+    (setq template (replace-regexp-in-string "\n" (concat "</" mirror ">\n<$1>") template))
     (yas/expand-snippet template)))
+
+(defun yas/html-wrap-selection-if-not-wrapped-already (wrapping)
+  (if (string-match (format "<%s>.*</%s>" wrapping wrapping) yas/selected-text)
+      (insert yas/selected-text)
+    (insert (format "<%s>%s</%s>" wrapping yas/selected-text wrapping))))
+
 
 (defun yas/html-between-tag-pair-p ()
   (save-excursion

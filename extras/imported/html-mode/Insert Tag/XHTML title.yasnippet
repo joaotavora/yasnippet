@@ -4,4 +4,6 @@
 # name: Title
 ## condition: "text.html - text.blog"
 # --
-<title>${1:${TM_FILENAME/((.+)\..*)?/(?2:$2:Page Title)/}}</title>
+<title>${1:`(or (and buffer-file-name
+                             (file-name-sans-extension (file-name-nondirectory buffer-file-name)))
+                        "Page Title")`}</title>

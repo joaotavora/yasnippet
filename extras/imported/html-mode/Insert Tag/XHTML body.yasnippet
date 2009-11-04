@@ -4,6 +4,8 @@
 # name: Body
 ## condition: "text.html"
 # --
-<body id="${1:${TM_FILENAME/(.*)\..*/\L$1/}}"${2: onload="$3"}>
+<body id="${1:`(or (and buffer-file-name
+                        (downcase (file-name-sans-extension (file-name-nondirectory buffer-file-name))))
+                   "some_id")`}"${2: onload="$3"}>
 	$0
 </body>

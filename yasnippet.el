@@ -710,7 +710,7 @@ With optional UNBIND-KEY, try to unbind that key from
 (defvar yas/snippet-tables (make-hash-table)
   "A hash table of MAJOR-MODE symbols to `yas/snippet-table' objects.")
 
-(defvar yas/snippet-keymaps nil
+(defvar yas/direct-keymaps (list)
   "Keymap alist supporting direct snippet keybindings.
 
 This variable is is placed `emulation-mode-map-alists'.
@@ -721,16 +721,27 @@ set buffer-locally when entering `yas/minor-mode'. KEYMAP binds
 all defined direct keybindings to the command
 `yas/expand-from-keymap', which acts similarly to `yas/expand'")
 
-(defun yas/snippet-keymaps-reload ()
+(defun yas/direct-keymaps-reload ()
+  "Force reload the direct keybinding for active snippet tables."
   (interactive)
-  (setq yas/snippet-keymaps nil) 
+  (setq yas/direct-keymaps nil) 
   (maphash #'(lambda (name table)
                (mapc #'(lambda (table)
-                         (push (cons name
-                                     (yas/snippet-table-keymap table))
-                               yas/snippet-keymaps))
+                         (push (cons (intern (format "yas//direct-%s" name))
+                                     (yas/snippet-table-direct-keymap table))
+                               yas/direct-keymaps))
                      (cons table (yas/snippet-table-get-all-parents table))))
            yas/snippet-tables))
+
+(defun yas/direct-keymaps-set-vars ()
+  (let ((modes-to-activate (list major-mode))
+        (mode major-mode))
+    (while (setq mode (get mode 'derived-mode-parent))
+      (push mode modes-to-activate))
+    (dolist (mode modes-to-activate)
+      (let ((name (intern (format "yas//direct-%s" mode))))
+        (set-default name nil)
+        (set (make-local-variable name) t)))))
 
 ;;;###autoload
 (define-minor-mode yas/minor-mode
@@ -764,26 +775,19 @@ Key bindings:
          ;; Install the direct keymaps in `emulation-mode-map-alists'
          ;; (we use `add-hook' even though it's not technically a hook,
          ;; but it works). Then define variables named after modes to
-         ;; index `yas/snippet-keymaps'.
+         ;; index `yas/direct-keymaps'.
          ;;
          ;; FIXME: this is quite wrong and breaks cua-mode for
-         ;; example. It is either `yas/snippet-keymaps' that needs to
+         ;; example. It is either `yas/direct-keymaps' that needs to
          ;; have a buffer-local value, or those little indicator vars
          ;; need to be set and unset buffer-locally (preferred).
          ;; 
-         (add-hook 'emulation-mode-map-alists 'yas/snippet-keymaps nil 'local)
-         (let ((modes-to-activate (list major-mode))
-               (mode major-mode))
-           (while (setq mode (get mode 'derived-mode-parent))
-             (push mode modes-to-activate))
-           (dolist (mode modes-to-activate)
-             (unless (and (boundp mode)
-                          (symbol-value mode))
-               (set (make-local-variable mode) t)))))
+         (add-hook 'emulation-mode-map-alists 'yas/direct-keymaps)
+         (yas/direct-keymaps-set-vars))
         (t
          ;; Uninstall the direct keymaps.
          ;; 
-         (remove-hook 'emulation-mode-map-alists 'yas/snippet-keymaps 'local))))
+         (remove-hook 'emulation-mode-map-alists 'yas/direct-keymaps))))
 
 (defvar yas/dont-activate #'(lambda ()
                               (and yas/root-directory
@@ -892,7 +896,7 @@ Has the following fields:
 
   A hash table, known as the \"keyhash\" where key is a string or
   a vector. In case of a string its the snippet trigger key,
-  whereas a vector means its a direct keybinding. The value is
+  whereas a vector means it's a direct keybinding. The value is
   yet another hash of (NAME . TEMPLATE), known as the
   \"namehash\", where NAME is the snippet name and TEMPLATE is a
   `yas/template' object.
@@ -902,7 +906,7 @@ Has the following fields:
   A list of tables considered parents of this table: i.e. when
   searching for expansions they are searched as well.
 
-`yas/snippet-keymap'
+`yas/snippet-table-direct-keymap'
 
   A keymap for the snippets in this table that have direct
   keybindings. This is kept in sync with the keyhash, i.e., all
@@ -912,7 +916,7 @@ Has the following fields:
   name
   (hash (make-hash-table :test 'equal))
   (parents nil)
-  (keymap (make-sparse-keymap)))
+  (direct-keymap (make-sparse-keymap)))
 
 ;; Apropos storing/updating, this is works with two steps:
 ;;
@@ -968,7 +972,7 @@ Has the following fields:
       (when (= 0 (hash-table-count (cdr elem)))
         (remhash (car elem) (yas/snippet-table-hash table))
         (when (vectorp (car elem))
-          (define-key (yas/snippet-table-keymap table) (car elem) nil))))))
+          (define-key (yas/snippet-table-direct-keymap table) (car elem) nil))))))
 
 (defun yas/add-snippet (table name key template)
   "Store in TABLE the snippet NAME indexed by KEY and expanding TEMPLATE.
@@ -987,7 +991,7 @@ keybinding)."
                           (make-hash-table :test 'equal)
                           (yas/snippet-table-hash table))))
     (when (vectorp key)
-      (define-key (yas/snippet-table-keymap table) key 'yas/expand-from-keymap)))) 
+      (define-key (yas/snippet-table-direct-keymap table) key 'yas/expand-from-keymap)))) 
 
 (defun yas/fetch (table key)
   "Fetch snippets in TABLE by KEY. "
@@ -1053,13 +1057,7 @@ conditions to filter out potential expansions."
   (let* ((requirement (or requirement
                           (yas/require-template-specific-condition-p)))
          (result (or (null condition)
-                     (yas/eval-condition
-                      (condition-case err
-                          (read condition)
-                        (error (progn
-                                 (message (format "[yas] error reading condition: %s"
-                                                  (error-message-string err))))
-                               nil))))))
+                     (yas/eval-condition condition))))
     (cond ((eq requirement t)
            result)
           (t
@@ -1182,7 +1180,9 @@ already have such a property."
                         yas/snippet-tables)))
     (unless table
       (setq table (yas/make-snippet-table (symbol-name mode)))
-      (puthash mode table yas/snippet-tables))
+      (puthash mode table yas/snippet-tables)
+      (aput 'yas/direct-keymaps (intern (format "yas//direct-%s" mode))
+            (yas/snippet-table-direct-keymap table)))
     table))
 
 (defun yas/get-snippet-tables (&optional mode-symbol dont-search-parents)
@@ -1284,7 +1284,7 @@ Here's a list of currently recognized variables:
                  (when (string= "name" (match-string-no-properties 1))
                    (setq name (match-string-no-properties 2)))
                  (when (string= "condition" (match-string-no-properties 1))
-                   (setq condition (match-string-no-properties 2)))
+                   (setq condition (yas/read-lisp (match-string-no-properties 2))))
                  (when (string= "group" (match-string-no-properties 1))
                    (setq group (match-string-no-properties 2)))
                  (when (string= "expand-env" (match-string-no-properties 1))
@@ -1556,7 +1556,7 @@ content of the file is the template."
       (call-interactively 'yas/load-directory))
     ;; Reload the direct keybindings
     ;;
-    (yas/snippet-keymaps-reload)
+    (yas/direct-keymaps-reload)
     ;; Restore the mode configuration
     ;;
     (when restore-minor-mode
@@ -1669,7 +1669,12 @@ Here's the default value for all the parameters:
                 (insert "\n\n"))))
         (dolist (dir dirs)
           (dolist (subdir (yas/subdirs dir))
-            (yas/load-directory-1 subdir nil 'no-hierarchy-parents))))
+            (yas/load-directory-1 subdir nil 'no-hierarchy-parents)
+            (let ((file (concat subdir "/.yas-setup.el")))
+              (when (file-readable-p file)
+                (insert ";; Supporting elisp for subdir " (file-name-nondirectory subdir) "\n\n")
+                (goto-char (+ (point)
+                              (second (insert-file-contents file)))))))))
 
       (insert (pp-to-string `(yas/global-mode 1)))
       (insert ")\n\n" code "\n")
@@ -1930,7 +1935,7 @@ object satisfying `yas/field-p' to restrict the expansion to."
       (yas/fallback 'trigger-key))))
 
 (defun yas/expand-from-keymap ()
-  "Directly expand some snippets, searching `yas/snippet-keymaps'.
+  "Directly expand some snippets, searching `yas/direct-keymaps'.
 
 If expansion fails, execute the previous binding for this key"
   (interactive)
@@ -1968,7 +1973,7 @@ Common gateway for `yas/expand-from-trigger-key' and
          nil)
         ((eq yas/fallback-behavior 'call-other-command)
          (let* ((yas/minor-mode nil)
-                (yas/snippet-keymaps nil)
+                (yas/direct-keymaps nil)
                 (keys-1 (this-command-keys-vector))
                 (keys-2 (and yas/trigger-key
                              from-trigger-key-p
@@ -2172,7 +2177,7 @@ lurking."
 # -*- mode: snippet -*-
 # name: %s
 # key: $1${2:
-# binding: \"${3:keybinding}\"}${4:
+# binding: \"${3:direct-keybinding}\"}${4:
 # expand-env: ((${5:some-var} ${6:some-value}))}
 # --
 $0" name))))
@@ -2372,6 +2377,12 @@ Otherwise throw exception."
                      (yas/snippet-find-field snippet number))))
     (when field
       (yas/field-text-for-display field))))
+
+(defun yas/get-field-once (number &optional transform-fn)
+  (unless yas/modified-p
+    (if transform-fn
+        (funcall transform-fn yas/field-value number)
+      (yas/field-value number))))
 
 (defun yas/default-from-field (number)
   (unless yas/modified-p
@@ -3451,7 +3462,7 @@ When multiple expressions are found, only the last one counts."
             (let ((lisp-expression-string (buffer-substring-no-properties (match-beginning 1)
                                                                           real-match-end-1)))
               (setf (yas/field-transform parent-field)
-                    (yas/restore-escapes (yas/read-lisp lisp-expression-string))))
+                    (yas/read-lisp (yas/restore-escapes lisp-expression-string))))
             (push (cons (match-beginning 0) real-match-end-1)
                   yas/dollar-regions)))))))
 
@@ -3623,7 +3634,7 @@ object satisfying `yas/field-p' to restrict the expansion to.")))
                    (templates (mapcan #'(lambda (table)
                                           (yas/fetch table vec))
                                       (yas/get-snippet-tables)))
-                   (yas/snippet-keymaps nil)
+                   (yas/direct-keymaps nil)
                    (fallback (key-binding vec)))
               (concat "In this particular case\nmy guess is it would "
                       (when templates

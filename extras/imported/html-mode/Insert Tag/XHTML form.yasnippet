@@ -4,8 +4,11 @@
 # name: Form
 ## condition: "text.html"
 # --
-<form action="${1:${TM_FILENAME/(.*?)\..*/$1_submit/}}" method="${2:get}" accept-charset="utf-8">
+<form action="${1:`(or (and buffer-file-name
+                            (concat (file-name-sans-extension (file-name-nondirectory buffer-file-name))
+                                    "_submit"))
+                   "some_action")`}" method="${2:get}" accept-charset="utf-8">
 	$0
 
-	<p><input type="submit" value="Continue &rarr;"${TM_XHTML}></p>
+	<p><input type="submit" value="Continue &rarr;"`yas/html-xhtml-attr`></p>
 </form>

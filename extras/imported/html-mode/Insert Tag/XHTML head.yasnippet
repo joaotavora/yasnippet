@@ -5,7 +5,9 @@
 ## condition: "text.html - text.html source"
 # --
 <head>
-	<meta http-equiv="Content-type" content="text/html; charset=utf-8"${TM_XHTML}>
-	<title>${1:${TM_FILENAME/((.+)\..*)?/(?2:$2:Page Title)/}}</title>
+	<meta http-equiv="Content-type" content="text/html; charset=utf-8"`yas/html-xhtml-attr`>
+	<title>${1:`(or (and buffer-file-name
+                             (file-name-sans-extension (file-name-nondirectory buffer-file-name)))
+                        "Page Title")`}</title>
 	$0
 </head>

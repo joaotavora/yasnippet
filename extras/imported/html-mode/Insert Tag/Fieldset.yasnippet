@@ -4,7 +4,7 @@
 # name: Fieldset
 ## condition: "text.html"
 # --
-<fieldset id="${1/[[:alpha:]]+|( )/(?1:_:\L$0)/g}" ${2:class="${3:}"}>
+<fieldset id="${1:$(yas/html-id-from-string yas/text)}" ${2:class="$3"}>
 	<legend>${1:`yas/selected-text`}</legend>
 	
 	$0

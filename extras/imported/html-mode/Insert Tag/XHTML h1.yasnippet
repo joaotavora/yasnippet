@@ -4,4 +4,4 @@
 # name: Heading
 ## condition: "text.html"
 # --
-<h1 id="${1/[[:alpha:]]+|( )/(?1:_:\L$0)/g}">${1:`yas/selected-text`}</h1>
+<h1 id="${1:$(yas/html-id-from-string yas/text)}">${1:`yas/selected-text`}</h1>

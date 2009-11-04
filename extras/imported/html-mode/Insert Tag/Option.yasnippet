@@ -4,4 +4,4 @@
 # name: Option
 ## condition: "text.html"
 # --
-<option${1: value="${2:option}"}>${3:$2}</option>
+<option${1: value="${2:option}"}>${3:option$(unless yas/modified-p (yas/field-value 2))}</option>
