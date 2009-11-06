@@ -154,13 +154,26 @@ class TmSnippet
       doc << "# condition: \"#{self.scope}\"\n"
     end
     doc << "# --\n"
-    @@known_substitutions.each {|level| level.each_pair { |k, v| self.content.gsub!(k,v) }}
-    doc << "#{self.content}"
+    if self.content
+      @@known_substitutions.each {|level| level.each_pair { |k, v| self.content.gsub!(k,v) }} 
+      doc << "#{self.content}"
+    end
+    doc
+  end
+
+  def canonicalize(filename)
+    invalid_char = /[^ a-z_0-9.+=~(){}'"'"'`&#,-]/i
+
+    filename.
+      gsub(invalid_char, '').  # remove invalid characters
+      gsub(/ {2,}/,' ').       # squeeze repeated spaces into a single one
+      rstrip                   # remove trailing whitespaces
   end
 
   def yasnippet_file(basedir)
-    basedir = File.join(basedir,group) if group
-    File.join(basedir,@file).gsub(/#{File.extname(@file)}$/,".yasnippet")
+    # files cannot end with dots (followed by spaces) on windows
+    basedir = File.join(basedir,group.gsub(/[.]+ *$/,'')) if group
+    File.join(basedir,canonicalize(@file[0, @file.length-File.extname(@file).length]) + ".yasnippet")
   end
 
 end
