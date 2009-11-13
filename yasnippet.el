@@ -3030,9 +3030,18 @@ will be deleted before inserting template."
            ;; the new snippet (without the "key") followed by an apply of
            ;; `yas/take-care-of-redo' on the newly inserted snippet boundaries
            ;;
-           (let ((start (overlay-start (yas/snippet-control-overlay snippet)))
+           ;; A small exception, if `yas/also-auto-indent-first-line'
+           ;; is t and `yas/indent' decides to indent the line to a
+           ;; point before the actual expansion point, undo would be
+           ;; messed up. We call the early point "newstart"".  case,
+           ;; and attempt to fix undo.
+           ;;
+           (let ((newstart (overlay-start (yas/snippet-control-overlay snippet)))
                  (end (overlay-end (yas/snippet-control-overlay snippet))))
-             (push (cons start end) buffer-undo-list)
+             (when (< newstart start)
+               
+               (push (cons (make-string (- start newstart) ? ) newstart) buffer-undo-list))
+             (push (cons newstart end) buffer-undo-list)
              (push `(apply yas/take-care-of-redo ,start ,end ,snippet)
                    buffer-undo-list))
            ;; Now, move to the first field
