@@ -3039,7 +3039,6 @@ will be deleted before inserting template."
            (let ((newstart (overlay-start (yas/snippet-control-overlay snippet)))
                  (end (overlay-end (yas/snippet-control-overlay snippet))))
              (when (< newstart start)
-               
                (push (cons (make-string (- start newstart) ? ) newstart) buffer-undo-list))
              (push (cons newstart end) buffer-undo-list)
              (push `(apply yas/take-care-of-redo ,start ,end ,snippet)
