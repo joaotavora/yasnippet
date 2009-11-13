@@ -10,21 +10,25 @@
   (interactive)
   (let (word-begin
         word-end
+        (line-beginning-position (line-beginning-position))
         (orig-point (point))
         retval)
     (save-excursion
-      (forward-word -1)
-      (setq word-begin (point))
-      (forward-word 1)
-      (setq word-end (point)))
-    (when (and (< word-begin orig-point)
-               (>= word-end (point)))
+      (when (and (forward-word -1)
+                 (setq word-begin (point))
+                 (forward-word 1)
+                 (setq word-end (point))
+                 (< word-begin orig-point)
+                 (>= word-end orig-point)
+                 (<= (line-beginning-position) word-begin)
+                 ;; (not (string-match "^[\s\t]+$" "          "))
+                 )
       (setq retval
             (cons
              (buffer-substring-no-properties word-begin orig-point)
              (buffer-substring-no-properties word-end orig-point)))
       (delete-region word-begin word-end)
-      retval)))
+      retval))))
 
 
 (defun yas/html-first-word (string)
@@ -75,4 +79,5 @@
     (backward-word)
     (looking-at "\\\w+></\\\w+>")))
 
-
+(defun yas/html-id-from-string (string)
+  (replace-regexp-in-string " " "_" (downcase string)))
