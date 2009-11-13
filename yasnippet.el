@@ -2381,7 +2381,7 @@ Otherwise throw exception."
 (defun yas/get-field-once (number &optional transform-fn)
   (unless yas/modified-p
     (if transform-fn
-        (funcall transform-fn yas/field-value number)
+        (funcall transform-fn (yas/field-value number))
       (yas/field-value number))))
 
 (defun yas/default-from-field (number)
@@ -3157,6 +3157,14 @@ Returns the newly created snippet."
         (t
          (yas/exit-next fom))))
 
+(defun yas/fom-parent-field (fom)
+  (cond ((yas/field-p fom)
+         (yas/field-parent-field fom))
+        ((yas/mirror-p fom)
+         (yas/mirror-parent-field fom))
+        (t
+         nil)))
+
 (defun yas/calculate-adjacencies (snippet)
   "Calculate adjacencies for fields or mirrors of SNIPPET.
 
@@ -3199,9 +3207,9 @@ If it does, also:
   (when (and fom (< (yas/fom-end fom) newend))
     (set-marker (yas/fom-end fom) newend)
     (yas/advance-start-maybe (yas/fom-next fom) newend)
-    (if (and (yas/field-p fom)
-             (yas/field-parent-field fom))
-        (yas/advance-end-maybe (yas/field-parent-field fom) newend))))
+    (let ((parent (yas/fom-parent-field fom)))
+      (when parent
+        (yas/advance-end-maybe parent newend)))))
 
 (defun yas/advance-start-maybe (fom newstart)
   "Maybe advance FOM's start to NEWSTART if it needs it.
@@ -3717,12 +3725,13 @@ object satisfying `yas/field-p' to restrict the expansion to.")))
                        (yas/exit-marker (yas/snippet-exit snippet))
                        (yas/exit-next (yas/snippet-exit snippet)))))
       (dolist (field (yas/snippet-fields snippet))
-        (princ (format "\tfield: %d from %s to %s covering \"%s\" next: %s\n"
+        (princ (format "\tfield: %d from %s to %s covering \"%s\" next: %s%s\n"
                        (yas/field-number field)
                        (marker-position (yas/field-start field))
                        (marker-position (yas/field-end field))
                        (buffer-substring-no-properties (yas/field-start field) (yas/field-end field))
-                       (yas/debug-format-fom-concise (yas/field-next field))))
+                       (yas/debug-format-fom-concise (yas/field-next field))
+                       (if (yas/field-parent-field field) "(has a parent)" "")))
         (dolist (mirror (yas/field-mirrors field))
           (princ (format "\t\tmirror: from %s to %s covering \"%s\" next: %s\n"
                          (marker-position (yas/mirror-start mirror))
