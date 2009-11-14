@@ -2444,6 +2444,7 @@ Otherwise throw exception."
   "A mirror."
   start end
   (transform nil)
+  parent-field
   next)
 
 (defstruct (yas/exit (:constructor yas/make-exit (marker)))
@@ -3178,7 +3179,7 @@ has to be called before the $-constructs are deleted."
                                      (t
                                       (setf (yas/exit-next fom) nextfom))))
          (yas/compare-fom-begs (fom1 fom2)
-                               (> (yas/fom-start fom2) (yas/fom-start fom1)))
+                               (>= (yas/fom-start fom2) (yas/fom-start fom1)))
          (yas/link-foms (fom1 fom2)
                         (yas/fom-set-next-fom fom1 fom2)))
     ;; make some yas/field, yas/mirror and yas/exit soup
@@ -3194,6 +3195,23 @@ has to be called before the $-constructs are deleted."
                   #'yas/compare-fom-begs))
       (when soup
         (reduce #'yas/link-foms soup)))))
+
+(defun yas/calculate-mirror-parent-fields (snippet mirror)
+  "Attempt to assign a parent field of SNIPPET to the mirror MIRROR.
+
+Use the tighest containing field if more than one field contains
+the mirror. Intended to be called *before* the dollar-regions are
+deleted."
+  (let ((min (point-min))
+        (max (point-max)))
+    (dolist (field (yas/snippet-fields snippet))
+      (when (and (<= (yas/field-start field) (yas/mirror-start mirror))
+                 (<= (yas/mirror-end mirror) (yas/field-end field))
+               (< min (yas/field-start field))
+               (< (yas/field-end field) max))
+          (setq min (yas/field-start field)
+                max (yas/field-end field))
+          (setf (yas/mirror-parent-field mirror) field)))))
 
 (defun yas/advance-end-maybe (fom newend)
   "Maybe advance FOM's end to NEWEND if it needs it.
@@ -3218,6 +3236,12 @@ If it does, also call `yas/advance-end-maybe' on FOM."
   (when (and fom (< (yas/fom-start fom) newstart))
     (set-marker (yas/fom-start fom) newstart)
     (yas/advance-end-maybe fom newstart)))
+
+(defun yas/advance-end-of-parents-maybe (field newend)
+  (when (and field
+             (< (yas/field-end field) newend))
+    (set-marker (yas/field-end field) newend)
+    (yas/advance-end-of-parents-maybe (yas/field-parent-field field) newend)))
 
 (defvar yas/dollar-regions nil
   "When expanding the snippet the \"parse-create\" functions add
@@ -3468,13 +3492,21 @@ When multiple expressions are found, only the last one counts."
     (save-excursion
       (while (re-search-forward yas/multi-dollar-lisp-expression-regexp nil t)
         (let* ((real-match-end-1 (yas/scan-sexps (match-beginning 1) 1)))
-          ;; commit the primary field transformation if we don't find
-          ;; it in yas/dollar-regions (a subnested field) might have
-          ;; already caught it.
+          ;; commit the primary field transformation if:
+          ;;
+          ;; 1. we don't find it in yas/dollar-regions (a subnested
+          ;; field) might have already caught it.
+          ;;
+          ;; 2. we really make sure we have either two '$' or some
+          ;; text and a '$' after the colon ':'. This is a FIXME: work
+          ;; my regular expressions and end these ugly hacks.
+          ;; 
           (when (and real-match-end-1
                      (not (member (cons (match-beginning 0)
                                         real-match-end-1)
-                                  yas/dollar-regions)))
+                                  yas/dollar-regions))
+                     (not (eq ?:
+                              (char-before (1- (match-beginning 1))))))
             (let ((lisp-expression-string (buffer-substring-no-properties (match-beginning 1)
                                                                           real-match-end-1)))
               (setf (yas/field-transform parent-field)
@@ -3489,15 +3521,20 @@ When multiple expressions are found, only the last one counts."
            (number (string-to-number (match-string-no-properties 1)))
            (field (and number
                        (not (zerop number))
-                       (yas/snippet-find-field snippet number))))
-      (when (and real-match-end-0
-                 field)
-        (push (yas/make-mirror (yas/make-marker (match-beginning 0))
-                               (yas/make-marker (match-beginning 0))
-                               (yas/read-lisp (yas/restore-escapes
-                                               (buffer-substring-no-properties (match-beginning 2)
-                                                                               (1- real-match-end-0)))))
+                       (yas/snippet-find-field snippet number)))
+           (brand-new-mirror
+            (and real-match-end-0
+                 field
+                 (yas/make-mirror (yas/make-marker (match-beginning 0))
+                                  (yas/make-marker (match-beginning 0))
+                                  (yas/read-lisp
+                                   (yas/restore-escapes
+                                    (buffer-substring-no-properties (match-beginning 2)
+                                                                    (1- real-match-end-0))))))))
+      (when brand-new-mirror
+        (push brand-new-mirror 
               (yas/field-mirrors field))
+        (yas/calculate-mirror-parent-fields snippet brand-new-mirror)
         (push (cons (match-beginning 0) real-match-end-0) yas/dollar-regions)))))
 
 (defun yas/simple-mirror-parse-create (snippet)
@@ -3523,10 +3560,13 @@ When multiple expressions are found, only the last one counts."
             (t
              (let ((field (yas/snippet-find-field snippet number)))
                (if field
-                   (push (yas/make-mirror (yas/make-marker (match-beginning 0))
-                                          (yas/make-marker (match-beginning 0))
-                                          nil)
-                         (yas/field-mirrors field))
+                   (let ((brand-new-mirror (yas/make-mirror
+                                            (yas/make-marker (match-beginning 0))
+                                            (yas/make-marker (match-beginning 0))
+                                            nil)))
+                     (push brand-new-mirror 
+                           (yas/field-mirrors field))
+                     (yas/calculate-mirror-parent-fields snippet brand-new-mirror))
                  (push (yas/make-field number
                                        (yas/make-marker (match-beginning 0))
                                        (yas/make-marker (match-beginning 0))
@@ -3563,8 +3603,12 @@ When multiple expressions are found, only the last one counts."
 
 (defun yas/mirror-update-display (mirror field)
   "Update MIRROR according to FIELD (and mirror transform)."
-  (let ((reflection (or (yas/apply-transform mirror field)
-                        (yas/field-text-for-display field))))
+
+  (let* ((mirror-parent-field (yas/mirror-parent-field mirror))
+         (reflection (and (not (and mirror-parent-field
+                                    (yas/field-modified-p mirror-parent-field)))
+                          (or (yas/apply-transform mirror field)
+                              (yas/field-text-for-display field)))))
     (when (and reflection
                (not (string= reflection (buffer-substring-no-properties (yas/mirror-start mirror)
                                                                         (yas/mirror-end mirror)))))
@@ -3573,7 +3617,9 @@ When multiple expressions are found, only the last one counts."
       (if (> (yas/mirror-end mirror) (point))
           (delete-region (point) (yas/mirror-end mirror))
         (set-marker (yas/mirror-end mirror) (point))
-        (yas/advance-start-maybe (yas/mirror-next mirror) (point))))))
+        (yas/advance-start-maybe (yas/mirror-next mirror) (point))
+        ;; super-special advance
+        (yas/advance-end-of-parents-maybe mirror-parent-field (point))))))
 
 (defun yas/field-update-display (field snippet)
   "Much like `yas/mirror-update-display', but for fields"
