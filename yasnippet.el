@@ -2810,8 +2810,23 @@ Otherwise deletes a character normally by calling `delete-char'."
 
 (defun yas/skip-and-clear (field)
   "Deletes the region of FIELD and sets it modified state to t"
-  (setf (yas/field-modified-p field) t)
+  ;; Just before skipping-and-clearing the field, mark its children
+  ;; fields as modified, too. If the childen have mirrors-in-fields
+  ;; this prevents them from updating erroneously (we're skipping and
+  ;; deleting!).
+  ;; 
+  (yas/mark-this-and-children-modified field)
   (delete-region (yas/field-start field) (yas/field-end field)))
+
+(defun yas/mark-this-and-children-modified (field)
+  (setf (yas/field-modified-p field) t)
+  (let ((fom (yas/field-next field)))
+    (while (and fom
+                (yas/fom-parent-field fom))
+      (when (and (eq (yas/fom-parent-field fom) field)
+                 (yas/field-p fom))
+        (yas/mark-this-and-children-modified fom))
+      (setq fom (yas/fom-next fom)))))
 
 (defun yas/make-move-active-field-overlay (snippet field)
   "Place the active field overlay in SNIPPET's FIELD.
@@ -3196,7 +3211,7 @@ has to be called before the $-constructs are deleted."
       (when soup
         (reduce #'yas/link-foms soup)))))
 
-(defun yas/calculate-mirror-parent-fields (snippet mirror)
+(defun yas/calculate-mirrors-in-fields (snippet mirror)
   "Attempt to assign a parent field of SNIPPET to the mirror MIRROR.
 
 Use the tighest containing field if more than one field contains
@@ -3238,6 +3253,7 @@ If it does, also call `yas/advance-end-maybe' on FOM."
     (yas/advance-end-maybe fom newstart)))
 
 (defun yas/advance-end-of-parents-maybe (field newend)
+  "Like `yas/advance-end-maybe' but for parents."
   (when (and field
              (< (yas/field-end field) newend))
     (set-marker (yas/field-end field) newend)
@@ -3534,7 +3550,7 @@ When multiple expressions are found, only the last one counts."
       (when brand-new-mirror
         (push brand-new-mirror 
               (yas/field-mirrors field))
-        (yas/calculate-mirror-parent-fields snippet brand-new-mirror)
+        (yas/calculate-mirrors-in-fields snippet brand-new-mirror)
         (push (cons (match-beginning 0) real-match-end-0) yas/dollar-regions)))))
 
 (defun yas/simple-mirror-parse-create (snippet)
@@ -3566,7 +3582,7 @@ When multiple expressions are found, only the last one counts."
                                             nil)))
                      (push brand-new-mirror 
                            (yas/field-mirrors field))
-                     (yas/calculate-mirror-parent-fields snippet brand-new-mirror))
+                     (yas/calculate-mirrors-in-fields snippet brand-new-mirror))
                  (push (yas/make-field number
                                        (yas/make-marker (match-beginning 0))
                                        (yas/make-marker (match-beginning 0))
@@ -3586,20 +3602,32 @@ When multiple expressions are found, only the last one counts."
 (defun yas/update-mirrors (snippet)
   "Updates all the mirrors of SNIPPET."
   (save-excursion
-    (dolist (field (yas/snippet-fields snippet))
-      (dolist (mirror (yas/field-mirrors field))
-        ;; stacked expansion: I added an `inhibit-modification-hooks'
-        ;; here, for safety, may need to remove if we the mechanism is
-        ;; altered.
-        ;;
-        (let ((inhibit-modification-hooks t))
-          (yas/mirror-update-display mirror field)
-          ;; `yas/place-overlays' is needed if the active field and
-          ;; protected overlays have been changed because of insertions
-          ;; in `yas/mirror-update-display'
+    (let* ((fields (copy-list (yas/snippet-fields snippet)))
+           (field (car fields)))
+      (while field
+        (dolist (mirror (yas/field-mirrors field))
+          ;; stacked expansion: I added an `inhibit-modification-hooks'
+          ;; here, for safety, may need to remove if we the mechanism is
+          ;; altered.
           ;;
-          (when (eq field (yas/snippet-active-field snippet))
-            (yas/place-overlays snippet field)))))))
+          (let ((inhibit-modification-hooks t)
+                (mirror-parent-field (yas/mirror-parent-field mirror)))
+            ;; updatte this mirror
+            ;; 
+            (yas/mirror-update-display mirror field)
+            ;; for mirrors-in-fields: schedule a possible
+            ;; parent field for reupdting later on
+            ;; 
+            (when mirror-parent-field
+              (add-to-list 'fields mirror-parent-field 'append #'eq))
+            ;; `yas/place-overlays' is needed if the active field and
+            ;; protected overlays have been changed because of insertions
+            ;; in `yas/mirror-update-display'
+            ;;
+            (when (eq field (yas/snippet-active-field snippet))
+              (yas/place-overlays snippet field))))
+        (setq fields (cdr fields))
+        (setq field (car fields))))))
 
 (defun yas/mirror-update-display (mirror field)
   "Update MIRROR according to FIELD (and mirror transform)."
