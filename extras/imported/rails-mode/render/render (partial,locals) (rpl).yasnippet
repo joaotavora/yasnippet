@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# key: rpl
+# contributor: Translated from TextMate Snippet
+# name: render (partial, locals)
+## condition: "source.ruby.rails"
+# --
+render :partial => "${1:item}", :locals => { :${2:$1} => ${3:@$1}$0 }

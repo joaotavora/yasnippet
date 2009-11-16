@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# key: verify
+# contributor: Translated from TextMate Snippet
+# name: verify — render
+## condition: "source.ruby.rails"
+# --
+verify :only => [:$1], :method => :post, :render => {:status => 500, :text => "use HTTP-POST"}

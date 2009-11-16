@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# key: vcif
+# contributor: Translated from TextMate Snippet
+# name: validates_confirmation_of if
+## condition: "source.ruby.rails"
+# --
+validates_confirmation_of :${1:attribute}${2:, :on => :${3:create}, :message => "${4:should match confirmation}", :if => proc { |obj| ${5:obj.condition?} }}

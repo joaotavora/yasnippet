@@ -1,0 +1,12 @@
+# -*- mode: snippet -*-
+# key: deftp
+# contributor: Translated from TextMate Snippet
+# name: def test_should_post_action
+## condition: "meta.rails.functional_test"
+# --
+def test_should_post_${1:action}
+	${3:@$2 = ${4:$2s}(:${5:fixture_name})
+	}post :${1}${6:, :id => @$2.to_param}, :${2:model} => { $0 }
+	assert_response :redirect
+
+end

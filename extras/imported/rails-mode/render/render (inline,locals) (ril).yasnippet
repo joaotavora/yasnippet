@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# key: ril
+# contributor: Translated from TextMate Snippet
+# name: render (inline, locals)
+## condition: "source.ruby.rails"
+# --
+render :inline => "${1:<%= 'hello' %>}", :locals => { ${2::name} => "${3:value}"$4 }

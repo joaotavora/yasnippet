@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# key: returning
+# contributor: Translated from TextMate Snippet
+# name: returning do |variable| … end
+## condition: "source.ruby.rails"
+# --
+returning ${1:variable} do${2:$(if (string= "" yas/text) "" " |")}${2:v}${2:$(if (string= "" yas/text) "" "|")}
+	$0
+end

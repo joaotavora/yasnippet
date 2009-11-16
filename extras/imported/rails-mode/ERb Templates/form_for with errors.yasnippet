@@ -1,0 +1,11 @@
+# -*- mode: snippet -*-
+# key: ffe
+# contributor: Translated from TextMate Snippet
+# name: form_for with errors
+## condition: "text.html.ruby, text.haml"
+# --
+<%= error_messages_for :${1:model} %>
+
+<% form_for @${2:$1} do |f| -%>
+  $0
+end

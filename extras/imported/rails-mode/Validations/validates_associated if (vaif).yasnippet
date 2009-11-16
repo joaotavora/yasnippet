@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# key: vaif
+# contributor: Translated from TextMate Snippet
+# name: validates_associated if
+## condition: "source.ruby.rails"
+# --
+validates_associated :${1:attribute}${2:, :on => :${3:create}, :if => proc { |obj| ${5:obj.condition?} }}

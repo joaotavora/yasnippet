@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# key: mapca
+# contributor: Translated from TextMate Snippet
+# name: map.catch_all
+## condition: "meta.rails.routes"
+# --
+${1:map}.catch_all "*${2:anything}", :controller => "${3:default}", :action => "${4:error}"

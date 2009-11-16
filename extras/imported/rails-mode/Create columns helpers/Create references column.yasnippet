@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# key: tcr
+# contributor: Translated from TextMate Snippet
+# name: Table column(s) references
+## condition: "meta.rails.migration.create_table, meta.rails.migration.change_table"
+# --
+t.references :${1:taggable}${2:, :polymorphic => ${3:{ :default => '${4:Photo}' \}}}
+$0

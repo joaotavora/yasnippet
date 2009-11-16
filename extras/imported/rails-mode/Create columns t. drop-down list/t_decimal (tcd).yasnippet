@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# key: t.
+# contributor: Translated from TextMate Snippet
+# name: t.decimal (tcd)
+## condition: "meta.rails.migration.create_table, meta.rails.migration.change_table"
+# --
+t.decimal :${1:title}${2:${3:, :precision => ${4:10}}${5:, :scale => ${6:2}}}
+t.$0

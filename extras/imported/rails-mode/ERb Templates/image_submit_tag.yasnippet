@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# key: ist
+# contributor: Translated from TextMate Snippet
+# name: image_submit_tag
+## condition: "text.html.ruby, text.haml"
+# --
+<%= image_submit_tag("${1:agree.png}"${2:${3:, :id => "${4:${1:$(file-name-sans-extension yas/text)}}"}${5:, :name => "${6:${1:$(file-name-sans-extension yas/text)}}"}${7:, :class => "${8:${1:$(file-name-sans-extension yas/text)}-button}"}${9:, :disabled => ${10:false}}}) %>

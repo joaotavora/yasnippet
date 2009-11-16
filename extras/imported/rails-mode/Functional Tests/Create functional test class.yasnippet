@@ -1,0 +1,11 @@
+# -*- mode: snippet -*-
+# key: cla
+# contributor: Translated from TextMate Snippet
+# name: Create functional test class
+## condition: "source.ruby"
+# --
+require File.dirname(__FILE__) + '/../test_helper'
+
+class ${1:Model}ControllerTest < ActionController::TestCase
+	deft$0
+end

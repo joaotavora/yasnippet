@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# key: ffl
+# contributor: Translated from TextMate Snippet
+# name: form_for label
+## condition: "text.html.ruby, text.haml"
+# --
+<%= f.label :${1:attribute}${2:, "${3:${1:$(capitalize (replace-regexp-in-string "_" " " yas/text))}}"} %>

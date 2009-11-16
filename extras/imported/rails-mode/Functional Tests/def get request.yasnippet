@@ -1,0 +1,12 @@
+# -*- mode: snippet -*-
+# key: deftg
+# contributor: Translated from TextMate Snippet
+# name: def test_should_get_action
+## condition: "meta.rails.functional_test"
+# --
+def test_should_get_${1:action}
+	${2:@${3:model} = ${4:$3s}(:${5:fixture_name})
+	}get :${1}${6:, :id => @$3.to_param}
+	assert_response :success
+	$0
+end

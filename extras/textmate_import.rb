@@ -142,6 +142,7 @@ class TmSnippet
 
   def to_yasnippet
     doc = "# -*- mode: snippet -*-\n"
+    doc << "# type: command\n" unless self.content
     doc << "# key: #{self.tab_trigger}\n" if self.tab_trigger
     doc << "# contributor: Translated from TextMate Snippet\n"
     doc << "# name: #{self.name}\n"

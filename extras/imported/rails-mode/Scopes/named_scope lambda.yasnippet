@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# key: ncl
+# contributor: Translated from TextMate Snippet
+# name: named_scope lambda
+## condition: "source.ruby.rails"
+# --
+named_scope :name, lambda { |${1:param}| { :conditions => ${3:['${4:${5:field} = ?}', ${6:$1}]} } }

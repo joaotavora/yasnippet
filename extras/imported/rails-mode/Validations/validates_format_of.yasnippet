@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# key: vf
+# contributor: Translated from TextMate Snippet
+# name: validates_format_of
+## condition: "source.ruby.rails"
+# --
+validates_format_of :${1:attribute}, :with => /${2:^[${3:\w\d}]+\$}/${4:, :on => :${5:create}, :message => "${6:is invalid}"}

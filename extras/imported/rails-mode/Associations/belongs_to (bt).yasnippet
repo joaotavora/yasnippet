@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# key: bt
+# contributor: Translated from TextMate Snippet
+# name: belongs_to
+## condition: "source.ruby.rails"
+# --
+belongs_to :${1:object}${2:, :class_name => "${3:${1:$(replace-regexp-in-string "_" "" (capitalize yas/text))}}", :foreign_key => "${4:$1_id}"}

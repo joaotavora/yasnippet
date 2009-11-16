@@ -1,0 +1,12 @@
+# -*- mode: snippet -*-
+# contributor: Translated from TextMate Snippet
+# name: respond_to (html)
+## binding: "@H"
+## condition: "meta.rails.controller"
+# --
+respond_to do |wants|
+	wants.html do
+		`yas/selected-text`
+	end
+	wants.${1:js} { $0 }
+end

@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# key: ft
+# contributor: Translated from TextMate Snippet
+# name: form_tag
+## condition: "text.html.ruby, text.haml"
+# --
+<% form_tag(${1::action => "${5:update}"}${6:, {:${8:class} => "${9:form}"\}}) do %>
+  $0
+end

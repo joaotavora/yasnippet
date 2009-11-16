@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# key: tre
+# contributor: Translated from TextMate Snippet
+# name: Table column(s) rename
+## condition: "meta.rails.migration.create_table, meta.rails.migration.change_table"
+# --
+t.rename(:${1:old_column_name}, :${2:new_column_name})
+$0
