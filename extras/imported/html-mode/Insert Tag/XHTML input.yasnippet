@@ -3,4 +3,4 @@
 # name: Input
 ## condition: "text.html"
 # --
-<input type="${1:$$(yas/choose-value '("text" "submit" "hidden" "button"))}" name="${2:some_name}" value="$3"${4: id="${5:$$(yas/get-field-once 2)}"}`yas/html-xhtml-attr`>
+<input type="${1:$$(yas/choose-value '("text" "submit" "hidden" "button"))}" name="${2:some_name}" value="$3"${4: id="${5:$2}"}`yas/html-xhtml-attr`>
