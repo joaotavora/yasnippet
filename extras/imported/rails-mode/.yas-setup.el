@@ -48,4 +48,50 @@
   (and (yas/rails-root)
        (string-match "db/migrate/" default-directory)))
 
+(defvar yas/rails-intelligent-migration-snippet-bits
+      '((:rename_column . ((:up   . "rename_column :${1:table_name}, :${2:column_name}, :${3:new_column_name}$0")
+                           (:down . "rename_column :$1, :$3, :$2" )))
 
+        (:rename_column_continue . ((:up   . "rename_column :${1:table_name}, :${2:column_name}, :${3:new_column_name}\nmncc$0")
+                                    (:down . "rename_column :$1, :$3, :$2" )))
+
+        (:rename_table . ((:up   . "rename_table :${1:old_table_name}, :${2:new_table_name}$0")
+                          (:down . "rename_table :$2, :$1" )))
+
+        (:rename_table_continue . ((:up   . "rename_table :${1:old_table_name}, :${2:new_table_name}\nmntc$0")
+                                   (:down . "rename_table :$2, :$1" )))
+
+        (:add_remove_column . ((:up   . "add_column :${1:table_name}, :${2:column_name}, :${3:string}$0")
+                               (:down . "remove_column :$1, :$2" )))
+
+        (:add_remove_column_continue . ((:up   . "add_column :${1:table_name}, :${2:column_name}, :${3:string}\nmarcc$0")
+                                        (:down . "remove_column :$1, :$2" )))
+
+        (:create_drop_table . ((:up   . "create_table :${1:table_name}, :force . true do |t|\nt.$0\nt.timestamps\nend")
+                               (:down . "drop_table :$1" )))
+
+        (:change_change_table . ((:up   . "change_table :${1:table_name} do |t|\nt.$0\nend")
+                                 (:down . "change_table :$1 do |t|\nend" )))
+
+        (:add_remove_index . ((:up   . "add_index :${1:table_name}, :${2:column_name}$0")
+                              (:down . "remove_index :$1, :$2" )))
+
+        (:add_remove_unique_index . ((:up   . "add_index :${1:table_name}, ${2:[:${3:column_name}${4:, :${5:column_name}}]}, :unique . true$0")
+                                     (:down . "remove_index :$1, :column . $2" )))
+
+        (:add_remove_named_index . ((:up   . "add_index :${1:table_name}, [:${2:column_name}${3:, :${4:column_name}}], :name . \"${5:index_name}\"${6:, :unique . true}$0")
+                                    (:down . "remove_index :$1, :name . :$5" )))))
+
+
+(defun yas/rails-intelligent-migration-snippet (type)
+  (let* ((start  (point))
+         (end (save-excursion
+                (search-forward-regexp "^\s*def\sself\.down" nil 'noerror)))
+         (up (aget (aget yas/rails-intelligent-migration-snippet-bits type) :up))
+         (down (aget (aget yas/rails-intelligent-migration-snippet-bits type) :down))
+         (snippet
+          (and up down start end (concat up
+                                         (buffer-substring-no-properties start end)
+                                         "\n" down))))
+    (delete-region start end)
+    (yas/expand-snippet snippet)))

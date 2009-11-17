@@ -49,7 +49,7 @@ Choice.options do
     short '-f'
     long '--file=SNIPPET FILE NAME'
     desc 'A specific snippet that you want to copy or a glob for various files'
-    default '*.{tmSnippet,plist}'
+    default '*.{tmSnippet,plist,tmMacro}'
   end
 
   option :print_pretty do
