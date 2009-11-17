@@ -3194,7 +3194,9 @@ has to be called before the $-constructs are deleted."
                                      (t
                                       (setf (yas/exit-next fom) nextfom))))
          (yas/compare-fom-begs (fom1 fom2)
-                               (>= (yas/fom-start fom2) (yas/fom-start fom1)))
+                               (if (= (yas/fom-start fom2) (yas/fom-start fom1))
+                                   (yas/mirror-p fom2)
+                                 (>= (yas/fom-start fom2) (yas/fom-start fom1))))
          (yas/link-foms (fom1 fom2)
                         (yas/fom-set-next-fom fom1 fom2)))
     ;; make some yas/field, yas/mirror and yas/exit soup
