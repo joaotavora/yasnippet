@@ -2,7 +2,7 @@
 # key: t.
 # contributor: Translated from TextMate Snippet
 # name: t.rename (tre)
-## condition: "meta.rails.migration.create_table, meta.rails.migration.change_table"
+# condition: (and (yas/rails-migration-p) (yas/rails-in-create-table))
 # --
 t.rename(:${1:old_column_name}, :${2:new_column_name})
 t.$0

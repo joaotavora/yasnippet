@@ -2,7 +2,7 @@
 # key: t.
 # contributor: Translated from TextMate Snippet
 # name: t.references (tcr)
-## condition: "meta.rails.migration.create_table, meta.rails.migration.change_table"
+# condition: (and (yas/rails-migration-p) (yas/rails-in-create-table-p))
 # --
 t.references :${1:taggable}${2:, :polymorphic => ${3:{ :default => '${4:Photo}' \}}}
 t.$0

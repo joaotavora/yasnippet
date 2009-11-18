@@ -1,8 +1,8 @@
 (defvar yas/rails-root-cache nil)
 (make-local-variable 'yas/rails-root-cache)
 
-;; copied from rinari-mode's rinari-root
-(defun yas/rails-root (&optional dir home)
+;; stolen from rinari-mode's rinari-root
+(defun yas/rails-root (&optional dir)
   (or yas/rails-root-cache
       (or dir (setq dir default-directory))
       (if (file-exists-p (expand-file-name
@@ -13,7 +13,7 @@
           (unless (string-match "\\(^[[:alpha:]]:/$\\|^/[^\/]+:\\|^/$\\)" dir)
             (rinari-root new-dir))))))
 
-;; copied from rinari-mode's rinari-extract-partial
+;; stolen from rinari-mode's rinari-extract-partial
 (defun yas/rails-extract-partial (begin end partial-name)
   (interactive "r\nsName your partial: ")
   (let* ((path (buffer-file-name)) ending)
@@ -31,23 +31,9 @@
 	  (yank) (pop-to-buffer nil)
 	  (insert (concat "<%= render :partial => '" partial-name "' %>\n")))
       (message "not in a view"))))
-
-(defun yas/rails-model-p ()
-  (and (yas/rails-root)
-       (string-match "app/models/$" default-directory)))
-
-(defun yas/rails-view-p ()
-  (and (yas/rails-root)
-       (string-match "app/views/" default-directory)))
-
-(defun yas/rails-controller-p ()
-  (and (yas/rails-root)
-       (string-match "app/controllers/$" default-directory)))
-
-(defun yas/rails-migration-p ()
-  (and (yas/rails-root)
-       (string-match "db/migrate/" default-directory)))
-
+;;;
+;;; The TextMate "intelligent" migration snippet
+;;
 (defvar yas/rails-intelligent-migration-snippet-bits
       '((:rename_column . ((:up   . "rename_column :${1:table_name}, :${2:column_name}, :${3:new_column_name}$0")
                            (:down . "rename_column :$1, :$3, :$2" )))
@@ -63,9 +49,12 @@
 
         (:add_remove_column . ((:up   . "add_column :${1:table_name}, :${2:column_name}, :${3:string}$0")
                                (:down . "remove_column :$1, :$2" )))
-
+        
         (:add_remove_column_continue . ((:up   . "add_column :${1:table_name}, :${2:column_name}, :${3:string}\nmarcc$0")
                                         (:down . "remove_column :$1, :$2" )))
+        
+        (:remove_add_column . ((:up   . "remove_column :${1:table_name}, :${2:column_name}$0")
+                               (:down . "add_column :$1, :$2, :$3{string}" )))
 
         (:create_drop_table . ((:up   . "create_table :${1:table_name}, :force . true do |t|\nt.$0\nt.timestamps\nend")
                                (:down . "drop_table :$1" )))
@@ -93,5 +82,63 @@
           (and up down start end (concat up
                                          (buffer-substring-no-properties start end)
                                          "\n" down))))
-    (delete-region start end)
-    (yas/expand-snippet snippet)))
+    (when snippet
+      (delete-region start end)
+      (yas/expand-snippet snippet))))
+
+(yas/define-condition-cache
+  yas/rails-intelligent-migration-snippet-condition-p
+  "Non-nil if an \"intelligent\" migration snippet should be expanded"
+  (and (yas/rails-migration-p)
+       (not (yas/rails-in-create-table-p))
+       (not (yas/rails-in-change-table-p))
+       (yas/rails-in-ruby-block-like "self\.up")))
+
+(defun yas/rails-in-ruby-block-like (regexp)
+  (save-excursion
+    (ruby-accurate-end-of-block)
+    (ruby-backward-sexp)
+    (search-forward-regexp regexp (line-end-position) t)))
+
+;;; conditions
+(yas/define-condition-cache
+ yas/rails-in-create-table-p
+ "Non-nil if point is inside a 'create_table' method call."
+ (yas/rails-in-ruby-block-like "create_table"))
+
+(yas/define-condition-cache
+ yas/rails-in-change-table-p
+ "Non-nil if point is inside a 'change_table' method call."
+ (yas/rails-in-ruby-block-like "change_table"))
+
+(yas/define-condition-cache
+ yas/rails-model-p
+ "Non-nil if the current buffer is a rails model."
+ (and (yas/rails-root)
+      (string-match "app/models/$" default-directory)))
+
+(yas/define-condition-cache
+ yas/rails-view-p
+ "Non-nil if the current buffer is a rails view."
+ (and (yas/rails-root)
+      (string-match "app/views/" default-directory)))
+
+(yas/define-condition-cache
+ yas/rails-controller-p
+"Non-nil if the current buffer is a rails controller." 
+ (and (yas/rails-root)
+      (string-match "app/controllers/$" default-directory)))
+
+(yas/define-condition-cache
+ yas/rails-migration-p
+ "Non-nil if the current buffer is a rails migration."
+ (and (yas/rails-root)
+      (string-match "db/migrate/" default-directory)))
+
+
+(defadvice cd (after yas/rails-on-cd-activate)
+  "Active/Deactive rinari-merb-minor-node when changing into and out
+of raills project directories."
+  (setq yas/rails-root-cache nil)
+  (when (yas/rails-root)
+    (setq (make-local-variable 'yas/mode-symbol) 'rails-mode))) 

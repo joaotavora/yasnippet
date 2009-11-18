@@ -2,7 +2,7 @@
 # key: t.
 # contributor: Translated from TextMate Snippet
 # name: t.binary (tcbi)
-## condition: "meta.rails.migration.create_table, meta.rails.migration.change_table"
+# condition: (and (yas/rails-migration-p) (yas/rails-in-create-table-p))
 # --
 t.binary :${1:title}${2:, :limit => ${3:2}.megabytes}
 t.$0

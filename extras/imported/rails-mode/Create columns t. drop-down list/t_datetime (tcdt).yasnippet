@@ -2,7 +2,7 @@
 # key: t.
 # contributor: Translated from TextMate Snippet
 # name: t.datetime (tcdt)
-## condition: "meta.rails.migration.create_table, meta.rails.migration.change_table"
+# condition: (and (yas/rails-migration-p) (yas/rails-in-create-table-p))
 # --
 t.datetime :${1:title}
 t.$0
