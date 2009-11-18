@@ -1914,8 +1914,29 @@ will only be expanded when the condition evaluated to non-nil."
     (undo 1)
     nil))
 
-(defalias 'yas/expand 'yas/expand-from-trigger-key)
 
+;;; Apropos condition-cache:
+;;;
+;;;
+;;;
+;;;
+(defvar yas/condition-cache-timestamp nil)
+(defmacro yas/define-condition-cache (func doc &rest body)
+  `(defun ,func () ,(when doc
+                      (concat doc
+"\n\nFor use in snippets' conditions. Within each
+snippet-expansion routine like `yas/expand', computes actual
+value for the first time then always returns a cached value."))
+     (let ((timestamp-and-value (get ',func 'yas/condition-cache)))
+       (if (equal (car timestamp-and-value) yas/condition-cache-timestamp)
+           (cdr timestamp-and-value)
+         (let ((new-value (progn
+                            ,@body
+                            )))
+           (put ',func 'yas/condition-cache (cons yas/condition-cache-timestamp new-value))
+           new-value)))))
+
+(defalias 'yas/expand 'yas/expand-from-trigger-key)
 (defun yas/expand-from-trigger-key (&optional field)
   "Expand a snippet before point.
 
@@ -1925,6 +1946,7 @@ defined in `yas/fallback-behavior'.
 Optional argument FIELD is for non-interactive use and is an
 object satisfying `yas/field-p' to restrict the expansion to."
   (interactive)
+  (setq yas/condition-cache-timestamp (current-time))
   (multiple-value-bind (templates start end) (if field
                                                  (save-restriction
                                                    (narrow-to-region (yas/field-start field) (yas/field-end field))
@@ -1939,6 +1961,7 @@ object satisfying `yas/field-p' to restrict the expansion to."
 
 If expansion fails, execute the previous binding for this key"
   (interactive)
+  (setq yas/condition-cache-timestamp (current-time))
   (let* ((vec (this-command-keys-vector))
          (templates (mapcan #'(lambda (table)
                                 (yas/fetch table vec))
@@ -2032,6 +2055,7 @@ to `yas/prompt-function'.
 With prefix argument NO-CONDITION, bypass filtering of snippets
 by condition."
   (interactive "P")
+  (setq yas/condition-cache-timestamp (current-time))
   (let* ((yas/buffer-local-condition (or (and no-condition
                                               'always)
                                          yas/buffer-local-condition))
