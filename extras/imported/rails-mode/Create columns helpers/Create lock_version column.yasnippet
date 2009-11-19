@@ -2,7 +2,7 @@
 # key: tcl
 # contributor: Translated from TextMate Snippet
 # name: Table column lock_version
-## condition: "meta.rails.migration.create_table, meta.rails.migration.change_table"
+# condition: (and (yas/rails-migration-p) (or (yas/rails-in-create-table-p) (yas/rails-in-change-table-p)))
 # --
 t.integer :lock_version, :null => false, :default => 0
 $0

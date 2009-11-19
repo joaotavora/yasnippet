@@ -1,17 +1,16 @@
 (defvar yas/rails-root-cache nil)
-(make-local-variable 'yas/rails-root-cache)
 
 ;; stolen from rinari-mode's rinari-root
 (defun yas/rails-root (&optional dir)
+  (or dir (setq dir default-directory))
   (or yas/rails-root-cache
-      (or dir (setq dir default-directory))
       (if (file-exists-p (expand-file-name
                           "environment.rb" (expand-file-name "config" dir)))
-          (setq yas/rails-root-cache dir)
+          (set (make-local-variable 'yas/rails-root-cache) dir)
         (let ((new-dir (expand-file-name (file-name-as-directory "..") dir)))
           ;; regexp to match windows roots, tramp roots, or regular posix roots
           (unless (string-match "\\(^[[:alpha:]]:/$\\|^/[^\/]+:\\|^/$\\)" dir)
-            (rinari-root new-dir))))))
+            (yas/rails-root new-dir))))))
 
 ;; stolen from rinari-mode's rinari-extract-partial
 (defun yas/rails-extract-partial (begin end partial-name)
@@ -135,10 +134,9 @@
  (and (yas/rails-root)
       (string-match "db/migrate/" default-directory)))
 
-
-(defadvice cd (after yas/rails-on-cd-activate)
-  "Active/Deactive rinari-merb-minor-node when changing into and out
-of raills project directories."
+(defadvice cd (after yas/rails-on-cd-activate activate)
+  "Set `yas/mode-symbol' to `rails-mode' so that rails snippets
+are recognized"
   (setq yas/rails-root-cache nil)
   (when (yas/rails-root)
-    (setq (make-local-variable 'yas/mode-symbol) 'rails-mode))) 
+    (set (make-local-variable 'yas/mode-symbol) 'rails-mode))) 

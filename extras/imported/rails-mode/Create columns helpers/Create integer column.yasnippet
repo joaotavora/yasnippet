@@ -2,7 +2,7 @@
 # key: tci
 # contributor: Translated from TextMate Snippet
 # name: Table column integer
-## condition: "meta.rails.migration.create_table, meta.rails.migration.change_table"
+# condition: (and (yas/rails-migration-p) (or (yas/rails-in-create-table-p) (yas/rails-in-change-table-p)))
 # --
 t.integer :${1:title}
 $0
