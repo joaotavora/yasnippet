@@ -17,11 +17,10 @@
      ((string-match "_" fn) (replace-match "" nil nil fn))
      (t fn))))
 
-(defun yas/ruby-in-interpolated-string-p ()
-  (eq (fourth (syntax-ppss))
-      ?\"))
-
-(defun yas/ruby-in-comment-p ()
-  (fifth (syntax-ppss)))
+;; conditions
+;; 
+(yas/define-condition-cache yas/ruby-in-interpolated-string-p (eq (fourth (syntax-ppss)) ?\"))
+(yas/define-condition-cache yas/ruby-in-comment-p (fifth (syntax-ppss)))
+(yas/define-condition-cache yas/ruby-in-string-p (fourth (syntax-ppss)))
 
 

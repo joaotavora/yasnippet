@@ -4,6 +4,6 @@
 # name: New Block
 ## condition: "source.ruby"
 # --
-`[[ $TM_LINE_INDEX != 0 ]] && echo; echo`=begin rdoc
+`(if (save-restriction (widen) (eq 1 (line-number-at-pos))) "\n\n" "\n")`=begin rdoc
 	$0
 =end

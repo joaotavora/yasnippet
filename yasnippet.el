@@ -447,13 +447,8 @@ Attention: These hooks are not run when exiting nested/stackd snippet expansion!
   "Hooks to run just before expanding a snippet.")
 
 (defvar yas/buffer-local-condition
-  '(if (and (not (bobp))
-            (or (equal 'font-lock-comment-face
-                       (get-char-property (1- (point))
-                                          'face))
-                (equal 'font-lock-string-face
-                       (get-char-property (1- (point))
-                                          'face))))
+  '(if (or (fourth (syntax-ppss))
+           (fifth (syntax-ppss)))
        '(require-snippet-condition . force-in-comment)
      t)
   "Snippet expanding condition.
@@ -1052,11 +1047,9 @@ conditions to filter out potential expansions."
                (symbolp (cdr local-condition))
                (cdr local-condition)))))))
 
-(defun yas/template-can-expand-p (condition &optional requirement)
+(defun yas/template-can-expand-p (condition requirement)
   "Evaluates CONDITION and REQUIREMENT and returns a boolean"
-  (let* ((requirement (or requirement
-                          (yas/require-template-specific-condition-p)))
-         (result (or (null condition)
+  (let* ((result (or (null condition)
                      (yas/eval-condition condition))))
     (cond ((eq requirement t)
            result)
@@ -1922,11 +1915,19 @@ will only be expanded when the condition evaluated to non-nil."
 ;;;
 (defvar yas/condition-cache-timestamp nil)
 (defmacro yas/define-condition-cache (func doc &rest body)
-  `(defun ,func () ,(when doc
-                      (concat doc
+  "Define a function FUNC with doc DOC and body BODY, BODY is
+executed at most once every snippet expansion attempt, to check
+expansion conditions.
+
+It doesn't make any sense to call FUNC programatically."
+  `(defun ,func () ,(if (and doc
+                             (stringp doc))
+                        (concat doc
 "\n\nFor use in snippets' conditions. Within each
 snippet-expansion routine like `yas/expand', computes actual
-value for the first time then always returns a cached value."))
+value for the first time then always returns a cached value.")
+                      (setq body (cons doc body))
+                      nil)
      (let ((timestamp-and-value (get ',func 'yas/condition-cache)))
        (if (equal (car timestamp-and-value) yas/condition-cache-timestamp)
            (cdr timestamp-and-value)
@@ -3043,12 +3044,13 @@ will be deleted before inserting template."
                ;; them mostly to make the undo information
                ;;
                (setq yas/start-column (save-restriction (widen) (current-column)))
-               (insert template)
 
                (setq snippet
                      (if expand-env
                          (eval `(let ,expand-env
+                                  (insert template)
                                   (yas/snippet-create (point-min) (point-max))))
+                       (insert template)
                        (yas/snippet-create (point-min) (point-max))))))
 
            ;; stacked-expansion: This checks for stacked expansion, save the

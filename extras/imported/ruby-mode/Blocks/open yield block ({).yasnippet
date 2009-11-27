@@ -1,9 +1,13 @@
 # -*- mode: snippet -*-
+# type: command
 # key: {
 # contributor: Translated from TextMate Snippet
-# assumes some sort of autopairing of the braces such as autopair.el or ruby electric
-# that would have added the closing brace.
 # name: Insert { |variable| … }
-## condition: "source.ruby - string - comment"
+# condition: (not (or (yas/ruby-in-comment-p) (yas/ruby-in-string-p)))
 # --
-{ ${1:$(if (string= yas/text "") "" "|")}${1:variable}${1:$(if (string= yas/text "") "" "|")}${2:`yas/selected-text`} 
+(yas/expand-snippet (concat 
+                    "{ ${1:$(if (string= yas/text \"\") \"\" \"|\")}${1:variable}${1:$(if (string= yas/text \"\") \" \" \"| \")}`yas/selected-text`$0"
+                    (save-excursion (if (search-forward-regexp "}" (line-end-position) t)
+                                    "" "}"))))
+                                
+                    
