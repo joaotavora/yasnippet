@@ -867,8 +867,9 @@ Do this unless `yas/dont-activate' is t or the function
 ;;; Internal structs for template management
 
 (defstruct (yas/template (:constructor yas/make-template
-                                       (content name condition expand-env file keybinding)))
+                                       (key content name condition expand-env file keybinding)))
   "A template for a snippet."
+  key
   content
   name
   condition
@@ -1459,44 +1460,42 @@ TEMPLATES is a list of `yas/template'."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Loading snippets from files
 ;;
-(defun yas/load-directory-1 (directory &optional parents no-hierarchy-parents making-groups-sym)
+(defun yas/load-directory-1 (directory &optional mode-sym parents)
   "Recursively load snippet templates from DIRECTORY."
-  ;; TODO: Rewrite this horrible, horrible monster I created
-  ;; TODO: Temp hack, load a .yas-setup.el file if its exists
+
+  ;; Load .yas-setup.el files wherever we find them
+  ;; 
   (let ((file (concat directory "/" ".yas-setup.el")))
     (when (file-readable-p file)
       (load file)))
-  
+
+  ;;
+  ;;
   (unless (file-exists-p (concat directory "/" ".yas-skip"))
-    (let* ((major-mode-and-parents (unless making-groups-sym
-                                     (yas/compute-major-mode-and-parents (concat directory "/dummy")
-                                                                         nil
-                                                                         no-hierarchy-parents)))
+    (let* ((major-mode-and-parents (if mode-sym
+                                       (cons mode-sym parents)
+                                     (yas/compute-major-mode-and-parents (concat directory "/dummy"))))
            (yas/ignore-filenames-as-triggers (or yas/ignore-filenames-as-triggers
                                                  (file-exists-p (concat directory "/" ".yas-ignore-filenames-as-triggers"))))
-           (mode-sym (and major-mode-and-parents
-                          (car major-mode-and-parents)))
-           (parents (if making-groups-sym
-                        parents
-                      (rest major-mode-and-parents)))
-           (snippet-defs nil)
-           (make-groups-p (or making-groups-sym
-                              (file-exists-p (concat directory "/" ".yas-make-groups")))))
+           (snippet-defs nil))
+      ;; load the snippet files
+      ;; 
       (with-temp-buffer
         (dolist (file (yas/subdirs directory 'no-subdirs-just-files))
           (when (file-readable-p file)
             (insert-file-contents file nil nil nil t)
             (push (yas/parse-template file)
                   snippet-defs))))
-      (yas/define-snippets (or mode-sym
-                               making-groups-sym)
-                           snippet-defs
-                           parents)
+      (when snippet-defs
+        (yas/define-snippets (car major-mode-and-parents)
+                             snippet-defs
+                             (cdr major-mode-and-parents)))
+      ;; now recurse to a lower level
+      ;; 
       (dolist (subdir (yas/subdirs directory))
-        (if make-groups-p
-            (yas/load-directory-1 subdir parents 't (or mode-sym
-                                                        making-groups-sym))
-          (yas/load-directory-1 subdir (list mode-sym)))))))
+        (yas/load-directory-1 subdir
+                              (car major-mode-and-parents)
+                              (cdr major-mode-and-parents))))))
 
 (defun yas/load-directory (directory)
   "Load snippet definition from a directory hierarchy.
@@ -1511,7 +1510,7 @@ content of the file is the template."
   (unless yas/root-directory
     (setq yas/root-directory directory))
   (dolist (dir (yas/subdirs directory))
-    (yas/load-directory-1 dir nil 'no-hierarchy-parents))
+    (yas/load-directory-1 dir))
   (when (interactive-p)
     (message "[yas] Loaded snippets from %s." directory)))
 
@@ -1662,7 +1661,7 @@ Here's the default value for all the parameters:
                 (insert "\n\n"))))
         (dolist (dir dirs)
           (dolist (subdir (yas/subdirs dir))
-            (yas/load-directory-1 subdir nil 'no-hierarchy-parents)
+            (yas/load-directory-1 subdir nil)
             (let ((file (concat subdir "/.yas-setup.el")))
               (when (file-readable-p file)
                 (insert ";; Supporting elisp for subdir " (file-name-nondirectory subdir) "\n\n")
@@ -1794,7 +1793,8 @@ not need to be a real mode."
         ;; a key and a name for the snippet, because that is what
         ;; indexes the snippet tables
         ;;
-        (setq template (yas/make-template (second snippet)
+        (setq template (yas/make-template key
+                                          (second snippet)
                                           (or name key)
                                           condition
                                           (sixth snippet)
@@ -2100,7 +2100,24 @@ visited file in `snippet-mode'."
           (file
            (message "Original file %s no longer exists!" file))
           (t
-           (message "This snippet was not loaded from a file!")))))
+           (switch-to-buffer (format "*%s*"(yas/template-name template)))
+           (let ((type 'snippet))
+             (when (listp (yas/template-content template))
+               (insert (format "# type: command\n"))
+               (setq type 'command))
+             (insert (format "# key: %s\n" (yas/template-key template)))
+             (insert (format "# name: %s\n" (yas/template-name template)))
+             (when (yas/template-keybinding template)
+               (insert (format "# binding: %s\n" (yas/template-keybinding template))))
+             (when (yas/template-expand-env template)
+               (insert (format "# expand-env: %s\n" (yas/template-expand-env template))))
+             (when (yas/template-condition template)
+               (insert (format "# condition: %s\n" (yas/template-condition template))))
+             (insert "# --\n")
+             (insert (if (eq type 'command)
+                         (pp-to-string (yas/template-content template))
+                       (yas/template-content template))))
+             (snippet-mode)))))
 
 (defun yas/guess-snippet-directories-1 (table &optional suffix)
   "Guesses possible snippet subdirsdirectories for TABLE."
@@ -2252,37 +2269,27 @@ there, otherwise, proposes to create the first option returned by
                 (snippet-mode)))))
       (message "Could not guess snippet dir!"))))
 
-(defun yas/compute-major-mode-and-parents (file &optional prompt-if-failed no-hierarchy-parents)
+(defun yas/compute-major-mode-and-parents (file &optional prompt-if-failed)
   (let* ((file-dir (and file
                         (directory-file-name (or (locate-dominating-file file ".yas-make-groups")
                                                  (directory-file-name (file-name-directory file))))))
-         (extra-parents-file-name (concat file-dir "/.yas-parents"))
-         (no-hierarchy-parents (or no-hierarchy-parents
-                                   (file-readable-p extra-parents-file-name)))
+         (parents-file-name (concat file-dir "/.yas-parents"))
          (major-mode-name (and file-dir
                                (file-name-nondirectory file-dir)))
-         (parent-file-dir (and file-dir
-                               (directory-file-name (file-name-directory file-dir))))
-         (parent-mode-name (and parent-file-dir
-                                (not no-hierarchy-parents)
-                                (file-name-nondirectory parent-file-dir)))
          (major-mode-sym (or (and major-mode-name
                                   (intern major-mode-name))
                              (when prompt-if-failed
                                (read-from-minibuffer
                                 "[yas] Cannot auto-detect major mode! Enter a major mode: "))))
-         (parent-mode-sym (and parent-mode-name
-                               (intern parent-mode-name)))
-         (more-parents (when (file-readable-p extra-parents-file-name)
+         (parents (when (file-readable-p parents-file-name)
                          (mapcar #'intern
                                  (split-string
                                   (with-temp-buffer
-                                    (insert-file-contents extra-parents-file-name)
+                                    (insert-file-contents parents-file-name)
                                     (buffer-substring-no-properties (point-min)
                                                                     (point-max))))))))
     (when major-mode-sym
-      (remove nil (append (list major-mode-sym parent-mode-sym)
-                          more-parents)))))
+      (cons major-mode-sym parents))))
 
 (defun yas/load-snippet-buffer (&optional kill)
   "Parse and load current buffer's snippet definition.
@@ -2324,7 +2331,8 @@ With optional prefix argument KILL quit the window and buffer."
                         (intern (read-from-minibuffer "[yas] please input a mode: "))))
          (template (and parsed
                         (fboundp test-mode)
-                        (yas/make-template (second parsed)
+                        (yas/make-template (first parsed)
+                                           (second parsed)
                                            (third parsed)
                                            nil
                                            (sixth parsed)
