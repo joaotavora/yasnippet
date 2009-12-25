@@ -1,4 +1,3 @@
 #name : deep_copy(...)
-#group : general
 # --
 Marshal.load(Marshal.dump($0))

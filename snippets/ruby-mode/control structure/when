@@ -1,5 +1,4 @@
 #name : when ... end
-#group : control structure
 # --
 when ${condition}
   $0

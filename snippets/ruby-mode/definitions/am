@@ -1,4 +1,3 @@
 #name : alias_method new, old
-#group : definitions
 # --
 alias_method :${new_name}, :${old_name}
