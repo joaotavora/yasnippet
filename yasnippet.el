@@ -1177,7 +1177,7 @@ return an expression that when evaluated will issue an error."
   (condition-case err
       (read string)
     (error (and (not nil-on-error)
-                `(error (error-message-string err))))))
+                `(error ,(error-message-string err))))))
 
 (defvar yas/mode-symbol nil
   "If non-nil, lookup snippets using this instead of `major-mode'.")
@@ -2361,8 +2361,11 @@ With optional prefix argument KILL quit the window and buffer."
                 (yas/define-snippets (car major-mode-and-parent)
                                      (list parsed)
                                      (cdr major-mode-and-parent))))
+            
             (when (and (buffer-modified-p)
-                       (y-or-n-p "Also save snippet buffer? "))
+                       (file-writable-p buffer-file-name)
+                       ;; (y-or-n-p "Also save snippet buffer? ")
+                       )
               (save-buffer))
             (when kill
               (quit-window kill))
@@ -2396,7 +2399,8 @@ With optional prefix argument KILL quit the window and buffer."
                            (first yas/snippet-dirs)
                          yas/snippet-dirs))))
       (when chosen
-        (let ((default-directory chosen))
+        (let ((default-directory chosen)
+              (ido-mode nil))
           (call-interactively 'write-file))
         (setq yas/guessed-directories nil)
         (setq yas/current-template nil)
@@ -2507,6 +2511,11 @@ Otherwise throw exception."
 
 (defun yas/inside-string ()
   (equal 'font-lock-string-face (get-char-property (1- (point)) 'face)))
+
+(defun yas/get-lose-selected-text ()
+  (or yas/selected-text
+      (prog1 (get-register ?0)
+        (set-register ?0 nil))))
 
 
 ;;; Snippet expansion and field management
