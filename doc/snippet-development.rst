@@ -572,8 +572,9 @@ around the currently selected region. When this variable is set to t,
 this has the same effect has using the ```yas/selected-text``` inline
 evaluation.
 
-Because on most systems starting to type deletes the currently region,
-this works mostly with the ``yas/insert-snippet`` command.
+Because on most systems starting to type deletes the currently
+selected region, this works mostly for snippets with direct
+keybindings or with the ``yas/insert-snippet`` command.
 
 However, when the value is of this variable is ``cua`` YASnippet will
 additionally look-up any recently selected that you deleted by starting
