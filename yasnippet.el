@@ -3365,13 +3365,20 @@ If it does, also:
 * call `yas/advance-start-maybe' on FOM's next fom.
 
 * in case FOM is field call `yas/advance-end-maybe' on its parent
-  field"
-  (when (and fom (< (yas/fom-end fom) newend))
-    (set-marker (yas/fom-end fom) newend)
-    (yas/advance-start-maybe (yas/fom-next fom) newend)
-    (let ((parent (yas/fom-parent-field fom)))
-      (when parent
-        (yas/advance-end-maybe parent newend)))))
+  field
+
+Also, if FOM is an exit-marker, always call
+`yas/advance-start-maybe' on its next fom.
+
+"
+  (cond ((and fom (< (yas/fom-end fom) newend))
+         (set-marker (yas/fom-end fom) newend)
+         (yas/advance-start-maybe (yas/fom-next fom) newend)
+         (let ((parent (yas/fom-parent-field fom)))
+           (when parent
+             (yas/advance-end-maybe parent newend))))
+        ((yas/exit-p fom)
+         (yas/advance-start-maybe (yas/fom-next fom) newend))))
 
 (defun yas/advance-start-maybe (fom newstart)
   "Maybe advance FOM's start to NEWSTART if it needs it.
