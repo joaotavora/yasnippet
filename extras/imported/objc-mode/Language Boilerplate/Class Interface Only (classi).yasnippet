@@ -1,0 +1,11 @@
+# -*- mode: snippet -*-
+# key: clh
+# contributor: Translated from TextMate Snippet
+# name: Class Interface
+## condition: "source.objc, source.objc++"
+# --
+@interface ${1:${TM_FILENAME/\...*$|(^$)/(?1:object)/}} : ${2:NSObject}
+{$3
+}
+$0
+@end

@@ -1,0 +1,11 @@
+# -*- mode: snippet -*-
+# key: m
+# contributor: Translated from TextMate Snippet
+# name: Method
+## binding: "^M"
+## condition: "(source.objc | source.objc++) & meta.scope.implementation.objc - meta.function-with-body"
+# --
+- (${1:id})${2:${TM_SELECTED_TEXT:method}}${3::(${4:id})${5:${4/(NS([AEIOQUY])?(\w+).*)|(.)?.*/(?1:a(?2:n$2)$3:(?4:anArgument))/}}}
+{$0${1/^(void|IBAction)$|(.*)/(?2:
+	return nil;)/}
+}

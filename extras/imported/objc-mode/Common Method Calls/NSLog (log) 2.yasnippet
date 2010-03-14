@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# key: log
+# contributor: Translated from TextMate Snippet
+# name: NSLog(…)
+## condition: "source.objc, source.objc++"
+# --
+NSLog(@"$1"${1/[^%]*(%)?.*/(?1:, :\);)/}$2${1/[^%]*(%)?.*/(?1:\);)/}

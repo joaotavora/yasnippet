@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# key: stracc
+# contributor: Translated from TextMate Snippet
+# name: Interface: Accessors for String
+## condition: "source.objc meta.scope.interface, source.objc++ meta.scope.interface"
+# --
+- (NSString${TM_C_POINTER/(^(.+?)\s*$)?/(?1:$2: *)/})${1:thing};
+- (void)set${1/./\u$0/}:(NSString${TM_C_POINTER/(^(.+?)\s*$)?/(?1:$2: *)/})${2:a${1/.*/\u$0/}};

@@ -1,0 +1,17 @@
+# -*- mode: snippet -*-
+# key: stracc
+# contributor: Translated from TextMate Snippet
+# name: String
+## condition: "(source.objc | source.objc++) & meta.scope.implementation.objc - meta.function-with-body"
+# --
+- (NSString${TM_C_POINTER/(^(.+?)\s*$)?/(?1:$2: *)/})${1:thing}
+{
+	return ${2:$1};
+}
+
+- (void)set${1/.*/\u$0/}:(NSString${TM_C_POINTER/(^(.+?)\s*$)?/(?1:$2: *)/})${3:a${1/.*/\u$0/}}
+{
+	$3 = [$3 copy];
+	[$2 release];
+	$2 = $3;
+}

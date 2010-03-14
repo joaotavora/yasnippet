@@ -1,0 +1,12 @@
+# -*- mode: snippet -*-
+# key: I
+# contributor: Translated from TextMate Snippet
+# name: Method: Initialize
+## condition: "(source.objc | source.objc++) & meta.scope.implementation.objc - meta.function-with-body"
+# --
++ (void)initialize
+{
+	[[NSUserDefaults standardUserDefaults] registerDefaults:[NSDictionary dictionaryWithObjectsAndKeys:
+		$0@"value", @"key",
+		nil]];
+}

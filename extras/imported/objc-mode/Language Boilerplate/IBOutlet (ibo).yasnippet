@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# key: ibo
+# contributor: Translated from TextMate Snippet
+# name: IBOutlet
+## condition: "source.objc, source.objc++"
+# --
+IBOutlet ${1:NSSomeClass}${TM_C_POINTER: *}${2:${1/^[A-Z](?:[A-Z]+|[a-z]+)([A-Z]\w*)/\l$1/}};

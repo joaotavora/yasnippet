@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# key: catm
+# contributor: Translated from TextMate Snippet
+# name: Category Implementation
+## condition: "source.objc, source.objc++"
+# --
+@implementation ${1:${TM_FILENAME/.*?(\w+).*|.*/(?1:$1:NSObject)/}} (${2:${TM_FILENAME/.*?\w+\W+(\w+).*\..+|.*/(?1:$1:Category)/}})
+$0
+@end

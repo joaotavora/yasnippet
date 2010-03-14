@@ -1,0 +1,15 @@
+# -*- mode: snippet -*-
+# key: alert
+# contributor: Translated from TextMate Snippet
+# name: NSRunAlertPanel
+## condition: "source.objc, source.objc++"
+# --
+int choice = NSRunAlertPanel(@"${1:Something important!}", @"${2:Something important just happend, and now I need to ask you, do you want to continue?}", @"${3:Continue}", @"${4:Cancel}", nil);
+if(choice == NSAlertDefaultReturn) // "${3:Continue}"
+{
+	$0;
+}
+else if(choice == NSAlertAlternateReturn) // "${4:Cancel}"
+{
+	
+}

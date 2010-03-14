@@ -1,0 +1,20 @@
+# -*- mode: snippet -*-
+# key: cl
+# contributor: Translated from TextMate Snippet
+# name: Class
+## condition: "source.objc, source.objc++ - meta.scope.implementation.objc"
+# --
+@interface ${1:${TM_FILENAME/\...*$|(^$)/(?1:object)/}} : ${2:NSObject}
+{
+}
+@end
+
+@implementation $1
+- (id)init
+{
+	if((self = [super init]))
+	{$0
+	}
+	return self;
+}
+@end

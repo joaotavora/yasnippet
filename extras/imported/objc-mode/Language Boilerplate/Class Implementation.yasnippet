@@ -1,0 +1,15 @@
+# -*- mode: snippet -*-
+# key: clm
+# contributor: Translated from TextMate Snippet
+# name: Class Implementation
+## condition: "source.objc, source.objc++"
+# --
+@implementation ${1:${TM_FILENAME/\...*$|(^$)/(?1:object)/}}
+- (id)init
+{
+	if((self = [super init]))
+	{$0
+	}
+	return self;
+}
+@end

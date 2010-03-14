@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# key: thread
+# contributor: Translated from TextMate Snippet
+# name: Detach New NSThread
+## condition: "source.objc, source.objc++"
+# --
+[NSThread detachNewThreadSelector:@selector(${1:method}:) toTarget:${2:aTarget} withObject:${3:anArgument}]
