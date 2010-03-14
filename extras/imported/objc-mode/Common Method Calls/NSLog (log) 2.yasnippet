@@ -2,6 +2,7 @@
 # key: log
 # contributor: Translated from TextMate Snippet
 # name: NSLog(…)
-## condition: "source.objc, source.objc++"
+# condition: (and (yas/objc-implementation-p) (yas/objc-method-body-p))
 # --
-NSLog(@"$1"${1/[^%]*(%)?.*/(?1:, :\);)/}$2${1/[^%]*(%)?.*/(?1:\);)/}
+NSLog(@"${1:%@}"${1:$(if (string-match "%" text) ", " ");")
+}$2${1:$(if (string-match "%" text) ");" "")}$0

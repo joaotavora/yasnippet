@@ -2,7 +2,7 @@
 # key: m
 # contributor: Translated from TextMate Snippet
 # name: Interface: Method
-## binding: "^M"
-## condition: "source.objc meta.scope.interface, source.objc++ meta.scope.interface"
+# binding: "C-c m"
+# condition: (yas/objc-interface-p)
 # --
 - (${1:id})${2:${TM_SELECTED_TEXT:method}}${3::(${4:id})${5:${4/(NS([AEIOQUY])?(\w+).*)|(.)?.*/(?1:a(?2:n$2)$3:(?4:anArgument))/}}};

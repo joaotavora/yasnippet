@@ -1,7 +1,0 @@
-# -*- mode: snippet -*-
-# key: log
-# contributor: Translated from TextMate Snippet
-# name: NSLog(.., _cmd)
-## condition: "source.objc meta.scope.implementation, source.objc++ meta.scope.implementation"
-# --
-NSLog(@"%s$1", _cmd${1/[^%]*(%)?.*/(?1:, :\);)/}$2${1/[^%]*(%)?.*/(?1:\);)/}

@@ -2,10 +2,10 @@
 # key: sm
 # contributor: Translated from TextMate Snippet
 # name: Sub-method (Call Super)
-## condition: "(source.objc | source.objc++) & meta.scope.implementation.objc - meta.function-with-body"
+# condition: (and (yas/objc-implementation-p) (not (yas/objc-method-body-p)))
 # --
-- (${1:id})${2:method}${3::(${4:id})${5:${4/(NS([AEIOQUY])?(\w+).*)|(.)?.*/(?1:a(?2:n$2)$3:(?4:anArgument))/}}}
-{
-	${1/^(void|IBAction)$|(.*)/(?2:$2 res = )/}[super ${2:method}${5/.+/:$0/}];$0${1/^(void|IBAction)$|(.*)/(?2:
-	return res;)/}
+- (${1:id})${2:`(or yas/selected-text "method")`}${3::(${4:id})${5:${4:$(
+yas/objc-guess-instance-name yas/text)}}} {
+${1:$(if (string-match yas/objc-void-regexp text) "" "res = ")}[super $2${5:$(
+if (string= yas/text "") "" (concat ":" yas/text))}];${1:$(if (string-match yas/objc-void-regexp text) "" "\n  return res;")}
 }

@@ -2,6 +2,6 @@
 # key: ibo
 # contributor: Translated from TextMate Snippet
 # name: IBOutlet
-## condition: "source.objc, source.objc++"
+# condition: (yas/objc-interface-p)
 # --
-IBOutlet ${1:NSSomeClass}${TM_C_POINTER: *}${2:${1/^[A-Z](?:[A-Z]+|[a-z]+)([A-Z]\w*)/\l$1/}};
+IBOutlet ${1:NSSomeClass}*${2:${1:$(yas/objc-guess-member-name yas/text)}};

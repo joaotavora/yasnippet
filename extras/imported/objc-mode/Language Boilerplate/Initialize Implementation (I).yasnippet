@@ -2,7 +2,7 @@
 # key: I
 # contributor: Translated from TextMate Snippet
 # name: Method: Initialize
-## condition: "(source.objc | source.objc++) & meta.scope.implementation.objc - meta.function-with-body"
+# condition: (and (yas/objc-implementation-p) (not (yas/objc-method-body-p)))
 # --
 + (void)initialize
 {

@@ -2,10 +2,9 @@
 # key: m
 # contributor: Translated from TextMate Snippet
 # name: Method
-## binding: "^M"
-## condition: "(source.objc | source.objc++) & meta.scope.implementation.objc - meta.function-with-body"
+# binding: C-c m
+# condition: (and (yas/objc-implementation-p) (not (yas/objc-method-body-p)))
 # --
-- (${1:id})${2:${TM_SELECTED_TEXT:method}}${3::(${4:id})${5:${4/(NS([AEIOQUY])?(\w+).*)|(.)?.*/(?1:a(?2:n$2)$3:(?4:anArgument))/}}}
-{$0${1/^(void|IBAction)$|(.*)/(?2:
-	return nil;)/}
-}
+- (${1:id})${2:`(or yas/selected-text "method")`}${3::(${4:id})${5:${4:$(
+yas/objc-guess-instance-name yas/text)}}} {$0${1:$(if (
+string-match yas/objc-void-regexp text) "}" "\n  return nil;\n}")}
