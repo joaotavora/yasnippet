@@ -5,6 +5,6 @@
 # --
 int main (int argc, char const *argv[])
 {
-	${1:/* code */$(when yas/modified-p (yas/exit-snippet (first (yas/snippets-at-point))) (yas/field-value 1))}$0
+	${1:/* code */$(yas/ephemeral-field 1)}$0
 	return 0;
 }
