@@ -1181,7 +1181,8 @@ return an expression that when evaluated will issue an error."
 
 (defun yas/read-keybinding (keybinding)
   "Read KEYBINDING as a snippet keybinding, return a vector."
-  (when keybinding
+  (when (and keybinding
+             (not (string-match "keybinding" keybinding))) 
     (condition-case err
         (let ((keybinding-string (or (and (string-match "\".*\"" keybinding)
                                           (read keybinding))
@@ -2203,7 +2204,7 @@ lurking."
 # -*- mode: snippet -*-
 # name: $1
 # key: $2${3:
-# binding: \"${4:direct-keybinding}\"}${5:
+# binding: ${4:direct-keybinding}}${5:
 # expand-env: ((${6:some-var} ${7:some-value}))}
 # --
 $0"))))
