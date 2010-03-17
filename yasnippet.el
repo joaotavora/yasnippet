@@ -44,7 +44,7 @@
 ;;
 ;;   Steps 4. and 5. are optional, you don't have to use the minor
 ;;   mode to use YASnippet.
-;;
+;; 
 ;;   Interesting variables are:
 ;;
 ;;       `yas/snippet-dirs'
@@ -429,7 +429,7 @@ This cafn only work when snippets are loaded from files."
     map)
   "The keymap active while a snippet expansion is in progress.")
 
-(defvar yas/key-syntaxes (list "w" "w_" "w_." "w_.()" "^ ")
+(defvar yas/key-syntaxes (list "w" "w_" "w_.()" "^ ")
   "A list of syntax of a key. This list is tried in the order
 to try to find a key. For example, if the list is '(\"w\" \"w_\").
 And in emacs-lisp-mode, where \"-\" has the syntax of \"_\":
@@ -2162,10 +2162,12 @@ tables (or optional TABLE).
 Returns a a list of options alist TABLE -> DIRS where DIRS are
 all the possibly directories where snippets of table might be
 lurking."
-  (let ((main-dir (or (and (listp yas/snippet-dirs)
-                           (first yas/snippet-dirs))
-                      yas/snippet-dirs
-                      (setq yas/snippet-dirs "~/.emacs.d/snippets")))
+  (let ((main-dir (replace-regexp-in-string
+                   "/+$" ""
+                   (or (and (listp yas/snippet-dirs)
+                            (first yas/snippet-dirs))
+                       yas/snippet-dirs
+                       (setq yas/snippet-dirs "~/.emacs.d/snippets"))))
         (tables (or (and table
                          (list table))
                     (yas/get-snippet-tables))))
@@ -2190,6 +2192,8 @@ lurking."
   "Returns a dir inside  TABLE-AND-DIRS, prompts for creation if none exists."
   (or (some #'(lambda (dir) (when (file-directory-p dir) dir)) (cdr table-and-dirs))
       (let ((candidate (first (cdr table-and-dirs))))
+        (unless (file-writable-p (file-name-directory candidate))
+          (error "[yas] %s is not writable."))
         (if (y-or-n-p (format "Guessed directory (%s) for%s%s table \"%s\" does not exist! Create? "
                               candidate
                               (if (gethash (intern (yas/snippet-table-name (car table-and-dirs)))
@@ -2348,17 +2352,18 @@ With optional prefix argument KILL quit the window and buffer."
                (chosen (and option
                             (yas/make-directory-maybe option))))
           (when chosen
-            (condition-case quit
-                (let ((default-directory (concat chosen "/" (yas/template-name yas/current-template)))
-                      (ido-mode nil))
-                  (call-interactively 'write-file)
-                  (setf (yas/template-file yas/current-template) buffer-file-name))
-              (quit nil))))))
-          (when kill
-            (quit-window kill))
-          (message "[yas] Snippet \"%s\" loaded for %s."
-                   (yas/template-name yas/current-template)
-                   (yas/snippet-table-name (yas/template-table yas/current-template))))
+            (let ((default-file-name (or (and (yas/template-file yas/current-template)
+                                              (file-name-nondirectory (yas/template-file yas/current-template)))
+                                         (yas/template-name yas/current-template))))
+              (write-file (concat chosen "/"
+                                  (read-from-minibuffer (format "File name to create in %s? " chosen)
+                                                        default-file-name)))
+              (setf (yas/template-file yas/current-template) buffer-file-name))))))
+    (when kill
+      (quit-window kill))
+    (message "[yas] Snippet \"%s\" loaded for %s."
+             (yas/template-name yas/current-template)
+             (yas/snippet-table-name (yas/template-table yas/current-template))))
    ( ;; X) Option 1: We have a file name, consider this as being
     ;; a brand new snippet and calculate name, groups, etc from
     ;; the current file-name and buffer content
@@ -2470,7 +2475,7 @@ With optional prefix argument KILL quit the window and buffer."
 
 (defun yas/list-tables (all-tables &optional by-name-hash)
   "Display snippets for each table."
-  (interactive (list (y-or-n-p "Show also non-active tables?")
+  (interactive (list (y-or-n-p "Show also non-active tables? ")
                      nil))
   (let ((buffer (get-buffer-create "*YASnippet tables*"))
         (tables (or (and all-tables
@@ -2502,6 +2507,7 @@ With optional prefix argument KILL quit the window and buffer."
                          (insert (format "bound to %s " (key-description (yas/template-keybinding p)))))
                        (insert "\n")))))
                (yas/create-snippet-xrefs)
+               (beginning-of-buffer)
                (help-mode))
               (t
                (insert "\n\nYASnippet tables by NAMEHASH: \n")
