@@ -3,4 +3,4 @@
 # contributor: Translated from TextMate Snippet
 # name: Copyright Notice
 # --
-(c) Copyright `date +%Y` $TM_FULLNAME. All Rights Reserved. 
+(c) Copyright `(replace-regexp-in-string "[[:space:]]+$" "" (shell-command-to-string "date +%Y"))` `user-full-name`. All Rights Reserved. 

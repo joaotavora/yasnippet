@@ -429,7 +429,7 @@ This cafn only work when snippets are loaded from files."
     map)
   "The keymap active while a snippet expansion is in progress.")
 
-(defvar yas/key-syntaxes (list "w" "w_" "w_." "^ ")
+(defvar yas/key-syntaxes (list "w" "w_" "w_." "w_.()" "^ ")
   "A list of syntax of a key. This list is tried in the order
 to try to find a key. For example, if the list is '(\"w\" \"w_\").
 And in emacs-lisp-mode, where \"-\" has the syntax of \"_\":
@@ -2462,7 +2462,8 @@ With optional prefix argument KILL quit the window and buffer."
                                  (point-min)
                                  (point-max)
                                  (yas/template-expand-env template))
-             (when debug
+             (when (and debug
+                        (require 'yasnippet-debug nil t))
                (add-hook 'post-command-hook 'yas/debug-snippet-vars 't 'local))))
           (t
            (message "[yas] Cannot test snippet for unknown major mode")))))
@@ -2471,47 +2472,53 @@ With optional prefix argument KILL quit the window and buffer."
   "Display snippets for each table."
   (interactive (list (y-or-n-p "Show also non-active tables?")
                      nil))
-  (with-output-to-temp-buffer "*YASnippet tables*"
-    (let ((tables (or (and all-tables
-                           (let ((all))
-                             (maphash #'(lambda (k v)
-                                          (push v all))
-                                      yas/snippet-tables)
-                             all))
-                      (yas/get-snippet-tables))))
-      (cond ((not by-name-hash)
-             (princ "YASnippet tables by UUID: \n")
-             (dolist (table tables)
-               (princ (format "\nSnippet table `%s':\n\n" (yas/snippet-table-name table)))
-               (let ((templates))
-                 (maphash #'(lambda (k v)
-                              (push v templates))
-                          (yas/snippet-table-uidhash table))
-                 (dolist (p templates)
-                   (let ((name (yas/template-name p)))
-                     (princ (format " * %s" name))
-                     (princ (make-string (max (- 50 (length name))
-                                              1) ? ))
-                     (when (yas/template-key p)
-                       (princ (format "key \"%s\" " (yas/template-key p))))
-                     (when (yas/template-keybinding p)
-                       (princ (format "bound to %s " (key-description (yas/template-keybinding p)))))
-                     (princ "\n"))))))
-            (t
-             (princ "\n\nYASnippet tables by NAMEHASH: \n")
-             (dolist (table tables)
-               (princ (format "\nSnippet table `%s':\n\n" (yas/snippet-table-name table)))
-               (let ((keys))
-                 (maphash #'(lambda (k v)
-                              (push k keys))
-                          (yas/snippet-table-hash table))
-                 (dolist (key keys)
-                   (princ (format "   key %s maps snippets: %s\n" key
-                                  (let ((names))
-                                    (maphash #'(lambda (k v)
-                                                 (push k names))
-                                             (gethash key (yas/snippet-table-hash table)))
-                                    names)))))))))))
+  (let ((buffer (get-buffer-create "*YASnippet tables*"))
+        (tables (or (and all-tables
+                         (let ((all))
+                           (maphash #'(lambda (k v)
+                                        (push v all))
+                                    yas/snippet-tables)
+                           all))
+                    (yas/get-snippet-tables))))
+    (with-current-buffer buffer 
+      (let ((buffer-read-only nil))
+        (erase-buffer)
+        (cond ((not by-name-hash)
+               (insert "YASnippet tables by UUID: \n")
+               (dolist (table tables)
+                 (insert (format "\nSnippet table `%s':\n\n" (yas/snippet-table-name table)))
+                 (let ((templates))
+                   (maphash #'(lambda (k v)
+                                (push v templates))
+                            (yas/snippet-table-uidhash table))
+                   (dolist (p templates)
+                     (let ((name (yas/template-name p)))
+                       (insert (propertize (format "\\\\snippet `%s'" name) 'yasnippet p))
+                       (insert (make-string (max (- 50 (length name))
+                                                 1) ? ))
+                       (when (yas/template-key p)
+                         (insert (format "key \"%s\" " (yas/template-key p))))
+                       (when (yas/template-keybinding p)
+                         (insert (format "bound to %s " (key-description (yas/template-keybinding p)))))
+                       (insert "\n")))))
+               (yas/create-snippet-xrefs)
+               (help-mode))
+              (t
+               (insert "\n\nYASnippet tables by NAMEHASH: \n")
+               (dolist (table tables)
+                 (insert (format "\nSnippet table `%s':\n\n" (yas/snippet-table-name table)))
+                 (let ((keys))
+                   (maphash #'(lambda (k v)
+                                (push k keys))
+                            (yas/snippet-table-hash table))
+                   (dolist (key keys)
+                     (insert (format "   key %s maps snippets: %s\n" key
+                                     (let ((names))
+                                       (maphash #'(lambda (k v)
+                                                    (push k names))
+                                                (gethash key (yas/snippet-table-hash table)))
+                                       names))))))))))
+    (display-buffer buffer)))
 
 
 ;;; User convenience functions, for using in snippet definitions
@@ -3929,7 +3936,8 @@ object satisfying `yas/field-p' to restrict the expansion to.")))
 (put 'yas/expand-from-keymap  'function-documentation '(yas/expand-from-keymap-doc))
 (defun yas/expand-from-keymap-doc ()
   "A doc synthethizer for `yas/expand-from-keymap-doc'."
-  (concat "Expand some snippets from keymaps.\n\nMay fall back to original binding."
+  (add-hook 'temp-buffer-show-hook 'yas/snippet-description-finish-runonce)
+  (concat "Expand/run snippets from keymaps, possibly falling back to original binding.\n"
           (when (eq this-command 'describe-key)
             (let* ((vec (this-single-command-keys))
                    (templates (mapcan #'(lambda (table)
@@ -3937,146 +3945,43 @@ object satisfying `yas/field-p' to restrict the expansion to.")))
                                       (yas/get-snippet-tables)))
                    (yas/direct-keymaps nil)
                    (fallback (key-binding vec)))
-              (concat "In this particular case\nmy guess is it would "
+              (concat "In this case, "
                       (when templates
-                        (concat "expand the snippets:\n"
+                        (concat "these snippets are bound to this key:\n"
                                 (yas/template-pretty-list templates)
-                                "\n\nIf no expansion possible, "))
+                                "\n\nIf none of these expands, "))
                       (or (and fallback
-                               (format "call command `%s'." (pp-to-string fallback)))
-                          "do nothing."))))))
+                               (format "fallback `%s' will be called." (pp-to-string fallback)))
+                          "no fallback keybinding is called."))))))
 
 (defun yas/template-pretty-list (templates)
-  (let ((acc))
+  (let ((acc)
+        (yas/buffer-local-condition 'always))
     (dolist (plate templates)
-      (setq acc (concat acc "\n*) " (car plate))))
+      (setq acc (concat acc "\n*) "
+                        (propertize (concat "\\\\snippet `" (car plate) "'")
+                                    'yasnippet (cdr plate)))))
     acc))
 
-
-;;; Debug functions.  Use (or change) at will whenever needed.
-;;
-;; some useful debug code for looking up snippet tables
-;;
-;; (insert (pp
-;; (let ((shit))
-;;   (maphash #'(lambda (k v)
-;;             (push k shit))
-;;         (yas/snippet-table-hash (gethash 'ruby-mode yas/snippet-tables)))
-;;   shit)))
-;;
-;; and here's a way to do it by namehash
-;;
-;; (let ((keys))
-;;   (maphash #'(lambda (k v)
-;;                (push k keys))
-;;            (yas/snippet-table-hash table))
-;;   (dolist (key keys)
-;;     (princ (format "   key %s maps snippets: %s\n" key
-;;                    (let ((names))
-;;                      (maphash #'(lambda (k v)
-;;                                   (push k names))
-;;                               (gethash key (yas/snippet-table-hash table)))
-;;                      names)))))
-;;
+(define-button-type 'help-snippet-def
+  :supertype 'help-xref
+  'help-function (lambda (template) (yas/visit-snippet-file-1 template))
+  'help-echo (purecopy "mouse-2, RET: find snippets's definition"))
 
+(defun yas/snippet-description-finish-runonce ()
+  "Final adjustments for the help buffer when snippets are concerned."
+  (yas/create-snippet-xrefs)
+  (remove-hook 'temp-buffer-show-hook 'yas/snippet-description-finish-runonce))
 
-(defun yas/debug-snippet-vars ()
-  "Debug snippets, fields, mirrors and the `buffer-undo-list'."
-  (interactive)
-  (with-output-to-temp-buffer "*YASnippet trace*"
-    (princ "Interesting YASnippet vars: \n\n")
-
-    (princ (format "\nPost command hook: %s\n" post-command-hook))
-    (princ (format "\nPre  command hook: %s\n" pre-command-hook))
-
-    (princ (format "%s live snippets in total\n" (length (yas/snippets-at-point (quote all-snippets)))))
-    (princ (format "%s overlays in buffer:\n\n" (length (overlays-in (point-min) (point-max)))))
-    (princ (format "%s live snippets at point:\n\n" (length (yas/snippets-at-point))))
-
-
-    (dolist (snippet (yas/snippets-at-point))
-      (princ (format "\tsid: %d control overlay from %d to %d\n"
-                     (yas/snippet-id snippet)
-                     (overlay-start (yas/snippet-control-overlay snippet))
-                     (overlay-end (yas/snippet-control-overlay snippet))))
-      (princ (format "\tactive field: %d from %s to %s covering \"%s\"\n"
-                     (yas/field-number (yas/snippet-active-field snippet))
-                     (marker-position (yas/field-start (yas/snippet-active-field snippet)))
-                     (marker-position (yas/field-end (yas/snippet-active-field snippet)))
-                     (buffer-substring-no-properties (yas/field-start (yas/snippet-active-field snippet)) (yas/field-end (yas/snippet-active-field snippet)))))
-      (when (yas/snippet-exit snippet)
-        (princ (format "\tsnippet-exit: at %s next: %s\n"
-                       (yas/exit-marker (yas/snippet-exit snippet))
-                       (yas/exit-next (yas/snippet-exit snippet)))))
-      (dolist (field (yas/snippet-fields snippet))
-        (princ (format "\tfield: %d from %s to %s covering \"%s\" next: %s%s\n"
-                       (yas/field-number field)
-                       (marker-position (yas/field-start field))
-                       (marker-position (yas/field-end field))
-                       (buffer-substring-no-properties (yas/field-start field) (yas/field-end field))
-                       (yas/debug-format-fom-concise (yas/field-next field))
-                       (if (yas/field-parent-field field) "(has a parent)" "")))
-        (dolist (mirror (yas/field-mirrors field))
-          (princ (format "\t\tmirror: from %s to %s covering \"%s\" next: %s\n"
-                         (marker-position (yas/mirror-start mirror))
-                         (marker-position (yas/mirror-end mirror))
-                         (buffer-substring-no-properties (yas/mirror-start mirror) (yas/mirror-end mirror))
-                         (yas/debug-format-fom-concise (yas/mirror-next mirror)))))))
-
-    (princ (format "\nUndo is %s and point-max is %s.\n"
-                   (if (eq buffer-undo-list t)
-                       "DISABLED"
-                     "ENABLED")
-                   (point-max)))
-    (unless (eq buffer-undo-list t)
-      (princ (format "Undpolist has %s elements. First 10 elements follow:\n" (length buffer-undo-list)))
-      (let ((first-ten (subseq buffer-undo-list 0 19)))
-        (dolist (undo-elem first-ten)
-          (princ (format "%2s:  %s\n" (position undo-elem first-ten) (truncate-string-to-width (format "%s" undo-elem) 70))))))))
-
-(defun yas/debug-format-fom-concise (fom)
-  (when fom
-    (cond ((yas/field-p fom)
-           (format "field %d from %d to %d"
-                   (yas/field-number fom)
-                   (marker-position (yas/field-start fom))
-                   (marker-position (yas/field-end fom))))
-          ((yas/mirror-p fom)
-           (format "mirror from %d to %d"
-                   (marker-position (yas/mirror-start fom))
-                   (marker-position (yas/mirror-end fom))))
-          (t
-           (format "snippet exit at %d"
-                   (marker-position (yas/fom-start fom)))))))
-
-
-(defun yas/exterminate-package ()
-  (interactive)
-  (yas/global-mode -1)
-  (yas/minor-mode -1)
-  (mapatoms #'(lambda (atom)
-                (when (string-match "yas/" (symbol-name atom))
-                  (unintern atom)))))
-
-(defun yas/debug-test (&optional quiet)
-  (interactive "P")
-  (yas/load-directory (or (and (listp yas/snippet-dirs)
-                               (first yas/snippet-dirs))
-                          yas/snippet-dirs
-                          "~/Source/yasnippet/snippets/"))
-  (set-buffer (switch-to-buffer "*YAS TEST*"))
-  (mapc #'yas/commit-snippet (yas/snippets-at-point 'all-snippets))
-  (erase-buffer)
-  (setq buffer-undo-list nil)
-  (setq undo-in-progress nil)
-  (snippet-mode)
-  (yas/minor-mode 1)
-  (let ((abbrev))
-    (setq abbrev "$f")
-    (insert abbrev))
-  (unless quiet
-    (add-hook 'post-command-hook 'yas/debug-snippet-vars 't 'local)))
-
+(defun yas/create-snippet-xrefs ()
+  (save-excursion
+    (beginning-of-buffer)
+    (while (search-forward-regexp "\\\\\\\\snippet[ \s\t]+\\(`[^']+'\\)" nil t)
+      (let ((template (get-text-property (match-beginning 1)
+                                         'yasnippet)))
+        (when template
+          (help-xref-button 1 'help-snippet-def template)
+          (kill-region (match-beginning 0) (match-beginning 1)))))))
 
 
 ;;; Some hacks:
