@@ -115,7 +115,7 @@
 ;;           snippet there, so you can see what it looks like.  This is
 ;;           bound to "C-c C-t" while in `snippet-mode'.
 ;;           
-;;       M-x yas/list-snippets
+;;       M-x yas/describe-tables
 ;;
 ;;           Lists known snippets in a separate buffer. User is
 ;;           prompted as to whether only the currently active tables
@@ -886,7 +886,8 @@ Do this unless `yas/dont-activate' is t or the function
   expand-env
   file
   keybinding
-  uid)
+  uid
+  menu-binding)
 
 (defstruct (yas/snippet-table (:constructor yas/make-snippet-table (name)))
   "A table to store snippets for a particular mode.
@@ -895,9 +896,9 @@ Has the following fields:
 
 `yas/snippet-table-name'
 
-  A symbol normally corresponding to a major mode, but can also be
-  a pseudo major-mode to be referenced in `yas/mode-symbol', for
-  example.
+  A symbol name normally corresponding to a major mode, but can
+  also be a pseudo major-mode to be referenced in
+  `yas/mode-symbol', for example.
 
 `yas/snippet-table-hash'
 
@@ -1356,17 +1357,22 @@ Here's a list of currently recognized variables:
              (directory-files directory t)))
 
 (defun yas/make-menu-binding (template)
-  `(lambda () (interactive) (yas/expand-or-visit-from-menu ,template)))
+  (let ((mode (intern (yas/snippet-table-name (yas/template-table template))))) 
+    `(lambda () (interactive) (yas/expand-or-visit-from-menu ',mode ,(yas/template-uid template)))))
 
-(defun yas/expand-or-visit-from-menu (template)
-  (if yas/visit-from-menu
-      (yas/visit-snippet-file-1 template)
-    (let ((where (if mark-active
-                     (cons (region-beginning) (region-end))
-                   (cons (point) (point)))))
-      (yas/expand-snippet (yas/template-content template)
-                          (car where)
-                          (cdr where)))))
+(defun yas/expand-or-visit-from-menu (mode uid)
+  (let* ((table (yas/snippet-table-get-create mode))
+         (template (and table
+                        (gethash uid (yas/snippet-table-uidhash table)))))
+    (when template
+      (if yas/visit-from-menu
+          (yas/visit-snippet-file-1 template)
+        (let ((where (if mark-active
+                         (cons (region-beginning) (region-end))
+                       (cons (point) (point)))))
+          (yas/expand-snippet (yas/template-content template)
+                              (car where)
+                              (cdr where)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Popping up for keys and templates
@@ -1797,9 +1803,9 @@ not need to be a real mode."
     ;; X) Now, iterate for evey snippet def list
     ;;
     (dolist (snippet snippets)
-      (yas/define-snippets-1 snippet snippet-table menu-keymap))))
+      (yas/define-snippets-1 mode snippet snippet-table menu-keymap))))
 
-(defun yas/define-snippets-1 (snippet snippet-table menu-keymap)
+(defun yas/define-snippets-1 (mode snippet snippet-table menu-keymap)
   "Helper for `yas/define-snippets'."
   ;; X) Calculate some more defaults on the values returned by
   ;; `yas/parse-template'.
@@ -1860,14 +1866,20 @@ not need to be a real mode."
                   `(menu-item ,(symbol-name subgroup)
                               ,subgroup-keymap)))
               (setq group-keymap subgroup-keymap))))
-        (define-key group-keymap (vector (gensym))
-          `(menu-item ,(yas/template-name template)
-                      ,(yas/make-menu-binding template)
-                      :help ,name
-                      :keys ,(or (and key name
-                                      (concat key yas/trigger-symbol))
-                                 (and keybinding (key-description keybinding)))))))))
+        (let ((menu-binding (yas/snippet-menu-binding-get-create template)))
+          (define-key group-keymap (vector (gensym)) menu-binding))))))
 
+(defun yas/snippet-menu-binding-get-create (template)
+  "Get TEMPLATE's menu binding or assign it a new one."
+  (or (yas/template-menu-binding template)
+      (let ((key (yas/template-key template))
+            (keybinding (yas/template-keybinding template)))
+        (setf (yas/template-menu-binding template)
+              `(menu-item ,(yas/template-name template)
+                          ,(yas/make-menu-binding template)
+                          :keys ,(or (and keybinding (key-description keybinding))
+                                     (and key (concat key yas/trigger-symbol))))))))
+  
 (defun yas/show-menu-p (mode)
   (cond ((eq yas/use-menu 'abbreviate)
          (find mode
@@ -2473,7 +2485,7 @@ With optional prefix argument KILL quit the window and buffer."
           (t
            (message "[yas] Cannot test snippet for unknown major mode")))))
 
-(defun yas/list-tables (all-tables &optional by-name-hash)
+(defun yas/describe-tables (all-tables &optional by-name-hash)
   "Display snippets for each table."
   (interactive (list (y-or-n-p "Show also non-active tables? ")
                      nil))
@@ -3273,7 +3285,7 @@ will be deleted before inserting template."
              (push (cons newstart end) buffer-undo-list)
              (push `(apply yas/take-care-of-redo ,start ,end ,snippet)
                    buffer-undo-list))
-           ;; Now, move to the first field
+           ;; Now, schedule a move to the first field
            ;;
            (let ((first-field (car (yas/snippet-fields snippet))))
              (when first-field
@@ -3893,10 +3905,29 @@ When multiple expressions are found, only the last one counts."
 
 
 ;;; Pre- and post-command hooks:
+
+(defvar yas/post-command-runonce-actions nil
+  "List of actions to run once  `post-command-hook'.
+
+Each element of this list looks like (FN . ARGS) where FN is
+called with ARGS as its arguments after the currently executing
+snippet command.
+
+After all actions have been run, this list is emptied, and after
+that the rest of `yas/post-command-handler' runs.")
+
 (defun yas/pre-command-handler () )
 
 (defun yas/post-command-handler ()
   "Handles various yasnippet conditions after each command."
+  (when yas/post-command-runonce-actions
+    (condition-case err
+        (mapc #'(lambda (fn-and-args)
+                  (apply (car fn-and-args)
+                         (cdr fn-and-args)))
+              yas/post-command-runonce-actions)
+      (error (message "[yas] problem running `yas/post-command-runonce-actions'!")))
+    (setq yas/post-command-runonce-actions nil))
   (cond (yas/protection-violation
          (goto-char yas/protection-violation)
          (setq yas/protection-violation nil))
@@ -3915,7 +3946,8 @@ When multiple expressions are found, only the last one counts."
            (when target-field
              (yas/move-to-field snippet target-field))))
         ((not (yas/undo-in-progress))
-         ;; When not in an undo, check if we must commit the snippet (use exited it).
+         ;; When not in an undo, check if we must commit the snippet
+         ;; (user exited it).
          (yas/check-commit-snippet))))
 
 ;;; Fancy docs:
