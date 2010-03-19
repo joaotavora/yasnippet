@@ -148,6 +148,7 @@
 (require 'cl)
 (require 'assoc)
 (require 'easymenu)
+(require 'help-mode)
 
 
 ;;; User customizable variables
@@ -945,34 +946,28 @@ Has the following fields:
 ;;    entry.
 ;;
 (defun yas/remove-snippet-by-uid (table uid)
-  "Attempt to remove from TABLE a template with NAME and KEY.
-
-TYPE-FN indicates if KEY is a trigger key (string) or a
-keybinding (vector)."
+  "Remove from TABLE a template identified by UID."
   (let ((template (gethash uid (yas/snippet-table-uidhash table))))
     (when template
       (let* ((name                (yas/template-name template))
-             (key                 (yas/template-key template))
-             (keybinding          (yas/template-keybinding template))
-             (key-namehash        (and key (gethash key (yas/snippet-table-hash table))))
-             (keybinding-namehash (and keybinding (gethash keybinding (yas/snippet-table-hash table)))))
+             (empty-keys          nil))
         ;; Remove the name from each of the targeted namehashes
         ;;
-        (dolist (namehash (remove nil (list key-namehash
-                                            keybinding-namehash)))
-          (remhash name namehash))
-        ;; Cleanup if any of the namehashes in now empty. The
-        ;; keybinding namehash, if empty, leads to the actual
-        ;; keybinding being removed as well.
+        (maphash #'(lambda (k v)
+                     (when (gethash name v)
+                       (remhash name v)
+                       (when (zerop (hash-table-count v))
+                         (push k empty-keys))))
+                 (yas/snippet-table-hash table))
+        ;; Remove the namehashed themselves if they've become empty
         ;;
-        (when (and key-namehash (zerop (hash-table-count key-namehash)))
-          (remhash key (yas/snippet-table-hash table))
-        (when (and keybinding-namehash (zerop (hash-table-count keybinding-namehash)))
-          (define-key (yas/snippet-table-direct-keymap table) keybinding nil)
-          (remhash keybinding (yas/snippet-table-hash table)))
+        (dolist (key empty-keys)
+          (remhash key (yas/snippet-table-hash table)))
+
         ;; Finally, remove the uid from the uidhash
         ;;
-        (remhash uid (yas/snippet-table-uidhash table)))))))
+        (remhash uid (yas/snippet-table-uidhash table))))))
+
 
 (defun yas/add-snippet (table template)
   "Store in TABLE the snippet template TEMPLATE.
@@ -2358,7 +2353,8 @@ With optional prefix argument KILL quit the window and buffer."
                    (not (string-match (expand-file-name (first yas/snippet-dirs))
                                       (yas/template-file yas/current-template))))
               (and (yas/template-file yas/current-template)
-                   (not (file-writable-p (yas/template-file yas/current-template)))))
+                   (not (file-writable-p (yas/template-file yas/current-template))))
+              (not (yas/template-file yas/current-template)))
       (when (y-or-n-p "[yas] Also save snippet buffer to new file? ")
         (let* ((option (first (yas/guess-snippet-directories (yas/template-table yas/current-template))))
                (chosen (and option
@@ -2485,45 +2481,63 @@ With optional prefix argument KILL quit the window and buffer."
           (t
            (message "[yas] Cannot test snippet for unknown major mode")))))
 
-(defun yas/describe-tables (all-tables &optional by-name-hash)
+(defun yas/describe-tables (&optional choose)
   "Display snippets for each table."
-  (interactive (list (y-or-n-p "Show also non-active tables? ")
-                     nil))
-  (let ((buffer (get-buffer-create "*YASnippet tables*"))
-        (tables (or (and all-tables
-                         (let ((all))
-                           (maphash #'(lambda (k v)
-                                        (push v all))
-                                    yas/snippet-tables)
-                           all))
-                    (yas/get-snippet-tables))))
+  (interactive "P")
+  (let* ((by-name-hash (and choose
+                            (y-or-n-p "Show by namehash? ")))
+         (buffer (get-buffer-create "*YASnippet tables*"))
+         (active-tables (yas/get-snippet-tables))
+         (remain-tables (let ((all))
+                          (maphash #'(lambda (k v)
+                                       (unless (find v active-tables)
+                                         (push v all)))
+                                   yas/snippet-tables)
+                          all))
+         (table-lists (list active-tables remain-tables))
+         (continue t))
     (with-current-buffer buffer 
       (let ((buffer-read-only nil))
         (erase-buffer)
         (cond ((not by-name-hash)
                (insert "YASnippet tables by UUID: \n")
-               (dolist (table tables)
-                 (insert (format "\nSnippet table `%s':\n\n" (yas/snippet-table-name table)))
-                 (let ((templates))
-                   (maphash #'(lambda (k v)
-                                (push v templates))
-                            (yas/snippet-table-uidhash table))
-                   (dolist (p templates)
-                     (let ((name (yas/template-name p)))
-                       (insert (propertize (format "\\\\snippet `%s'" name) 'yasnippet p))
-                       (insert (make-string (max (- 50 (length name))
-                                                 1) ? ))
-                       (when (yas/template-key p)
-                         (insert (format "key \"%s\" " (yas/template-key p))))
-                       (when (yas/template-keybinding p)
-                         (insert (format "bound to %s " (key-description (yas/template-keybinding p)))))
-                       (insert "\n")))))
+               (while (and table-lists
+                           continue)
+                 (dolist (table (car table-lists))
+                   (insert (format "\nSnippet table `%s'"
+                                   (yas/snippet-table-name table)))
+                   (if (yas/snippet-table-parents table)
+                       (insert (format " parents: %s\n\n"
+                                       (combine-and-quote-strings
+                                        (mapcar #'yas/snippet-table-name
+                                                (yas/snippet-table-parents table))
+                                        ", ")))
+                     (insert "\n\n"))
+                   (let ((templates))
+                     (maphash #'(lambda (k v)
+                                  (push v templates))
+                              (yas/snippet-table-uidhash table))
+                     (dolist (p templates)
+                       (let ((name (yas/template-name p)))
+                         (insert (propertize (format "\\\\snippet `%s'" name) 'yasnippet p))
+                         (insert (make-string (max (- 50 (length name))
+                                                   1) ? ))
+                         (when (yas/template-key p)
+                           (insert (format "key \"%s\" " (yas/template-key p))))
+                         (when (yas/template-keybinding p)
+                           (insert (format "bound to %s " (key-description (yas/template-keybinding p)))))
+                         (insert "\n")))))
+                 (setq table-lists (cdr table-lists))
+                 (when table-lists
+                   (yas/create-snippet-xrefs)
+                   (display-buffer buffer)
+                   (setq continue (and choose (y-or-n-p "Show also non-active tables? ")))))
                (yas/create-snippet-xrefs)
                (beginning-of-buffer)
                (help-mode))
               (t
                (insert "\n\nYASnippet tables by NAMEHASH: \n")
-               (dolist (table tables)
+               (dolist (table (append active-tables remain-tables))
                  (insert (format "\nSnippet table `%s':\n\n" (yas/snippet-table-name table)))
                  (let ((keys))
                    (maphash #'(lambda (k v)
