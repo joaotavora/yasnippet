@@ -887,7 +887,7 @@ Do this unless `yas/dont-activate' is t or the function
   file
   keybinding
   uid
-  menu-binding)
+  menu-binding-pair)
 
 
 (defun yas/populate-template (template &rest args)
@@ -946,17 +946,17 @@ Has the following fields:
 
 ;; Apropos storing/updating, this works with two steps:
 ;;
-;; 1. `yas/remove-snippet-by-uid' to remove any existing mappings by
+;; 1. `yas/remove-template-by-uid' to remove any existing mappings by
 ;;    snippet uid
 ;;
-;; 2. `yas/add-snippet' to add the mappings again:
+;; 2. `yas/add-template' to add the mappings again:
 ;;
 ;;    Create or index the entry in TABLES's `yas/table-hash'
 ;;    linking KEY to a namehash. That namehash links NAME to
 ;;    TEMPLATE, and is also created a new namehash inside that
 ;;    entry.
 ;;
-(defun yas/remove-snippet-by-uid (table uid)
+(defun yas/remove-template-by-uid (table uid)
   "Remove from TABLE a template identified by UID."
   (let ((template (gethash uid (yas/table-uidhash table))))
     (when template
@@ -982,32 +982,40 @@ Has the following fields:
         (remhash uid (yas/table-uidhash table))))))
 
 
-(defun yas/add-snippet (table template)
+(defun yas/add-template (table template)
   "Store in TABLE the snippet template TEMPLATE.
 
 KEY can be a string (trigger key) of a vector (direct
 keybinding)."
   (let ((name (yas/template-name template))
-        (keys (remove nil (list (yas/template-key template)
-                                (yas/template-keybinding template)))))
-    (dolist (key keys)
+        (key (yas/template-key template))
+        (keybinding (yas/template-keybinding template))
+        (menu-binding (car (yas/template-menu-binding-pair template))))
+    (dolist (k (remove nil (list key keybinding)))
       (puthash name
                template
-               (or (gethash key
+               (or (gethash k
                             (yas/table-hash table))
-                   (puthash key
+                   (puthash k
                             (make-hash-table :test 'equal)
                             (yas/table-hash table))))
-      (when (vectorp key)
-        (define-key (yas/table-direct-keymap table) key 'yas/expand-from-keymap)))
-    (when keys
-      (puthash (yas/template-uid template) template (yas/table-uidhash table)))))
+      (when (vectorp k)
+        (define-key (yas/table-direct-keymap table) k 'yas/expand-from-keymap)))
 
-(defun yas/update-snippet (snippet-table template)
+    (when menu-binding
+      (setf (getf (cdr menu-binding) :keys)
+            (or (and keybinding (key-description keybinding))
+                (and key (concat key yas/trigger-symbol))))
+      (setcar (cdr menu-binding)
+              name))
+    
+    (puthash (yas/template-uid template) template (yas/table-uidhash table))))
+
+(defun yas/update-template (snippet-table template)
   "Add or update TEMPLATE in SNIPPET-TABLE"
 
-  (yas/remove-snippet-by-uid snippet-table (yas/template-uid template))
-  (yas/add-snippet snippet-table template))
+  (yas/remove-template-by-uid snippet-table (yas/template-uid template))
+  (yas/add-template snippet-table template))
 
 (defun yas/fetch (table key)
   "Fetch snippets in TABLE by KEY. "
@@ -1498,9 +1506,10 @@ TEMPLATES is a list of `yas/template'."
   "Recursively load snippet templates from DIRECTORY."
 
   ;; Load .yas-setup.el files wherever we find them
-  ;; 
-  (let ((file (concat directory "/" ".yas-setup.el")))
-    (when (file-readable-p file)
+  ;;
+  (let ((file (concat directory "/" ".yas-setup")))
+    (when (or (file-readable-p (concat file ".el"))
+              (file-readable-p (concat file ".elc")))
       (load file)))
 
   ;;
@@ -1836,23 +1845,23 @@ not need to be a real mode."
          (template (or (gethash uid (yas/table-uidhash snippet-table))
                        (yas/make-blank-template))))
 
-    ;; X) update this template
-    ;; 
-    (yas/update-snippet snippet-table (yas/populate-template template
-                                                             :table       snippet-table
-                                                             :key         key
-                                                             :content     (second snippet)
-                                                             :name        (or name key)
-                                                             :condition   condition
-                                                             :expand-env  (sixth snippet)
-                                                             :file        (seventh snippet)
-                                                             :keybinding  keybinding
-                                                             :uid         uid))
-
+    ;; X) populate the template object
+    ;;
+    (yas/populate-template template
+                           :table       snippet-table
+                           :key         key
+                           :content     (second snippet)
+                           :name        (or name key)
+                           :condition   condition
+                           :expand-env  (sixth snippet)
+                           :file        (seventh snippet)
+                           :keybinding  keybinding
+                           :uid         uid)
     ;; X) setup the menu groups, reorganizing from group to group if
     ;;    necessary
     ;;
-    (when yas/use-menu
+    (when (and yas/use-menu
+               (not (cdr (yas/template-menu-binding-pair template))))
       (let ((group-keymap menu-keymap))
         ;; Delete this entry from another group if already exists
         ;; in some other group. An entry is considered as existing
@@ -1873,19 +1882,25 @@ not need to be a real mode."
                   `(menu-item ,(symbol-name subgroup)
                               ,subgroup-keymap)))
               (setq group-keymap subgroup-keymap))))
-        (let ((menu-binding (yas/snippet-menu-binding-get-create template)))
-          (define-key group-keymap (vector (gensym)) menu-binding))))))
+        (let ((menu-binding-pair (yas/snippet-menu-binding-pair-get-create template)))
+          (define-key group-keymap (vector (gensym)) (car menu-binding-pair)))))
+    ;; X) Update this template in the appropriate table. This step
+    ;;    also will take care of adding the key indicators in the
+    ;;    templates menu entry, if any
+    ;;
+    (yas/update-template snippet-table template)))
 
-(defun yas/snippet-menu-binding-get-create (template)
+(defun yas/snippet-menu-binding-pair-get-create (template &optional type)
   "Get TEMPLATE's menu binding or assign it a new one."
-  (or (yas/template-menu-binding template)
+  (or (yas/template-menu-binding-pair template)
       (let ((key (yas/template-key template))
             (keybinding (yas/template-keybinding template)))
-        (setf (yas/template-menu-binding template)
-              `(menu-item ,(yas/template-name template)
-                          ,(yas/make-menu-binding template)
-                          :keys ,(or (and keybinding (key-description keybinding))
-                                     (and key (concat key yas/trigger-symbol))))))))
+        (setf (yas/template-menu-binding-pair template)
+              (cons `(menu-item ,(or (yas/template-name template)
+                                     (yas/template-uid template))
+                                ,(yas/make-menu-binding template)
+                                :keys nil)
+                    type)))))
   
 (defun yas/show-menu-p (mode)
   (cond ((eq yas/use-menu 'abbreviate)
@@ -1932,6 +1947,43 @@ Skip any submenus named \"parent mode\""
                                 keymap))
         (setf (nthcdr pos-in-keymap keymap)
               (nthcdr (+ 1 pos-in-keymap) keymap))))))
+
+(defun yas/define-menu (mode menu)
+  (let ((table (yas/table-get-create mode)))
+    (yas/define-menu-1 table
+                       (yas/menu-keymap-get-create table)
+                       menu
+                       (yas/table-uidhash table))))
+
+(defun yas/define-menu-1 (table keymap menu uidhash)
+  (dolist (e menu)
+    (cond ((eq (first e) 'yas/item)
+           (let ((template (or (gethash (second e) uidhash)
+                               (yas/populate-template (puthash (second e)
+                                                               (yas/make-blank-template)
+                                                               uidhash)
+                                                      :table table
+                                                      :uid (second e)))))
+             (define-key keymap (vector (gensym))
+               ;; '(menu-item "shit" 'ding)
+               (car (yas/snippet-menu-binding-pair-get-create template :stay)))))
+          ((eq (first e) 'yas/submenu)
+           (let ((subkeymap (make-sparse-keymap)))
+             (define-key keymap (vector (make-symbol (second e)))
+               `(menu-item ,(second e) ,subkeymap))
+             (yas/define-menu-1 table subkeymap (third e) uidhash)))
+          ((eq (first e) 'yas/separator)
+           (define-key keymap (vector (gensym))
+             '(menu-item "----")))
+          ((eq (first e) 'yas/omit)
+           (dolist (uid (rest e))
+             (let ((template (or (gethash uid uidhash)
+                                 (yas/populate-template (puthash uid
+                                                                 (yas/make-blank-template)
+                                                                 uidhash)
+                                                        :table table
+                                                        :uid uid))))
+               (setf (yas/template-menu-binding-pair template) (cons nil :none))))))))
 
 (defun yas/define (mode key template &optional name condition group)
   "Define a snippet.  Expanding KEY into TEMPLATE.
@@ -2347,7 +2399,7 @@ With optional prefix argument KILL quit the window and buffer."
                              :condition  (fourth parsed)
                              :expand-env (sixth parsed)
                              :keybinding (yas/read-keybinding (eighth parsed)))
-      (yas/update-snippet (yas/template-table yas/current-template)
+      (yas/update-template (yas/template-table yas/current-template)
                           yas/current-template))
     ;; Now, prompt for new file creation much like
     ;; `yas/new-snippet' if one of the following is true:
