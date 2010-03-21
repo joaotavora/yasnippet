@@ -1283,7 +1283,7 @@ otherwise we attempt to calculate it from FILE.
 
 Return a snippet-definition, i.e. a list
 
- (KEY TEMPLATE NAME CONDITION GROUP VARS FILE KEYBINDING)
+ (KEY TEMPLATE NAME CONDITION GROUP VARS FILE KEYBINDING UID)
 
 If the buffer contains a line of \"# --\" then the contents
 above this line are ignored. Variables can be set above this
@@ -1293,7 +1293,6 @@ line through the syntax:
 
 Here's a list of currently recognized variables:
 
- * uid
  * type
  * name
  * contributor
@@ -1301,6 +1300,7 @@ Here's a list of currently recognized variables:
  * key
  * expand-env
  * binding
+ * uid
 
 #name: #include \"...\"
 # --
@@ -1353,7 +1353,7 @@ Here's a list of currently recognized variables:
             (buffer-substring-no-properties (point-min) (point-max))))
     (when (eq type 'command)
       (setq template (yas/read-lisp (concat "(progn" template ")"))))
-    (list key template name condition group expand-env file binding)))
+    (list key template name condition group expand-env file binding uid)))
 
 (defun yas/calculate-group (file)
   "Calculate the group for snippet file path FILE."
@@ -1715,12 +1715,12 @@ Here's the default value for all the parameters:
                 (insert "\n\n"))))
         (dolist (dir dirs)
           (dolist (subdir (yas/subdirs dir))
-            (yas/load-directory-1 subdir nil)
             (let ((file (concat subdir "/.yas-setup.el")))
               (when (file-readable-p file)
                 (insert ";; Supporting elisp for subdir " (file-name-nondirectory subdir) "\n\n")
                 (goto-char (+ (point)
-                              (second (insert-file-contents file)))))))))
+                              (second (insert-file-contents file))))))
+            (yas/load-directory-1 subdir nil))))
 
       (insert (pp-to-string `(yas/global-mode 1)))
       (insert ")\n\n" code "\n")
@@ -1899,7 +1899,7 @@ not need to be a real mode."
               (cons `(menu-item ,(or (yas/template-name template)
                                      (yas/template-uid template))
                                 ,(yas/make-menu-binding template)
-                                :keys nil)
+                                :keys ,nil)
                     type)))))
   
 (defun yas/show-menu-p (mode)
@@ -1956,7 +1956,7 @@ Skip any submenus named \"parent mode\""
                        (yas/table-uidhash table))))
 
 (defun yas/define-menu-1 (table keymap menu uidhash)
-  (dolist (e menu)
+  (dolist (e (reverse menu))
     (cond ((eq (first e) 'yas/item)
            (let ((template (or (gethash (second e) uidhash)
                                (yas/populate-template (puthash (second e)
@@ -2381,7 +2381,7 @@ there, otherwise, proposes to create the first option returned by
 With optional prefix argument KILL quit the window and buffer."
   (interactive "P")
   (cond
-   ;; X) Option 2: We have `yas/current-template', this buffer's
+   ;; X) Option 1: We have `yas/current-template', this buffer's
    ;;  content comes from a template which is already loaded and
    ;;  neatly positioned,...
    ;;
@@ -2434,9 +2434,9 @@ With optional prefix argument KILL quit the window and buffer."
     (message "[yas] Snippet \"%s\" loaded for %s."
              (yas/template-name yas/current-template)
              (yas/table-name (yas/template-table yas/current-template))))
-   ( ;; X) Option 1: We have a file name, consider this as being
-    ;; a brand new snippet and calculate name, groups, etc from
-    ;; the current file-name and buffer content
+   (;; X) Option 2: We have a file name, consider this a brand new
+    ;; snippet and calculate name, groups, etc from the current
+    ;; file-name and buffer content
     ;;
     buffer-file-name
     (let ((major-mode-and-parent (yas/compute-major-mode-and-parents buffer-file-name)))
@@ -2447,10 +2447,9 @@ With optional prefix argument KILL quit the window and buffer."
                  (name (and parsed
                             (third parsed))))
             (when name
-              (let ((yas/better-guess-for-replacements t))
-                (yas/define-snippets (car major-mode-and-parent)
-                                     (list parsed)
-                                     (cdr major-mode-and-parent))))
+              (yas/define-snippets (car major-mode-and-parent)
+                                   (list parsed)
+                                   (cdr major-mode-and-parent)))
             (when (and (buffer-modified-p)
                        (y-or-n-p "Also save snippet buffer? "))
               (save-buffer))
