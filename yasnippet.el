@@ -944,6 +944,12 @@ Has the following fields:
   (parents nil)
   (direct-keymap (make-sparse-keymap)))
 
+(defun yas/get-template-by-uid (mode uid)
+  "Find the snippet template in MODE by its UID."
+  (let* ((table (gethash mode yas/tables mode)))
+    (when table
+      (gethash uid (yas/table-uidhash table)))))
+
 ;; Apropos storing/updating, this works with two steps:
 ;;
 ;; 1. `yas/remove-template-by-uid' to remove any existing mappings by
@@ -3262,9 +3268,12 @@ The error should be ignored in `debug-ignored-errors'"
 ;; they should account for all situations...
 ;;
 
-(defun yas/expand-snippet (template &optional start end expand-env)
-  "Expand snippet at current point. Text between START and END
-will be deleted before inserting template."
+(defun yas/expand-snippet (content &optional start end expand-env)
+  "Expand snippet CONTENT at current point.
+
+Text between START and END will be deleted before inserting
+template. EXPAND-ENV is are let-style variable to value bindings
+considered when expanding the snippet."
   (run-hooks 'yas/before-expand-snippet-hook)
 
   ;; If a region is active, set `yas/selected-text'
@@ -3291,14 +3300,14 @@ will be deleted before inserting template."
       (delete-region start end)
       (setq yas/deleted-text to-delete))
 
-    (cond ((listp template)
+    (cond ((listp content)
            ;; x) This is a snippet-command
            ;; 
-           (yas/eval-lisp-no-saves template))
+           (yas/eval-lisp-no-saves content))
           (t
            ;; x) This is a snippet-snippet :-)
            ;;
-           ;;    Narrow the region down to the template, shoosh the
+           ;;    Narrow the region down to the content, shoosh the
            ;;    `buffer-undo-list', and create the snippet, the new
            ;;    snippet updates its mirrors once, so we are left with
            ;;    some plain text.  The undo action for deleting this
@@ -3318,9 +3327,9 @@ will be deleted before inserting template."
                (setq snippet
                      (if expand-env
                          (eval `(let ,expand-env
-                                  (insert template)
+                                  (insert content)
                                   (yas/snippet-create (point-min) (point-max))))
-                       (insert template)
+                       (insert content)
                        (yas/snippet-create (point-min) (point-max))))))
 
            ;; stacked-expansion: This checks for stacked expansion, save the
