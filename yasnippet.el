@@ -2303,7 +2303,8 @@ lurking."
 # name: $1
 # key: $2${3:
 # binding: ${4:direct-keybinding}}${5:
-# expand-env: ((${6:some-var} ${7:some-value}))}
+# expand-env: ((${6:some-var} ${7:some-value}))}${8:
+# type: command}
 # --
 $0"))))
 
@@ -3368,6 +3369,7 @@ considered when expanding the snippet."
            ;;
            (let ((first-field (car (yas/snippet-fields snippet))))
              (when first-field
+               (sit-for 0) ;; fix issue 125
                (yas/move-to-field snippet first-field)))))
     (message "[yas] snippet expanded.")))
 
