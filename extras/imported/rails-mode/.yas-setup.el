@@ -134,9 +134,14 @@
  (and (yas/rails-root)
       (string-match "db/migrate/" default-directory)))
 
+(defun yas/rails-activate-maybe
+  (when (yas/rails-root)
+    (set (make-local-variable 'yas/mode-symbol) 'rails-mode)))
+
 (defadvice cd (after yas/rails-on-cd-activate activate)
   "Set `yas/mode-symbol' to `rails-mode' so that rails snippets
-are recognized"
+are recognized. Stolen from `rinari-mode' more or`' less."
   (setq yas/rails-root-cache nil)
-  (when (yas/rails-root)
-    (set (make-local-variable 'yas/mode-symbol) 'rails-mode))) 
+  (yas/rails-activate-maybe))
+
+(add-hook 'find-file-hook 'yas/rails-activate-maybe)

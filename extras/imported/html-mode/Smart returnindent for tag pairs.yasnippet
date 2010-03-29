@@ -3,6 +3,8 @@
 # name: Special: Return Inside Empty Open/Close Tags
 # binding: RET
 # condition: (yas/html-between-tag-pair-p)
+# type: command
 # --
-
-	$0
+(save-excursion
+   (newline-and-indent))
+(indent-according-to-mode)

@@ -2,6 +2,6 @@
 # type: command
 # contributor: Translated from TextMate Snippet
 # name: Go to Controller
-## binding: "~$@"
-## condition: "text.html.ruby, source.ruby.rails.embedded.html, meta.rails.helper, meta.rails.functional_test, source.js, source.css, source.yaml, meta.rails.model, meta.rails.unit_test, text.haml"
+# binding: C-c g c
 # --
+(call-interactively (find-file (concat (yas/rails-root) "/app/controllers")))
