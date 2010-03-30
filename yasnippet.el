@@ -743,11 +743,15 @@ all defined direct keybindings to the command
         (mode major-mode))
     (while (setq mode (get mode 'derived-mode-parent))
       (push mode modes-to-activate))
-    (push yas/mode-symbol modes-to-activate)
+    (when yas/mode-symbol
+      (push yas/mode-symbol modes-to-activate))
     (dolist (mode modes-to-activate)
       (let ((name (intern (format "yas//direct-%s" mode))))
         (set-default name nil)
         (set (make-local-variable name) t)))))
+
+(defvar yas/minor-mode-hook nil
+  "Hook run when yas/minor-mode is turned on")
 
 ;;;###autoload
 (define-minor-mode yas/minor-mode
@@ -783,17 +787,16 @@ Key bindings:
          ;; but it works). Then define variables named after modes to
          ;; index `yas/direct-keymaps'.
          ;;
-         ;; FIXME: this is quite wrong and breaks cua-mode for
-         ;; example. It is either `yas/direct-keymaps' that needs to
-         ;; have a buffer-local value, or those little indicator vars
-         ;; need to be set and unset buffer-locally (preferred).
-         ;; 
          (add-hook 'emulation-mode-map-alists 'yas/direct-keymaps)
-         (yas/direct-keymaps-set-vars))
+         (add-hook 'yas/minor-mode-hook 'yas/direct-keymaps-set-vars-runonce 'append))
         (t
          ;; Uninstall the direct keymaps.
          ;; 
          (remove-hook 'emulation-mode-map-alists 'yas/direct-keymaps))))
+
+(defun yas/direct-keymaps-set-vars-runonce ()
+  (yas/direct-keymaps-set-vars)
+  (remove-hook 'yas/minor-mode-hook 'yas/direct-keymaps-set-vars-runonce))
 
 (defvar yas/dont-activate #'(lambda ()
                               (and yas/snippet-dirs
@@ -3382,8 +3385,8 @@ considered when expanding the snippet."
            (let ((first-field (car (yas/snippet-fields snippet))))
              (when first-field
                (sit-for 0) ;; fix issue 125
-               (yas/move-to-field snippet first-field)))))
-    (message "[yas] snippet expanded.")))
+               (yas/move-to-field snippet first-field))))
+          (message "[yas] snippet expanded."))))
 
 (defun yas/take-care-of-redo (beg end snippet)
   "Commits SNIPPET, which in turn pushes an undo action for
