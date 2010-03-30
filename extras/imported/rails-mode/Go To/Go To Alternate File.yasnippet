@@ -4,4 +4,8 @@
 # name: Go to Controller
 # binding: C-c g c
 # --
-(call-interactively (find-file (concat (yas/rails-root) "/app/controllers")))
+(if (featurep 'rinari)
+    (call-interactively 'rinari-find-controller)
+  (let ((default-directory (concat (yas/rails-root) "/app/controllers/")))
+     (call-interactively 'find-file )))
+

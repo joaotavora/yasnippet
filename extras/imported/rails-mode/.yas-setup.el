@@ -3,7 +3,8 @@
 ;; stolen from rinari-mode's rinari-root
 (defun yas/rails-root (&optional dir)
   (or dir (setq dir default-directory))
-  (or yas/rails-root-cache
+  (or (and (featurep 'rinari) (rinari-root dir))
+      yas/rails-root-cache
       (if (file-exists-p (expand-file-name
                           "environment.rb" (expand-file-name "config" dir)))
           (set (make-local-variable 'yas/rails-root-cache) dir)
@@ -134,8 +135,9 @@
  (and (yas/rails-root)
       (string-match "db/migrate/" default-directory)))
 
-(defun yas/rails-activate-maybe
-  (when (yas/rails-root)
+(defun yas/rails-activate-maybe ()
+  (when (and yas/minor-mode
+             (yas/rails-root))
     (set (make-local-variable 'yas/mode-symbol) 'rails-mode)))
 
 (defadvice cd (after yas/rails-on-cd-activate activate)
@@ -144,4 +146,4 @@ are recognized. Stolen from `rinari-mode' more or`' less."
   (setq yas/rails-root-cache nil)
   (yas/rails-activate-maybe))
 
-(add-hook 'find-file-hook 'yas/rails-activate-maybe)
+(add-hook 'yas/minor-mode-hook 'yas/rails-activate-maybe)
