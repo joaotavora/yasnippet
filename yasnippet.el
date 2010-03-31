@@ -1958,12 +1958,21 @@ Skip any submenus named \"parent mode\""
         (setf (nthcdr pos-in-keymap keymap)
               (nthcdr (+ 1 pos-in-keymap) keymap))))))
 
-(defun yas/define-menu (mode menu)
-  (let ((table (yas/table-get-create mode)))
+(defun yas/define-menu (mode menu omit-items)
+  (let* ((table (yas/table-get-create mode))
+         (hash (yas/table-uidhash table)))
     (yas/define-menu-1 table
                        (yas/menu-keymap-get-create table)
                        menu
-                       (yas/table-uidhash table))))
+                       hash)
+    (dolist (uid omit-items)
+      (let ((template (or (gethash uid hash)
+                          (yas/populate-template (puthash uid
+                                                          (yas/make-blank-template)
+                                                          hash)
+                                                 :table table
+                                                 :uid uid))))
+        (setf (yas/template-menu-binding-pair template) (cons nil :none))))))
 
 (defun yas/define-menu-1 (table keymap menu uidhash)
   (dolist (e (reverse menu))
@@ -1985,15 +1994,8 @@ Skip any submenus named \"parent mode\""
           ((eq (first e) 'yas/separator)
            (define-key keymap (vector (gensym))
              '(menu-item "----")))
-          ((eq (first e) 'yas/omit)
-           (dolist (uid (rest e))
-             (let ((template (or (gethash uid uidhash)
-                                 (yas/populate-template (puthash uid
-                                                                 (yas/make-blank-template)
-                                                                 uidhash)
-                                                        :table table
-                                                        :uid uid))))
-               (setf (yas/template-menu-binding-pair template) (cons nil :none))))))))
+          (t
+           (message "[yas] don't know anything about menu entry %s" (first e))))))
 
 (defun yas/define (mode key template &optional name condition group)
   "Define a snippet.  Expanding KEY into TEMPLATE.
