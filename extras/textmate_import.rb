@@ -1,31 +1,21 @@
 #!/usr/bin/env ruby
+# -*- coding: utf-8 -*-
+# textmate_import.rb --- import textmate snippets
+# 
+# Copyright (C) 2009 Rob Christie, 2010 João Távora
+# 
 # This is a quick script to generate YASnippets from TextMate Snippets.
 #
 # I based the script off of a python script of a similar nature by
 # Jeff Wheeler: http://nokrev.com
 # http://code.nokrev.com/?p=snippet-copier.git;a=blob_plain;f=snippet_copier.py
 #
-# Usage
-#
-# Make sure you have the plist and the choice gem installed
-# $ sudo gem install plist
-# $ sudo gem install choice
-#
-# Usage: snippet_copier.rb [-dofp]
-#
-# Standard Options:
-#     -d, --snippet-dir=PATH           Tells the program the directory to find the TextMate Snippets
-#     -o, --output-dir=PATH            What directory to write the new YASnippets to
-#     -f, --file=SNIPPET FILE NAME     A specific snippet that you want to copy or a glob for various files
-#     -p, --print-pretty               Pretty prints multiple snippets when printing to standard out
-#     -b, --convert-bindings           TextMate "keyEquivalent" keys are translated to YASnippet "# binding :" directives
-#     -g, --info-plist=INFO            Attempt to derive group information from "info.plist" type-file PLIST
-#
-# Common options:
-#         --help                       Show this message
+# Use textmate_import.rb --help to get usage information.
+
 require 'rubygems'
 require 'plist'
 require 'choice'
+require 'FileUtils'
 require 'ruby-debug' if $DEBUG
 
 Choice.options do
@@ -58,6 +48,12 @@ Choice.options do
     desc 'Pretty prints multiple snippets when printing to standard out'
   end
 
+  option :quiet do
+    short '-v'
+    long '--quiet'
+    desc 'Be quiet.'
+  end
+
   option :convert_bindings do
     short '-b'
     long '--convert-bindings'
@@ -67,7 +63,7 @@ Choice.options do
   option :info_plist do
     short '-g'
     long '--info-plist'
-    desc "Attempt to derive group information from \"info.plist\" type-file PLIST"
+    desc "Attempt to derive menu information from \"info.plist\" type-file PLIST"
   end
 
   separator ''
@@ -79,7 +75,84 @@ Choice.options do
   end
 end
 
+# Represents and is capable of outputting the representation of a
+# TextMate menu in terms of `yas/define-menu'
+#
+class TmSubmenu
+  attr_reader :items, :name
+  def initialize(name, hash)
+    @items = hash["items"]
+    @name = name
+  end
 
+  def to_lisp(allsubmenus,
+              indent = 0,
+              thingy = ["(", ")"])
+    
+    first = true;
+
+    string = ""
+    items.each do |uuid|
+      string += "\n"
+      string += " " * indent
+      string += (first ? thingy[0] : (" " * thingy[0].length))
+      
+      submenu = allsubmenus[uuid]
+      if submenu
+        str = "(yas/submenu "
+        string += str + "\"" + submenu.name + "\"" 
+        string += submenu.to_lisp(allsubmenus,
+                                  indent + str.length + thingy[0].length)
+      else
+        snippet = TmSnippet::snippets_by_uid[uuid]
+        sname = snippet ? snippet.name : uuid
+
+        if (sname !~ /---------------------/)
+          string += "(yas/item \"" + sname + "\")"
+        else
+          string += "(yas/separator)"
+        end
+      end
+      first = false;
+    end
+    string += ")"
+    string += thingy[1]
+
+    return string
+  end
+
+  def self.main_menu_to_lisp (hash)
+    mainmenu = TmSubmenu.new("__main_menu__", hash)
+    all = {}
+    
+    hash["submenus"].each_pair do |k,v|
+      all[k] = TmSubmenu.new(v["name"], v)
+    end
+
+    closing = "\n                    '("
+    closing+= hash["excludedItems"].collect do |uuid|
+      snippet = TmSnippet::snippets_by_uid[uuid]
+      
+      "\"" + (snippet ? snippet.name : uuid) + "\"" 
+    end.join(  "\n                       ") + "))"
+
+    str = "(yas/define-menu "
+    return str + "'major-mode-name" + mainmenu.to_lisp(all,
+                                                       str.length,
+                                                       ["'(" , closing])
+  end
+end
+
+# Represents a textmate snippet
+#
+# - @file is the .tmsnippet/.plist file path relative to cwd
+# 
+# - optional @info is a Plist.parsed info.plist found in the bundle dir
+#
+# - @@snippets_by_uid is where one can find all the snippets parsed so
+#   far.
+# 
+#
 class TmSnippet
   @@known_substitutions=[
                          {
@@ -92,18 +165,15 @@ class TmSnippet
                          },
                          { "$TM_SELECTED_TEXT"                      => "`yas/selected-text`" }
                         ]
-  
-  attr_reader :file
 
-  # Makes a TmSnippet
-  #
-  # * file is the .tmsnippet/.plist file path relative to cwd 
-  # * optional info is a Plist.parsed info.plist found in the bundle dir
-  #
+  @@snippets_by_uid={}
+  def self.snippets_by_uid; @@snippets_by_uid; end
+
   def initialize(file,info=nil)
     @file    = file
     @info    = info
     @snippet = TmSnippet::read_plist(file)
+    @@snippets_by_uid[self.uuid] = self;
     raise RuntimeError.new("Cannot convert this snippet #{file}!") unless @snippet;  
   end
 
@@ -111,15 +181,15 @@ class TmSnippet
     @snippet["name"]
   end
 
-  def group
-    if @info
-      submenus = @info["mainMenu"]["submenus"]
-      container = submenus.keys.find do |submenu|
-        submenus[submenu]["items"].member?(uuid)
-      end
-      submenus[container]["name"] if container;
-    end
-  end
+  # def subdir
+  #   if @info
+  #     submenus = @info["mainMenu"]["submenus"]
+  #     container = submenus.keys.find do |submenu|
+  #       submenus[submenu]["items"].member?(uuid)
+  #     end
+  #     submenus[container]["name"] if container;
+  #   end
+  # end
 
   def uuid
     @snippet["uuid"]
@@ -144,6 +214,7 @@ class TmSnippet
   def to_yasnippet
     doc = "# -*- mode: snippet -*-\n"
     doc << "# type: command\n" unless self.content
+    doc << "# uuid: #{self.uuid}\n"
     doc << "# key: #{self.tab_trigger}\n" if self.tab_trigger
     doc << "# contributor: Translated from TextMate Snippet\n"
     doc << "# name: #{self.name}\n"
@@ -164,7 +235,7 @@ class TmSnippet
   end
 
   def canonicalize(filename)
-    invalid_char = /[^ a-z_0-9.+=~(){}'"'"'`&#,-]/i
+    invalid_char = /[^ a-z_0-9.+=~(){}\/'"'"'`&#,-]/i
 
     filename.
       gsub(invalid_char, '').  # remove invalid characters
@@ -174,14 +245,13 @@ class TmSnippet
 
   def yasnippet_file(basedir)
     # files cannot end with dots (followed by spaces) on windows
-    basedir = File.join(basedir,group.gsub(/[.]+ *$/,'')) if group
     File.join(basedir,canonicalize(@file[0, @file.length-File.extname(@file).length]) + ".yasnippet")
   end
 
   def self.read_plist(xml_or_binary)
     begin
       parsed = Plist::parse_xml(xml_or_binary)
-      return parsed if parsed;
+      return parsed if parsed
       raise RuntimeError.new "Probably in binary format and parse_xml is very quiet..."
     rescue RuntimeError => e
       if (system "plutil -convert xml1 '#{xml_or_binary}' -o /tmp/textmate_import")
@@ -195,27 +265,25 @@ class TmSnippet
 end
 
 
-
 if $0 == __FILE__
 
   info_plist = TmSnippet::read_plist(Choice.choices.info_plist) if Choice.choices.info_plist;
 
-  if Choice.choices.output_dir
-    FileUtils.mkdir_p Choice.choices.output_dir
-    FileUtils.touch File.join(Choice.choices.output_dir, ".yas-make-groups")
-    FileUtils.touch File.join(Choice.choices.output_dir, ".yas-ignore-filenames-as-triggers")
-  end
-  
+  # Glob snippets into snippet_files, going into subdirs
+  #
   original_dir = Dir.pwd
   Dir.chdir Choice.choices.snippet_dir
   snippet_files_glob = File.join("**", Choice.choices.snippet)
   snippet_files = Dir.glob(snippet_files_glob)
 
-  puts "Will try to convert #{snippet_files.length} snippets...\n"
+  # Attempt to convert each snippet files in snippet_files
+  #  
+  puts "Will try to convert #{snippet_files.length} snippets...\n" unless Choice.choices.quiet
   snippet_files.each do |file|
     begin
-      puts "Processing \"#{File.join(Choice.choices.snippet_dir,file)}\"\n"
+      puts "Processing \"#{File.join(Choice.choices.snippet_dir,file)}\"\n" unless Choice.choices.quiet
       snippet = TmSnippet.new(file,info_plist)
+
       if Choice.choices.output_dir
         file_to_create = snippet.yasnippet_file(File.join(original_dir, Choice.choices.output_dir))
         FileUtils.mkdir_p(File.dirname(file_to_create))
@@ -226,14 +294,35 @@ if $0 == __FILE__
         if Choice.choices.print_pretty
           puts "--------------------------------------------"
         end
-        puts snippet.to_yasnippet
+        puts snippet.to_yasnippet if Choice.choices.print_pretty or not Choice.choices.info_plist
         if Choice.choices.print_pretty
-          puts "--------------------------------------------"
+          puts "--------------------------------------------\n\n"
         end
-        puts "\n\n"
       end
     rescue Exception => e
       $stderr.puts "Oops... #{e.class}:#{e.message}\n#{e.backtrace.join("\n")}"
     end
   end
+  # Attempt to decypher the menu
+  #
+  modename = Choice.choices.output_dir or "major-mode-name"  
+  str = TmSubmenu::main_menu_to_lisp(info_plist["mainMenu"]) if info_plist
+  puts str unless !str or Choice.choices.quiet
+
+  # Write some basic .yas-* files
+  #
+  if Choice.choices.output_dir
+    FileUtils.mkdir_p Choice.choices.output_dir
+    FileUtils.touch File.join(Choice.choices.output_dir, ".yas-make-groups") unless str
+    FileUtils.touch File.join(Choice.choices.output_dir, ".yas-ignore-filenames-as-triggers")
+    File.open(File.join(Choice.choices.output_dir, ".yas-setup.el"), 'w') do |file|
+      file.write ";; .yas-setup.el for #{modename}\n"
+      file.write ";;\n"
+      file.write ";;\n"
+      file.write(str)
+      file.write "\n;;\n"
+      file.write ";; .yas-setup.el for #{modename} ends here\n"
+    end
+  end
+
 end
