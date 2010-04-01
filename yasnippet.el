@@ -890,7 +890,7 @@ Do this unless `yas/dont-activate' is t or the function
   expand-env
   file
   keybinding
-  uid
+  uuid
   menu-binding-pair)
 
 
@@ -937,27 +937,27 @@ Has the following fields:
   the elements of the keyhash that are vectors appear here as
   bindings to `yas/expand-from-keymap'.
 
-`yas/table-uidhash'
+`yas/table-uuidhash'
 
-  A hash table mapping snippets uid's to the same `yas/template'
-  objects. A snippet uid defaults to the snippet's name.
+  A hash table mapping snippets uuid's to the same `yas/template'
+  objects. A snippet uuid defaults to the snippet's name.
 "
   name
   (hash (make-hash-table :test 'equal))
-  (uidhash (make-hash-table :test 'equal))
+  (uuidhash (make-hash-table :test 'equal))
   (parents nil)
   (direct-keymap (make-sparse-keymap)))
 
-(defun yas/get-template-by-uid (mode uid)
-  "Find the snippet template in MODE by its UID."
+(defun yas/get-template-by-uuid (mode uuid)
+  "Find the snippet template in MODE by its UUID."
   (let* ((table (gethash mode yas/tables mode)))
     (when table
-      (gethash uid (yas/table-uidhash table)))))
+      (gethash uuid (yas/table-uuidhash table)))))
 
 ;; Apropos storing/updating, this works with two steps:
 ;;
-;; 1. `yas/remove-template-by-uid' to remove any existing mappings by
-;;    snippet uid
+;; 1. `yas/remove-template-by-uuid' to remove any existing mappings by
+;;    snippet uuid
 ;;
 ;; 2. `yas/add-template' to add the mappings again:
 ;;
@@ -966,9 +966,9 @@ Has the following fields:
 ;;    TEMPLATE, and is also created a new namehash inside that
 ;;    entry.
 ;;
-(defun yas/remove-template-by-uid (table uid)
-  "Remove from TABLE a template identified by UID."
-  (let ((template (gethash uid (yas/table-uidhash table))))
+(defun yas/remove-template-by-uuid (table uuid)
+  "Remove from TABLE a template identified by UUID."
+  (let ((template (gethash uuid (yas/table-uuidhash table))))
     (when template
       (let* ((name                (yas/template-name template))
              (empty-keys          nil))
@@ -977,7 +977,7 @@ Has the following fields:
         (maphash #'(lambda (k v)
                      (let ((template (gethash name v)))
                        (when (and template
-                                  (eq uid (yas/template-uid template)))
+                                  (eq uuid (yas/template-uuid template)))
                          (remhash name v)
                          (when (zerop (hash-table-count v))
                            (push k empty-keys)))))
@@ -987,9 +987,9 @@ Has the following fields:
         (dolist (key empty-keys)
           (remhash key (yas/table-hash table)))
 
-        ;; Finally, remove the uid from the uidhash
+        ;; Finally, remove the uuid from the uuidhash
         ;;
-        (remhash uid (yas/table-uidhash table))))))
+        (remhash uuid (yas/table-uuidhash table))))))
 
 
 (defun yas/add-template (table template)
@@ -1019,12 +1019,12 @@ keybinding)."
       (setcar (cdr menu-binding)
               name))
 
-    (puthash (yas/template-uid template) template (yas/table-uidhash table))))
+    (puthash (yas/template-uuid template) template (yas/table-uuidhash table))))
 
 (defun yas/update-template (snippet-table template)
   "Add or update TEMPLATE in SNIPPET-TABLE"
 
-  (yas/remove-template-by-uid snippet-table (yas/template-uid template))
+  (yas/remove-template-by-uuid snippet-table (yas/template-uuid template))
   (yas/add-template snippet-table template))
 
 (defun yas/fetch (table key)
@@ -1294,7 +1294,7 @@ otherwise we attempt to calculate it from FILE.
 
 Return a snippet-definition, i.e. a list
 
- (KEY TEMPLATE NAME CONDITION GROUP VARS FILE KEYBINDING UID)
+ (KEY TEMPLATE NAME CONDITION GROUP VARS FILE KEYBINDING UUID)
 
 If the buffer contains a line of \"# --\" then the contents
 above this line are ignored. Variables can be set above this
@@ -1311,7 +1311,7 @@ Here's a list of currently recognized variables:
  * key
  * expand-env
  * binding
- * uid
+ * uuid
 
 #name: #include \"...\"
 # --
@@ -1333,7 +1333,7 @@ Here's a list of currently recognized variables:
                          (yas/calculate-group file))))
          expand-env
          binding
-         uid)
+         uuid)
     (if (re-search-forward "^# --\n" nil t)
         (progn (setq template
                      (buffer-substring-no-properties (point)
@@ -1341,8 +1341,8 @@ Here's a list of currently recognized variables:
                (setq bound (point))
                (goto-char (point-min))
                (while (re-search-forward "^# *\\([^ ]+?\\) *: *\\(.*\\)$" bound t)
-                 (when (string= "uid" (match-string-no-properties 1))
-                   (setq uid (match-string-no-properties 2)))
+                 (when (string= "uuid" (match-string-no-properties 1))
+                   (setq uuid (match-string-no-properties 2)))
                  (when (string= "type" (match-string-no-properties 1))
                    (setq type (if (string= "command" (match-string-no-properties 2))
                                   'command
@@ -1364,7 +1364,7 @@ Here's a list of currently recognized variables:
             (buffer-substring-no-properties (point-min) (point-max))))
     (when (eq type 'command)
       (setq template (yas/read-lisp (concat "(progn" template ")"))))
-    (list key template name condition group expand-env file binding uid)))
+    (list key template name condition group expand-env file binding uuid)))
 
 (defun yas/calculate-group (file)
   "Calculate the group for snippet file path FILE."
@@ -1399,12 +1399,12 @@ Here's a list of currently recognized variables:
 
 (defun yas/make-menu-binding (template)
   (let ((mode (intern (yas/table-name (yas/template-table template)))))
-    `(lambda () (interactive) (yas/expand-or-visit-from-menu ',mode ,(yas/template-uid template)))))
+    `(lambda () (interactive) (yas/expand-or-visit-from-menu ',mode ,(yas/template-uuid template)))))
 
-(defun yas/expand-or-visit-from-menu (mode uid)
+(defun yas/expand-or-visit-from-menu (mode uuid)
   (let* ((table (yas/table-get-create mode))
          (template (and table
-                        (gethash uid (yas/table-uidhash table)))))
+                        (gethash uuid (yas/table-uuidhash table)))))
     (when template
       (if yas/visit-from-menu
           (yas/visit-snippet-file-1 template)
@@ -1715,7 +1715,7 @@ Here's the default value for all the parameters:
                         (expand-env             (sixth   snippet))
                         (file                   nil) ;; (seventh snippet)) ;; omit on purpose
                         (binding                (eighth  snippet))
-                        (uid                    (ninth   snippet)))
+                        (uuid                    (ninth   snippet)))
                     (push `(,key
                             ,template-content
                             ,name
@@ -1724,7 +1724,7 @@ Here's the default value for all the parameters:
                             ,expand-env
                             ,file
                             ,binding
-                            ,uid)
+                            ,uuid)
                           literal-snippets)))
                 (insert (pp-to-string `(yas/define-snippets ',mode ',literal-snippets ',parent-or-parents)))
                 (insert "\n\n"))))
@@ -1781,7 +1781,7 @@ Here's the default value for all the parameters:
 SNIPPETS is a list of snippet definitions, each taking the
 following form
 
- (KEY TEMPLATE NAME CONDITION GROUP EXPAND-ENV FILE KEYBINDING UID)
+ (KEY TEMPLATE NAME CONDITION GROUP EXPAND-ENV FILE KEYBINDING UUID)
 
 Within these, only KEY and TEMPLATE are actually mandatory.
 
@@ -1797,8 +1797,8 @@ The remaining elements are strings.
 FILE is probably of very little use if you're programatically
 defining snippets.
 
-UID is the snippets \"unique-id\". Loading a second snippet file
-with the same uid replaced the previous snippet.
+UUID is the snippets \"unique-id\". Loading a second snippet file
+with the same uuid replaced the previous snippet.
 
 You can use `yas/parse-template' to return such lists based on
 the current buffers contents.
@@ -1855,9 +1855,9 @@ not need to be a real mode."
          (condition (fourth snippet))
          (group (fifth snippet))
          (keybinding (yas/read-keybinding (eighth snippet)))
-         (uid (or (ninth snippet)
+         (uuid (or (ninth snippet)
                   name))
-         (template (or (gethash uid (yas/table-uidhash snippet-table))
+         (template (or (gethash uuid (yas/table-uuidhash snippet-table))
                        (yas/make-blank-template))))
 
     ;; X) populate the template object
@@ -1871,7 +1871,7 @@ not need to be a real mode."
                            :expand-env  (sixth snippet)
                            :file        (seventh snippet)
                            :keybinding  keybinding
-                           :uid         uid)
+                           :uuid         uuid)
     ;; X) setup the menu groups, reorganizing from group to group if
     ;;    necessary
     ;;
@@ -1912,7 +1912,7 @@ not need to be a real mode."
             (keybinding (yas/template-keybinding template)))
         (setf (yas/template-menu-binding-pair template)
               (cons `(menu-item ,(or (yas/template-name template)
-                                     (yas/template-uid template))
+                                     (yas/template-uuid template))
                                 ,(yas/make-menu-binding template)
                                 :keys ,nil)
                     type)))))
@@ -1965,29 +1965,29 @@ Skip any submenus named \"parent mode\""
 
 (defun yas/define-menu (mode menu omit-items)
   (let* ((table (yas/table-get-create mode))
-         (hash (yas/table-uidhash table)))
+         (hash (yas/table-uuidhash table)))
     (yas/define-menu-1 table
                        (yas/menu-keymap-get-create table)
                        menu
                        hash)
-    (dolist (uid omit-items)
-      (let ((template (or (gethash uid hash)
-                          (yas/populate-template (puthash uid
+    (dolist (uuid omit-items)
+      (let ((template (or (gethash uuid hash)
+                          (yas/populate-template (puthash uuid
                                                           (yas/make-blank-template)
                                                           hash)
                                                  :table table
-                                                 :uid uid))))
+                                                 :uuid uuid))))
         (setf (yas/template-menu-binding-pair template) (cons nil :none))))))
 
-(defun yas/define-menu-1 (table keymap menu uidhash)
+(defun yas/define-menu-1 (table keymap menu uuidhash)
   (dolist (e (reverse menu))
     (cond ((eq (first e) 'yas/item)
-           (let ((template (or (gethash (second e) uidhash)
+           (let ((template (or (gethash (second e) uuidhash)
                                (yas/populate-template (puthash (second e)
                                                                (yas/make-blank-template)
-                                                               uidhash)
+                                                               uuidhash)
                                                       :table table
-                                                      :uid (second e)))))
+                                                      :uuid (second e)))))
              (define-key keymap (vector (gensym))
                ;; '(menu-item "shit" 'ding)
                (car (yas/snippet-menu-binding-pair-get-create template :stay)))))
@@ -1995,7 +1995,7 @@ Skip any submenus named \"parent mode\""
            (let ((subkeymap (make-sparse-keymap)))
              (define-key keymap (vector (make-symbol (second e)))
                `(menu-item ,(second e) ,subkeymap))
-             (yas/define-menu-1 table subkeymap (third e) uidhash)))
+             (yas/define-menu-1 table subkeymap (third e) uuidhash)))
           ((eq (first e) 'yas/separator)
            (define-key keymap (vector (gensym))
              '(menu-item "----")))
@@ -2604,7 +2604,7 @@ With optional prefix argument KILL quit the window and buffer."
                                             (push v (cdr active))
                                           (push v (cdr sleeping))))
                                       (push v (cdr always)))))
-                              (yas/table-uidhash table))
+                              (yas/table-uuidhash table))
                      (dolist (type-and-templates (list always active sleeping))
                        (dolist (p (cdr type-and-templates))
                          (let ((name (yas/template-name p)))
@@ -2622,7 +2622,6 @@ With optional prefix argument KILL quit the window and buffer."
                    (display-buffer buffer)
                    (setq continue (and choose (y-or-n-p "Show also non-active tables? ")))))
                (yas/create-snippet-xrefs)
-               (goto-char (point-min))
                (help-mode))
               (t
                (insert "\n\nYASnippet tables by NAMEHASH: \n")
@@ -2639,7 +2638,9 @@ With optional prefix argument KILL quit the window and buffer."
                                                     (push k names))
                                                 (gethash key (yas/table-hash table)))
                                        names))))))))))
-    (display-buffer buffer)))
+    (display-buffer buffer)
+    (with-current-buffer buffer
+      (beginning-of-buffer))))
 
 
 ;;; User convenience functions, for using in snippet definitions
@@ -2692,12 +2693,6 @@ Otherwise throw exception."
   (when (and yas/moving-away-p (notany #'(lambda (pos) (string= pos yas/text)) possibilities))
     (yas/throw (format "[yas] field only allows %s" possibilities))))
 
-(defun yas/ephemeral-field (number)
-  "Automatically exit snippet when something is typed in field NUMBER.
-
-To be used as a primary field transformation."
-  (when yas/modified-p (yas/exit-snippet (first (yas/snippets-at-point))) (yas/field-value number)))
-
 (defun yas/field-value (number)
   "A primary field transformation..."
   (let* ((snippet (car (yas/snippets-at-point)))
@@ -2705,6 +2700,13 @@ To be used as a primary field transformation."
                      (yas/snippet-find-field snippet number))))
     (when field
       (yas/field-text-for-display field))))
+
+(defun yas/text
+  (if yas/text
+      (if (not (string= "" yas/text))
+          ))
+  (or (and yas/text)
+      (not ())))
 
 (defun yas/get-field-once (number &optional transform-fn)
   (unless yas/modified-p
@@ -4164,7 +4166,7 @@ and return the directory.  Return nil if not found."
           (prev-file file)
           ;; `user' is not initialized outside the loop because
           ;; `file' may not exist, so we may have to walk up part of the
-          ;; hierarchy before we find the "initial UID".
+          ;; hierarchy before we find the "initial UUID".
           (user nil)
           try)
       (while (not (or root

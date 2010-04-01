@@ -23,10 +23,10 @@ Choice.options do
   header ''
   header 'Standard Options:'
 
-  option :snippet_dir do
+  option :bundle_dir do
     short '-d'
-    long '--snippet-dir=PATH'
-    desc 'Tells the program the directory to find the TextMate Snippets'
+    long '--bundle-dir=PATH'
+    desc 'Tells the program the directory to find the TextMate bundle directory'
     default '.'
   end
 
@@ -63,8 +63,8 @@ Choice.options do
 
   option :info_plist do
     short '-g'
-    long '--info-plist'
-    desc "Attempt to derive menu information from \"info.plist\" type-file PLIST"
+    long '--info-plist=PLIST'
+    desc "Specify a plist file derive menu information from defaults to \"bundle-dir\"/info.plist"
   end
 
   separator ''
@@ -87,6 +87,7 @@ class TmSubmenu
   end
 
   def to_lisp(allsubmenus,
+              deleteditems,
               indent = 0,
               thingy = ["(", ")"])
     
@@ -94,6 +95,10 @@ class TmSubmenu
 
     string = ""
     items.each do |uuid|
+      if deleteditems.index(uuid)
+        $stderr.puts "#{uuid} has been deleted!"
+        next
+      end
       string += "\n"
       string += " " * indent
       string += (first ? thingy[0] : (" " * thingy[0].length))
@@ -102,17 +107,14 @@ class TmSubmenu
       if submenu
         str = "(yas/submenu "
         string += str + "\"" + submenu.name + "\"" 
-        string += submenu.to_lisp(allsubmenus,
+        string += submenu.to_lisp(allsubmenus, deleteditems,
                                   indent + str.length + thingy[0].length)
+      elsif TmSnippet::snippets_by_uid[uuid]
+        string += "(yas/item \"" + uuid + "\")"
+      elsif (uuid =~ /---------------------/)
+        string += "(yas/separator)"
       else
-        snippet = TmSnippet::snippets_by_uid[uuid]
-        sname = snippet ? snippet.name : uuid
-
-        if (sname !~ /---------------------/)
-          string += "(yas/item \"" + sname + "\")"
-        else
-          string += "(yas/separator)"
-        end
+        string += "(yas/external-item \"" + uuid + "\")"
       end
       first = false;
     end
@@ -122,25 +124,29 @@ class TmSubmenu
     return string
   end
 
-  def self.main_menu_to_lisp (hash)
-    mainmenu = TmSubmenu.new("__main_menu__", hash)
+  def self.main_menu_to_lisp (parsed_plist, modename)
+    mainmenu = parsed_plist["mainMenu"]
+    deleted  = parsed_plist["deleted"]
+    
+    root = TmSubmenu.new("__main_menu__", mainmenu)
     all = {}
     
-    hash["submenus"].each_pair do |k,v|
+    mainmenu["submenus"].each_pair do |k,v|
       all[k] = TmSubmenu.new(v["name"], v)
     end
 
     closing = "\n                    '("
-    closing+= hash["excludedItems"].collect do |uuid|
+    closing+= mainmenu["excludedItems"].collect do |uuid|
       snippet = TmSnippet::snippets_by_uid[uuid]
       
       "\"" + (snippet ? snippet.name : uuid) + "\"" 
     end.join(  "\n                       ") + "))"
 
     str = "(yas/define-menu "
-    return str + "'major-mode-name" + mainmenu.to_lisp(all,
-                                                       str.length,
-                                                       ["'(" , closing])
+    return str + "'#{modename}" + root.to_lisp(all,
+                                               deleted,
+                                               str.length,
+                                               ["'(" , closing])
   end
 end
 
@@ -156,20 +162,29 @@ end
 #
 class SkipSnippet < RuntimeError; end
 class TmSnippet
-  @@known_substitutions=[
-                         {
-                           "${TM_RAILS_TEMPLATE_START_RUBY_EXPR}"   => "<%= ",
-                           "${TM_RAILS_TEMPLATE_END_RUBY_EXPR}"     => " %>",
-                           "${TM_RAILS_TEMPLATE_START_RUBY_INLINE}" => "<% ",
-                           "${TM_RAILS_TEMPLATE_END_RUBY_INLINE}"   => " -%>",
-                           "${TM_RAILS_TEMPLATE_END_RUBY_BLOCK}"    => "end" ,
-                           "${0:$TM_SELECTED_TEXT}"                 => "${0:`yas/selected-text`",
-                         },
-                         {
-                           #substitutions that have to take place
-                           #after the first group
-                         }
-                        ]
+  # unix to the rescue
+  #
+  # ack -aho '\${\d/[^/]*/[^/]*/}' imported/ruby-mode/ | sort | uniq
+  @@known_substitutions ={
+    "content"   => [
+                    {
+                      "${TM_RAILS_TEMPLATE_START_RUBY_EXPR}"   => "<%= ",
+                      "${TM_RAILS_TEMPLATE_END_RUBY_EXPR}"     => " %>",
+                      "${TM_RAILS_TEMPLATE_START_RUBY_INLINE}" => "<% ",
+                      "${TM_RAILS_TEMPLATE_END_RUBY_INLINE}"   => " -%>",
+                      "${TM_RAILS_TEMPLATE_END_RUBY_BLOCK}"    => "end" ,
+                      "${0:$TM_SELECTED_TEXT}"                 => "${0:`yas/selected-text`",
+                    }
+                   ],
+    "condition" => [ {
+                      /^source\..*$/ => "" 
+                     } ],
+    "binding"   => [ {} ]
+  }
+  # now add some more substitutions
+  # TODO: find a better way to add more substitutions
+  #
+  require 'textmate_import_substitutions.rb'
 
   @@snippets_by_uid={}
   def self.snippets_by_uid; @@snippets_by_uid; end
@@ -179,7 +194,7 @@ class TmSnippet
     @info    = info
     @snippet = TmSnippet::read_plist(file)
     @@snippets_by_uid[self.uuid] = self;
-    raise SkipSnippet.new "not a snippet/command/macro." unless (scope || @snippet["command"]) 
+    raise SkipSnippet.new "not a snippet/command/macro." unless (@snippet["scope"] || @snippet["command"]) 
     raise RuntimeError.new("Cannot convert this snippet #{file}!") unless @snippet;
   end
 
@@ -205,16 +220,40 @@ class TmSnippet
     @snippet["tabTrigger"]
   end
 
-  def key_equivalent
-    @snippet["keyEquivalent"]
+  def binding
+    binding = @snippet["keyEquivalent"]
+    if binding
+      @@known_substitutions["binding"].each do |level|
+        level.each_pair do |k, v|
+          binding.gsub!(k,v)
+        end
+      end
+    end
+    "## binding: \""+ binding + "\"\n" if binding and not binding.empty?
   end
 
   def content
-    @snippet["content"]
+    content = @snippet["content"]
+    if content
+      @@known_substitutions["content"].each do |level|
+        level.each_pair do |k, v|
+          content.gsub!(k,v)
+        end
+      end
+    end
+    content
   end
 
-  def scope
-    @snippet["scope"]
+  def condition
+    condition = @snippet["scope"]
+    if condition
+      @@known_substitutions["condition"].each do |level|
+        level.each_pair do |k, v|
+          condition.gsub!(k,v)
+        end
+      end
+    end
+    "## condition: \""+ condition + "\"\n" if condition and not condition.empty?
   end
 
   def to_yasnippet
@@ -224,19 +263,10 @@ class TmSnippet
     doc << "# key: #{self.tab_trigger}\n" if self.tab_trigger
     doc << "# contributor: Translated from TextMate Snippet\n"
     doc << "# name: #{self.name}\n"
-    if self.key_equivalent
-      doc << "#" unless Choice.choices.convert_bindings
-      doc << "# binding: \"#{self.key_equivalent}\"\n"
-    end
-    if self.scope
-      doc << "#" 
-      doc << "# condition: \"#{self.scope}\"\n"
-    end
+    doc << (self.binding || "")
+    doc << (self.condition || "")
     doc << "# --\n"
-    if self.content
-      @@known_substitutions.each {|level| level.each_pair { |k, v| self.content.gsub!(k,v) }} 
-      doc << "#{self.content}"
-    end
+    doc << (self.content || "")
     doc
   end
 
@@ -272,13 +302,15 @@ end
 
 
 if $0 == __FILE__
-
-  info_plist = TmSnippet::read_plist(Choice.choices.info_plist) if Choice.choices.info_plist;
+  # Read the info.plist if we have it
+  #
+  info_plist_file = Choice.choices.info_plist || File.join(Choice.choices.bundle_dir,"info.plist")
+  info_plist = TmSnippet::read_plist(info_plist_file) if info_plist_file and File.readable? info_plist_file;
 
   # Glob snippets into snippet_files, going into subdirs
   #
   original_dir = Dir.pwd
-  Dir.chdir Choice.choices.snippet_dir
+  Dir.chdir Choice.choices.bundle_dir
   snippet_files_glob = File.join("**", Choice.choices.snippet)
   snippet_files = Dir.glob(snippet_files_glob)
 
@@ -287,7 +319,7 @@ if $0 == __FILE__
   puts "Will try to convert #{snippet_files.length} snippets...\n" unless Choice.choices.quiet
   snippet_files.each do |file|
     begin
-      puts "Processing \"#{File.join(Choice.choices.snippet_dir,file)}\"\n" unless Choice.choices.quiet
+      puts "Processing \"#{File.join(Choice.choices.bundle_dir,file)}\"\n" unless Choice.choices.quiet
       snippet = TmSnippet.new(file,info_plist)
 
       if Choice.choices.output_dir
@@ -314,21 +346,22 @@ if $0 == __FILE__
   end
   # Attempt to decypher the menu
   #
-  modename = Choice.choices.output_dir or "major-mode-name"  
-  str = TmSubmenu::main_menu_to_lisp(info_plist["mainMenu"]) if info_plist
-  puts str unless !str or Choice.choices.quiet
+  modename = File.basename Choice.choices.output_dir || "major-mode-name"  
+  menustr = TmSubmenu::main_menu_to_lisp(info_plist, modename) if info_plist
+  puts menustr unless !menustr or Choice.choices.quiet
 
   # Write some basic .yas-* files
   #
+  Dir.chdir original_dir
   if Choice.choices.output_dir
     FileUtils.mkdir_p Choice.choices.output_dir
-    FileUtils.touch File.join(Choice.choices.output_dir, ".yas-make-groups") unless str
-    FileUtils.touch File.join(Choice.choices.output_dir, ".yas-ignore-filenames-as-triggers")
-    File.open(File.join(Choice.choices.output_dir, ".yas-setup.el"), 'w') do |file|
+    FileUtils.touch File.join(original_dir, Choice.choices.output_dir, ".yas-make-groups") unless menustr
+    FileUtils.touch File.join(original_dir, Choice.choices.output_dir, ".yas-ignore-filenames-as-triggers")
+    File.open(File.join(original_dir, Choice.choices.output_dir, ".yas-setup.el"), 'w') do |file|
       file.write ";; .yas-setup.el for #{modename}\n"
       file.write ";;\n"
-      file.write ";;\n"
-      file.write(str)
+      file.write ";; Automatically translated menu\n"
+      file.write(menustr)
       file.write "\n;;\n"
       file.write ";; .yas-setup.el for #{modename} ends here\n"
     end
