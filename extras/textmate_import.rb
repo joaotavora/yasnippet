@@ -16,6 +16,7 @@ require 'rubygems'
 require 'plist'
 require 'choice'
 require 'FileUtils'
+require 'Shellwords' # String#shellescape
 require 'ruby-debug' if $DEBUG
 
 Choice.options do
@@ -49,7 +50,7 @@ Choice.options do
   end
 
   option :quiet do
-    short '-v'
+    short '-q'
     long '--quiet'
     desc 'Be quiet.'
   end
@@ -153,6 +154,7 @@ end
 #   far.
 # 
 #
+class SkipSnippet < RuntimeError; end
 class TmSnippet
   @@known_substitutions=[
                          {
@@ -161,9 +163,12 @@ class TmSnippet
                            "${TM_RAILS_TEMPLATE_START_RUBY_INLINE}" => "<% ",
                            "${TM_RAILS_TEMPLATE_END_RUBY_INLINE}"   => " -%>",
                            "${TM_RAILS_TEMPLATE_END_RUBY_BLOCK}"    => "end" ,
-                           "${0:$TM_SELECTED_TEXT}"                 => "$TM_SELECTED_TEXT$0",
+                           "${0:$TM_SELECTED_TEXT}"                 => "${0:`yas/selected-text`",
                          },
-                         { "$TM_SELECTED_TEXT"                      => "`yas/selected-text`" }
+                         {
+                           #substitutions that have to take place
+                           #after the first group
+                         }
                         ]
 
   @@snippets_by_uid={}
@@ -174,7 +179,8 @@ class TmSnippet
     @info    = info
     @snippet = TmSnippet::read_plist(file)
     @@snippets_by_uid[self.uuid] = self;
-    raise RuntimeError.new("Cannot convert this snippet #{file}!") unless @snippet;  
+    raise SkipSnippet.new "not a snippet/command/macro." unless (scope || @snippet["command"]) 
+    raise RuntimeError.new("Cannot convert this snippet #{file}!") unless @snippet;
   end
 
   def name
@@ -234,8 +240,8 @@ class TmSnippet
     doc
   end
 
-  def canonicalize(filename)
-    invalid_char = /[^ a-z_0-9.+=~(){}\/'"'"'`&#,-]/i
+  def self.canonicalize(filename)
+    invalid_char = /[^ a-z_0-9.+=~(){}\/'`&#,-]/i
 
     filename.
       gsub(invalid_char, '').  # remove invalid characters
@@ -245,7 +251,7 @@ class TmSnippet
 
   def yasnippet_file(basedir)
     # files cannot end with dots (followed by spaces) on windows
-    File.join(basedir,canonicalize(@file[0, @file.length-File.extname(@file).length]) + ".yasnippet")
+    File.join(basedir,TmSnippet::canonicalize(@file[0, @file.length-File.extname(@file).length]) + ".yasnippet")
   end
 
   def self.read_plist(xml_or_binary)
@@ -254,8 +260,8 @@ class TmSnippet
       return parsed if parsed
       raise RuntimeError.new "Probably in binary format and parse_xml is very quiet..."
     rescue RuntimeError => e
-      if (system "plutil -convert xml1 '#{xml_or_binary}' -o /tmp/textmate_import")
-        return Plist::parse_xml("/tmp/textmate_import") 
+      if (system "plutil -convert xml1 #{xml_or_binary.shellescape} -o /tmp/textmate_import.tmpxml")
+        return Plist::parse_xml("/tmp/textmate_import.tmpxml") 
       else
         raise RuntimeError.new "plutil failed miserably, check if you have it..."
       end
@@ -299,8 +305,11 @@ if $0 == __FILE__
           puts "--------------------------------------------\n\n"
         end
       end
-    rescue Exception => e
-      $stderr.puts "Oops... #{e.class}:#{e.message}\n#{e.backtrace.join("\n")}"
+    rescue SkipSnippet => e
+      $stdout.puts "Skipping \"#{file}\": #{e.message}"
+    rescue RuntimeError => e
+      $stderr.puts "Oops.... \"#{file}\": #{e.message}"
+      $strerr.puts "#{e.backtrace.join("\n")}" unless Choice.choices.quiet
     end
   end
   # Attempt to decypher the menu
