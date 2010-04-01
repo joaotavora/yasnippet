@@ -1,7 +1,0 @@
-# -*- mode: snippet -*-
-# key: tra
-# contributor: Translated from TextMate Snippet
-# name: transaction( .. ) { .. }
-## condition: "source.ruby"
-# --
-transaction${1/(^.*?\S.*)|.*/(?1:\()/}${1:true}${1/(^.*?\S.*)|.*/(?1:\))/} { $0 }

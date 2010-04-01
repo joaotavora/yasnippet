@@ -1,7 +1,0 @@
-# -*- mode: snippet -*-
-# key: input
-# contributor: Translated from TextMate Snippet
-# name: Input with Label
-## condition: "text.html"
-# --
-<label for="${2:${1:$(yas/html-id-from-string yas/text)}}">${1:}</label><input type="${3:$$(yas/choose-value '("text" "submit" "hidden" "button"))}" name="${4:$2}" value="$5"${6: id="${7:$2}"}`yas/html-xhtml-attr`>

@@ -1,9 +1,0 @@
-# -*- mode: snippet -*-
-# key: subp
-# contributor: Translated from TextMate Snippet
-# name: Sub Paragraph
-# --
-\subparagraph{${1:subparagraph name}} % (fold)
-\label{subp:${2:${1/\\\w+\{(.*?)\}|\\(.)|(\w+)|([^\w\\]+)/(?4:_:\L$1$2$3)/g}}}
-`yas/selected-text`$0
-% subparagraph $2 (end)

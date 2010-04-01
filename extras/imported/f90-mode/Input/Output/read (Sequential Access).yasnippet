@@ -1,7 +1,0 @@
-# -*- mode: snippet -*-
-# key: read
-# contributor: Translated from TextMate Snippet
-# name: Read (Non Advancing Mode)
-# --
-read(unit=${1:iounit}, fmt="(${2:format string})", iostat=${3:istat}, advance='NO', size=${4:number of characters}) ${5:variables}
-if ( $3 /= 0 ) stop "Read error in file unit $1"

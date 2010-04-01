@@ -1,7 +1,0 @@
-# -*- mode: snippet -*-
-# key: File
-# contributor: Translated from TextMate Snippet
-# name: File.open("..") { |file| .. }
-## condition: "source.ruby"
-# --
-File.open(${1:"${2:path/to/file}"}${3:$(if (string-match "^[rwab+]+$" yas/text) ", '" "")}${3:w}${3:$(if (string-match "^[rwab+]+$" yas/text) "'" "")}) { |${4:file}| $0 }

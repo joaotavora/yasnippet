@@ -1,9 +1,0 @@
-# -*- mode: snippet -*-
-# key: for
-# name: For Loop
-# expand-env: ((yas/wrap-around-region t))
-# --
-for(size_t ${2:i} = 0; $2 < ${1:count}; ${3:++i$(unless yas/modified-p (concat "++" (yas/field-value 2)))})
-{
-    $0
-}

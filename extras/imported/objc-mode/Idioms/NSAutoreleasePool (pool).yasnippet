@@ -1,9 +1,0 @@
-# -*- mode: snippet -*-
-# key: pool
-# contributor: Translated from TextMate Snippet
-# name: NSAutoreleasePool
-## condition: "source.objc, source.objc++"
-# --
-NSAutoreleasePool${TM_C_POINTER: *}pool = [NSAutoreleasePool new];
-$0
-[pool drain];

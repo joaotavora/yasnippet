@@ -1,8 +1,0 @@
-# -*- mode: snippet -*-
-# key: log
-# contributor: Translated from TextMate Snippet
-# name: NSLog(…)
-# condition: (and (yas/objc-implementation-p) (yas/objc-method-body-p))
-# --
-NSLog(@"${1:%@}"${1:$(if (string-match "%" text) ", " ");")
-}$2${1:$(if (string-match "%" text) ");" "")}$0

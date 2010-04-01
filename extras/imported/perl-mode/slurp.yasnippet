@@ -1,7 +1,0 @@
-# -*- mode: snippet -*-
-# key: slurp
-# contributor: Translated from TextMate Snippet
-# name: Read File
-# --
-my \$${1:var};
-{ local \$/ = undef; local *FILE; open FILE, "<${2:file}"; \$$1 = <FILE>; close FILE }

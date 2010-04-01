@@ -1,7 +1,0 @@
-# -*- mode: snippet -*-
-# key: prop
-# contributor: Translated from TextMate Snippet
-# name: Property (Objective-C 2.0)
-## condition: "source.objc meta.scope.interface, source.objc++ meta.scope.interface"
-# --
-@property (${1/^(e)$|.*/(?1:r)/}${1:r}${1/^(?:(r)|(e)|(c)|(a))$|.*/(?1:etain)(?2:adonly)(?3:opy)(?4:ssign)/}) ${2:NSSomeClass}${TM_C_POINTER: *}${3:${2/^[A-Z](?:[A-Z]+|[a-z]+)([A-Z]\w*)/\l$1/}};

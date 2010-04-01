@@ -1,8 +1,0 @@
-# -*- mode: snippet -*-
-# contributor: Translated from TextMate Snippet
-# name: Itemize Lines in Selection
-# binding: "^L"
-# --
-\begin{${1:itemize}}
-${TM_SELECTED_TEXT/^(([^\\]*):\s*)?(.+)$/\n\t\item(?1: [ $2 ]) $3/g}
-\end{${1:itemize}}

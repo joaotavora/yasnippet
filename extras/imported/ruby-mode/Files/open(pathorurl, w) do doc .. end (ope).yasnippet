@@ -1,7 +1,0 @@
-# -*- mode: snippet -*-
-# key: ope
-# contributor: Translated from TextMate Snippet
-# name: open("path/or/url", "w") { |io| .. }
-## condition: "source.ruby"
-# --
-open(${1:"${2:path/or/url/or/pipe}"}${3:$(if (string-match "^[rwab+]+$" yas/text) ", '" "")}${3:w}${3:$(if (string-match "^[rwab+]+$" yas/text) "'" "")}) { |${4:io}| $0 }
