@@ -162,9 +162,8 @@ end
 #
 class SkipSnippet < RuntimeError; end
 class TmSnippet
-  # unix to the rescue
-  #
-  # ack -aho '\${\d/[^/]*/[^/]*/}' imported/ruby-mode/ | sort | uniq
+
+  def self.known_substitutions; @@known_substitutions; end
   @@known_substitutions ={
     "content"   => [
                     {
@@ -180,6 +179,12 @@ class TmSnippet
                       /^source\..*$/ => "" 
                      } ],
     "binding"   => [ {} ]
+  }
+  def self.unknown_substitutions; @@unknown_substitutions; end
+  @@unknown_substitutions = {
+    "content"   => [],
+    "condition" => [],
+    "binding"   => []
   }
   # now add some more substitutions
   # TODO: find a better way to add more substitutions
@@ -240,8 +245,13 @@ class TmSnippet
           content.gsub!(k,v)
         end
       end
+      content.scan(%r'\$\{ [^/\}\{:]* /
+                                [^/]* /
+                                [^/]* /
+                                [^\}]*\}'x) do |match|
+        @@unknown_substitutions["content"].push [match, @file]
+      end
     end
-    content
   end
 
   def condition
@@ -348,7 +358,7 @@ if $0 == __FILE__
   #
   modename = File.basename Choice.choices.output_dir || "major-mode-name"  
   menustr = TmSubmenu::main_menu_to_lisp(info_plist, modename) if info_plist
-  puts menustr unless !menustr or Choice.choices.quiet
+  puts menustr if $DEBUG
 
   # Write some basic .yas-* files
   #
@@ -357,14 +367,35 @@ if $0 == __FILE__
     FileUtils.mkdir_p Choice.choices.output_dir
     FileUtils.touch File.join(original_dir, Choice.choices.output_dir, ".yas-make-groups") unless menustr
     FileUtils.touch File.join(original_dir, Choice.choices.output_dir, ".yas-ignore-filenames-as-triggers")
-    File.open(File.join(original_dir, Choice.choices.output_dir, ".yas-setup.el"), 'w') do |file|
-      file.write ";; .yas-setup.el for #{modename}\n"
-      file.write ";;\n"
-      file.write ";; Automatically translated menu\n"
-      file.write(menustr)
-      file.write "\n;;\n"
-      file.write ";; .yas-setup.el for #{modename} ends here\n"
+    yas_setup_el = File.join(original_dir, Choice.choices.output_dir, ".yas-setup.el")
+
+    existing = nil
+    separator = ";; --**--"
+    File.open yas_setup_el, 'r' do |file|
+      existing = file.read.split( ";; --**--")
+      existing = existing[0] || (";; .yas-setup.el for #{modename}\n" +
+                                 ";; \n") 
+    end
+      
+    File.open yas_setup_el, 'w' do |file|
+      file.puts existing
+      file.puts separator
+      file.puts ";; Automatically generated code - Translated menu"
+      file.puts ";; "
+      file.puts menustr
+      file.puts
+      file.puts ";; Unknown content substitutions:"
+      file.puts ";; "
+      TmSnippet::unknown_substitutions["content"].reduce([]) do |acc,e1|
+        # if !acc.index {|e2| e2[0]==e[0]} then acc << e1 end
+        acc.push e1 unless !acc || acc.index {|e2| e2[0]==e1[0]}
+        acc
+      end.each do |pair|
+        file.puts ";; " + pair[0] + (" " * [1, 50-pair[0].length].max) + "as in '" + pair[1] + "'"
+      end
+      file.puts ";; "
+      file.puts
+      file.puts ";; .yas-setup.el for #{modename} ends here"
     end
   end
-
 end
