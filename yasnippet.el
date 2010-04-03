@@ -1822,8 +1822,8 @@ not need to be a real mode."
     ;;
     (dolist (parent parent-tables)
       (unless (find parent (yas/table-parents snippet-table))
-        (push (yas/table-parents snippet-table)
-              parent)))
+        (push parent
+              (yas/table-parents snippet-table))))
 
     ;; X) The keymap created here here is the menu keymap, it is also
     ;;    gotten/created according to MODE.  Make a menu entry for
@@ -2640,7 +2640,7 @@ With optional prefix argument KILL quit the window and buffer."
                                        names))))))))))
     (display-buffer buffer)
     (with-current-buffer buffer
-      (beginning-of-buffer))))
+      (goto-char (point-min)))))
 
 
 ;;; User convenience functions, for using in snippet definitions
@@ -2701,12 +2701,10 @@ Otherwise throw exception."
     (when field
       (yas/field-text-for-display field))))
 
-(defun yas/text
-  (if yas/text
-      (if (not (string= "" yas/text))
-          ))
-  (or (and yas/text)
-      (not ())))
+(defun yas/text ()
+  (if (and yas/text
+           (not (string= "" yas/text)))
+      yas/text))
 
 (defun yas/get-field-once (number &optional transform-fn)
   (unless yas/modified-p
