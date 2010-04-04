@@ -1,3 +1,5 @@
+#!/usr/bin/ruby
+# -*- coding: utf-8 -*-
 #!/usr/bin/env ruby
 # -*- coding: utf-8 -*-
 # textmate_import.rb --- import textmate snippets
@@ -356,13 +358,17 @@ if $0 == __FILE__
   tail    ||= ""
   head    ||= ""
   directive = nil
+  puts "get this head #{head}"
   head.each_line do |line|
     case line
     when /^;; Substitutions for:(.*)$/
       directive = $~[1].strip
       # puts "found the directove #{directive}"
     when /^;;(.*)[ ]+=yyas>(.*)$/
-      lookfor, replacewith = $~[1].strip, $~[2].strip
+      replacewith = $~[2].strip
+      lookfor = $~[1]
+      lookfor.gsub!(/^[ ]*/, "")
+      lookfor.gsub!(/[ ]*$/, "")
       # puts "found this wonderful substitution for #{directive} which is #{lookfor} => #{replacewith}"
       unless !directive or replacewith =~ /yas\/unknown/ then 
         TmSnippet.extra_substitutions[directive][lookfor] = replacewith

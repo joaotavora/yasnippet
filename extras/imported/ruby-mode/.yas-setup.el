@@ -1,11 +1,75 @@
 ;; .yas-setup.el for ruby-mode
 ;; -*- coding: utf-8 -*-
 ;;
-;; um caralho lhecolheco lhao lhao
+(defvar yas/ruby-snippet-open-paren " "
+  "The open parenthesis used in ruby-mode snippets. Normally blank but could be (")
+(defvar yas/ruby-snippet-close-paren " "
+  "The close parenthesis used in ruby-mode snippets. Normally blank but could be )")
+(defun yas/ruby-snippet-paren (&optional arg)
+  "Defaults to returning the open paren. If arg equals t then shows close paren."
+  (if arg
+      yas/ruby-snippet-close-paren
+    yas/ruby-snippet-open-paren))
 
-;; Substitutions for: content
-;;
+(defvar yas/ruby-shebang-args " -wKU"
+  "Arguments for the ruby shebang line.")
+
+(defun yas/ruby-infer-class-name ()
+  "Infer the class name from the buffer. Thanks to hitesh <hitesh.jasani@gmail.com>"
+  (let ((fn (capitalize (file-name-nondirectory
+                         (file-name-sans-extension
+                          (buffer-file-name))))))
+    (cond
+     ((string-match "_" fn) (replace-match "" nil nil fn))
+     (t fn))))
+
+
+(defun yas/ruby-open-yield-block
+  (yas/expand-snippet (concat 
+                       "{ ${1:$(if (string= yas/text \"\") \"\" \"|\")}${1:variable}${1:$(if (string= yas/text \"\") \" \" \"| \")}`yas/selected-text`$0"
+                       (save-excursion (if (search-forward-regexp "}" (line-end-position) t)
+                                           "" "}")))))
+;; # -*- mode: snippet -*-
+;; # type: command
+;; # key: {
+;; # contributor: Translated from TextMate Snippet
+;; # name: Insert { |variable| … }
+;; # condition: (not (or (yas/ruby-in-comment-p) (yas/ruby-in-string-p)))
+;; # --
+
+
+(defun yas/ruby-toggle-single-multi-line-block ()
+  (interactive)
+  (save-excursion
+    (let* ((block-start (progn (ruby-beginning-of-block) (point)))
+           (block-end (progn (ruby-end-of-block) (forward-word)(point))))
+      (when (and block-start
+                 block-end)
+        (goto-char block-start)
+        (cond ((not (eq (line-number-at-pos block-end)
+                        (line-number-at-pos block-start)))
+               (when (looking-at ".*[^\w]\\(do\\)[^\w]\\(|.*|\\)?")
+                 (goto-char block-end)
+                 (insert "}")
+                 (goto-char block-start)
+                 (replace-regexp "do" "{" t block-start (line-end-position))))
+              (t
+               (replace-regexp "\\(.*\\){[^w]\\(|.*|\\)" "\1do \2\n" nil block-start block-end)))))))
+
+
+;; conditions
+;; 
+(yas/define-condition-cache yas/ruby-in-interpolated-string-p (member (fourth (syntax-ppss)) (list ?\" ?\`)))
+(yas/define-condition-cache yas/ruby-in-comment-p (fifth (syntax-ppss)))
+(yas/define-condition-cache yas/ruby-in-string-p (fourth (syntax-ppss)))
+(yas/define-condition-cache yas/ruby-end-is-block-end-p
+                            (save-excursion
+                              (ruby-backward-sexp)
+                              (not (eq (point) (point-min)))))
+
 ;; My work in progress substitutions
+;;
+;; Substitutions for: content
 ;;
 ;; ${1/.+/(/}                                                                        =yyas> ${1:$(and (yas/text) "(")}
 ;; ${1/.+/)/}                                                                        =yyas> ${1:$(and (yas/text) ")")}
@@ -19,18 +83,41 @@
 ;; ${3/(^.*?\S.*)|.*/(?1:\))/}                                                       =yyas> ${3:$(and (string-match "[^\s\t]" yas/text) ")" )}
 ;; ${2/^\s*$|(.*\S.*)/(?1: )/}                                                       =yyas> ${2:$(and (string-match "[^\s\t]" yas/text) " " )}
 ;; ${3/^\s*$|(.*\S.*)/(?1: )/}                                                       =yyas> ${3:$(and (string-match "[^\s\t]" yas/text) " " )}
+;; ${3/(^[rwab+]+$)|.*/(?1:, ")/}                                                    =yyas> ${3:$(and (string-match "^[rwab+]+$" yas/text) ", \\"" )}
+;; ${3/(^[rwab+]+$)|.*/(?1:")/}                                                      =yyas> ${3:$(and (string-match "^[rwab+]+$" yas/text) "\\"" )}
+;; 
+;; ${TM_FILENAME/(?:\A|_)([A-Za-z0-9]+)(?:\.rb)?/(?2::\u$1)/g}                       =yyas> `(yas/ruby-infer-class-name)`
+;; 
+;; ${1/(^(?<var>\s*[a-z_][a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:|)/}             =yyas> ${1:$(and (yas/text) "|")}
+;; ${1/(^(?<var>\s*[a-z_][a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1: |)/}            =yyas> ${1:$(and (yas/text) " |")}
+;; ${1/(^(?<var>\s*[a-z_][a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:| )/}            =yyas> ${1:$(and (yas/text) "| ")}
 ;;
+;; ${1/(^(?<var>\s*(?:\*|\*?[a-z_])[a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:|)/}   =yyas> ${1:$(and (yas/text) "|")}
+;; ${1/(^(?<var>\s*(?:\*|\*?[a-z_])[a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:| )/}  =yyas> ${1:$(and (yas/text) "| ")}
+;; ${2/(^(?<var>\s*(?:\*|\*?[a-z_])[a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:|)/}   =yyas> ${2:$(and (yas/text) "|")}
+;; ${2/(^(?<var>\s*(?:\*|\*?[a-z_])[a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:| )/}  =yyas> ${2:$(and (yas/text) "| ")}
+;; 
+;; ${1/([\w&&[^_]]+)|./\u$1/g}                                                       =yyas> ${1:$(replace-regexp-in-string "[_/]" "" (capitalize yas/text))}
+;;
+;; # as in Snippets/Wrap in Begin Rescue End.yasnippet
+;; 0F940CBC-2173-49FF-B6FD-98A62863F8F2                                              =yyas> (yas/ruby-wrap-in-begin-rescue)
+;; 
 ;; Substitutions for: condition
 ;;
-;; (string.quoted.double.ruby|string.interpolated.ruby) - string source                       =yyas> (yas/ruby-in-interpolated-string-p)
-;; text.html.ruby, text.html source.ruby                                                      =yyas> (yas/unimplemented)
-;; text.html, source.yaml, meta.erb                                                           =yyas> (yas/unimplemented)
-;; keyword.control.start-block.ruby, meta.syntax.ruby.start-block                             =yyas>
+;; 451A0596-1F72-4AFB-AF2F-45900FABB0F7                                              =yyas> (not (yas/ruby-end-is-block-end-p))
+;; (string.quoted.double.ruby|string.interpolated.ruby) - string source              =yyas> (and (yas/ruby-in-interpolated-string-p) 'force-in-comment)
+;; text.html.ruby, text.html source.ruby                                             =yyas> (yas/unimplemented)
+;; text.html, source.yaml, meta.erb                                                  =yyas> (yas/unimplemented)
+;; keyword.control.start-block.ruby, meta.syntax.ruby.start-block                    =yyas>
 ;; 
 ;; Substitutions for: binding
 ;;
 ;; # as in Commands/New Method.yasnippet
-;; $                                                                                        =yyas> C-s-M
+;; $                                                                               =yyas> C-s-M
+;; #                                                                                 =yyas> #
+;;
+
+;; 
 ;; --**--
 ;; Automatically generated code, do not edit this part
 ;; 
@@ -275,45 +362,6 @@
 ;; 
 ;; Substitutions for: content
 ;; 
-;; # as in Snippets/open(pathorurl, w) do doc .. end (ope).yasnippet
-;; ${3/(^[rwab+]+$)|.*/(?1:, ")/}                                                             =yyas> (yas/unknown)
-;; 
-;; # as in Snippets/open(pathorurl, w) do doc .. end (ope).yasnippet
-;; ${3/(^[rwab+]+$)|.*/(?1:")/}                                                               =yyas> (yas/unknown)
-;; 
-;; # as in Snippets/upto(1.00.0) { n .. } (upt).yasnippet
-;; ${2/(^(?<var>\s*(?:\*|\*?[a-z_])[a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:|)/}            =yyas> (yas/unknown)
-;; 
-;; # as in Snippets/upto(1.00.0) { n .. } (upt).yasnippet
-;; ${2/(^(?<var>\s*(?:\*|\*?[a-z_])[a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:| )/}           =yyas> (yas/unknown)
-;; 
-;; # as in Snippets/Wrap in Begin Rescue End.yasnippet
-;; ${TM_SELECTED_TEXT/([\t ]*).*/$1/m}                                                        =yyas> (yas/unknown)
-;; 
-;; # as in Snippets/Wrap in Begin Rescue End.yasnippet
-;; ${TM_SELECTED_TEXT/(\A.*)|(.+)|\n\z/(?1:$0:(?2:\t$0))/g}                                   =yyas> (yas/unknown)
-;; 
-;; # as in Snippets/module .. module_function .. end.yasnippet
-;; ${TM_FILENAME/(?:\A|_)([A-Za-z0-9]+)(?:\.rb)?/(?2::\u$1)/g}                                =yyas> (yas/unknown)
-;; 
-;; # as in Snippets/class .. TestUnitTestCase .. end (tc).yasnippet
-;; ${1/([\w&&[^_]]+)|./\u$1/g}                                                                =yyas> (yas/unknown)
-;; 
-;; # as in Snippets/do obj .. end (doo).yasnippet
-;; ${1/(^(?<var>\s*[a-z_][a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1: |)/}                     =yyas> (yas/unknown)
-;; 
-;; # as in Snippets/open yield block ({).yasnippet
-;; ${1/(^(?<var>\s*[a-z_][a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:|)/}                      =yyas> (yas/unknown)
-;; 
-;; # as in Snippets/times { n .. } (tim).yasnippet
-;; ${1/(^(?<var>\s*(?:\*|\*?[a-z_])[a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:|)/}            =yyas> (yas/unknown)
-;; 
-;; # as in Snippets/times { n .. } (tim).yasnippet
-;; ${1/(^(?<var>\s*(?:\*|\*?[a-z_])[a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:| )/}           =yyas> (yas/unknown)
-;; 
-;; # as in Snippets/open yield block ({).yasnippet
-;; ${1/(^(?<var>\s*[a-z_][a-zA-Z0-9_]*\s*)(,\g<var>)*,?\s*$)|.*/(?1:| )/}                     =yyas> (yas/unknown)
-;; 
 ;; # as in Snippets/untitled.yasnippet
 ;; ${3/^\s*$|(.*\S.*)/(?1:, )/}                                                               =yyas> (yas/unknown)
 ;; 
@@ -331,41 +379,35 @@
 ;; # as in Commands/Check Ruby Syntax.yasnippet
 ;; ^V                                                                                         =yyas> (yas/unknown)
 ;; 
-;; # as in Commands/Execute Line with Ruby.yasnippet
-;; ^E                                                                                         =yyas> (yas/unknown)
-;; 
-;; # as in Commands/Insert Missing Requires.yasnippet
-;; ^#                                                                                         =yyas> (yas/unknown)
-;; 
-;; # as in Commands/Lookup in Documentation.yasnippet
-;; ^h                                                                                         =yyas> (yas/unknown)
-;; 
-;; # as in Commands/Make Destructive Call.yasnippet
-;; ^!                                                                                         =yyas> (yas/unknown)
-;; 
-;; # as in Commands/Run focused unit test.yasnippet
-;; @R                                                                                         =yyas> (yas/unknown)
-;; 
-;; # as in Commands/Toggle Quote Style.yasnippet
-;; ^"                                                                                         =yyas> (yas/unknown)
-;; 
-;; # as in Macros/Overwrite } in #{ .. }.yasnippet
-;; }                                                                                          =yyas> (yas/unknown)
-;; 
-;; # as in Macros/Toggle Single Multi Line Block.yasnippet
-;; ^{                                                                                         =yyas> (yas/unknown)
+;; # as in Snippets/hash pointer.yasnippet
+;; ^l                                                                                         =yyas> (yas/unknown)
 ;; 
 ;; # as in Snippets/Wrap in Begin Rescue End.yasnippet
 ;; ^W                                                                                         =yyas> (yas/unknown)
 ;; 
-;; # as in Snippets/embed string variable.yasnippet
-;; #                                                                                          =yyas> (yas/unknown)
+;; # as in Commands/Make Destructive Call.yasnippet
+;; ^!                                                                                         =yyas> (yas/unknown)
 ;; 
-;; # as in Snippets/hash pointer.yasnippet
-;; ^l                                                                                         =yyas> (yas/unknown)
+;; # as in Commands/Toggle Quote Style.yasnippet
+;; ^"                                                                                         =yyas> (yas/unknown)
+;; 
+;; # as in Macros/Toggle Single Multi Line Block.yasnippet
+;; ^{                                                                                         =yyas> (yas/unknown)
+;; 
+;; # as in Macros/Overwrite } in #{ .. }.yasnippet
+;; }                                                                                          =yyas> (yas/unknown)
+;; 
+;; # as in Commands/Run focused unit test.yasnippet
+;; @R                                                                                         =yyas> (yas/unknown)
+;; 
+;; # as in Commands/Execute Line with Ruby.yasnippet
+;; ^E                                                                                         =yyas> (yas/unknown)
 ;; 
 ;; # as in Macros/Delete forwardbackward.yasnippet
 ;;                                                                                           =yyas> (yas/unknown)
+;; 
+;; # as in Commands/Lookup in Documentation.yasnippet
+;; ^h                                                                                         =yyas> (yas/unknown)
 ;; 
 ;; 
 
