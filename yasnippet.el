@@ -512,7 +512,6 @@ The default value is similar, it filters out potential snippet
 expansions inside comments and string literals, unless the
 snippet itself contains a condition that returns the symbol
 `force-in-comment'.")
-(make-variable-buffer-local 'yas/buffer-local-condition)
 
 
 ;;; Internal variables
@@ -2795,7 +2794,8 @@ for this field, apply it. Otherwise, returned nil."
          (transformed (and transform
                            (save-excursion
                              (goto-char start-point)
-                             (yas/eval-lisp transform)))))
+                             (let ((ret (yas/eval-lisp transform)))
+                               (or ret ""))))))
     transformed))
 
 (defsubst yas/replace-all (from to &optional text)
