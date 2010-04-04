@@ -162,34 +162,32 @@ end
 #
 class SkipSnippet < RuntimeError; end
 class TmSnippet
-
-  def self.known_substitutions; @@known_substitutions; end
-  @@known_substitutions ={
-    "content"   => [
-                    {
-                      "${TM_RAILS_TEMPLATE_START_RUBY_EXPR}"   => "<%= ",
-                      "${TM_RAILS_TEMPLATE_END_RUBY_EXPR}"     => " %>",
-                      "${TM_RAILS_TEMPLATE_START_RUBY_INLINE}" => "<% ",
-                      "${TM_RAILS_TEMPLATE_END_RUBY_INLINE}"   => " -%>",
-                      "${TM_RAILS_TEMPLATE_END_RUBY_BLOCK}"    => "end" ,
-                      "${0:$TM_SELECTED_TEXT}"                 => "${0:`yas/selected-text`",
-                    }
-                   ],
-    "condition" => [ {
-                      /^source\..*$/ => "" 
-                     } ],
-    "binding"   => [ {} ]
+  @@known_substitutions = {
+    "content"   => {
+      "${TM_RAILS_TEMPLATE_START_RUBY_EXPR}"   => "<%= ",
+      "${TM_RAILS_TEMPLATE_END_RUBY_EXPR}"     => " %>",
+      "${TM_RAILS_TEMPLATE_START_RUBY_INLINE}" => "<% ",
+      "${TM_RAILS_TEMPLATE_END_RUBY_INLINE}"   => " -%>",
+      "${TM_RAILS_TEMPLATE_END_RUBY_BLOCK}"    => "end" ,
+      "${0:$TM_SELECTED_TEXT}"                 => "${0:`yas/selected-text`" },
+    "condition" => {
+      /^source\..*$/ => "" },
+    "binding"   => {}
   }
+
+  def self.extra_substitutions; @@extra_substitutions; end
+  @@extra_substitutions = {
+    "content"   => {},
+    "condition" => {},
+    "binding"   => {}
+  }
+  
   def self.unknown_substitutions; @@unknown_substitutions; end
   @@unknown_substitutions = {
-    "content"   => [],
-    "condition" => [],
-    "binding"   => []
+    "content"   => {},
+    "condition" => {},
+    "binding"   => {}
   }
-  # now add some more substitutions
-  # TODO: find a better way to add more substitutions
-  #
-  require 'textmate_import_substitutions.rb'
 
   @@snippets_by_uid={}
   def self.snippets_by_uid; @@snippets_by_uid; end
@@ -207,70 +205,55 @@ class TmSnippet
     @snippet["name"]
   end
 
-  # def subdir
-  #   if @info
-  #     submenus = @info["mainMenu"]["submenus"]
-  #     container = submenus.keys.find do |submenu|
-  #       submenus[submenu]["items"].member?(uuid)
-  #     end
-  #     submenus[container]["name"] if container;
-  #   end
-  # end
-
   def uuid
     @snippet["uuid"]
   end
 
-  def tab_trigger
+  def key
     @snippet["tabTrigger"]
   end
 
+  def condition
+    yas_directive "condition"
+  end
+
   def binding
-    binding = @snippet["keyEquivalent"]
-    if binding
-      @@known_substitutions["binding"].each do |level|
-        level.each_pair do |k, v|
-          binding.gsub!(k,v)
-        end
-      end
-    end
-    "## binding: \""+ binding + "\"\n" if binding and not binding.empty?
+    yas_directive "binding"
   end
 
   def content
-    content = @snippet["content"]
-    if content
-      @@known_substitutions["content"].each do |level|
-        level.each_pair do |k, v|
-          content.gsub!(k,v)
+    if direct = @@known_substitutions["content"].
+        merge(@@extra_substitutions["content"])[uuid]
+      return direct
+    else
+      content = @snippet["content"]
+      if content
+        @@known_substitutions["content"].
+          merge(@@extra_substitutions["content"]).
+          each_pair do |k,v|
+          if (k != uuid)
+            content.gsub!(k,v)
+          else
+            content = v
+          end
         end
-      end
-      content.scan(%r'\$\{ [^/\}\{:]* /
+        content.scan(%r'\$\{ [^/\}\{:]* /
                                 [^/]* /
                                 [^/]* /
                                 [^\}]*\}'x) do |match|
-        @@unknown_substitutions["content"].push [match, @file]
-      end
-    end
-  end
-
-  def condition
-    condition = @snippet["scope"]
-    if condition
-      @@known_substitutions["condition"].each do |level|
-        level.each_pair do |k, v|
-          condition.gsub!(k,v)
+          @@unknown_substitutions["content"][match] = self
         end
+      else
+        
       end
     end
-    "## condition: \""+ condition + "\"\n" if condition and not condition.empty?
   end
 
-  def to_yasnippet
+  def to_yas
     doc = "# -*- mode: snippet -*-\n"
     doc << "# type: command\n" unless self.content
     doc << "# uuid: #{self.uuid}\n"
-    doc << "# key: #{self.tab_trigger}\n" if self.tab_trigger
+    doc << "# key: #{self.key}\n" if self.key
     doc << "# contributor: Translated from TextMate Snippet\n"
     doc << "# name: #{self.name}\n"
     doc << (self.binding || "")
@@ -289,17 +272,16 @@ class TmSnippet
       rstrip                   # remove trailing whitespaces
   end
 
-  def yasnippet_file(basedir)
-    # files cannot end with dots (followed by spaces) on windows
-    File.join(basedir,TmSnippet::canonicalize(@file[0, @file.length-File.extname(@file).length]) + ".yasnippet")
+  def yas_file()
+      File.join(TmSnippet::canonicalize(@file[0, @file.length-File.extname(@file).length]) + ".yasnippet")
   end
 
   def self.read_plist(xml_or_binary)
     begin
       parsed = Plist::parse_xml(xml_or_binary)
       return parsed if parsed
-      raise RuntimeError.new "Probably in binary format and parse_xml is very quiet..."
-    rescue RuntimeError => e
+      raise ArgumentError.new "Probably in binary format and parse_xml is very quiet..."
+    rescue StandardError => e
       if (system "plutil -convert xml1 #{xml_or_binary.shellescape} -o /tmp/textmate_import.tmpxml")
         return Plist::parse_xml("/tmp/textmate_import.tmpxml") 
       else
@@ -308,18 +290,88 @@ class TmSnippet
     end
   end
 
+  private
+
+  @@yas_to_tm_directives = {"condition" => "scope", "binding" => "keyEquivalent", "key" => "tabTrigger"}
+  def yas_directive(yas_directive)
+    tm_directive = @@yas_to_tm_directives[yas_directive]
+    val = @snippet[tm_directive]
+    found = false
+    # puts "Looking for a substitution for #{val}"
+    if val and !val.delete(" ").empty?
+      @@known_substitutions[yas_directive].
+        merge(@@extra_substitutions[yas_directive]).
+        each_pair do |k, v|
+        if (k == uuid)
+          val = v
+          found = true
+          break
+        elsif val.gsub!(k,v)
+          # puts "#{@snippet[tm_directive]} matched #{k} so replacing with #{v}"
+          found = true
+          break
+        end
+      end
+      if found
+        # puts "found substitution for #{yas_directive} : #{val}"
+        "# #{yas_directive}: "+ val + "\n" unless val.empty?
+      else
+        # puts "found this unknown substitutions for #{yas_directive} : #{val}"
+        @@unknown_substitutions[yas_directive][val] = self
+        "## #{yas_directive}: \""+ val + "\n"
+      end
+    end
+  end
+
 end
 
 
 if $0 == __FILE__
-  # Read the info.plist if we have it
+  # Read the the bundle's info.plist if can find it/guess it
   #
   info_plist_file = Choice.choices.info_plist || File.join(Choice.choices.bundle_dir,"info.plist")
   info_plist = TmSnippet::read_plist(info_plist_file) if info_plist_file and File.readable? info_plist_file;
 
-  # Glob snippets into snippet_files, going into subdirs
+  # Calculate the mode name
+  # 
+  modename = File.basename Choice.choices.output_dir || "major-mode-name"
+
+  # Read in .yas-setup.el looking for the separator between auto-generated
   #
   original_dir = Dir.pwd
+  yas_setup_el_file = File.join(original_dir, Choice.choices.output_dir, ".yas-setup.el")
+  separator = ";; --**--"
+  whole, head , tail = "", "", ""
+  if File::exists? yas_setup_el_file
+    File.open yas_setup_el_file, 'r' do |file|
+      whole = file.read
+      head , tail = whole.split(separator)
+    end
+  else
+    head = ";; .yas-setup.el for #{modename}\n" + ";; \n"
+  end
+
+  # Now iterate the tail part to find extra substitutions
+  #
+  tail    ||= ""
+  head    ||= ""
+  directive = nil
+  head.each_line do |line|
+    case line
+    when /^;; Substitutions for:(.*)$/
+      directive = $~[1].strip
+      # puts "found the directove #{directive}"
+    when /^;;(.*)[ ]+=yyas>(.*)$/
+      lookfor, replacewith = $~[1].strip, $~[2].strip
+      # puts "found this wonderful substitution for #{directive} which is #{lookfor} => #{replacewith}"
+      unless !directive or replacewith =~ /yas\/unknown/ then 
+        TmSnippet.extra_substitutions[directive][lookfor] = replacewith
+      end
+    end
+  end
+
+  # Glob snippets into snippet_files, going into subdirs
+  #
   Dir.chdir Choice.choices.bundle_dir
   snippet_files_glob = File.join("**", Choice.choices.snippet)
   snippet_files = Dir.glob(snippet_files_glob)
@@ -327,22 +379,26 @@ if $0 == __FILE__
   # Attempt to convert each snippet files in snippet_files
   #  
   puts "Will try to convert #{snippet_files.length} snippets...\n" unless Choice.choices.quiet
+  
+
+  # Iterate the globbed files
+  #
   snippet_files.each do |file|
     begin
       puts "Processing \"#{File.join(Choice.choices.bundle_dir,file)}\"\n" unless Choice.choices.quiet
       snippet = TmSnippet.new(file,info_plist)
 
-      if Choice.choices.output_dir
-        file_to_create = snippet.yasnippet_file(File.join(original_dir, Choice.choices.output_dir))
+      if 
+        file_to_create = File.join(original_dir, Choice.choices.output_dir, snippet.yas_file)
         FileUtils.mkdir_p(File.dirname(file_to_create))
         File.open(file_to_create, 'w') do |f|
-          f.write(snippet.to_yasnippet)
+          f.write(snippet.to_yas)
         end
       else
         if Choice.choices.print_pretty
           puts "--------------------------------------------"
         end
-        puts snippet.to_yasnippet if Choice.choices.print_pretty or not Choice.choices.info_plist
+        puts snippet.to_yas if Choice.choices.print_pretty or not Choice.choices.info_plist
         if Choice.choices.print_pretty
           puts "--------------------------------------------\n\n"
         end
@@ -354,47 +410,49 @@ if $0 == __FILE__
       $strerr.puts "#{e.backtrace.join("\n")}" unless Choice.choices.quiet
     end
   end
+
   # Attempt to decypher the menu
   #
-  modename = File.basename Choice.choices.output_dir || "major-mode-name"  
   menustr = TmSubmenu::main_menu_to_lisp(info_plist, modename) if info_plist
   puts menustr if $DEBUG
 
   # Write some basic .yas-* files
   #
-  Dir.chdir original_dir
   if Choice.choices.output_dir
     FileUtils.mkdir_p Choice.choices.output_dir
     FileUtils.touch File.join(original_dir, Choice.choices.output_dir, ".yas-make-groups") unless menustr
     FileUtils.touch File.join(original_dir, Choice.choices.output_dir, ".yas-ignore-filenames-as-triggers")
-    yas_setup_el = File.join(original_dir, Choice.choices.output_dir, ".yas-setup.el")
-
-    existing = nil
-    separator = ";; --**--"
-    File.open yas_setup_el, 'r' do |file|
-      existing = file.read.split( ";; --**--")
-      existing = existing[0] || (";; .yas-setup.el for #{modename}\n" +
-                                 ";; \n") 
-    end
-      
-    File.open yas_setup_el, 'w' do |file|
-      file.puts existing
+    
+    # Now, output head + a new tail in (possibly new) .yas-setup.el
+    # file
+    #
+    File.open yas_setup_el_file, 'w' do |file|
+      file.puts head
       file.puts separator
-      file.puts ";; Automatically generated code - Translated menu"
+      file.puts ";; Automatically generated code, do not edit this part"
+      file.puts ";; "
+      file.puts ";; Translated menu"
       file.puts ";; "
       file.puts menustr
       file.puts
-      file.puts ";; Unknown content substitutions:"
+      file.puts ";; Unknown substitutions"
       file.puts ";; "
-      TmSnippet::unknown_substitutions["content"].reduce([]) do |acc,e1|
-        # if !acc.index {|e2| e2[0]==e[0]} then acc << e1 end
-        acc.push e1 unless !acc || acc.index {|e2| e2[0]==e1[0]}
-        acc
-      end.each do |pair|
-        file.puts ";; " + pair[0] + (" " * [1, 50-pair[0].length].max) + "as in '" + pair[1] + "'"
+      ["content", "condition", "binding"].each do |type|
+        file.puts ";; Substitutions for: #{type}"
+        file.puts ";; "
+        # TmSnippet::extra_substitutions[type].
+        #   each_pair do |k,v|
+        #   file.puts ";; " + k + "" + (" " * [1, 90-k.length].max) + " =yyas> " + v
+        # end
+        unknown = TmSnippet::unknown_substitutions[type];
+        unknown.keys.uniq.each do |k|
+          file.puts ";; # as in " +  unknown[k].yas_file
+          file.puts ";; " + k + "" + (" " * [1, 90-k.length].max) + " =yyas> (yas/unknown)"
+          file.puts ";; "
+        end
+        file.puts ";; "
+        file.puts
       end
-      file.puts ";; "
-      file.puts
       file.puts ";; .yas-setup.el for #{modename} ends here"
     end
   end
