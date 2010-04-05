@@ -111,11 +111,15 @@ class TmSubmenu
         string += str + "\"" + submenu.name + "\"" 
         string += submenu.to_lisp(allsubmenus, deleteditems,
                                   indent + str.length + thingy[0].length)
-      elsif TmSnippet::snippets_by_uid[uuid]
+      elsif snippet = TmSnippet::snippets_by_uid[uuid]
+        string += ";; " + snippet.name + "\n"
+        string += " " * (indent + thingy[0].length)
         string += "(yas/item \"" + uuid + "\")"
       elsif (uuid =~ /---------------------/)
         string += "(yas/separator)"
       else
+        string += ";; An external, misterious item\n"
+        string += " " * (indent + thingy[0].length)
         string += "(yas/external-item \"" + uuid + "\")"
       end
       first = false;
@@ -139,9 +143,7 @@ class TmSubmenu
 
     closing = "\n                    '("
     closing+= mainmenu["excludedItems"].collect do |uuid|
-      snippet = TmSnippet::snippets_by_uid[uuid]
-      
-      "\"" + (snippet ? snippet.name : uuid) + "\"" 
+      "\"" + uuid + "\"" 
     end.join(  "\n                       ") + "))"
 
     str = "(yas/define-menu "
@@ -174,21 +176,24 @@ class TmSnippet
       "${0:$TM_SELECTED_TEXT}"                 => "${0:`yas/selected-text`" },
     "condition" => {
       /^source\..*$/ => "" },
-    "binding"   => {}
+    "binding"   => {},
+    "type"      => {}
   }
 
   def self.extra_substitutions; @@extra_substitutions; end
   @@extra_substitutions = {
     "content"   => {},
     "condition" => {},
-    "binding"   => {}
+    "binding"   => {},
+    "type"      => {}
   }
   
   def self.unknown_substitutions; @@unknown_substitutions; end
   @@unknown_substitutions = {
     "content"   => {},
     "condition" => {},
-    "binding"   => {}
+    "binding"   => {},
+    "type"      => {}
   }
 
   @@snippets_by_uid={}
@@ -199,7 +204,8 @@ class TmSnippet
     @info    = info
     @snippet = TmSnippet::read_plist(file)
     @@snippets_by_uid[self.uuid] = self;
-    raise SkipSnippet.new "not a snippet/command/macro." unless (@snippet["scope"] || @snippet["command"]) 
+    raise SkipSnippet.new "not a snippet/command/macro." unless (@snippet["scope"] || @snippet["command"])
+    raise SkipSnippet.new "looks like preferences."if @file =~ /Preferences\//
     raise RuntimeError.new("Cannot convert this snippet #{file}!") unless @snippet;
   end
 
@@ -219,6 +225,10 @@ class TmSnippet
     yas_directive "condition"
   end
 
+  def type
+    yas_directive "type"
+  end
+
   def binding
     yas_directive "binding"
   end
@@ -233,27 +243,26 @@ class TmSnippet
         @@known_substitutions["content"].
           merge(@@extra_substitutions["content"]).
           each_pair do |k,v|
-          if (k != uuid)
             content.gsub!(k,v)
-          else
-            content = v
+        end
+        # the remaining stuff is an unknown substitution
+        # 
+        [ %r'\$\{ [^/\}\{:]* / [^/]* / [^/]* / [^\}]*\}'x ,
+          %r'\$\{[^\d][^}]+\}'x ,
+          %r'`[^`]+`'
+        ].each do |reg|
+          content.scan(reg) do |match|
+            @@unknown_substitutions["content"][match] = self
           end
         end
-        content.scan(%r'\$\{ [^/\}\{:]* /
-                                [^/]* /
-                                [^/]* /
-                                [^\}]*\}'x) do |match|
-          @@unknown_substitutions["content"][match] = self
-        end
-      else
-        
+        return content
       end
     end
   end
 
   def to_yas
     doc = "# -*- mode: snippet -*-\n"
-    doc << "# type: command\n" unless self.content
+    doc << (self.type || "")
     doc << "# uuid: #{self.uuid}\n"
     doc << "# key: #{self.key}\n" if self.key
     doc << "# contributor: Translated from TextMate Snippet\n"
@@ -296,31 +305,23 @@ class TmSnippet
 
   @@yas_to_tm_directives = {"condition" => "scope", "binding" => "keyEquivalent", "key" => "tabTrigger"}
   def yas_directive(yas_directive)
-    tm_directive = @@yas_to_tm_directives[yas_directive]
-    val = @snippet[tm_directive]
-    found = false
-    # puts "Looking for a substitution for #{val}"
-    if val and !val.delete(" ").empty?
-      @@known_substitutions[yas_directive].
-        merge(@@extra_substitutions[yas_directive]).
-        each_pair do |k, v|
-        if (k == uuid)
-          val = v
-          found = true
-          break
-        elsif val.gsub!(k,v)
-          # puts "#{@snippet[tm_directive]} matched #{k} so replacing with #{v}"
-          found = true
-          break
+    if direct = @@known_substitutions[yas_directive].
+        merge(@@extra_substitutions[yas_directive])[uuid]
+      return "# #{yas_directive}: "+ direct + "\n" unless direct.empty?
+    else
+      tm_directive = @@yas_to_tm_directives[yas_directive]
+      val = tm_directive && @snippet[tm_directive]
+      if val and !val.delete(" ").empty? then
+        # puts "Looking for a substitution for #{val}"
+        @@known_substitutions[yas_directive].
+          merge(@@extra_substitutions[yas_directive]).
+          each_pair do |k, v|
+          if val.gsub!(k,v)
+            return "# #{yas_directive}: "+ val + "\n" unless val.empty?
+          end
         end
-      end
-      if found
-        # puts "found substitution for #{yas_directive} : #{val}"
-        "# #{yas_directive}: "+ val + "\n" unless val.empty?
-      else
-        # puts "found this unknown substitutions for #{yas_directive} : #{val}"
         @@unknown_substitutions[yas_directive][val] = self
-        "## #{yas_directive}: \""+ val + "\n"
+        return "## #{yas_directive}: \""+ val + "\n"
       end
     end
   end
@@ -358,7 +359,7 @@ if $0 == __FILE__
   tail    ||= ""
   head    ||= ""
   directive = nil
-  puts "get this head #{head}"
+  # puts "get this head #{head}"
   head.each_line do |line|
     case line
     when /^;; Substitutions for:(.*)$/
