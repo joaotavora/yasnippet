@@ -42,7 +42,7 @@ Choice.options do
     short '-f'
     long '--file=SNIPPET FILE NAME'
     desc 'A specific snippet that you want to copy or a glob for various files'
-    default '*.{tmSnippet,plist,tmMacro}'
+    default '*.{tmSnippet,tmCommand,plist,tmMacro}'
   end
 
   option :print_pretty do
@@ -163,7 +163,7 @@ end
 # - @@snippets_by_uid is where one can find all the snippets parsed so
 #   far.
 # 
-#
+# 
 class SkipSnippet < RuntimeError; end
 class TmSnippet
   @@known_substitutions = {
@@ -173,7 +173,9 @@ class TmSnippet
       "${TM_RAILS_TEMPLATE_START_RUBY_INLINE}" => "<% ",
       "${TM_RAILS_TEMPLATE_END_RUBY_INLINE}"   => " -%>",
       "${TM_RAILS_TEMPLATE_END_RUBY_BLOCK}"    => "end" ,
-      "${0:$TM_SELECTED_TEXT}"                 => "${0:`yas/selected-text`" },
+      "${0:$TM_SELECTED_TEXT}"                 => "${0:`yas/selected-text`}",
+      "${1:$TM_SELECTED_TEXT}"                 => "${1:`yas/selected-text`}",
+      "${2:$TM_SELECTED_TEXT}"                 => "${2:`yas/selected-text`}"},
     "condition" => {
       /^source\..*$/ => "" },
     "binding"   => {},
@@ -226,7 +228,12 @@ class TmSnippet
   end
 
   def type
-    yas_directive "type"
+    override = yas_directive "type"
+    if override
+      return override
+    else
+      return "# type: command\n" if @file =~ /(Commands\/)/
+    end
   end
 
   def binding
@@ -238,24 +245,29 @@ class TmSnippet
         merge(@@extra_substitutions["content"])[uuid]
       return direct
     else
-      content = @snippet["content"]
-      if content
+      ct = @snippet["content"]
+      
+      if ct
         @@known_substitutions["content"].
           merge(@@extra_substitutions["content"]).
           each_pair do |k,v|
-            content.gsub!(k,v)
+            ct.gsub!(k,v)
         end
         # the remaining stuff is an unknown substitution
         # 
         [ %r'\$\{ [^/\}\{:]* / [^/]* / [^/]* / [^\}]*\}'x ,
-          %r'\$\{[^\d][^}]+\}'x ,
-          %r'`[^`]+`'
+          %r'\$\{[^\d][^}]+\}',
+          %r'`[^`]+`',
+          %r'\$TM_[\w_]+'
         ].each do |reg|
-          content.scan(reg) do |match|
+          ct.scan(reg) do |match|
             @@unknown_substitutions["content"][match] = self
           end
         end
-        return content
+        return ct
+      else
+        @@unknown_substitutions["content"][uuid] = self
+        return "(yas/unimplemented)"
       end
     end
   end
@@ -265,12 +277,12 @@ class TmSnippet
     doc << (self.type || "")
     doc << "# uuid: #{self.uuid}\n"
     doc << "# key: #{self.key}\n" if self.key
-    doc << "# contributor: Translated from TextMate Snippet\n"
+    doc << "# contributor: Translated from textmate snippet by PROGRAM_NAME\n"
     doc << "# name: #{self.name}\n"
     doc << (self.binding || "")
     doc << (self.condition || "")
     doc << "# --\n"
-    doc << (self.content || "")
+    doc << (self.content || "(yas/unimplemented)")
     doc
   end
 
