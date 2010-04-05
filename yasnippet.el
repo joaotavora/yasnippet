@@ -1387,7 +1387,7 @@ Here's a list of currently recognized variables:
   (remove-if (lambda (file)
                (or (string-match "^\\."
                                  (file-name-nondirectory file))
-                   (string-match "^#"
+                   (string-match "^#.*#$"
                                  (file-name-nondirectory file))
                    (string-match "~$"
                                  (file-name-nondirectory file))
@@ -1402,15 +1402,15 @@ Here's a list of currently recognized variables:
 
 (defun yas/expand-or-visit-from-menu (mode uuid)
   (let* ((table (yas/table-get-create mode))
-         (template (and table
-                        (gethash uuid (yas/table-uuidhash table)))))
-    (when template
+         (yas/current-template (and table
+                                    (gethash uuid (yas/table-uuidhash table)))))
+    (when yas/current-template
       (if yas/visit-from-menu
-          (yas/visit-snippet-file-1 template)
+          (yas/visit-snippet-file-1 yas/current-template)
         (let ((where (if mark-active
                          (cons (region-beginning) (region-end))
                        (cons (point) (point)))))
-          (yas/expand-snippet (yas/template-content template)
+          (yas/expand-snippet (yas/template-content yas/current-template)
                               (car where)
                               (cdr where)))))))
 
@@ -1990,6 +1990,19 @@ Skip any submenus named \"parent mode\""
              (define-key keymap (vector (gensym))
                ;; '(menu-item "shit" 'ding)
                (car (yas/snippet-menu-binding-pair-get-create template :stay)))))
+          ;; ((eq (first e) 'yas/external-item)
+          ;;  (let ((template (some #'(lambda (table)
+          ;;                            (gethash (second e) (yas/table-uuidhash table)))
+          ;;                        (let (all-tables)
+          ;;                          (maphash #'(lambda (k v)
+          ;;                                       (push v all-tables))
+          ;;                                   yas/tables)
+          ;;                          yas/tables))))
+          ;;    (if template
+          ;;        (define-key keymap (vector (gensym))
+          ;;          ;; '(menu-item "shit" 'ding)
+          ;;          (car (yas/snippet-menu-binding-pair-get-create template :stay)))
+          ;;      (message "[yas] external menu item %s not found anywhere!" (second e)))))
           ((eq (first e) 'yas/submenu)
            (let ((subkeymap (make-sparse-keymap)))
              (define-key keymap (vector (make-symbol (second e)))
@@ -2092,14 +2105,14 @@ If expansion fails, execute the previous binding for this key"
 Prompt the user if TEMPLATES has more than one element, else
 expand immediately. Common gateway for
 `yas/expand-from-trigger-key' and `yas/expand-from-keymap'."
-  (let ((template (or (and (rest templates) ;; more than one
-                           (yas/prompt-for-template (mapcar #'cdr templates)))
-                      (cdar templates))))
-    (when template
-      (yas/expand-snippet (yas/template-content template)
+  (let ((yas/current-template (or (and (rest templates) ;; more than one
+                                       (yas/prompt-for-template (mapcar #'cdr templates)))
+                                  (cdar templates))))
+    (when yas/current-template
+      (yas/expand-snippet (yas/template-content yas/current-template)
                           start
                           end
-                          (yas/template-expand-env template)))))
+                          (yas/template-expand-env yas/current-template)))))
 
 (defun yas/fallback (&optional from-trigger-key-p)
   "Fallback after expansion has failed.
@@ -2175,18 +2188,18 @@ by condition."
                                               'always)
                                          yas/buffer-local-condition))
          (templates (yas/all-templates (yas/get-snippet-tables)))
-         (template (and templates
-                        (or (and (rest templates) ;; more than one template for same key
-                                 (yas/prompt-for-template templates))
-                            (car templates))))
+         (yas/current-template (and templates
+                                    (or (and (rest templates) ;; more than one template for same key
+                                             (yas/prompt-for-template templates))
+                                        (car templates))))
          (where (if mark-active
                     (cons (region-beginning) (region-end))
                   (cons (point) (point)))))
-    (if template
-        (yas/expand-snippet (yas/template-content template)
+    (if yas/current-template
+        (yas/expand-snippet (yas/template-content yas/current-template)
                             (car where)
                             (cdr where)
-                            (yas/template-expand-env template))
+                            (yas/template-expand-env yas/current-template))
       (message "[yas] No snippets can be inserted here!"))))
 
 (defun yas/visit-snippet-file ()
@@ -2211,7 +2224,7 @@ visited file in `snippet-mode'."
     (cond ((and file (file-readable-p file))
            (find-file-other-window file)
            (snippet-mode)
-           (setq yas/current-template template))
+           (setq yas/editing-template template))
           (file
            (message "Original file %s no longer exists!" file))
           (t
@@ -2233,7 +2246,7 @@ visited file in `snippet-mode'."
                          (pp-to-string (yas/template-content template))
                        (yas/template-content template))))
            (snippet-mode)
-           (setq yas/current-template template)))))
+           (setq yas/editing-template template)))))
 
 (defun yas/guess-snippet-directories-1 (table)
   "Guesses possible snippet subdirectories for TABLE."
@@ -2386,9 +2399,12 @@ there, otherwise, proposes to create the first option returned by
     (when major-mode-sym
       (cons major-mode-sym parents))))
 
-(defvar yas/current-template nil
+(defvar yas/editing-template nil
   "Supporting variable for `yas/load-snippet-buffer' and `yas/visit-snippet'")
-(make-variable-buffer-local 'yas/current-template)
+(make-variable-buffer-local 'yas/editing-template)
+
+(defvar yas/current-template nil
+  "Holds the current template being expanded into a snippet.")
 
 (defvar yas/guessed-directories nil
   "Supporting variable for `yas/load-snippet-buffer' and `yas/new-snippet'")
@@ -2400,26 +2416,26 @@ there, otherwise, proposes to create the first option returned by
 With optional prefix argument KILL quit the window and buffer."
   (interactive "P")
   (cond
-   ;; X) Option 1: We have `yas/current-template', this buffer's
+   ;; X) Option 1: We have `yas/editing-template', this buffer's
    ;;  content comes from a template which is already loaded and
    ;;  neatly positioned,...
    ;;
-   ((and (boundp 'yas/current-template)
-         yas/current-template
-         (yas/template-p yas/current-template))
+   ((and (boundp 'yas/editing-template)
+         yas/editing-template
+         (yas/template-p yas/editing-template))
 
-    (let ((parsed (yas/parse-template (yas/template-file yas/current-template))))
+    (let ((parsed (yas/parse-template (yas/template-file yas/editing-template))))
       ;; ... just change its template, expand-env, condition, key,
       ;; keybinding and name. The group cannot be changed.
-      (yas/populate-template yas/current-template
+      (yas/populate-template yas/editing-template
                              :content    (second parsed)
                              :key        (first parsed)
                              :name       (third parsed)
                              :condition  (fourth parsed)
                              :expand-env (sixth parsed)
                              :keybinding (yas/read-keybinding (eighth parsed)))
-      (yas/update-template (yas/template-table yas/current-template)
-                          yas/current-template))
+      (yas/update-template (yas/template-table yas/editing-template)
+                          yas/editing-template))
     ;; Now, prompt for new file creation much like
     ;; `yas/new-snippet' if one of the following is true:
     ;;
@@ -2427,32 +2443,32 @@ With optional prefix argument KILL quit the window and buffer."
     ;; match this template's file (i.e. this is a library snippet, not
     ;; a user snippet).
     ;;
-    ;; 2) yas/current-template comes from a file that we cannot write to...
+    ;; 2) yas/editing-template comes from a file that we cannot write to...
     ;;
     (when (or (and (listp yas/snippet-dirs)
                    (second yas/snippet-dirs)
                    (not (string-match (expand-file-name (first yas/snippet-dirs))
-                                      (yas/template-file yas/current-template))))
-              (and (yas/template-file yas/current-template)
-                   (not (file-writable-p (yas/template-file yas/current-template))))
-              (not (yas/template-file yas/current-template)))
+                                      (yas/template-file yas/editing-template))))
+              (and (yas/template-file yas/editing-template)
+                   (not (file-writable-p (yas/template-file yas/editing-template))))
+              (not (yas/template-file yas/editing-template)))
       (when (y-or-n-p "[yas] Also save snippet buffer to new file? ")
-        (let* ((option (first (yas/guess-snippet-directories (yas/template-table yas/current-template))))
+        (let* ((option (first (yas/guess-snippet-directories (yas/template-table yas/editing-template))))
                (chosen (and option
                             (yas/make-directory-maybe option))))
           (when chosen
-            (let ((default-file-name (or (and (yas/template-file yas/current-template)
-                                              (file-name-nondirectory (yas/template-file yas/current-template)))
-                                         (yas/template-name yas/current-template))))
+            (let ((default-file-name (or (and (yas/template-file yas/editing-template)
+                                              (file-name-nondirectory (yas/template-file yas/editing-template)))
+                                         (yas/template-name yas/editing-template))))
               (write-file (concat chosen "/"
                                   (read-from-minibuffer (format "File name to create in %s? " chosen)
                                                         default-file-name)))
-              (setf (yas/template-file yas/current-template) buffer-file-name))))))
+              (setf (yas/template-file yas/editing-template) buffer-file-name))))))
     (when kill
       (quit-window kill))
     (message "[yas] Snippet \"%s\" loaded for %s."
-             (yas/template-name yas/current-template)
-             (yas/table-name (yas/template-table yas/current-template))))
+             (yas/template-name yas/editing-template)
+             (yas/table-name (yas/template-table yas/editing-template))))
    (;; X) Option 2: We have a file name, consider this a brand new
     ;; snippet and calculate name, groups, etc from the current
     ;; file-name and buffer content
@@ -2521,7 +2537,7 @@ With optional prefix argument KILL quit the window and buffer."
         (let ((default-directory chosen))
           (call-interactively 'write-file))
         (setq yas/guessed-directories nil)
-        (setq yas/current-template nil)
+        (setq yas/editing-template nil)
         (yas/load-snippet-buffer))))))
 
 
@@ -2536,24 +2552,25 @@ With optional prefix argument KILL quit the window and buffer."
                         (and yas/guessed-directories
                              (intern (yas/table-name (car (first yas/guessed-directories)))))
                         (intern (read-from-minibuffer "[yas] please input a mode: "))))
-         (template (and parsed
-                        (fboundp test-mode)
-                        (yas/populate-template (yas/make-blank-template)
-                                               :table       nil ;; no tables for ephemeral snippets
-                                               :key         (first parsed)
-                                               :content     (second parsed)
-                                               :name        (third parsed)
-                                               :expand-env  (sixth parsed)))))
-    (cond (template
-           (let ((buffer-name (format "*YAS TEST: %s*" (yas/template-name template))))
+         (yas/current-template
+          (and parsed
+               (fboundp test-mode)
+               (yas/populate-template (yas/make-blank-template)
+                                      :table       nil ;; no tables for ephemeral snippets
+                                      :key         (first parsed)
+                                      :content     (second parsed)
+                                      :name        (third parsed)
+                                      :expand-env  (sixth parsed)))))
+    (cond (yas/current-template
+           (let ((buffer-name (format "*YAS TEST: %s*" (yas/template-name yas/current-template))))
              (set-buffer (switch-to-buffer buffer-name))
              (erase-buffer)
              (setq buffer-undo-list nil)
              (condition-case nil (funcall test-mode) (error nil))
-             (yas/expand-snippet (yas/template-content template)
+             (yas/expand-snippet (yas/template-content yas/current-template)
                                  (point-min)
                                  (point-max)
-                                 (yas/template-expand-env template))
+                                 (yas/template-expand-env yas/current-template))
              (when (and debug
                         (require 'yasnippet-debug nil t))
                (add-hook 'post-command-hook 'yas/debug-snippet-vars 't 'local))))
@@ -2717,6 +2734,12 @@ Otherwise throw exception."
 
 (defun yas/inside-string ()
   (equal 'font-lock-string-face (get-char-property (1- (point)) 'face)))
+
+(defun yas/unimplemented ()
+  (if yas/current-template
+      (if (y-or-n-p "This snippet is unimplemented. Visit the snippet definition? ")
+          (yas/visit-snippet-file-1 yas/current-template))
+    (message "No implementation.")))
 
 
 ;;; Snippet expansion and field management
