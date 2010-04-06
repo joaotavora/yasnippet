@@ -232,7 +232,7 @@ class TmSnippet
     if override
       return override
     else
-      return "# type: command\n" if @file =~ /(Commands\/)/
+      return "# type: command\n" if @file =~ /(Commands\/|Macros\/)/
     end
   end
 
