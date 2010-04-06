@@ -20,25 +20,61 @@
 (defun yas/ruby-toggle-single-multi-line-block ()
   (interactive)
   (let* ((do-block-start (save-excursion
-                           (ruby-beginning-of-block)
-                           (when (looking-at ".*[^\w]\\(do\\)[^\w]\\(|.*|\\)?")
-                             (point))))
-         (brace-block-start (save-excursion
-                              (condition-case nil
-                                  (while (progn (up-list -1) (not (eq (char-after) ?{))))
-                                (point))
-                              (error nil))))
-    (if (and do-block-start brace-block-start)
-        (if (< do-block-start brace-block-start)
-            (setq do-block-start nil)
-          (setq brace-block-start nil)))
-    (cond (do-block-start
-           (ruby-end-of-block)
-           (forward-word)
-           (insert "}")
-           (goto-char do-block-start))
-          (brace-block-start
-           ))))
+                             (ruby-beginning-of-block)
+                             (when (search-forward-regexp ".*[^\w]\\(do\\)[^\w]\\(|.*|\\)?" nil t)
+                               (match-beginning 1))))
+           (brace-block-start (condition-case nil
+                                  (let ((syntax-info (syntax-ppss)))
+                                    (if (fourth syntax-info)
+                                        (goto-char (ninth syntax-info)))
+                                    (while (progn (up-list -1) (not (eq (char-after) ?{))))
+                                    (point))
+                                (error nil)))
+           (block-region))
+      (if (and do-block-start brace-block-start)
+          (if (< do-block-start brace-block-start)
+              (setq do-block-start nil)
+            (setq brace-block-start nil)))
+      (cond (do-block-start
+             (message "found a do block")
+             (goto-char do-block-start)
+             (ruby-end-of-block)
+             (setq block-region (buffer-substring (+ 2 do-block-start) (point)))
+             (delete-region do-block-start (+ 3(point)))
+             (insert "{")
+             (mapc #'(lambda (string)
+                       (let* ((chomped (replace-regexp-in-string "^[\s\t]*\\(.*\\)[\s\t]*$" "\\1" string))
+                              (lastchar (and (not (zerop (length chomped)))
+                                             (aref chomped (1- (length chomped))))))
+                         (when lastchar
+                           (insert " " chomped)
+                           (unless (member lastchar '(?;
+                                                      ?|))
+                             (insert ";")))))
+                   (split-string block-region "\n"))
+             (insert " }")
+             (backward-char 1))
+            (brace-block-start
+             (message "found a brace block")
+             (goto-char brace-block-start)
+             (forward-sexp)
+             (setq block-region (buffer-substring (+ 1 brace-block-start) (1- (point))))
+             (delete-region brace-block-start (point))
+             (insert "do")
+             (when (string-match "\\(|.*|\\).*" block-region)
+               (insert " " (match-string 1 block-region))
+               (setq block-region (substring block-region (match-end 1))))
+             (mapc #'(lambda (string)
+                       (let* ((chomped (replace-regexp-in-string "^[\s\t]*\\(.*\\)[\s\t]*$" "\\1" string)))
+                         (unless (zerop (length chomped))
+                           (insert "\n" chomped)
+                           (indent-according-to-mode))))
+                   (split-string block-region ";"))
+             (insert "\nend")
+             (backward-char 3)
+             (indent-according-to-mode))
+            (t
+             (message "found no block at all")))))
 
 (defvar yas/ruby-require-regexps
   '(("abbrev"                            . ("abbrev"))
@@ -178,6 +214,7 @@
 ;; ${1/([\w&&[^_]]+)|./\u$1/g}                                                       =yyas> ${1:$(replace-regexp-in-string "[_/]" "" (capitalize yas/text))}
 ;;
 ;; 0F940CBC-2173-49FF-B6FD-98A62863F8F2               =yyas> (yas/ruby-wrap-in-begin-rescue)
+;; 7990EE60-C850-4779-A8C0-7FD2C853B99B               =yyas> (yas/ruby-toggle-single-multi-line-block)
 ;; 7E084412-80E6-4B70-8092-C03D1ECE4CD2               =yyas> (yas/ruby-require "eac")(yas/expand-uuid 'ruby-mode "FDD73070-6D32-4301-A86A-C55B77C3D8ED")
 
 ;;
@@ -660,7 +697,6 @@
 ;; DAA69A0C-FC1E-4509-9931-DFFB38B4D6AE                                                       =yyas> (yas/unknown)
 ;; 
 ;; # as in Macros/Toggle Single Multi Line Block.yasnippet
-;; 7990EE60-C850-4779-A8C0-7FD2C853B99B                                                       =yyas> (yas/unknown)
 ;; 
 ;; # as in Commands/Omit from RDoc.yasnippet
 ;; BF4CA9F1-51CD-48D4-8357-852234F59046                                                       =yyas> (yas/unknown)
