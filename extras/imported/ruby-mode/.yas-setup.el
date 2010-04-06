@@ -17,64 +17,91 @@
      ((string-match "_" fn) (replace-match "" nil nil fn))
      (t fn))))
 
+(defun yas/ruby-chomp (x)
+  "Chomp string X, return nil if X became empty"
+  (let ((len (length x))
+        (start 0)
+        (end (1- (length x))))
+    (unless (zerop len)
+      (while (and (< start len)
+                  (memq (aref x start)
+                        '(?  ?\t ?\n)))
+        (setq start (1+ start)))
+      (while (and (> end start)
+                  (memq (aref x end)
+                        '(?  ?\t ?\n)))
+        (setq end (1- end)))
+      (unless (<= end start)
+        (substring x start (1+ end))))))
+
+(defvar yas/ruby-block-start-regexp ".*[\s\t\n]\\(do\\)[\s\t\n]\\(|.*|\\)?")
+
 (defun yas/ruby-toggle-single-multi-line-block ()
   (interactive)
-  (let* ((do-block-start (save-excursion
-                             (ruby-beginning-of-block)
-                             (when (search-forward-regexp ".*[^\w]\\(do\\)[^\w]\\(|.*|\\)?" nil t)
-                               (match-beginning 1))))
-           (brace-block-start (condition-case nil
-                                  (let ((syntax-info (syntax-ppss)))
-                                    (if (fourth syntax-info)
-                                        (goto-char (ninth syntax-info)))
-                                    (while (progn (up-list -1) (not (eq (char-after) ?{))))
-                                    (point))
-                                (error nil)))
-           (block-region))
-      (if (and do-block-start brace-block-start)
-          (if (< do-block-start brace-block-start)
-              (setq do-block-start nil)
-            (setq brace-block-start nil)))
-      (cond (do-block-start
-             (message "found a do block")
-             (goto-char do-block-start)
-             (ruby-end-of-block)
-             (setq block-region (buffer-substring (+ 2 do-block-start) (point)))
-             (delete-region do-block-start (+ 3(point)))
-             (insert "{")
-             (mapc #'(lambda (string)
-                       (let* ((chomped (replace-regexp-in-string "^[\s\t]*\\(.*\\)[\s\t]*$" "\\1" string))
-                              (lastchar (and (not (zerop (length chomped)))
-                                             (aref chomped (1- (length chomped))))))
-                         (when lastchar
-                           (insert " " chomped)
-                           (unless (member lastchar '(?;
-                                                      ?|))
-                             (insert ";")))))
-                   (split-string block-region "\n"))
-             (insert " }")
-             (backward-char 1))
-            (brace-block-start
-             (message "found a brace block")
-             (goto-char brace-block-start)
-             (forward-sexp)
-             (setq block-region (buffer-substring (+ 1 brace-block-start) (1- (point))))
-             (delete-region brace-block-start (point))
-             (insert "do")
-             (when (string-match "\\(|.*|\\).*" block-region)
-               (insert " " (match-string 1 block-region))
-               (setq block-region (substring block-region (match-end 1))))
-             (mapc #'(lambda (string)
-                       (let* ((chomped (replace-regexp-in-string "^[\s\t]*\\(.*\\)[\s\t]*$" "\\1" string)))
-                         (unless (zerop (length chomped))
-                           (insert "\n" chomped)
-                           (indent-according-to-mode))))
-                   (split-string block-region ";"))
+  (let* ((do-block-bounds (save-excursion
+                            (when (or (save-excursion (beginning-of-line)
+                                                      (looking-at yas/ruby-block-start-regexp))
+                                      (save-excursion (ruby-beginning-of-block)
+                                                      (looking-at yas/ruby-block-start-regexp)))
+                              (cons (match-beginning 1)
+                                    (progn (goto-char (match-beginning 1))
+                                           (ruby-end-of-block) (point))))))
+         (brace-block-bounds (condition-case nil
+                                 (let ((syntax-info (syntax-ppss)))
+                                   (if (fourth syntax-info)
+                                       (goto-char (ninth syntax-info)))
+                                   (while (progn (up-list -1) (not (eq (char-after) ?{))))
+                                   (cons (point)
+                                         (progn (forward-sexp) (point))))
+                               (error nil)))
+         (block-region)
+         (statements))
+    (if (and do-block-bounds brace-block-bounds)
+        (if (< (car do-block-bounds) (car brace-block-bounds))
+            (setq do-block-bounds nil)
+          (setq brace-block-bounds nil)))
+    (cond (do-block-bounds
+           ;; (and do-block-bounds
+           ;;      (<= (point) (cdr do-block-bounds)))
+           ;; (message "found a do block")
+           (goto-char (car do-block-bounds))
+           (setq block-region (buffer-substring-no-properties (+ 2 (car do-block-bounds)) (cdr do-block-bounds)))
+           (setq statements (mapcar #'yas/ruby-chomp
+                                    (split-string block-region "\n")))
+           (delete-region (car do-block-bounds) (+ 3 (cdr do-block-bounds)))
+           (insert "{")
+           (mapc #'(lambda (string)
+                     (let* ((lastchar (and (not (zerop (length string)))
+                                           (aref string (1- (length string))))))
+                       (when lastchar
+                         (insert " " string)
+                         (unless (member lastchar '(?;
+                                                    ?|))
+                           (insert ";")))))
+                 statements)
+           (delete-backward-char 1)
+           (insert " }")
+           (backward-char 1))
+          (brace-block-bounds
+           ;; (message "found a brace block")
+           (goto-char (car brace-block-bounds))
+           (setq block-region (buffer-substring (1+ (car brace-block-bounds)) (1- (cdr brace-block-bounds))))
+           (delete-region (car brace-block-bounds) (cdr brace-block-bounds))
+           (insert "do")
+           (when (string-match "\\(|.*|\\).*" block-region)
+             (insert " " (match-string 1 block-region))
+             (setq block-region (substring block-region (match-end 1))))
+           (setq statements (mapcar #'yas/ruby-chomp
+                                    (split-string block-region ";")))
+           (mapc #'(lambda (string)
+                     (insert "\n" string)
+                     (indent-according-to-mode))
+                 statements)
+           (save-excursion
              (insert "\nend")
-             (backward-char 3)
-             (indent-according-to-mode))
-            (t
-             (message "found no block at all")))))
+             (indent-according-to-mode)))
+          (t
+           (message "No enclosing block found.")))))
 
 (defvar yas/ruby-require-regexps
   '(("abbrev"                            . ("abbrev"))
@@ -226,6 +253,7 @@
 ;; 
 ;; Substitutions for: condition
 ;;
+;; 7990EE60-C850-4779-A8C0-7FD2C853B99B                                              =yyas> 'force-in-comment
 ;; 451A0596-1F72-4AFB-AF2F-45900FABB0F7                                              =yyas> (not (yas/ruby-end-is-block-end-p))
 ;; (string.quoted.double.ruby|string.interpolated.ruby) - string source              =yyas> (and (yas/ruby-in-interpolated-string-p) 'force-in-comment)
 ;; text.html.ruby, text.html source.ruby                                             =yyas> (yas/unimplemented)
@@ -234,7 +262,6 @@
 ;; 
 ;; Substitutions for: binding
 ;;
-;; # as in Commands/New Method.yasnippet
 ;; $                                                                               =yyas> C-s-M
 ;; ^W                                                                                =yyas> s-C-W
 ;; #                                                                                 =yyas> #
@@ -695,8 +722,6 @@
 ;; 
 ;; # as in Commands/Enclose in _ (RDoc comments).yasnippet
 ;; DAA69A0C-FC1E-4509-9931-DFFB38B4D6AE                                                       =yyas> (yas/unknown)
-;; 
-;; # as in Macros/Toggle Single Multi Line Block.yasnippet
 ;; 
 ;; # as in Commands/Omit from RDoc.yasnippet
 ;; BF4CA9F1-51CD-48D4-8357-852234F59046                                                       =yyas> (yas/unknown)
