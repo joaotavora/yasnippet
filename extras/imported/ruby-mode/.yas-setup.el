@@ -197,6 +197,16 @@
         (goto-char (line-beginning-position)))
       (insert "require \"" package "\"\n"))))
 
+(defun yas/ruby-pipe-through-xmpfilter ()
+  (interactive)
+  (let ((start (or (and mark-active
+                        (region-beginning))
+                   (point-min)))
+        (end (or (and mark-active
+                      (region-end))
+                 (point-max))))
+    (shell-command-on-region start end "xmpfilter" (current-buffer) t (get-buffer-create "*xmpfilter errors*") t)))
+
 ;; conditions
 ;; 
 (yas/define-condition-cache yas/ruby-in-interpolated-string-p (member (fourth (syntax-ppss)) (list ?\" ?\`)))
@@ -226,6 +236,8 @@
 ;; ${3/(^[rwab+]+$)|.*/(?1:, ")/}                                                    =yyas> ${3:$(and (string-match "^[rwab+]+$" yas/text) ", \\"" )}
 ;; ${3/(^[rwab+]+$)|.*/(?1:")/}                                                      =yyas> ${3:$(and (string-match "^[rwab+]+$" yas/text) "\\"" )}
 ;; ${3/^\s*$|(.*\S.*)/(?1:, )/}                                                      =yyas> ${3:$(and (string-match "[^\s\t]" (yas/text) ", ")}
+;; ${TM_SELECTED_TEXT/([\t ]*).*/$1/m}                                               =yyas>
+;; ${TM_SELECTED_TEXT/(\A.*)|(.+)|\n\z/(?1:$0:(?2:\t$0))/g}                          =yyas> `yas/selected-text`
 ;; 
 ;; ${TM_FILENAME/(?:\A|_)([A-Za-z0-9]+)(?:\.rb)?/(?2::\u$1)/g}                       =yyas> `(yas/ruby-infer-class-name)`
 ;; 
@@ -240,9 +252,10 @@
 ;; 
 ;; ${1/([\w&&[^_]]+)|./\u$1/g}                                                       =yyas> ${1:$(replace-regexp-in-string "[_/]" "" (capitalize yas/text))}
 ;;
-;; 0F940CBC-2173-49FF-B6FD-98A62863F8F2               =yyas> (yas/ruby-wrap-in-begin-rescue)
 ;; 7990EE60-C850-4779-A8C0-7FD2C853B99B               =yyas> (yas/ruby-toggle-single-multi-line-block)
 ;; 7E084412-80E6-4B70-8092-C03D1ECE4CD2               =yyas> (yas/ruby-require "eac")(yas/expand-uuid 'ruby-mode "FDD73070-6D32-4301-A86A-C55B77C3D8ED")
+;; FBFC214F-B019-4967-95D2-028F374A3221               =yyas> (yas/ruby-pipe-through-xmpfilter)
+;; 63F3B3B7-CBE2-426B-B551-657733F3868B               =yyas> (or (and (featurep 'ri) (call-interactively 'ri)) (message "No ri found!"))
 
 ;;
 ;; `[[ $TM_LINE_INDEX != 0 ]] && echo; echo`                                         =yyas> `(concat (if (eq 0 current-line) "\n" "") "\n")`
@@ -254,6 +267,8 @@
 ;; Substitutions for: condition
 ;;
 ;; 7990EE60-C850-4779-A8C0-7FD2C853B99B                                              =yyas> 'force-in-comment
+;; 88BC3896-DC39-4307-A271-21D33340F15A                                              =yyas> 'force-in-comment
+;; 0F940CBC-2173-49FF-B6FD-98A62863F8F2                                              =yyas> 'force-in-comment
 ;; 451A0596-1F72-4AFB-AF2F-45900FABB0F7                                              =yyas> (not (yas/ruby-end-is-block-end-p))
 ;; (string.quoted.double.ruby|string.interpolated.ruby) - string source              =yyas> (and (yas/ruby-in-interpolated-string-p) 'force-in-comment)
 ;; text.html.ruby, text.html source.ruby                                             =yyas> (yas/unimplemented)
@@ -262,16 +277,62 @@
 ;; 
 ;; Substitutions for: binding
 ;;
-;; $                                                                               =yyas> C-s-M
-;; ^W                                                                                =yyas> s-C-W
+;; # as in Commands/New Method.yasnippet
+;; $                                                                               =yyas> C-c s-m
+;; ^W                                                                                =yyas> C-c s-w
 ;; #                                                                                 =yyas> #
-;; ^{                                                                                =yyas> s-C-{
-;; @R                                                                                =yyas> s-S-r
-;; @r                                                                                =yyas> s-r
-;; ^R                                                                                =yyas> C-s-S-r
+;; ^{                                                                                =yyas> C-c s-{
+;; @R                                                                                =yyas> C-c s-R
+;; @r                                                                                =yyas> C-c s-r
+;; ^R                                                                                =yyas> C-c M-r
 ;; @i                                                                                =yyas> s-i
-;;
-
+;; @b                                                                                =yyas> s-b
+;; ^@E                                                                               =yyas> C-c s-e
+;; ^:                                                                                =yyas> C-c s-:
+;; # as in Commands/Enclose in + (RDoc comments).yasnippet
+;; @k                                                                                         =yyas> (yas/unknown)
+;; 
+;; # as in Commands/Toggle ERb Tags.yasnippet
+;; ^>                                                                                         =yyas> (yas/unknown)
+;; 
+;; # as in Commands/Check Ruby Syntax.yasnippet
+;; ^V                                                                                         =yyas> (yas/unknown)
+;; 
+;; # as in Commands/Omit from RDoc.yasnippet
+;; ^@O                                                                                        =yyas> (yas/unknown)
+;; 
+;; # as in Commands/Enclose in (RDoc comments).yasnippet
+;; @b                                                                                         =yyas> (yas/unknown)
+;; 
+;; # as in Snippets/hash pointer.yasnippet
+;; ^l                                                                                         =yyas> (yas/unknown)
+;; 
+;; # as in Commands/Make Destructive Call.yasnippet
+;; ^!                                                                                         =yyas> (yas/unknown)
+;; 
+;; # as in Commands/Toggle Quote Style.yasnippet
+;; ^"                                                                                         =yyas> (yas/unknown)
+;; 
+;; # as in Commands/Open Require.yasnippet
+;; @D                                                                                         =yyas> (yas/unknown)
+;; 
+;; # as in Commands/Toggle StringSymbol.yasnippet
+;; ^:                                                                                         =yyas> (yas/unknown)
+;; 
+;; # as in Macros/Overwrite } in #{ .. }.yasnippet
+;; }                                                                                          =yyas> (yas/unknown)
+;; 
+;; # as in Commands/Execute Line with Ruby.yasnippet
+;; ^E                                                                                         =yyas> (yas/unknown)
+;; 
+;; # as in Commands/Completion Ruby (rcodetools).yasnippet
+;; ~                                                                                         =yyas> (yas/unknown)
+;; 
+;; # as in Macros/Delete forwardbackward.yasnippet
+;;                                                                                           =yyas> (yas/unknown)
+;; 
+;; # as in Commands/Lookup in Documentation.yasnippet
+;; ^h                                                                                         =yyas> (yas/unknown)
 ;; 
 ;; --**--
 ;; Automatically generated code, do not edit this part
@@ -741,9 +802,6 @@
 ;; # as in Commands/Run Rake Task.yasnippet
 ;; 569C9822-8C41-4907-94C7-1A8A0031B66D                                                       =yyas> (yas/unknown)
 ;; 
-;; # as in Commands/Execute and Insert Results.yasnippet
-;; FBFC214F-B019-4967-95D2-028F374A3221                                                       =yyas> (yas/unknown)
-;; 
 ;; # as in Macros/Benchmark_bmbm(__) do __ end.yasnippet
 ;; C649F945-DAB8-4DA2-B73C-2EFF9D7D34F3                                                       =yyas> (yas/unknown)
 ;; 
@@ -805,7 +863,7 @@
 ;; EC73D5CC-5F05-46B9-A6F4-82037E4A38C9                                                       =yyas> (yas/unknown)
 ;; 
 ;; # as in Commands/Lookup in Documentation.yasnippet
-;; 63F3B3B7-CBE2-426B-B551-657733F3868B                                                       =yyas> (yas/unknown)
+;; 63F3B3B7-CBE2-426B-B551-657733F3868B                                                       =yyas> (or (and (featurep 'ri) (call-interactively 'ri)) (message "no ri found!"))
 ;; 
 ;; # as in Commands/Open Require.yasnippet
 ;; 8646378E-91F5-4771-AC7C-43FC49A93576                                                       =yyas> (yas/unknown)
@@ -824,53 +882,7 @@
 
 ;; Substitutions for: binding
 ;; 
-;; # as in Commands/Enclose in + (RDoc comments).yasnippet
-;; @k                                                                                         =yyas> (yas/unknown)
-;; 
-;; # as in Commands/Toggle ERb Tags.yasnippet
-;; ^>                                                                                         =yyas> (yas/unknown)
-;; 
-;; # as in Commands/Check Ruby Syntax.yasnippet
-;; ^V                                                                                         =yyas> (yas/unknown)
-;; 
-;; # as in Commands/Omit from RDoc.yasnippet
-;; ^@O                                                                                        =yyas> (yas/unknown)
-;; 
-;; # as in Commands/Enclose in (RDoc comments).yasnippet
-;; @b                                                                                         =yyas> (yas/unknown)
-;; 
-;; # as in Snippets/hash pointer.yasnippet
-;; ^l                                                                                         =yyas> (yas/unknown)
-;; 
-;; # as in Commands/Make Destructive Call.yasnippet
-;; ^!                                                                                         =yyas> (yas/unknown)
-;; 
-;; # as in Commands/Execute and Insert Results.yasnippet
-;; ^@E                                                                                        =yyas> (yas/unknown)
-;; 
-;; # as in Commands/Toggle Quote Style.yasnippet
-;; ^"                                                                                         =yyas> (yas/unknown)
-;; 
-;; # as in Commands/Open Require.yasnippet
-;; @D                                                                                         =yyas> (yas/unknown)
-;; 
-;; # as in Commands/Toggle StringSymbol.yasnippet
-;; ^:                                                                                         =yyas> (yas/unknown)
-;; 
-;; # as in Macros/Overwrite } in #{ .. }.yasnippet
-;; }                                                                                          =yyas> (yas/unknown)
-;; 
-;; # as in Commands/Execute Line with Ruby.yasnippet
-;; ^E                                                                                         =yyas> (yas/unknown)
-;; 
-;; # as in Commands/Completion Ruby (rcodetools).yasnippet
-;; ~                                                                                         =yyas> (yas/unknown)
-;; 
-;; # as in Macros/Delete forwardbackward.yasnippet
-;;                                                                                           =yyas> (yas/unknown)
-;; 
-;; # as in Commands/Lookup in Documentation.yasnippet
-;; ^h                                                                                         =yyas> (yas/unknown)
+
 ;; 
 ;; 
 
