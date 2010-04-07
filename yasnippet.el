@@ -325,7 +325,6 @@ field"
   :type '(choice (const :tag "Call previous command"  call-other-command)
                  (const :tag "Do nothing"             return-nil))
   :group 'yasnippet)
-(make-variable-buffer-local 'yas/fallback-behavior)
 
 (defcustom yas/choose-keys-first nil
   "If non-nil, prompt for snippet key first, then for template.
@@ -2134,9 +2133,11 @@ Common gateway for `yas/expand-from-trigger-key' and
                 (command-2 (and keys-2 (key-binding keys-2)))
                 ;; An (ugly) safety: prevents infinite recursion of
                 ;; yas/expand* calls.
-                (command (or (and (not (string-match "yas/expand" (symbol-name command-1)))
+                (command (or (and (symbolp command-1)
+                                  (not (string-match "yas/expand" (symbol-name command-1)))
                                   command-1)
-                             command-2)))
+                             (and (symbolp command-2)
+                                  command-2))))
            (when (and (commandp command)
                       (not (string-match "yas/expand" (symbol-name command))))
              (setq this-command command)
@@ -2401,14 +2402,12 @@ there, otherwise, proposes to create the first option returned by
 
 (defvar yas/editing-template nil
   "Supporting variable for `yas/load-snippet-buffer' and `yas/visit-snippet'")
-(make-variable-buffer-local 'yas/editing-template)
 
 (defvar yas/current-template nil
   "Holds the current template being expanded into a snippet.")
 
 (defvar yas/guessed-directories nil
   "Supporting variable for `yas/load-snippet-buffer' and `yas/new-snippet'")
-(make-variable-buffer-local 'yas/guessed-directories)
 
 (defun yas/load-snippet-buffer (&optional kill)
   "Parse and load current buffer's snippet definition.
@@ -4156,6 +4155,16 @@ object satisfying `yas/field-p' to restrict the expansion to.")))
         (when template
           (help-xref-button 1 'help-snippet-def template)
           (kill-region (match-beginning 0) (match-beginning 1)))))))
+
+(defun yas/expand-uuid (mode-symbol uuid &optional start end expand-env)
+  "Expand a snippet registered in MODE-SYMBOL's table with UUID.
+
+Remaining args as in `yas/expand-snippet'."
+  (let* ((table (gethash mode-symbol yas/tables))
+         (yas/current-template (and table
+                                    (gethash uuid (yas/table-uuidhash table)))))
+    (when yas/current-template
+      (yas/expand-snippet (yas/template-content yas/current-template)))))
 
 
 ;;; Some hacks:
