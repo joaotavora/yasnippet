@@ -1026,7 +1026,10 @@ keybinding)."
   (yas/add-template snippet-table template))
 
 (defun yas/fetch (table key)
-  "Fetch snippets in TABLE by KEY. "
+  "Fetch templates in TABLE by KEY.
+
+Return a list of cons (NAME . TEMPLATE) where NAME is a
+string and TEMPLATE is a `yas/template' structure."
   (let* ((keyhash (yas/table-hash table))
          (namehash (and keyhash (gethash key keyhash))))
     (when namehash
@@ -1443,67 +1446,110 @@ TEMPLATES is a list of `yas/template'."
           yas/prompt-functions)))
 
 (defun yas/x-prompt (prompt choices &optional display-fn)
+  "Display choices in a x-window prompt."
+  ;; FIXME: HACK: if we notice that one of the objects in choices is
+  ;; actually a `yas/template', defer to `yas/x-prompt-pretty-templates'
+  ;;
+  ;; This would be better implemented by passing CHOICES as a
+  ;; strucutred tree rather than a list. Modifications would go as far
+  ;; up as `yas/all-templates' I think.
+  ;;
   (when (and window-system choices)
-    (let ((keymap (cons 'keymap
-                        (cons
-                         prompt
-                         (mapcar (lambda (choice)
-                                   (list choice
-                                         'menu-item
-                                         (if display-fn
-                                             (funcall display-fn choice)
-                                           choice)
-                                         t))
-                                 choices)))))
-      (when (cdr keymap)
-        (car (x-popup-menu (if (fboundp 'posn-at-point)
-                               (let ((x-y (posn-x-y (posn-at-point (point)))))
-                                 (list (list (+ (car x-y) 10)
-                                             (+ (cdr x-y) 20))
-                                       (selected-window)))
-                             t)
-                           keymap))))))
+    (let ((chosen
+           (if (yas/template-p (first choices))
+               (yas/x-prompt-pretty-templates prompt choices)
+             (let (menu d) ;; d for display
+               (dolist (c choices)
+                 (setq d (or (and display-fn (funcall display-fn c))
+                             c))
+                 (cond ((stringp d)
+                        (push (cons (concat "   " d) c) menu))
+                       ((listp d)
+                        (push (car d) menu))))
+               (setq menu (list prompt (push "title" menu)))
+               (x-popup-menu (if (fboundp 'posn-at-point)
+                                 (let ((x-y (posn-x-y (posn-at-point (point)))))
+                                   (list (list (+ (car x-y) 10)
+                                               (+ (cdr x-y) 20))
+                                         (selected-window)))
+                               t)
+                             menu)))))
+      (or chosen
+          (keyboard-quit)))))
+
+(defun yas/x-prompt-pretty-templates (prompt templates)
+  "Display TEMPLATES, grouping neatly by table name."
+  (let ((props (list))
+        menu
+        more-than-one-table
+        prefix)
+    (dolist (tl templates)
+      (push tl (getf props (intern (yas/table-name (yas/template-table tl))))))
+    (setq more-than-one-table (> (length props) 2))
+    (setq prefix (if more-than-one-table
+                     "   " ""))
+    (dolist (thing props)
+      (cond ((listp thing)
+             (setq menu (nconc (mapcar #'(lambda (tl)
+                                           (cons (concat prefix (yas/template-name tl))
+                                                 tl))
+                                       thing)
+                               menu)))
+            (more-than-one-table
+             (push (symbol-name thing) menu))))
+    (setq menu (nreverse menu))
+    (x-popup-menu (if (fboundp 'posn-at-point)
+                      (let ((x-y (posn-x-y (posn-at-point (point)))))
+                        (list (list (+ (car x-y) 10)
+                                    (+ (cdr x-y) 20))
+                              (selected-window)))
+                    t)
+                  (list prompt (push "title" menu)))))
 
 (defun yas/ido-prompt (prompt choices &optional display-fn)
   (when (and (featurep 'ido)
              ido-mode)
-    (let* ((formatted-choices (or (and display-fn
-                                       (mapcar display-fn choices))
-                                  choices))
-           (chosen (and formatted-choices
-                        (ido-completing-read prompt
-                                             formatted-choices
-                                             nil
-                                             'require-match
-                                             nil
-                                             nil))))
-      (when chosen
-        (nth (position chosen formatted-choices :test #'string=) choices)))))
+    (yas/completing-prompt prompt choices display-fn #'ido-completing-read)))
 
 (eval-when-compile (require 'dropdown-list nil t))
 (defun yas/dropdown-prompt (prompt choices &optional display-fn)
   (when (featurep 'dropdown-list)
-    (let* ((formatted-choices (or (and display-fn
-                                       (mapcar display-fn choices))
-                                  choices))
-           (chosen (and formatted-choices
+    (let (formatted-choices
+          filtered-choices
+          chosen
+          d)
+      (dolist (choice choices)
+        (setq d (or (and display-fn (funcall display-fn choice))
+                      choice))
+        (when (stringp d)
+          (push d formatted-choices)
+          (push choice filtered-choices)))
+      (setq chosen (and formatted-choices
                         (nth (dropdown-list formatted-choices)
-                             choices))))
-      chosen)))
+                             filtered-choices))))))
 
-(defun yas/completing-prompt (prompt choices &optional display-fn)
-  (let* ((formatted-choices (or (and display-fn
-                                     (mapcar display-fn choices))
-                                choices))
-         (chosen (and formatted-choices
-                      (completing-read prompt
-                                       formatted-choices
-                                       nil
-                                       'require-match
-                                       nil
-                                       nil))))
+(defun yas/completing-prompt (prompt choices &optional display-fn completion-fn)
+  (let (formatted-choices
+        filtered-choices
+        chosen
+        d
+        (completion-fn (or completion-fn
+                           #'completing-read)))
+    (dolist (choice choices)
+      (setq d (or (and display-fn (funcall display-fn choice))
+                    choice))
+      (when (stringp d)
+        (push d formatted-choices)
+        (push choice filtered-choices)))
+    (setq chosen (and formatted-choices
+                      (funcall completion-fn prompt
+                               formatted-choices
+                               nil
+                               'require-match
+                               nil
+                               nil)))
     (when chosen
-      (nth (position chosen formatted-choices :test #'string=) choices))))
+      (nth (position chosen formatted-choices :test #'string=) filtered-choices))))
 
 (defun yas/no-prompt (prompt choices &optional display-fn)
   (first choices))
