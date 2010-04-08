@@ -17,8 +17,8 @@
 require 'rubygems'
 require 'plist'
 require 'choice'
-require 'FileUtils'
-require 'Shellwords' # String#shellescape
+# require 'FileUtils'
+# require 'Shellwords' # String#shellescape
 require 'ruby-debug' if $DEBUG
 
 Choice.options do
@@ -174,6 +174,7 @@ class TmSnippet
       "${TM_RAILS_TEMPLATE_END_RUBY_INLINE}"   => " -%>",
       "${TM_RAILS_TEMPLATE_END_RUBY_BLOCK}"    => "end" ,
       "${0:$TM_SELECTED_TEXT}"                 => "${0:`yas/selected-text`}",
+      /\$\{(\d+)\}/                             => "$\\1",
       "${1:$TM_SELECTED_TEXT}"                 => "${1:`yas/selected-text`}",
       "${2:$TM_SELECTED_TEXT}"                 => "${2:`yas/selected-text`}"},
     "condition" => {
