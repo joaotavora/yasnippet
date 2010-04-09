@@ -1424,11 +1424,17 @@ Here's a list of currently recognized variables:
 
 TEMPLATES is a list of `yas/template'."
   (when templates
-    (some #'(lambda (fn)
-              (funcall fn (or prompt "Choose a snippet: ")
-                       templates
-                       #'yas/template-name))
-          yas/prompt-functions)))
+    (setq templates
+          (sort templates #'(lambda (t1 t2)
+                              (< (length (yas/template-name t1))
+                                 (length (yas/template-name t2))))))
+    (if yas/x-pretty-prompt-templates
+        (yas/x-pretty-prompt-templates "Choose a snippet" templates)
+      (some #'(lambda (fn)
+                (funcall fn (or prompt "Choose a snippet: ")
+                         templates
+                         #'yas/template-name))
+            yas/prompt-functions))))
 
 (defun yas/prompt-for-keys (keys &optional prompt)
   "Interactively choose a template key from the list KEYS."
@@ -1456,28 +1462,28 @@ TEMPLATES is a list of `yas/template'."
   ;;
   (when (and window-system choices)
     (let ((chosen
-           (if (yas/template-p (first choices))
-               (yas/x-prompt-pretty-templates prompt choices)
-             (let (menu d) ;; d for display
-               (dolist (c choices)
-                 (setq d (or (and display-fn (funcall display-fn c))
-                             c))
-                 (cond ((stringp d)
-                        (push (cons (concat "   " d) c) menu))
-                       ((listp d)
-                        (push (car d) menu))))
-               (setq menu (list prompt (push "title" menu)))
-               (x-popup-menu (if (fboundp 'posn-at-point)
-                                 (let ((x-y (posn-x-y (posn-at-point (point)))))
-                                   (list (list (+ (car x-y) 10)
-                                               (+ (cdr x-y) 20))
-                                         (selected-window)))
-                               t)
-                             menu)))))
+           (let (menu d) ;; d for display
+             (dolist (c choices)
+               (setq d (or (and display-fn (funcall display-fn c))
+                           c))
+               (cond ((stringp d)
+                      (push (cons (concat "   " d) c) menu))
+                     ((listp d)
+                      (push (car d) menu))))
+             (setq menu (list prompt (push "title" menu)))
+             (x-popup-menu (if (fboundp 'posn-at-point)
+                               (let ((x-y (posn-x-y (posn-at-point (point)))))
+                                 (list (list (+ (car x-y) 10)
+                                             (+ (cdr x-y) 20))
+                                       (selected-window)))
+                             t)
+                           menu))))
       (or chosen
           (keyboard-quit)))))
 
-(defun yas/x-prompt-pretty-templates (prompt templates)
+(defvar yas/x-pretty-prompt-templates nil
+  "If non-nil, attempt to prompt for templates like TextMate.")
+(defun yas/x-pretty-prompt-templates (prompt templates)
   "Display TEMPLATES, grouping neatly by table name."
   (let ((props (list))
         menu
@@ -2032,8 +2038,9 @@ Skip any submenus named \"parent mode\""
                                                                uuidhash)
                                                       :table table
                                                       :uuid (second e)))))
+             ;; (if (string= (second e) "944F1410-188C-4D70-8340-CECAA56FC7F2")
+             ;;     (debug))
              (define-key keymap (vector (gensym))
-               ;; '(menu-item "shit" 'ding)
                (car (yas/snippet-menu-binding-pair-get-create template :stay)))))
           ;; ((eq (first e) 'yas/external-item)
           ;;  (let ((template (some #'(lambda (table)
@@ -2050,7 +2057,7 @@ Skip any submenus named \"parent mode\""
           ;;      (message "[yas] external menu item %s not found anywhere!" (second e)))))
           ((eq (first e) 'yas/submenu)
            (let ((subkeymap (make-sparse-keymap)))
-             (define-key keymap (vector (make-symbol (second e)))
+             (define-key keymap (vector (gensym))
                `(menu-item ,(second e) ,subkeymap))
              (yas/define-menu-1 table subkeymap (third e) uuidhash)))
           ((eq (first e) 'yas/separator)
