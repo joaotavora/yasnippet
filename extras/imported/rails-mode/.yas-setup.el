@@ -337,53 +337,23 @@ are recognized. Stolen from `rinari-mode' more or`' less."
 
 ;; Substitutions for: condition
 
-;; # as in Commands/Go To Model.yasnippet
-;; text.html.ruby, source.ruby.rails.embedded.html, meta.rails.helper, meta.rails.unit_test, source.js, source.css, source.yaml, meta.rails.controller, meta.rails.functional_test, text.haml  =yyas> (yas/unknown)
-;; 
-;; # as in Snippets/wants_format.yasnippet
-;; meta.rails.controller                                                                      =yyas> (yas/rails-in-controller-p)
-;; 
-;; # as in Snippets/map_catch_all.yasnippet
-;; meta.rails.routes                                                                          =yyas> (yas/rails-in-routes-p)
-;; 
-;; # as in Snippets/def get request.yasnippet
-;; meta.rails.functional_test                                                                 =yyas> (yas/rails-in-functional-test-p)
-;; 
-;; # as in Snippets/licai.yasnippet
-;; text.html.ruby, text.haml                                                                  =yyas> (yas/rails-view-p)
-;; 
-;; # as in Commands/Go To Unit Test.yasnippet
-;; meta.rails.controller, meta.rails.helper, meta.rails.model, meta.rails.functional_test, source.yaml  =yyas> t
-;; 
-;; # as in Commands/Go To Functional Test.yasnippet
-;; meta.rails.controller, meta.rails.helper, meta.rails.model, source.yaml, meta.rails.unit_test  =yyas> t
-;; 
-;; # as in Snippets/Migration Create Column Continue (mccc).yasnippet
-;; meta.rails.migration.create_table                                                          =yyas> (yas/rails-in-create-table-p)
-;; 
-;; # as in Commands/Go To Helper.yasnippet
-;; text.html.ruby, source.ruby.rails.embedded.html, meta.rails.controller, meta.rails.model, meta.rails.unit_test, meta.rails.functional_test, text.haml  =yyas> t
-;; 
-;; # as in Commands/Go To View.yasnippet
-;; meta.rails.controller, meta.rails.mailer, source.js, source.css                            =yyas> (yas/unknown)
-;; 
-;; # as in Snippets/t_decimal (tcd).yasnippet
-;; meta.rails.migration.create_table, meta.rails.migration.change_table                       =yyas> (or (yas/rails-in-create-table-p) (yas/rails-in-change-table-p))
-;; 
-;; # as in Commands/Go To Alternate File.yasnippet
-;; text.html.ruby, source.ruby.rails.embedded.html, meta.rails.helper, meta.rails.functional_test, source.js, source.css, source.yaml, meta.rails.model, meta.rails.unit_test, text.haml  =yyas> (yas/unknown)
-;; 
-;; # as in Commands/Go To Javascript.yasnippet
-;; text.html.ruby, source.ruby.rails.embedded.html, meta.rails.controller, meta.rails.helper, text.haml  =yyas> (yas/unknown)
-;; 
-;; # as in Macros/Remove 3A Add Column.yasnippet
-;; meta.rails.migration - meta.rails.migration.create_table - meta.rails.migration.change_table  =yyas> (yas/rails-intelligent-migration-snippet-condition-p)
-;; 
-;; # as in Snippets/stylesheet_link_tag.yasnippet
-;; text.html.ruby                                                                             =yyas> (yas/unknown)
-;; 
-;; # as in Commands/Go to Fixture.yasnippet
-;; meta.rails.controller, meta.rails.helper, meta.rails.model, meta.rails.unit_test, meta.rails.functional_test  =yyas> (yas/unknown)
+;; text.html.ruby, source.ruby.rails.embedded.html, meta.rails.helper, meta.rails.unit_test, source.js, source.css, source.yaml, meta.rails.controller, meta.rails.functional_test, text.haml =yyas> (yas/unknown)
+;; text.html.ruby, source.ruby.rails.embedded.html, meta.rails.helper, meta.rails.functional_test, source.js, source.css, source.yaml, meta.rails.model, meta.rails.unit_test, text.haml      =yyas> (yas/unknown)
+;; text.html.ruby, source.ruby.rails.embedded.html, meta.rails.controller, meta.rails.model, meta.rails.unit_test, meta.rails.functional_test, text.haml                                      =yyas> t
+;; meta.rails.controller, meta.rails.helper, meta.rails.model, meta.rails.unit_test, meta.rails.functional_test                                                                               =yyas> (yas/unknown)
+;; text.html.ruby, source.ruby.rails.embedded.html, meta.rails.controller, meta.rails.helper, text.haml                                                                                       =yyas> (yas/unknown)
+;; meta.rails.controller, meta.rails.helper, meta.rails.model, meta.rails.functional_test, source.yaml                                                                                        =yyas> t
+;; meta.rails.controller, meta.rails.helper, meta.rails.model, source.yaml, meta.rails.unit_test                                                                                              =yyas> t
+;; meta.rails.migration - meta.rails.migration.create_table - meta.rails.migration.change_table                                                                                               =yyas> (yas/rails-intelligent-migration-snippet-condition-p)
+;; meta.rails.migration.create_table, meta.rails.migration.change_table                                                                                                                       =yyas> (or (yas/rails-in-create-table-p) (yas/rails-in-change-table-p))
+;; meta.rails.controller, meta.rails.mailer, source.js, source.css                                                                                                                            =yyas> (yas/unknown)
+;; meta.rails.migration.create_table                                                                                                                                                          =yyas> (yas/rails-in-create-table-p)
+;; meta.rails.functional_test                                                                                                                                                                 =yyas> (yas/rails-in-functional-test-p)
+;; text.html.ruby, text.haml                                                                                                                                                                  =yyas> (yas/rails-view-p)
+;; meta.rails.controller                                                                                                                                                                      =yyas> (yas/rails-in-controller-p)
+;; meta.rails.routes                                                                                                                                                                          =yyas> (yas/rails-in-routes-p)
+;; text.html.ruby                                                                                                                                                                             =yyas> (yas/unknown)
+
 
 ;; Substitutions for: binding
 ;; 
@@ -569,30 +539,20 @@ are recognized. Stolen from `rinari-mode' more or`' less."
                                                (yas/item "3E3AF538-171B-4108-AB92-827AD7E24C77")
                                                ;; has_many (through)
                                                (yas/item "9D58B6C9-BA52-48B3-B639-D5CB894AF810")
-                                               (yas/separator)
-                                               ;; accepts_nested_attributes_for
-                                               (yas/item "D414D70D-BD2D-4C15-BDA6-1AAEABF7791F")))
+                                               ;; has_many :dependent => :destroy
+                                               (yas/item "3E3AF538-171B-4108-AB92-827AD7E24C77")))
                                  (yas/submenu "Scopes"
                                               (;; named_scope
                                                (yas/item "1CB65A0D-4FEC-4438-9B4F-8B0BD13FB875")
                                                ;; named_scope lambda
-                                               (yas/item "4E286CB4-069E-474C-A970-95216FE7DE95")
-                                               ;; default_scope
-                                               (yas/item "83B80B60-6143-4465-B064-0DA25DDDCAA7")))
+                                               (yas/item "4E286CB4-069E-474C-A970-95216FE7DE95")))
                                  (yas/submenu "Finders"
                                               (;; find(id)
                                                (yas/item "59CD3A41-8164-4FB4-B462-D7ACE86BCDBF")
                                                ;; find(:all)
                                                (yas/item "A017AB39-A875-40DC-8ACF-7E3551057CA0")
                                                ;; find(:first)
-                                               (yas/item "FE430ECD-5D40-4D95-A73B-F064C73992DE")
-                                               ;; find(:last)
-                                               (yas/item "8B515110-41D3-11DD-AE16-0800200C9A66")
-                                               ;; find_in_batches
-                                               (yas/item "B660FC85-F69A-43BC-A72A-748CBEA0AA9A")
-                                               (yas/separator)
-                                               ;; scoped_by
-                                               (yas/item "7CC002AE-83BA-4294-B87D-DE9790839D97")))
+                                               (yas/item "FE430ECD-5D40-4D95-A73B-F064C73992DE")))
                                  (yas/submenu "Validations"
                                               (;; validates_acceptance_of
                                                (yas/item "89198999-7E6D-4D97-A20E-45263E1CA993")
@@ -637,8 +597,6 @@ are recognized. Stolen from `rinari-mode' more or`' less."
                    (yas/submenu "Controllers"
                                 (;; Create controller class
                                  (yas/item "4B3F798E-E3B6-48C8-8C2F-CB8631011638")
-                                 ;; Create resources controller class
-                                 (yas/item "F90BFB23-5706-484B-8108-B376A988C0A0")
                                  ;; flash[…]
                                  (yas/item "D864896E-8763-11D9-897C-000393CBCE2E")
                                  (yas/submenu "respond_to"
@@ -666,9 +624,7 @@ are recognized. Stolen from `rinari-mode' more or`' less."
                                                ;; redirect_to (controller, action)
                                                (yas/item "0C137FBF-73BA-11D9-B752-000D932CD5BA")
                                                ;; redirect_to (controller, action, id)
-                                               (yas/item "18D3C1C3-73BA-11D9-B752-000D932CD5BA")
-                                               ;; redirect_to :back
-                                               (yas/item "BC194AE7-FA60-4E65-9503-6920D1666A29")))
+                                               (yas/item "18D3C1C3-73BA-11D9-B752-000D932CD5BA")))
                                  (yas/submenu "render"
                                               (;; render (action)
                                                (yas/item "7B03D38B-7580-41AC-BC2B-3766AB074A43")
@@ -718,7 +674,7 @@ are recognized. Stolen from `rinari-mode' more or`' less."
                                  (yas/item "9ECBF20C-003E-41D9-A881-4BAC0656F9DC")
                                  ;; verify — redirect
                                  (yas/item "7BBD3F57-57A5-4CD0-8E79-B931021FC110")))
-                   (yas/submenu "View Templates"
+                   (yas/submenu "ERb Templates"
                                 (;; Create Partial From Selection
                                  (yas/item "1DD8A214-1C97-45BA-ADEE-8F888DDE8570")
                                  (yas/separator)
@@ -735,7 +691,7 @@ are recognized. Stolen from `rinari-mode' more or`' less."
                                                (yas/item "06498926-F84D-466C-8736-B8A0AC586A94")
                                                ;; f.check_box (ffcb)
                                                (yas/item "F579F9E7-E072-4BCC-BFF9-C8C5BAE7FFA5")
-                                               ;; f.radio_button (ffrb)
+                                               ;; f.radio_box (ffrb)
                                                (yas/item "A95358D2-C68A-4894-8C36-062C9F45848A")
                                                ;; f.password_field (ffpf)
                                                (yas/item "42289456-C8D1-498C-AE30-5206544B349F")
@@ -744,9 +700,7 @@ are recognized. Stolen from `rinari-mode' more or`' less."
                                                ;; f.file_field (ffff)
                                                (yas/item "79BC2303-3D9D-4E21-AF85-73B388B7B56D")
                                                ;; f.submit (ffs)
-                                               (yas/item "C315EC5D-A7F3-49CB-9795-21B78BB42FF4")
-                                               ;; f.fields_for (nff)
-                                               (yas/item "BBE5B6F2-A8F2-4714-9186-4FCD21A5B432")))
+                                               (yas/item "C315EC5D-A7F3-49CB-9795-21B78BB42FF4")))
                                  (yas/submenu "form_for helpers"
                                               (;; form_for label
                                                (yas/item "B31822D9-2048-4D16-B2AF-00E0B4E5C368")
@@ -756,7 +710,7 @@ are recognized. Stolen from `rinari-mode' more or`' less."
                                                (yas/item "4C898FA8-D09C-4B28-BE42-14BB4EA4E2B1")
                                                ;; form_for check_box
                                                (yas/item "F0DB6886-4FFE-45BA-907F-44326AD8142D")
-                                               ;; form_for radio_button
+                                               ;; form_for radio_box
                                                (yas/item "D4282CE1-4171-4B13-9220-3F2718BC2505")
                                                ;; form_for password_field
                                                (yas/item "3379FB35-C664-4255-96C6-6E4B91F12759")
@@ -765,11 +719,7 @@ are recognized. Stolen from `rinari-mode' more or`' less."
                                                ;; form_for file_field
                                                (yas/item "C8BA285D-E12E-4AB8-A941-514C963E8226")
                                                ;; form_for submit
-                                               (yas/item "3000E569-4E19-4566-B08E-A3FFFAAC9075")
-                                               ;; form_for fields_for
-                                               (yas/item "16645C58-C7C8-4E72-923F-3B44932F946D")))
-                                 ;; fields_for
-                                 (yas/item "7C7FC66A-D566-40D3-B9DA-FCEA4EFF98C6")
+                                               (yas/item "3000E569-4E19-4566-B08E-A3FFFAAC9075")))
                                  (yas/separator)
                                  ;; form_tag
                                  (yas/item "F0F6DACA-6A0B-11D9-BDC2-000D932CD5BA")
@@ -804,8 +754,6 @@ are recognized. Stolen from `rinari-mode' more or`' less."
                                  ;; map(&:sym_proc)
                                  (yas/item "EC605540-C431-4FD0-AD91-D913118DACA7")
                                  (yas/separator)
-                                 ;; content_for
-                                 (yas/item "9038B99B-4810-4C0B-B547-F72F2AD5CAFC")
                                  ;; for loop in rhtml
                                  (yas/item "F7744F07-306C-4951-AB5A-3D69BA5516B7")))
                    (yas/submenu "Layouts"
@@ -839,12 +787,6 @@ are recognized. Stolen from `rinari-mode' more or`' less."
                                                (yas/item "7BC860E6-7561-4E6E-983B-507D7A6F6228")
                                                ;; Add / Remove Several Columns (marcc)
                                                (yas/item "27A6C58A-896B-4956-BA81-D671A2EF9C7D")
-                                               ;; Add / Remove Timestamps
-                                               (yas/item "221969A1-A5EA-4A8E-8817-C74EBED63901")
-                                               ;; Change Column
-                                               (yas/item "42DE1441-D1B7-4998-BAF9-16B1EC7E210C")
-                                               ;; Change Column Default
-                                               (yas/item "A219EBB8-004A-4012-B5B2-232C9A5C94F8")
                                                ;; Rename / Rename Column
                                                (yas/item "AC50762C-DE40-4EB9-9A22-2F6AF2EA4EA3")
                                                ;; Rename / Rename Several Columns
@@ -852,9 +794,7 @@ are recognized. Stolen from `rinari-mode' more or`' less."
                                                ;; Rename / Rename Several Columns (mncc)
                                                (yas/item "04A86178-71B1-430A-A06D-DFF7C9A338B5")
                                                ;; Remove / Add Column
-                                               (yas/item "16A705EB-10DC-42B5-9FF2-377E206421DC")
-                                               ;; Remove / Add Timestamps
-                                               (yas/item "E885A3E8-8020-4AC3-A25E-510B26F114B2")))
+                                               (yas/item "16A705EB-10DC-42B5-9FF2-377E206421DC")))
                                  (yas/submenu "Tables"
                                               (;; Create / Drop Table
                                                (yas/item "25F8F5D8-2BD1-45D8-8B2A-9F2EA4F73AA2")
@@ -928,14 +868,10 @@ are recognized. Stolen from `rinari-mode' more or`' less."
                                                ;; Create Several Columns in Table
                                                (yas/item "67FD2F8F-5F25-45F2-A451-2F39977A9EDE")
                                                (yas/submenu "Change columns t. drop-down list"
-                                                            (;; t.change (tch)
-                                                             (yas/item "19761681-17E6-4DF1-8C08-73C337D29481")
-                                                             ;; t.rename (tre)
+                                                            (;; t.rename (tre)
                                                              (yas/item "9D4E30E2-4A61-4941-B9F3-BEE97552747A")))
                                                (yas/submenu "Change columns helpers"
-                                                            (;; Table column(s) change
-                                                             (yas/item "57A9D5BC-DD0F-422B-B857-53F30B5D763A")
-                                                             ;; Table column(s) rename
+                                                            (;; Table column(s) rename
                                                              (yas/item "DF30226E-1111-448A-B669-7CA34EE83909")))))
                                  (yas/submenu "Indexes"
                                               (;; Add / Remove Index
@@ -973,8 +909,6 @@ are recognized. Stolen from `rinari-mode' more or`' less."
                                  (yas/item "0BCF0EE2-35EE-4959-A771-E74D55271D5A")
                                  ;; Autocomplete Foreign Key Fixture Reference (habtm)
                                  (yas/item "275C0B86-F735-49B6-8A22-218A8F4CC2E0")))
-                   ;; test do..end
-                   (yas/item "6ECA11FE-E8C1-4EC0-93F3-B4472752E60D")
                    (yas/submenu "Unit Tests"
                                 (;; assert_difference
                                  (yas/item "30BEA6FB-301C-4460-93EC-FA3404688962")
@@ -1021,9 +955,7 @@ are recognized. Stolen from `rinari-mode' more or`' less."
                                  (yas/item "C12C98A5-74E5-4E70-9ADB-8783455D6539")))
                    (yas/separator)
                    ;; View demo help
-                   (yas/item "964436B8-E578-11DC-8177-00112475D960")
-                   ;; Documentation for Word
-                   (yas/item "32F30207-D827-46D9-889A-451C35269D52"))
+                   (yas/item "964436B8-E578-11DC-8177-00112475D960"))
                     '("A2135370-67A1-488D-B43C-B4F221127C2F"
                        "809BCA42-5C49-4B08-B3C4-BB773036C086"))
 
@@ -1037,14 +969,14 @@ are recognized. Stolen from `rinari-mode' more or`' less."
 ;; # as in Macros/Add 3A Remove Named Index.yasnippet
 ;; A7F692C1-778A-48B8-945E-573568BA0403                                                       =yyas> (yas/unknown)
 ;; 
+;; # as in Commands/Autocomplete Foreign Key Fixture Reference (habtm).yasnippet
+;; 275C0B86-F735-49B6-8A22-218A8F4CC2E0                                                       =yyas> (yas/unknown)
+;; 
 ;; # as in Commands/Test Uncommitted.yasnippet
 ;; 212C3047-D9B1-11DC-94E9-00112475D960                                                       =yyas> (yas/unknown)
 ;; 
 ;; # as in Commands/Autocomplete Foreign Key Fixture Reference.yasnippet
 ;; 0BCF0EE2-35EE-4959-A771-E74D55271D5A                                                       =yyas> (yas/unknown)
-;; 
-;; # as in Commands/Autocomplete Foreign Key Fixture Reference (habtm).yasnippet
-;; 275C0B86-F735-49B6-8A22-218A8F4CC2E0                                                       =yyas> (yas/unknown)
 ;; 
 ;; # as in Macros/Change Change Table.yasnippet
 ;; 20FC02C5-32A3-4F20-B163-FF75C9FDFABF                                                       =yyas> (yas/unknown)
@@ -1055,20 +987,14 @@ are recognized. Stolen from `rinari-mode' more or`' less."
 ;; # as in Commands/DB Schema Import.yasnippet
 ;; 6DEF923E-2347-46EC-AFBE-183D08E63DC1                                                       =yyas> (yas/unknown)
 ;; 
-;; # as in Commands/Load Fixtures (Test DB).yasnippet
-;; F758BFD1-00CA-4742-BE71-032580080F5C                                                       =yyas> (yas/unknown)
-;; 
 ;; # as in Commands/Generate Quick Migration.yasnippet
 ;; D696FA2C-785A-4B73-A2F6-F750904DD7C2                                                       =yyas> (yas/unknown)
 ;; 
-;; # as in Macros/Remove 3A Add Timestamps.yasnippet
-;; E885A3E8-8020-4AC3-A25E-510B26F114B2                                                       =yyas> (yas/unknown)
+;; # as in Commands/Load Fixtures (Test DB).yasnippet
+;; F758BFD1-00CA-4742-BE71-032580080F5C                                                       =yyas> (yas/unknown)
 ;; 
 ;; # as in Commands/Test Plugins.yasnippet
 ;; 0D966168-D9B1-11DC-94E9-00112475D960                                                       =yyas> (yas/unknown)
-;; 
-;; # as in Macros/Change Column.yasnippet
-;; 42DE1441-D1B7-4998-BAF9-16B1EC7E210C                                                       =yyas> (yas/unknown)
 ;; 
 ;; # as in Commands/Test Recent.yasnippet
 ;; 190401C2-D9B1-11DC-94E9-00112475D960                                                       =yyas> (yas/unknown)
@@ -1076,17 +1002,14 @@ are recognized. Stolen from `rinari-mode' more or`' less."
 ;; # as in Commands/Test All.yasnippet
 ;; DC549A45-D9B0-11DC-94E9-00112475D960                                                       =yyas> (yas/unknown)
 ;; 
+;; # as in Macros/Add 3A Remove Unique Index.yasnippet
+;; 33057A79-677B-4DFB-99D4-1492778BDDC6                                                       =yyas> (yas/unknown)
+;; 
 ;; # as in Macros/Rename Column.yasnippet
 ;; AC50762C-DE40-4EB9-9A22-2F6AF2EA4EA3                                                       =yyas> (yas/unknown)
 ;; 
 ;; # as in Macros/Create 3A Drop Table.yasnippet
 ;; 25F8F5D8-2BD1-45D8-8B2A-9F2EA4F73AA2                                                       =yyas> (yas/unknown)
-;; 
-;; # as in Macros/Add 3A Remove Unique Index.yasnippet
-;; 33057A79-677B-4DFB-99D4-1492778BDDC6                                                       =yyas> (yas/unknown)
-;; 
-;; # as in Macros/Add 3A Remove Timestamps.yasnippet
-;; 221969A1-A5EA-4A8E-8817-C74EBED63901                                                       =yyas> (yas/unknown)
 ;; 
 ;; # as in Commands/Go To Helper.yasnippet
 ;; 51C9C27A-D931-49F9-B6D8-C0E7ABEC992D                                                       =yyas> (yas/unknown)
@@ -1094,17 +1017,14 @@ are recognized. Stolen from `rinari-mode' more or`' less."
 ;; # as in Commands/DB Schema Dump.yasnippet
 ;; 310C901C-EF32-4E88-938A-804ABBF8C428                                                       =yyas> (yas/unknown)
 ;; 
-;; # as in Commands/Test Functionals.yasnippet
-;; F4EA552D-D9B0-11DC-94E9-00112475D960                                                       =yyas> (yas/unknown)
-;; 
 ;; # as in Commands/Migrate to Previous Version.yasnippet
 ;; 9A1AE6BA-8350-4AB7-B5BD-969A7E64CF29                                                       =yyas> (yas/unknown)
 ;; 
+;; # as in Commands/Test Functionals.yasnippet
+;; F4EA552D-D9B0-11DC-94E9-00112475D960                                                       =yyas> (yas/unknown)
+;; 
 ;; # as in Macros/Drop 3A Create Table.yasnippet
 ;; A2135370-67A1-488D-B43C-B4F221127C2F                                                       =yyas> (yas/unknown)
-;; 
-;; # as in Macros/Change Column Default.yasnippet
-;; A219EBB8-004A-4012-B5B2-232C9A5C94F8                                                       =yyas> (yas/unknown)
 ;; 
 ;; # as in Macros/Add 3A Remove Index.yasnippet
 ;; 95F83E1D-5B03-424F-8BEC-8AF66C8939BC                                                       =yyas> (yas/unknown)
@@ -1112,26 +1032,20 @@ are recognized. Stolen from `rinari-mode' more or`' less."
 ;; # as in Commands/Load Fixtures.yasnippet
 ;; 5EEA0C71-B34B-4408-953B-F47AAD343CCC                                                       =yyas> (yas/unknown)
 ;; 
-;; # as in Commands/Documentation for Word.yasnippet
-;; 32F30207-D827-46D9-889A-451C35269D52                                                       =yyas> (yas/unknown)
-;; 
 ;; # as in Commands/Clone Development DB to Test DB.yasnippet
 ;; 6F2AB859-46E3-4FF5-A9A7-E9A813AB5DE1                                                       =yyas> (yas/unknown)
 ;; 
 ;; # as in Macros/Rename 3A Rename Several Columns.yasnippet
 ;; F03162DE-9DB6-417B-9DD7-52D9F11EA736                                                       =yyas> (yas/unknown)
 ;; 
-;; # as in Commands/Go To Stylesheet.yasnippet
-;; B207BBD4-D6AA-41E9-9530-27210F2D7B66                                                       =yyas> (yas/unknown)
-;; 
 ;; # as in Commands/Go To Javascript.yasnippet
 ;; B078346F-61D8-4E75-9427-80720FBC67F7                                                       =yyas> (yas/unknown)
 ;; 
+;; # as in Commands/Go To Stylesheet.yasnippet
+;; B207BBD4-D6AA-41E9-9530-27210F2D7B66                                                       =yyas> (yas/unknown)
+;; 
 ;; # as in Commands/Rake Migrate to Version.yasnippet
 ;; 07C696F8-79F5-4E0B-9EE9-03B693A54ABB                                                       =yyas> (yas/unknown)
-;; 
-;; # as in Snippets/find_in_batches.yasnippet
-;; `(downcase (replace-regexp-in-string "\..*$"  "" (current-word)))`                         =yyas> (yas/unknown)
 ;; 
 ;; # as in Commands/View demo help.yasnippet
 ;; 964436B8-E578-11DC-8177-00112475D960                                                       =yyas> (yas/unknown)
@@ -1170,13 +1084,10 @@ are recognized. Stolen from `rinari-mode' more or`' less."
 
 ;; Substitutions for: condition
 ;; 
-;; # as in Snippets/verify - redirect (verify).yasnippet
+;; # as in Commands/Rake Migrate.yasnippet
 ;;                                                                                            =yyas> (yas/unknown)
 ;; 
-;; # as in Snippets/t_rename (tre).yasnippet
-;; meta.rails.migration.change_table                                                          =yyas> (yas/unknown)
-;; 
-;; # as in Snippets/for loop erb.yasnippet
+;; # as in Snippets/stylesheet_link_tag.yasnippet
 ;; text.html.ruby                                                                             =yyas> (yas/unknown)
 ;; 
 ;; 

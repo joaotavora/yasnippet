@@ -10,12 +10,14 @@
 
 (defun yas/ruby-infer-class-name ()
   "Infer the class name from the buffer. Thanks to hitesh <hitesh.jasani@gmail.com>"
-  (let ((fn (capitalize (file-name-nondirectory
-                         (file-name-sans-extension
-                          (buffer-file-name))))))
-    (cond
-     ((string-match "_" fn) (replace-match "" nil nil fn))
-     (t fn))))
+  (if buffer-file-name
+      (let ((fn (capitalize (file-name-nondirectory
+                             (file-name-sans-extension
+                              (buffer-file-name))))))
+        (cond
+         ((string-match "_" fn) (replace-match "" nil nil fn))
+         (t fn)))
+    "SomeClass"))
 
 (defun yas/ruby-chomp (x)
   "Chomp string X, return nil if X became empty"
@@ -37,6 +39,12 @@
 (defvar yas/ruby-block-start-regexp ".*[\s\t\n]\\(do\\)[\s\t\n]\\(|.*|\\)?")
 
 (defun yas/ruby-toggle-single-multi-line-block ()
+  "Toggle \"do .. end\" blocks into  \"{ .. }\" blocks back and forth."
+  ;;
+  ;; TODO: Some code to be refactored here.
+  ;; 
+  ;; FIXME: correctly detect statements in { .. } block, split-string(";") is no good
+  ;;
   (interactive)
   (let* ((do-block-bounds (save-excursion
                             (when (or (save-excursion (beginning-of-line)
@@ -61,27 +69,25 @@
             (setq do-block-bounds nil)
           (setq brace-block-bounds nil)))
     (cond (do-block-bounds
-           ;; (and do-block-bounds
-           ;;      (<= (point) (cdr do-block-bounds)))
-           ;; (message "found a do block")
            (goto-char (car do-block-bounds))
            (setq block-region (buffer-substring-no-properties (+ 2 (car do-block-bounds)) (cdr do-block-bounds)))
-           (setq statements (mapcar #'yas/ruby-chomp
-                                    (split-string block-region "\n")))
            (delete-region (car do-block-bounds) (+ 3 (cdr do-block-bounds)))
            (insert "{")
+           (when (string-match "\\(|.*|\\).*" block-region)
+             (insert " " (match-string 1 block-region))
+             (setq block-region (substring block-region (match-end 1))))
+           (setq statements (remove nil (mapcar #'yas/ruby-chomp
+                                                (split-string block-region "\n"))))
            (mapc #'(lambda (string)
-                     (let* ((lastchar (and (not (zerop (length string)))
-                                           (aref string (1- (length string))))))
-                       (when lastchar
-                         (insert " " string)
-                         (unless (member lastchar '(?;
-                                                    ?|))
-                           (insert ";")))))
+                     (insert " " string)
+                     (if (member (aref string (1- (length string))) '(?;
+                                                                      ?|))
+                         (insert " ")
+                       (insert ";")))
                  statements)
-           (delete-backward-char 1)
-           (insert " }")
-           (backward-char 1))
+           (when statements (delete-backward-char 1))
+           (save-excursion
+             (insert " }")))
           (brace-block-bounds
            ;; (message "found a brace block")
            (goto-char (car brace-block-bounds))
@@ -91,12 +97,13 @@
            (when (string-match "\\(|.*|\\).*" block-region)
              (insert " " (match-string 1 block-region))
              (setq block-region (substring block-region (match-end 1))))
-           (setq statements (mapcar #'yas/ruby-chomp
-                                    (split-string block-region ";")))
+           (setq statements (remove nil (mapcar #'yas/ruby-chomp
+                                                (split-string block-region ";"))))
            (mapc #'(lambda (string)
                      (insert "\n" string)
                      (indent-according-to-mode))
                  statements)
+           (unless statements (insert "\n") (indent-according-to-mode))
            (save-excursion
              (insert "\nend")
              (indent-according-to-mode)))
@@ -205,9 +212,11 @@
         (end (or (and mark-active
                       (region-end))
                  (point-max)))
-        (orig (point)))
+        (orig (point))
+        (orig-line (count-screen-lines (window-start) (point))))
     (shell-command-on-region start end "xmpfilter" (current-buffer) t (get-buffer-create "*xmpfilter errors*") t)
-    (goto-char (max (point-max) orig))))
+    (goto-char (min (point-max) orig))
+    (recenter (1- orig-line))))
 
 ;; conditions
 ;; 
@@ -240,6 +249,8 @@
 ;; ${3/^\s*$|(.*\S.*)/(?1:, )/}                                                      =yyas> ${3:$(and (string-match "[^\s\t]" (yas/text) ", ")}
 ;; ${TM_SELECTED_TEXT/([\t ]*).*/$1/m}                                               =yyas>
 ;; ${TM_SELECTED_TEXT/(\A.*)|(.+)|\n\z/(?1:$0:(?2:\t$0))/g}                          =yyas> `yas/selected-text`
+;; (yas/multi-line-unknown BF487539-8085-4FF4-8601-1AD20FABAEDC)                     =yyas> `(yas/ruby-infer-class-name)`
+;; (yas/multi-line-unknown 2B73EC5F-06D2-460C-A14F-6FA05AFCF0CC)                     =yyas> `(yas/ruby-infer-class-name)`
 ;; 
 ;; ${TM_FILENAME/(?:\A|_)([A-Za-z0-9]+)(?:\.rb)?/(?2::\u$1)/g}                       =yyas> `(yas/ruby-infer-class-name)`
 ;; 
@@ -261,7 +272,6 @@
 
 ;;
 ;; `[[ $TM_LINE_INDEX != 0 ]] && echo; echo`                                         =yyas> `(concat (if (eq 0 current-line) "\n" "") "\n")`
-;; 
 ;; `snippet_paren.rb`                                                                =yyas> `yas/ruby-snippet-open-paren`
 ;; `snippet_paren.rb end`                                                            =yyas> `yas/ruby-snippet-close-paren`
 ;; ${TM_RUBY_SWITCHES: -wKU}                                                         =yyas> `yas/ruby-shebang-args`
@@ -291,11 +301,12 @@
 ;; @b                                                                                =yyas> s-b
 ;; ^@E                                                                               =yyas> C-c M-e
 ;; ^:                                                                                =yyas> C-c M-:
+;; ^>                                                                                =yyas> C-c M->
+;; ^h                                                                                =yyas> C-c M-h
+;;
+;;
 ;; # as in Commands/Enclose in + (RDoc comments).yasnippet
 ;; @k                                                                                         =yyas> (yas/unknown)
-;; 
-;; # as in Commands/Toggle ERb Tags.yasnippet
-;; ^>                                                                                         =yyas> (yas/unknown)
 ;; 
 ;; # as in Commands/Check Ruby Syntax.yasnippet
 ;; ^V                                                                                         =yyas> (yas/unknown)
@@ -318,12 +329,6 @@
 ;; # as in Commands/Open Require.yasnippet
 ;; @D                                                                                         =yyas> (yas/unknown)
 ;; 
-;; # as in Commands/Toggle StringSymbol.yasnippet
-;; ^:                                                                                         =yyas> (yas/unknown)
-;; 
-;; # as in Macros/Overwrite } in #{ .. }.yasnippet
-;; }                                                                                          =yyas> (yas/unknown)
-;; 
 ;; # as in Commands/Execute Line with Ruby.yasnippet
 ;; ^E                                                                                         =yyas> (yas/unknown)
 ;; 
@@ -332,9 +337,6 @@
 ;; 
 ;; # as in Macros/Delete forwardbackward.yasnippet
 ;;                                                                                           =yyas> (yas/unknown)
-;; 
-;; # as in Commands/Lookup in Documentation.yasnippet
-;; ^h                                                                                         =yyas> (yas/unknown)
 ;; 
 ;; --**--
 ;; Automatically generated code, do not edit this part
@@ -775,6 +777,9 @@
 ;; # as in Snippets/RDoc documentation block.yasnippet
 ;; `(concat (if (eq 0 current-line) "\n" "") "\n")`                                           =yyas> (yas/unknown)
 ;; 
+;; # as in Snippets/class __ TestUnitTestCase with test_helper.yasnippet
+;; (yas/multi-line-unknown 228CAB3A-E221-4727-B430-31E94F76C9D3)                              =yyas> (yas/unknown)
+;; 
 ;; # as in Macros/map_with_index { e, i .. } (mapwi).yasnippet
 ;; BFB65D1C-62F1-485D-8A67-3E5A2E55107C                                                       =yyas> (yas/unknown)
 ;; 
@@ -823,6 +828,9 @@
 ;; # as in Macros/extend Forwardable (Forw).yasnippet
 ;; 58FDEA60-10AF-4C49-AA09-29B77030DB25                                                       =yyas> (yas/unknown)
 ;; 
+;; # as in Snippets/class .. TestUnitTestCase .. end (tc).yasnippet
+;; (yas/multi-line-unknown 31D1F145-33AB-4441-BA11-4D1C46928C4C)                              =yyas> (yas/unknown)
+;; 
 ;; # as in Commands/RakeSake task using file path.yasnippet
 ;; E07FF68B-C87D-4332-8477-D026929FDADA                                                       =yyas> (yas/unknown)
 ;; 
@@ -860,11 +868,7 @@
 ;; 76FCF165-54CB-4213-BC55-BD60B9C6A3EC                                                       =yyas> (yas/unknown)
 ;; 
 ;; # as in Snippets/class .. end (cla).yasnippet
-;; `#!/usr/bin/env ruby
-    ;; require 'rubygems'
-    ;; require "active_support"
-    ;; puts (ENV['TM_FILENAME'] || 'some_model.rb').gsub(/\.rb$/, '').camelize.singularize
-    ;;     `  =yyas> (yas/unknown)
+;; `(yas/ruby-infer-class-name)`                                                              =yyas> (yas/unknown)
 ;; 
 ;; # as in Snippets/embed string variable.yasnippet
 ;; `yas/selected-text`                                                                        =yyas> (yas/unknown)
@@ -880,13 +884,6 @@
 ;; 
 ;; # as in Commands/Open Require.yasnippet
 ;; 8646378E-91F5-4771-AC7C-43FC49A93576                                                       =yyas> (yas/unknown)
-;; 
-;; # as in Snippets/class .. TestUnitTestCase .. end (tc).yasnippet
-;; `#!/usr/bin/env ruby
-    ;; require 'rubygems'
-    ;; require "active_support"
-    ;; puts (ENV['TM_FILENAME'] || 'test_some_model.rb').gsub(/\.rb$/, '').gsub(/^test_/,'').gsub(/_test$/,'')
-    ;;     `  =yyas> (yas/unknown)
 ;; 
 ;; 
 
@@ -904,9 +901,6 @@
 ;; 
 ;; # as in Commands/Enclose in + (RDoc comments).yasnippet
 ;; @k                                                                                         =yyas> (yas/unknown)
-;; 
-;; # as in Commands/Toggle ERb Tags.yasnippet
-;; ^>                                                                                         =yyas> (yas/unknown)
 ;; 
 ;; # as in Commands/Check ERB Syntax.yasnippet
 ;; ^V                                                                                         =yyas> (yas/unknown)
@@ -937,9 +931,6 @@
 ;; 
 ;; # as in Macros/Delete forwardbackward.yasnippet
 ;;                                                                                           =yyas> (yas/unknown)
-;; 
-;; # as in Commands/Lookup in Documentation.yasnippet
-;; ^h                                                                                         =yyas> (yas/unknown)
 ;; 
 ;; 
 

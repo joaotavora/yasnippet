@@ -154,6 +154,7 @@ class TmSubmenu
   end
 end
 
+
 # Represents a textmate snippet
 #
 # - @file is the .tmsnippet/.plist file path relative to cwd
@@ -174,9 +175,10 @@ class TmSnippet
       "${TM_RAILS_TEMPLATE_END_RUBY_INLINE}"   => " -%>",
       "${TM_RAILS_TEMPLATE_END_RUBY_BLOCK}"    => "end" ,
       "${0:$TM_SELECTED_TEXT}"                 => "${0:`yas/selected-text`}",
-      /\$\{(\d+)\}/                             => "$\\1",
+      /\$\{(\d+)\}/                            => "$\\1",
       "${1:$TM_SELECTED_TEXT}"                 => "${1:`yas/selected-text`}",
-      "${2:$TM_SELECTED_TEXT}"                 => "${2:`yas/selected-text`}"},
+      "${2:$TM_SELECTED_TEXT}"                 => "${2:`yas/selected-text`}",
+      %r'`[^`]+\n[^`]`'                        => Proc.new {|uuid, match| "(yas/multi-line-unknown " + uuid + ")"}},
     "condition" => {
       /^source\..*$/ => "" },
     "binding"   => {},
@@ -242,24 +244,30 @@ class TmSnippet
   end
 
   def content
-    if direct = @@known_substitutions["content"].
-        merge(@@extra_substitutions["content"])[uuid]
+    known = @@known_substitutions["content"]
+    extra = @@extra_substitutions["content"]
+    if direct = extra[uuid]
       return direct
     else
       ct = @snippet["content"]
-      
       if ct
-        @@known_substitutions["content"].
-          merge(@@extra_substitutions["content"]).
-          each_pair do |k,v|
+        known.each_pair do |k,v|
+          if v.respond_to? :call
+            ct.gsub!(k) {|match| v.call(uuid, match)}
+          else
             ct.gsub!(k,v)
+          end
+        end
+        extra.each_pair do |k,v|
+          ct.gsub!(k,v)
         end
         # the remaining stuff is an unknown substitution
         # 
         [ %r'\$\{ [^/\}\{:]* / [^/]* / [^/]* / [^\}]*\}'x ,
           %r'\$\{[^\d][^}]+\}',
           %r'`[^`]+`',
-          %r'\$TM_[\w_]+'
+          %r'\$TM_[\w_]+',
+          %r'\(yas/multi-line-unknown [^\)]*\)'
         ].each do |reg|
           ct.scan(reg) do |match|
             @@unknown_substitutions["content"][match] = self
@@ -318,21 +326,37 @@ class TmSnippet
 
   @@yas_to_tm_directives = {"condition" => "scope", "binding" => "keyEquivalent", "key" => "tabTrigger"}
   def yas_directive(yas_directive)
-    if direct = @@known_substitutions[yas_directive].
-        merge(@@extra_substitutions[yas_directive])[uuid]
+    #
+    # Merge "known" hardcoded substitution with "extra" substitutions
+    # provided in the .yas-setup.el file.
+    # 
+    merged = @@known_substitutions[yas_directive].
+      merge(@@extra_substitutions[yas_directive])
+    #
+    # First look for an uuid-based direct substitution for this
+    # directive.
+    #
+    if direct = merged[uuid]
       return "# #{yas_directive}: "+ direct + "\n" unless direct.empty?
     else
       tm_directive = @@yas_to_tm_directives[yas_directive]
       val = tm_directive && @snippet[tm_directive]
       if val and !val.delete(" ").empty? then
-        # puts "Looking for a substitution for #{val}"
-        @@known_substitutions[yas_directive].
-          merge(@@extra_substitutions[yas_directive]).
-          each_pair do |k, v|
-          if val.gsub!(k,v)
+        #
+        # Sort merged substitutions by length (bigger ones first,
+        # regexps last), and apply them to the value gotten for plist.
+        #
+        merged.sort_by do |what, with|
+          if what.respond_to? :length then -what.length else 0 end
+        end.each do |sub|
+          if val.gsub!(sub[0],sub[1])
             return "# #{yas_directive}: "+ val + "\n" unless val.empty?
           end
         end
+        #
+        # If we get here, no substitution matched, so mark this an
+        # unknown substitution.
+        #
         @@unknown_substitutions[yas_directive][val] = self
         return "## #{yas_directive}: \""+ val + "\n"
       end
