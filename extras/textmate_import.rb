@@ -17,8 +17,8 @@
 require 'rubygems'
 require 'plist'
 require 'choice'
-# require 'FileUtils'
-# require 'Shellwords' # String#shellescape
+require 'FileUtils'
+require 'Shellwords' # String#shellescape
 require 'ruby-debug' if $DEBUG
 
 Choice.options do
@@ -188,6 +188,8 @@ class TmSnippet
       /\$\{(\d+)\}/                            => "$\\1",
       "${1:$TM_SELECTED_TEXT}"                 => "${1:`yas/selected-text`}",
       "${2:$TM_SELECTED_TEXT}"                 => "${2:`yas/selected-text`}",
+      '$TM_SELECTED_TEXT'                     => "`yas/selected-text`",
+      %r'\$\{TM_SELECTED_TEXT:([^\}]*)\}'       => "`(or (yas/selected-text) \"\\1\")`",
       %r'`[^`]+\n[^`]`'                        => Proc.new {|uuid, match| "(yas/multi-line-unknown " + uuid + ")"}},
     "condition" => {
       /^source\..*$/ => "" },
