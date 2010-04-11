@@ -82,6 +82,10 @@ end
 # TextMate menu in terms of `yas/define-menu'
 #
 class TmSubmenu
+
+  @@excluded_items = [];
+  def self.excluded_items; @@excluded_items; end
+  
   attr_reader :items, :name
   def initialize(name, hash)
     @items = hash["items"]
@@ -96,6 +100,7 @@ class TmSubmenu
     first = true;
 
     string = ""
+    separator_useless = true;
     items.each do |uuid|
       if deleteditems.index(uuid)
         $stderr.puts "#{uuid} has been deleted!"
@@ -104,23 +109,27 @@ class TmSubmenu
       string += "\n"
       string += " " * indent
       string += (first ? thingy[0] : (" " * thingy[0].length))
-      
+
       submenu = allsubmenus[uuid]
+      snippet = TmSnippet::snippets_by_uid[uuid]
+      unimplemented = TmSnippet::unknown_substitutions["content"][uuid]
       if submenu
         str = "(yas/submenu "
         string += str + "\"" + submenu.name + "\"" 
         string += submenu.to_lisp(allsubmenus, deleteditems,
                                   indent + str.length + thingy[0].length)
-      elsif snippet = TmSnippet::snippets_by_uid[uuid]
+      elsif snippet and not unimplemented
         string += ";; " + snippet.name + "\n"
         string += " " * (indent + thingy[0].length)
         string += "(yas/item \"" + uuid + "\")"
-      elsif (uuid =~ /---------------------/)
-        string += "(yas/separator)"
-      else
-        string += ";; An external, misterious item\n"
+        separator_useless = false;
+      elsif snippet and unimplemented  
+        string += ";; Ignoring " + snippet.name + "\n"
         string += " " * (indent + thingy[0].length)
-        string += "(yas/external-item \"" + uuid + "\")"
+        string += "(yas/ignore-item \"" + uuid + "\")"
+        separator_useless = true;
+      elsif (uuid =~ /---------------------/)
+        string += "(yas/separator)" unless separator_useless
       end
       first = false;
     end
@@ -141,8 +150,9 @@ class TmSubmenu
       all[k] = TmSubmenu.new(v["name"], v)
     end
 
+    excluded = mainmenu["excludedItems"] + TmSubmenu::excluded_items
     closing = "\n                    '("
-    closing+= mainmenu["excludedItems"].collect do |uuid|
+    closing+= excluded.collect do |uuid|
       "\"" + uuid + "\"" 
     end.join(  "\n                       ") + "))"
 
@@ -276,6 +286,7 @@ class TmSnippet
         return ct
       else
         @@unknown_substitutions["content"][uuid] = self
+        TmSubmenu::excluded_items.push(uuid)
         return "(yas/unimplemented)"
       end
     end

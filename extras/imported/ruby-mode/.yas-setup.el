@@ -344,32 +344,32 @@
 ;; Translated menu
 ;; 
 (yas/define-menu 'ruby-mode
-                 '(;; Run
-                   (yas/item "35222962-C50D-4D58-A6AE-71E7AD980BE4")
-                   ;; Run Focused Unit Test
-                   (yas/item "5289EE40-86B8-11D9-A8D4-000A95E13C98")
-                   ;; Run Rake Task
-                   (yas/item "569C9822-8C41-4907-94C7-1A8A0031B66D")
-                   (yas/separator)
+                 '(;; Ignoring Run
+                   (yas/ignore-item "35222962-C50D-4D58-A6AE-71E7AD980BE4")
+                   ;; Ignoring Run Focused Unit Test
+                   (yas/ignore-item "5289EE40-86B8-11D9-A8D4-000A95E13C98")
+                   ;; Ignoring Run Rake Task
+                   (yas/ignore-item "569C9822-8C41-4907-94C7-1A8A0031B66D")
+                   
                    ;; Documentation for Word / Selection
                    (yas/item "63F3B3B7-CBE2-426B-B551-657733F3868B")
                    (yas/submenu "RDoc"
-                                (;; Show for Current File / Project
-                                 (yas/item "1AD6A138-2E89-4D6A-AB3F-416BF9CE968D")
-                                 (yas/separator)
+                                (;; Ignoring Show for Current File / Project
+                                 (yas/ignore-item "1AD6A138-2E89-4D6A-AB3F-416BF9CE968D")
+                                 
                                  (yas/submenu "Format"
-                                              (;; Bold
-                                               (yas/item "931DD73E-615E-476E-9B0D-8341023AE730")
-                                               ;; Italic
-                                               (yas/item "DAA69A0C-FC1E-4509-9931-DFFB38B4D6AE")
-                                               ;; Typewriter
-                                               (yas/item "2DDB6FE0-6111-4C40-A149-8E67E76F8272")))
-                                 (yas/separator)
+                                              (;; Ignoring Bold
+                                               (yas/ignore-item "931DD73E-615E-476E-9B0D-8341023AE730")
+                                               ;; Ignoring Italic
+                                               (yas/ignore-item "DAA69A0C-FC1E-4509-9931-DFFB38B4D6AE")
+                                               ;; Ignoring Typewriter
+                                               (yas/ignore-item "2DDB6FE0-6111-4C40-A149-8E67E76F8272")))
+                                 
                                  ;; New Block
                                  (yas/item "05984208-D559-4C04-A69C-2019361A985A")
-                                 ;; Omit
-                                 (yas/item "BF4CA9F1-51CD-48D4-8357-852234F59046")
-                                 (yas/separator)
+                                 ;; Ignoring Omit
+                                 (yas/ignore-item "BF4CA9F1-51CD-48D4-8357-852234F59046")
+                                 
                                  ;; :yields:
                                  (yas/item "ED6368FB-A11D-4622-9F42-7879481094F1")))
                    (yas/separator)
@@ -384,27 +384,27 @@
                                  (yas/item "CB81DA55-F3BC-4BFB-B0C5-29F0EE6F8081")
                                  ;; desc ... task :name ... end
                                  (yas/item "FE9A8EDA-C243-4068-8F38-A615B82D08C9")
-                                 ;; Rake/Sake task using file path
-                                 (yas/item "E07FF68B-C87D-4332-8477-D026929FDADA")))
+                                 ;; Ignoring Rake/Sake task using file path
+                                 (yas/ignore-item "E07FF68B-C87D-4332-8477-D026929FDADA")))
                    (yas/separator)
-                   ;; Open Require
-                   (yas/item "8646378E-91F5-4771-AC7C-43FC49A93576")
-                   ;; Validate Syntax
-                   (yas/item "EE5F19BA-6C02-11D9-92BA-0011242E4184")
-                   (yas/separator)
-                   ;; Execute Line / Selection as Ruby
-                   (yas/item "EE5F1FB2-6C02-11D9-92BA-0011242E4184")
+                   ;; Ignoring Open Require
+                   (yas/ignore-item "8646378E-91F5-4771-AC7C-43FC49A93576")
+                   ;; Ignoring Validate Syntax
+                   (yas/ignore-item "EE5F19BA-6C02-11D9-92BA-0011242E4184")
+                   
+                   ;; Ignoring Execute Line / Selection as Ruby
+                   (yas/ignore-item "EE5F1FB2-6C02-11D9-92BA-0011242E4184")
                    ;; Execute and Update ‘# =>’ Markers
                    (yas/item "FBFC214F-B019-4967-95D2-028F374A3221")
                    ;; Add ‘# =>’ Marker
                    (yas/item "88BC3896-DC39-4307-A271-21D33340F15A")
                    (yas/separator)
-                   ;; Insert Missing Requires
-                   (yas/item "9FB64639-F776-499B-BA6F-BB45F86F80FD")
-                   ;; Add ! to Method in Line / Selection
-                   (yas/item "7F79BC8D-8A4F-4570-973B-05DFEC25747F")
-                   ;; Toggle String / Symbol
-                   (yas/item "B297E4B8-A8FF-49CE-B9C4-6D4911724D43")
+                   ;; Ignoring Insert Missing Requires
+                   (yas/ignore-item "9FB64639-F776-499B-BA6F-BB45F86F80FD")
+                   ;; Ignoring Add ! to Method in Line / Selection
+                   (yas/ignore-item "7F79BC8D-8A4F-4570-973B-05DFEC25747F")
+                   ;; Ignoring Toggle String / Symbol
+                   (yas/ignore-item "B297E4B8-A8FF-49CE-B9C4-6D4911724D43")
                    ;; Insert ERb’s <% .. %> or <%= .. %>
                    (yas/item "FDFABCB9-DF58-4469-AE11-5407A4FF4D70")
                    (yas/separator)
@@ -439,8 +439,8 @@
                                                (yas/item "05DFF82C-5A29-4EBD-93FE-C165FFFB5EA8")
                                                ;; class BlankSlate .. initialize .. end
                                                (yas/item "E98FB8F9-7302-431D-8BF2-275A68A6126C")
-                                               ;; class .. < DelegateClass .. initialize .. end
-                                               (yas/item "121B334B-2AA6-4E9A-A8B8-BF93B627982B")
+                                               ;; Ignoring class .. < DelegateClass .. initialize .. end
+                                               (yas/ignore-item "121B334B-2AA6-4E9A-A8B8-BF93B627982B")
                                                ;; class .. < DelegateClass .. initialize .. end
                                                (yas/item "AFE1D078-EA16-45F5-AD8A-FAC1B523D861")
                                                ;; class << self .. end
@@ -453,9 +453,9 @@
                                                ;; module .. ClassMethods .. end
                                                (yas/item "A71A18CF-2D71-4BFF-AA0C-D9B8C59BC4EB")))
                                  (yas/submenu "Methods"
-                                              (;; New Method
-                                               (yas/item "0275EF39-9357-408F-AF20-79E415CA9504")
-                                               (yas/separator)
+                                              (;; Ignoring New Method
+                                               (yas/ignore-item "0275EF39-9357-408F-AF20-79E415CA9504")
+                                               
                                                ;; attr_reader ..
                                                (yas/item "A150C2D8-25B3-4339-BC92-8A0160A70486")
                                                ;; attr_writer ..
@@ -468,8 +468,8 @@
                                                ;; include Comparable ..
                                                (yas/item "6C9D6B3D-D8E9-4606-9534-577C8D21FFF6")
                                                (yas/separator)
-                                               ;; extend Forwardable
-                                               (yas/item "58FDEA60-10AF-4C49-AA09-29B77030DB25")
+                                               ;; Ignoring extend Forwardable
+                                               (yas/ignore-item "58FDEA60-10AF-4C49-AA09-29B77030DB25")
                                                ;; extend Forwardable
                                                (yas/item "7F46C90A-595B-4B83-A4F7-058F63CE4218")
                                                (yas/separator)
@@ -533,8 +533,8 @@
                                                (yas/item "7E084412-80E6-4B70-8092-C03D1ECE4CD2")
                                                ;; each_char { |chr| .. }
                                                (yas/item "FDD73070-6D32-4301-A86A-C55B77C3D8ED")
-                                               ;; each_cons(..) { |group| .. }
-                                               (yas/item "EC73D5CC-5F05-46B9-A6F4-82037E4A38C9")
+                                               ;; Ignoring each_cons(..) { |group| .. }
+                                               (yas/ignore-item "EC73D5CC-5F05-46B9-A6F4-82037E4A38C9")
                                                ;; each_cons(..) { |group| .. }
                                                (yas/item "3C04589C-5127-478E-97B3-CA7DD2EA7ECD")
                                                ;; each_index { |i| .. }
@@ -545,8 +545,8 @@
                                                (yas/item "02913388-EE8E-4C55-AC94-94F3D751F47E")
                                                ;; each_pair { |name, val| .. }
                                                (yas/item "7A3CECED-452B-438E-A5C6-95B6BDC43243")
-                                               ;; each_slice(..) { |group| .. }
-                                               (yas/item "825B721D-4367-4DF7-98C0-F005695DF9E3")
+                                               ;; Ignoring each_slice(..) { |group| .. }
+                                               (yas/ignore-item "825B721D-4367-4DF7-98C0-F005695DF9E3")
                                                ;; each_slice(..) { |group| .. }
                                                (yas/item "CD748479-D2A4-4AB5-95BD-4C89512BA210")
                                                ;; each_value { |val| .. }
@@ -561,8 +561,8 @@
                                                (yas/separator)
                                                ;; map { |e| .. }
                                                (yas/item "5A3754FC-43A3-462B-AB42-E3E951872E6F")
-                                               ;; map_with_index { |e, i| .. }
-                                               (yas/item "BFB65D1C-62F1-485D-8A67-3E5A2E55107C")
+                                               ;; Ignoring map_with_index { |e, i| .. }
+                                               (yas/ignore-item "BFB65D1C-62F1-485D-8A67-3E5A2E55107C")
                                                ;; map_with_index { |e, i| .. }
                                                (yas/item "BD4CFD7B-1AC0-4569-9BDA-FD491F41F4E6")))
                                  (yas/submenu "Files"
@@ -692,8 +692,8 @@
                                  ;; flunk(..)
                                  (yas/item "DB457094-1AC9-4856-AEFC-43A9576B6775")
                                  (yas/separator)
-                                 ;; Benchmark.bmbm do .. end
-                                 (yas/item "C649F945-DAB8-4DA2-B73C-2EFF9D7D34F3")
+                                 ;; Ignoring Benchmark.bmbm do .. end
+                                 (yas/ignore-item "C649F945-DAB8-4DA2-B73C-2EFF9D7D34F3")
                                  ;; Benchmark.bmbm do .. end
                                  (yas/item "942F20E2-C40A-44B8-A3F2-99AAC68CB534")
                                  ;; results.report(..) { .. }
@@ -704,24 +704,24 @@
                                  ;; Marshal.load(obj)
                                  (yas/item "20AAD0BC-075D-4EC0-9057-E3E5E62C4125")
                                  (yas/separator)
-                                 ;; PStore.new( .. )
-                                 (yas/item "5AE7CFB4-418E-4E00-AD76-06DB755EE876")
+                                 ;; Ignoring PStore.new( .. )
+                                 (yas/ignore-item "5AE7CFB4-418E-4E00-AD76-06DB755EE876")
                                  ;; PStore.new( .. )
                                  (yas/item "5B46ECFD-23A4-4F0C-9951-F64C19C72C2B")
                                  ;; transaction( .. ) { .. }
                                  (yas/item "46BF99AD-E172-4D49-BCF7-072F4730E1D9")
                                  (yas/separator)
-                                 ;; YAML.dump(.., file)
-                                 (yas/item "9460392B-C036-4A76-A5AE-1191F10E4B1B")
+                                 ;; Ignoring YAML.dump(.., file)
+                                 (yas/ignore-item "9460392B-C036-4A76-A5AE-1191F10E4B1B")
                                  ;; YAML.dump(.., file)
                                  (yas/item "3BA6762A-BB6B-489E-8006-F30F386AEF48")
-                                 ;; YAML.load(file)
-                                 (yas/item "2C07D4E7-D74F-4AE4-82BE-B0BA82247AFA")
+                                 ;; Ignoring YAML.load(file)
+                                 (yas/ignore-item "2C07D4E7-D74F-4AE4-82BE-B0BA82247AFA")
                                  ;; YAML.load(file)
                                  (yas/item "8343ACF4-EEB7-44B5-B835-94826466D4D5")
                                  (yas/separator)
-                                 ;; xmlread(..)
-                                 (yas/item "F6BF907E-FDF7-4D9B-9E57-BE159561349D")
+                                 ;; Ignoring xmlread(..)
+                                 (yas/ignore-item "F6BF907E-FDF7-4D9B-9E57-BE159561349D")
                                  ;; xmlread(..)
                                  (yas/item "B904D4AA-D15D-48A4-8EB2-563BAF489332")
                                  ;; xpath(..) { .. }
@@ -735,8 +735,8 @@
                                  (yas/item "A4E89D97-D5ED-48BB-B5FF-1BFB79211FCD")
                                  ;; singleton_class()
                                  (yas/item "B46D35B8-5DEB-4C10-A110-BA1965A2EB9C")
-                                 ;; word_wrap()
-                                 (yas/item "97054C4D-E4A3-45B1-9C00-B82DBCB30CAD")))
+                                 ;; Ignoring word_wrap()
+                                 (yas/ignore-item "97054C4D-E4A3-45B1-9C00-B82DBCB30CAD")))
                    (yas/submenu "File"
                                 (;; require File.dirname(__FILE__) + "/.."
                                  (yas/item "7C42D878-FD0F-4181-A71A-57A091C0154A")
@@ -756,7 +756,41 @@
                        "6519CB08-8326-4B77-A251-54722FFBFC1F"
                        "835FAAC6-5431-436C-998B-241F7226B99B"
                        "A83F68A9-F751-4BB4-AE16-56812878C16A"
-                       "47D203ED-EB9B-4653-A07B-A897800CEB76"))
+                       "47D203ED-EB9B-4653-A07B-A897800CEB76"
+                       "35222962-C50D-4D58-A6AE-71E7AD980BE4"
+                       "B3875596-723C-41EE-9E6F-F84930C3B568"
+                       "8646378E-91F5-4771-AC7C-43FC49A93576"
+                       "B297E4B8-A8FF-49CE-B9C4-6D4911724D43"
+                       "2DDB6FE0-6111-4C40-A149-8E67E76F8272"
+                       "569C9822-8C41-4907-94C7-1A8A0031B66D"
+                       "835FAAC6-5431-436C-998B-241F7226B99B"
+                       "47D203ED-EB9B-4653-A07B-A897800CEB76"
+                       "E07FF68B-C87D-4332-8477-D026929FDADA"
+                       "BF4CA9F1-51CD-48D4-8357-852234F59046"
+                       "931DD73E-615E-476E-9B0D-8341023AE730"
+                       "DAA69A0C-FC1E-4509-9931-DFFB38B4D6AE"
+                       "825B721D-4367-4DF7-98C0-F005695DF9E3"
+                       "121B334B-2AA6-4E9A-A8B8-BF93B627982B"
+                       "9460392B-C036-4A76-A5AE-1191F10E4B1B"
+                       "E5158F94-CC52-4424-A495-14EF9272653F"
+                       "2C07D4E7-D74F-4AE4-82BE-B0BA82247AFA"
+                       "58FDEA60-10AF-4C49-AA09-29B77030DB25"
+                       "EC73D5CC-5F05-46B9-A6F4-82037E4A38C9"
+                       "BFB65D1C-62F1-485D-8A67-3E5A2E55107C"
+                       "6519CB08-8326-4B77-A251-54722FFBFC1F"
+                       "9FB64639-F776-499B-BA6F-BB45F86F80FD"
+                       "5289EE40-86B8-11D9-A8D4-000A95E13C98"
+                       "7F79BC8D-8A4F-4570-973B-05DFEC25747F"
+                       "EE5F19BA-6C02-11D9-92BA-0011242E4184"
+                       "EE5F1FB2-6C02-11D9-92BA-0011242E4184"
+                       "0275EF39-9357-408F-AF20-79E415CA9504"
+                       "1AD6A138-2E89-4D6A-AB3F-416BF9CE968D"
+                       "97054C4D-E4A3-45B1-9C00-B82DBCB30CAD"
+                       "76FCF165-54CB-4213-BC55-BD60B9C6A3EC"
+                       "C649F945-DAB8-4DA2-B73C-2EFF9D7D34F3"
+                       "5AE7CFB4-418E-4E00-AD76-06DB755EE876"
+                       "A83F68A9-F751-4BB4-AE16-56812878C16A"
+                       "F6BF907E-FDF7-4D9B-9E57-BE159561349D"))
 
 ;; Unknown substitutions
 ;; 
