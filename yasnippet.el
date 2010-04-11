@@ -2770,9 +2770,16 @@ Otherwise throw exception."
       (yas/field-text-for-display field))))
 
 (defun yas/text ()
+  "Return `yas/text' if that exists and is non-empty, else nil."
   (if (and yas/text
            (not (string= "" yas/text)))
       yas/text))
+
+;; (defun yas/selected-text ()
+;;   "Return `yas/selected-text' if that exists and is non-empty, else nil."
+;;   (if (and yas/selected-text
+;;            (not (string= "" yas/selected-text)))
+;;       yas/selected-text))
 
 (defun yas/get-field-once (number &optional transform-fn)
   (unless yas/modified-p
@@ -2986,12 +2993,19 @@ Also create some protection overlays"
   (setf (yas/snippet-active-field snippet) field)
   (yas/place-overlays snippet field)
   (overlay-put yas/active-field-overlay 'yas/field field)
-  ;; primary field transform: first call to snippet transform
-  (unless (yas/field-modified-p field)
-    (if (yas/field-update-display field snippet)
-        (let ((inhibit-modification-hooks t))
-          (yas/update-mirrors snippet))
-      (setf (yas/field-modified-p field) nil))))
+  (let ((number (yas/field-number field)))
+    (if (and number (zerop number))
+        (progn
+          (setf (yas/snippet-force-exit snippet) `(activate-mark ,(yas/field-start field) ,(yas/field-end field)))
+          (set-mark (yas/field-end field))
+          ;;(x-set-selection 'PRIMARY (cons (yas/field-start field) (yas/field-end-field)))
+          (setq transient-mark-mode (cons 'only transient-mark-mode)))
+      ;; primary field transform: first call to snippet transform
+      (unless (yas/field-modified-p field)
+        (if (yas/field-update-display field snippet)
+            (let ((inhibit-modification-hooks t))
+              (yas/update-mirrors snippet))
+          (setf (yas/field-modified-p field) nil))))))
 
 (defun yas/prev-field ()
   "Navigate to prev field.  If there's none, exit the snippet."
@@ -3268,11 +3282,9 @@ progress."
              ;; primary field transform: normal calls to expression or
              ;; force an exit on next `post-command-hook' if the
              ;; number is 0
-             (if (and number (zerop number))
-                 (setf (yas/snippet-force-exit snippet) t)
-               (let ((saved-point (point)))
-                 (yas/field-update-display field (car (yas/snippets-at-point)))
-                 (goto-char saved-point)))
+             (let ((saved-point (point)))
+               (yas/field-update-display field (car (yas/snippets-at-point)))
+               (goto-char saved-point))
              (yas/update-mirrors (car (yas/snippets-at-point))))
             (field
              (when (and (not after?)
