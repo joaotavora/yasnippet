@@ -1,6 +1,28 @@
 ;; .yas-setup.el for rails-mode
 (defvar yas/rails-root-cache nil)
 
+(add-to-list 'auto-mode-alist '("\\.erb$" . yas/rails-erb-mode))
+
+(define-derived-mode yas/rails-erb-mode
+  nxml-mode "eRB"
+  "Embedded Ruby Mode, very thin layer over `nxml-mode'."
+  (add-to-list (make-local-variable 'yas/extra-modes) 'html-mode)
+  (rng-set-vacuous-schema)
+  (message "hey erb mode"))
+
+(defvar yas/rails-erb-font-lock-keywords
+  '(("\\(<%=\\)\\(.*+\\)\\(%>\\)"
+     (1 font-lock-function-name-face)
+     (2 font-lock-string-face)
+     (3 font-lock-function-name-face))
+    ("\\(<%\\)\\(.*+\\)\\(%>\\)"
+     (1 font-lock-variable-name-face)
+     (2 font-lock-string-face)
+     (3 font-lock-variable-name-face)))
+  "(Crummy) font lock highlighting for ERB constructs.."
+  )
+(font-lock-add-keywords 'yas/rails-erb-mode yas/rails-erb-font-lock-keywords)
+
 ;; stolen from rinari-mode's rinari-root
 (defun yas/rails-root (&optional dir)
   (or dir (setq dir default-directory))
@@ -139,10 +161,10 @@
 (defun yas/rails-activate-maybe ()
   (when (and yas/minor-mode
              (yas/rails-root))
-    (set (make-local-variable 'yas/mode-symbol) 'rails-mode)))
+    (add-to-list (make-local-variable 'yas/extra-modes) 'rails-mode)))
 
 (defadvice cd (after yas/rails-on-cd-activate activate)
-  "Set `yas/mode-symbol' to `rails-mode' so that rails snippets
+  "Add `rails-mode' to `yas/extra-modes' so that rails snippets
 are recognized. Stolen from `rinari-mode' more or`' less."
   (setq yas/rails-root-cache nil)
   (yas/rails-activate-maybe))
@@ -423,58 +445,58 @@ are recognized. Stolen from `rinari-mode' more or`' less."
                                  (yas/item "EE862691-A624-4797-90CF-EDD39EFB2D8E")
                                  ;; Go to Functional Test
                                  (yas/item "DFE393BE-0764-49FE-B464-6350A50921E6")
-                                 ;; Go to Helper
-                                 (yas/item "51C9C27A-D931-49F9-B6D8-C0E7ABEC992D")
-                                 ;; Go to Javascript
-                                 (yas/item "B078346F-61D8-4E75-9427-80720FBC67F7")
-                                 ;; Go to Stylesheet
-                                 (yas/item "B207BBD4-D6AA-41E9-9530-27210F2D7B66")
+                                 ;; Ignoring Go to Helper
+                                 (yas/ignore-item "51C9C27A-D931-49F9-B6D8-C0E7ABEC992D")
+                                 ;; Ignoring Go to Javascript
+                                 (yas/ignore-item "B078346F-61D8-4E75-9427-80720FBC67F7")
+                                 ;; Ignoring Go to Stylesheet
+                                 (yas/ignore-item "B207BBD4-D6AA-41E9-9530-27210F2D7B66")
                                  ;; Go to Unit Test
                                  (yas/item "BDBB15A4-2824-4BEC-93A5-7475F9C46A39")
-                                 ;; Go to Fixture
-                                 (yas/item "638D94A4-BDFC-4FE9-8909-9934F3FD2899")))
+                                 ;; Ignoring Go to Fixture
+                                 (yas/ignore-item "638D94A4-BDFC-4FE9-8909-9934F3FD2899")))
                    (yas/submenu "Run Tests"
-                                (;; Test All
-                                 (yas/item "DC549A45-D9B0-11DC-94E9-00112475D960")
-                                 ;; Test Functionals
-                                 (yas/item "F4EA552D-D9B0-11DC-94E9-00112475D960")
-                                 ;; Test Integration
-                                 (yas/item "04A30A4D-D9B1-11DC-94E9-00112475D960")
-                                 ;; Test Plugins
-                                 (yas/item "0D966168-D9B1-11DC-94E9-00112475D960")
-                                 ;; Test Recent
-                                 (yas/item "190401C2-D9B1-11DC-94E9-00112475D960")
-                                 ;; Test Uncommitted
-                                 (yas/item "212C3047-D9B1-11DC-94E9-00112475D960")
-                                 ;; Test Units
-                                 (yas/item "2C60CBA1-D9B1-11DC-94E9-00112475D960")))
-                   (yas/separator)
-                   ;; Call Generate Script
-                   (yas/item "4904EDC7-5ED3-4132-AAB2-C2AD87C97EFE")
-                   ;; Install Plugin
-                   (yas/item "46ECE243-0448-4A64-A223-27CC21E7704D")
+                                (;; Ignoring Test All
+                                 (yas/ignore-item "DC549A45-D9B0-11DC-94E9-00112475D960")
+                                 ;; Ignoring Test Functionals
+                                 (yas/ignore-item "F4EA552D-D9B0-11DC-94E9-00112475D960")
+                                 ;; Ignoring Test Integration
+                                 (yas/ignore-item "04A30A4D-D9B1-11DC-94E9-00112475D960")
+                                 ;; Ignoring Test Plugins
+                                 (yas/ignore-item "0D966168-D9B1-11DC-94E9-00112475D960")
+                                 ;; Ignoring Test Recent
+                                 (yas/ignore-item "190401C2-D9B1-11DC-94E9-00112475D960")
+                                 ;; Ignoring Test Uncommitted
+                                 (yas/ignore-item "212C3047-D9B1-11DC-94E9-00112475D960")
+                                 ;; Ignoring Test Units
+                                 (yas/ignore-item "2C60CBA1-D9B1-11DC-94E9-00112475D960")))
+                   
+                   ;; Ignoring Call Generate Script
+                   (yas/ignore-item "4904EDC7-5ED3-4132-AAB2-C2AD87C97EFE")
+                   ;; Ignoring Install Plugin
+                   (yas/ignore-item "46ECE243-0448-4A64-A223-27CC21E7704D")
                    (yas/submenu "Database"
-                                (;; Migrate to Current
-                                 (yas/item "985F56D4-82ED-4C45-8250-2ECCFC71957E")
-                                 ;; Migrate to Version ...
-                                 (yas/item "07C696F8-79F5-4E0B-9EE9-03B693A54ABB")
-                                 ;; Migrate to Previous Version
-                                 (yas/item "9A1AE6BA-8350-4AB7-B5BD-969A7E64CF29")
+                                (;; Ignoring Migrate to Current
+                                 (yas/ignore-item "985F56D4-82ED-4C45-8250-2ECCFC71957E")
+                                 ;; Ignoring Migrate to Version ...
+                                 (yas/ignore-item "07C696F8-79F5-4E0B-9EE9-03B693A54ABB")
+                                 ;; Ignoring Migrate to Previous Version
+                                 (yas/ignore-item "9A1AE6BA-8350-4AB7-B5BD-969A7E64CF29")
                                  ;; Redo Last Migration
                                  (yas/item "CFDA9F62-D071-4E0F-AD10-66AE0729FFCF")
                                  (yas/separator)
-                                 ;; Load Fixtures (Development DB)
-                                 (yas/item "5EEA0C71-B34B-4408-953B-F47AAD343CCC")
-                                 ;; Load Fixtures (Test DB)
-                                 (yas/item "F758BFD1-00CA-4742-BE71-032580080F5C")
-                                 (yas/separator)
-                                 ;; Load schema.rb to DB
-                                 (yas/item "6DEF923E-2347-46EC-AFBE-183D08E63DC1")
-                                 ;; Dump DB to schema.rb
-                                 (yas/item "310C901C-EF32-4E88-938A-804ABBF8C428")
-                                 ;; Clone Development DB to Test DB
-                                 (yas/item "6F2AB859-46E3-4FF5-A9A7-E9A813AB5DE1")))
-                   (yas/separator)
+                                 ;; Ignoring Load Fixtures (Development DB)
+                                 (yas/ignore-item "5EEA0C71-B34B-4408-953B-F47AAD343CCC")
+                                 ;; Ignoring Load Fixtures (Test DB)
+                                 (yas/ignore-item "F758BFD1-00CA-4742-BE71-032580080F5C")
+                                 
+                                 ;; Ignoring Load schema.rb to DB
+                                 (yas/ignore-item "6DEF923E-2347-46EC-AFBE-183D08E63DC1")
+                                 ;; Ignoring Dump DB to schema.rb
+                                 (yas/ignore-item "310C901C-EF32-4E88-938A-804ABBF8C428")
+                                 ;; Ignoring Clone Development DB to Test DB
+                                 (yas/ignore-item "6F2AB859-46E3-4FF5-A9A7-E9A813AB5DE1")))
+                   
                    ;; params[…]
                    (yas/item "AC8EDA3E-875B-11D9-897C-000393CBCE2E")
                    ;; session[…]
@@ -494,9 +516,9 @@ are recognized. Stolen from `rinari-mode' more or`' less."
                                  (yas/item "7B15B396-1F41-4529-9253-32761E94448C")))
                    (yas/separator)
                    (yas/submenu "Models"
-                                (;; Show DB Schema for Current Class
-                                 (yas/item "1970AE74-3949-40B3-B263-727AA3FF167A")
-                                 (yas/separator)
+                                (;; Ignoring Show DB Schema for Current Class
+                                 (yas/ignore-item "1970AE74-3949-40B3-B263-727AA3FF167A")
+                                 
                                  (yas/submenu "Callbacks"
                                               (;; before_validation
                                                (yas/item "A1776279-5396-4FE9-9218-8BF2C88C5271")
@@ -777,34 +799,34 @@ are recognized. Stolen from `rinari-mode' more or`' less."
                                  ;; page.toggle (*ids)
                                  (yas/item "028DA0A4-B310-4BEF-8643-2A22993C21C7")))
                    (yas/submenu "Migrations"
-                                (;; Quick Migration
-                                 (yas/item "D696FA2C-785A-4B73-A2F6-F750904DD7C2")
-                                 (yas/separator)
+                                (;; Ignoring Quick Migration
+                                 (yas/ignore-item "D696FA2C-785A-4B73-A2F6-F750904DD7C2")
+                                 
                                  (yas/submenu "Columns"
                                               (;; Add / Remove Column
                                                (yas/item "18C76913-061C-4D65-866D-67AA3724AFEF")
-                                               ;; Add / Remove Several Columns
-                                               (yas/item "7BC860E6-7561-4E6E-983B-507D7A6F6228")
+                                               ;; Ignoring Add / Remove Several Columns
+                                               (yas/ignore-item "7BC860E6-7561-4E6E-983B-507D7A6F6228")
                                                ;; Add / Remove Several Columns (marcc)
                                                (yas/item "27A6C58A-896B-4956-BA81-D671A2EF9C7D")
-                                               ;; Rename / Rename Column
-                                               (yas/item "AC50762C-DE40-4EB9-9A22-2F6AF2EA4EA3")
-                                               ;; Rename / Rename Several Columns
-                                               (yas/item "F03162DE-9DB6-417B-9DD7-52D9F11EA736")
-                                               ;; Rename / Rename Several Columns (mncc)
-                                               (yas/item "04A86178-71B1-430A-A06D-DFF7C9A338B5")
+                                               ;; Ignoring Rename / Rename Column
+                                               (yas/ignore-item "AC50762C-DE40-4EB9-9A22-2F6AF2EA4EA3")
+                                               ;; Ignoring Rename / Rename Several Columns
+                                               (yas/ignore-item "F03162DE-9DB6-417B-9DD7-52D9F11EA736")
+                                               ;; Ignoring Rename / Rename Several Columns (mncc)
+                                               (yas/ignore-item "04A86178-71B1-430A-A06D-DFF7C9A338B5")
                                                ;; Remove / Add Column
                                                (yas/item "16A705EB-10DC-42B5-9FF2-377E206421DC")))
                                  (yas/submenu "Tables"
-                                              (;; Create / Drop Table
-                                               (yas/item "25F8F5D8-2BD1-45D8-8B2A-9F2EA4F73AA2")
-                                               ;; Rename / Rename Table
-                                               (yas/item "FD8CC811-2AD3-480F-B975-DF959DC96C67")
+                                              (;; Ignoring Create / Drop Table
+                                               (yas/ignore-item "25F8F5D8-2BD1-45D8-8B2A-9F2EA4F73AA2")
+                                               ;; Ignoring Rename / Rename Table
+                                               (yas/ignore-item "FD8CC811-2AD3-480F-B975-DF959DC96C67")
                                                ;; Drop / Create Table
                                                (yas/item "20375601-B13F-4314-B8E4-362706566636")
-                                               ;; Change / Change Table
-                                               (yas/item "20FC02C5-32A3-4F20-B163-FF75C9FDFABF")
-                                               (yas/separator)
+                                               ;; Ignoring Change / Change Table
+                                               (yas/ignore-item "20FC02C5-32A3-4F20-B163-FF75C9FDFABF")
+                                               
                                                (yas/submenu "Create columns t. drop-down list"
                                                             (;; t.string (tcs)
                                                              (yas/item "B757F7E5-E4BD-11DC-A11A-00112475D960")
@@ -874,12 +896,12 @@ are recognized. Stolen from `rinari-mode' more or`' less."
                                                             (;; Table column(s) rename
                                                              (yas/item "DF30226E-1111-448A-B669-7CA34EE83909")))))
                                  (yas/submenu "Indexes"
-                                              (;; Add / Remove Index
-                                               (yas/item "95F83E1D-5B03-424F-8BEC-8AF66C8939BC")
-                                               ;; Add / Remove Named Index
-                                               (yas/item "A7F692C1-778A-48B8-945E-573568BA0403")
-                                               ;; Add / Remove Unique Index
-                                               (yas/item "33057A79-677B-4DFB-99D4-1492778BDDC6")))))
+                                              (;; Ignoring Add / Remove Index
+                                               (yas/ignore-item "95F83E1D-5B03-424F-8BEC-8AF66C8939BC")
+                                               ;; Ignoring Add / Remove Named Index
+                                               (yas/ignore-item "A7F692C1-778A-48B8-945E-573568BA0403")
+                                               ;; Ignoring Add / Remove Unique Index
+                                               (yas/ignore-item "33057A79-677B-4DFB-99D4-1492778BDDC6")))))
                    (yas/submenu "Routes"
                                 (;; map.named_route
                                  (yas/item "91C543BF-7BD8-4E3A-B493-AE572C5472A0")
@@ -905,10 +927,10 @@ are recognized. Stolen from `rinari-mode' more or`' less."
                                  ;; <%= Fixtures.identify(:symbol) %>
                                  (yas/item "9671EB7A-89D6-4C23-914F-88CBEE0D177A")
                                  (yas/separator)
-                                 ;; Autocomplete Foreign Key Fixture Reference
-                                 (yas/item "0BCF0EE2-35EE-4959-A771-E74D55271D5A")
-                                 ;; Autocomplete Foreign Key Fixture Reference (habtm)
-                                 (yas/item "275C0B86-F735-49B6-8A22-218A8F4CC2E0")))
+                                 ;; Ignoring Autocomplete Foreign Key Fixture Reference
+                                 (yas/ignore-item "0BCF0EE2-35EE-4959-A771-E74D55271D5A")
+                                 ;; Ignoring Autocomplete Foreign Key Fixture Reference (habtm)
+                                 (yas/ignore-item "275C0B86-F735-49B6-8A22-218A8F4CC2E0")))
                    (yas/submenu "Unit Tests"
                                 (;; assert_difference
                                  (yas/item "30BEA6FB-301C-4460-93EC-FA3404688962")
@@ -954,9 +976,47 @@ are recognized. Stolen from `rinari-mode' more or`' less."
                                  ;; xhr put
                                  (yas/item "C12C98A5-74E5-4E70-9ADB-8783455D6539")))
                    (yas/separator)
-                   ;; View demo help
-                   (yas/item "964436B8-E578-11DC-8177-00112475D960"))
+                   ;; Ignoring View demo help
+                   (yas/ignore-item "964436B8-E578-11DC-8177-00112475D960"))
                     '("A2135370-67A1-488D-B43C-B4F221127C2F"
+                       "809BCA42-5C49-4B08-B3C4-BB773036C086"
+                       "1970AE74-3949-40B3-B263-727AA3FF167A"
+                       "638D94A4-BDFC-4FE9-8909-9934F3FD2899"
+                       "F758BFD1-00CA-4742-BE71-032580080F5C"
+                       "6F2AB859-46E3-4FF5-A9A7-E9A813AB5DE1"
+                       "07C696F8-79F5-4E0B-9EE9-03B693A54ABB"
+                       "D696FA2C-785A-4B73-A2F6-F750904DD7C2"
+                       "DC549A45-D9B0-11DC-94E9-00112475D960"
+                       "964436B8-E578-11DC-8177-00112475D960"
+                       "5EEA0C71-B34B-4408-953B-F47AAD343CCC"
+                       "0BCF0EE2-35EE-4959-A771-E74D55271D5A"
+                       "0D966168-D9B1-11DC-94E9-00112475D960"
+                       "190401C2-D9B1-11DC-94E9-00112475D960"
+                       "212C3047-D9B1-11DC-94E9-00112475D960"
+                       "F4EA552D-D9B0-11DC-94E9-00112475D960"
+                       "04A30A4D-D9B1-11DC-94E9-00112475D960"
+                       "275C0B86-F735-49B6-8A22-218A8F4CC2E0"
+                       "2C60CBA1-D9B1-11DC-94E9-00112475D960"
+                       "9A1AE6BA-8350-4AB7-B5BD-969A7E64CF29"
+                       "B207BBD4-D6AA-41E9-9530-27210F2D7B66"
+                       "B078346F-61D8-4E75-9427-80720FBC67F7"
+                       "6DEF923E-2347-46EC-AFBE-183D08E63DC1"
+                       "4904EDC7-5ED3-4132-AAB2-C2AD87C97EFE"
+                       "46ECE243-0448-4A64-A223-27CC21E7704D"
+                       "310C901C-EF32-4E88-938A-804ABBF8C428"
+                       "51C9C27A-D931-49F9-B6D8-C0E7ABEC992D"
+                       "985F56D4-82ED-4C45-8250-2ECCFC71957E"
+                       "25F8F5D8-2BD1-45D8-8B2A-9F2EA4F73AA2"
+                       "04A86178-71B1-430A-A06D-DFF7C9A338B5"
+                       "FD8CC811-2AD3-480F-B975-DF959DC96C67"
+                       "AC50762C-DE40-4EB9-9A22-2F6AF2EA4EA3"
+                       "95F83E1D-5B03-424F-8BEC-8AF66C8939BC"
+                       "33057A79-677B-4DFB-99D4-1492778BDDC6"
+                       "A7F692C1-778A-48B8-945E-573568BA0403"
+                       "20FC02C5-32A3-4F20-B163-FF75C9FDFABF"
+                       "A2135370-67A1-488D-B43C-B4F221127C2F"
+                       "7BC860E6-7561-4E6E-983B-507D7A6F6228"
+                       "F03162DE-9DB6-417B-9DD7-52D9F11EA736"
                        "809BCA42-5C49-4B08-B3C4-BB773036C086"))
 
 ;; Unknown substitutions
