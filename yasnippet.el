@@ -54,7 +54,11 @@
 ;;           when used for bulk (re)loading of snippets (at startup or
 ;;           via `yas/reload-all'), directories appearing earlier in
 ;;           the list shadow other dir's snippets. Also, the first
-;;           directory is taken as the default for storing the user's new snippets.
+;;           directory is taken as the default for storing the user's
+;;           new snippets.
+;;
+;;           The deprecated `yas/root-directory' aliases this variable
+;;           for backward-compatibility.
 ;;
 ;;       `yas/extra-modes'
 ;;
@@ -63,6 +67,9 @@
 ;;           list of symbols) that correspond to subdirectories of
 ;;           `yas/snippet-dirs' and is used for deciding which
 ;;           snippets to consider for the active buffer.
+;;
+;;           Deprecated `yas/mode-symbol' aliases this variable for
+;;           backward-compatibility.
 ;;
 ;;   Major commands are:
 ;;
@@ -178,6 +185,8 @@ as the default for storing the user's new snippets."
              (unless (or (not (fboundp 'yas/reload-all))
                          (equal old new))
                (yas/reload-all)))))
+(defun yas/snippet-dirs ()
+  (if (listp yas/snippet-dirs) yas/snippet-dirs (list yas/snippet-dirs)))
 (defvaralias 'yas/root-directory 'yas/snippet-dirs)
 
 (defcustom yas/prompt-functions '(yas/x-prompt
@@ -1221,10 +1230,9 @@ Can be a symbol or a list of symbols.
 
 This variable probably makes more sense as buffer-local, so
 ensure your use `make-local-variable' when you set it.")
-(defvaralias 'yas/mode-symbol 'yas/extra-modes)
 (defun yas/extra-modes ()
   (if (listp yas/extra-modes) yas/extra-modes (list yas/extra-modes)))
-
+(defvaralias 'yas/mode-symbol 'yas/extra-modes)
 
 (defun yas/table-get-create (mode)
   "Get the snippet table corresponding to MODE.
@@ -1254,19 +1262,18 @@ MODE-SYMBOL or `major-mode'.
 Guessing is done by looking up the MODE-SYMBOL's
 `derived-mode-parent' property, see also `derived-mode-p'."
   (let ((mode-tables
-         (mapcar #'(lambda (mode)
-                     (gethash mode yas/tables))
-                 (append (list mode-symbol)
-                         (yas/extra-modes)
-                         (list major-mode
-                               (and (not dont-search-parents)
-                                    (get major-mode
-                                         'derived-mode-parent))))))
-        (all-tables))
-    (dolist (table (remove nil mode-tables))
-      (push table all-tables)
-      (nconc all-tables (yas/table-get-all-parents table)))
-    (remove-duplicates all-tables)))
+         (remove nil
+                 (mapcar #'(lambda (mode)
+                             (gethash mode yas/tables))
+                 (remove nil (append (list mode-symbol)
+                                     (yas/extra-modes)
+                                     (list major-mode
+                                           (and (not dont-search-parents)
+                                                (get major-mode
+                                                     'derived-mode-parent)))))))))
+    (remove-duplicates 
+     (append mode-tables
+             (mapcan #'yas/table-get-all-parents mode-tables)))))
 
 (defun yas/menu-keymap-get-create (table)
   "Get or create the main menu keymap correspondong to MODE.
@@ -1634,10 +1641,8 @@ content of the file is the template."
   "Reload the directories listed in `yas/snippet-dirs' or
    prompt the user to select one."
   (if yas/snippet-dirs
-      (if (listp yas/snippet-dirs)
-          (dolist (directory (reverse yas/snippet-dirs))
-            (yas/load-directory directory))
-        (yas/load-directory yas/snippet-dirs))
+      (dolist (directory (reverse (yas/snippet-dirs)))
+        (yas/load-directory directory))
     (call-interactively 'yas/load-directory)))
 
 (defun yas/reload-all (&optional reset-root-directory)
@@ -1666,12 +1671,7 @@ content of the file is the template."
     ;; Reload the directories listed in `yas/snippet-dirs' or prompt
     ;; the user to select one.
     ;;
-    (if yas/snippet-dirs
-        (if (listp yas/snippet-dirs)
-            (dolist (directory (reverse yas/snippet-dirs))
-              (yas/load-directory directory))
-          (yas/load-directory yas/snippet-dirs))
-      (call-interactively 'yas/load-directory))
+    (yas/load-snippet-dirs)
     ;; Reload the direct keybindings
     ;;
     (yas/direct-keymaps-reload)
@@ -2325,18 +2325,16 @@ all the possibly directories where snippets of table might be
 lurking."
   (let ((main-dir (replace-regexp-in-string
                    "/+$" ""
-                   (or (and (listp yas/snippet-dirs)
-                            (first yas/snippet-dirs))
-                       yas/snippet-dirs
-                       (setq yas/snippet-dirs "~/.emacs.d/snippets"))))
+                   (or (first (yas/snippet-dirs))
+                       (setq yas/snippet-dirs '("~/.emacs.d/snippets")))))
         (tables (or (and table
                          (list table))
                     (yas/get-snippet-tables))))
     ;; HACK! the snippet table created here is actually registered!
     ;;
     (unless (or table (gethash major-mode yas/tables))
-      (setq tables (cons (yas/table-get-create major-mode)
-                         tables)))
+      (push (yas/table-get-create major-mode)
+            tables))
 
     (mapcar #'(lambda (table)
                 (cons table
@@ -2374,7 +2372,7 @@ lurking."
     (erase-buffer)
     (set (make-local-variable 'yas/editing-template) nil)
     (snippet-mode)
-    (set (make-local-variable 'yas/guessed-directories) guessed-directories)
+    (set (make-local-variable 'yas/guessed-modes) (mapcar #'car guessed-directories))
     (unless (and choose-instead-of-guess
                  (not (y-or-n-p "Insert a snippet with useful headers? ")))
       (yas/expand-snippet "\
@@ -2388,7 +2386,7 @@ lurking."
 $0"))))
 
 (defun yas/find-snippets (&optional same-window )
-  "Look for user snippets in guessed current mode's directory.
+  "Find snippet file in guessed current mode's directory.
 
 Calls `find-file' interactively in the guessed directory.
 
@@ -2416,9 +2414,7 @@ there, otherwise, proposes to create the first option returned by
                              (rest guessed-directories)))))
     (unless chosen
       (when (y-or-n-p "Having trouble... go to snippet root dir? ")
-        (setq chosen (if (listp yas/snippet-dirs)
-                         (first yas/snippet-dirs)
-                       yas/snippet-dirs))))
+        (setq chosen (first (yas/snippet-dirs)))))
     (if chosen
         (let ((default-directory chosen))
           (setq buffer (call-interactively (if same-window
@@ -2433,7 +2429,11 @@ there, otherwise, proposes to create the first option returned by
 
 (defun yas/compute-major-mode-and-parents (file &optional prompt-if-failed)
   (let* ((file-dir (and file
-                        (directory-file-name (or (locate-dominating-file file ".yas-make-groups")
+                        (directory-file-name (or (some #'(lambda (special)
+                                                           (locate-dominating-file file special))
+                                                       '(".yas-setup.el"
+                                                         ".yas-make-groups"
+                                                         ".yas-parents"))
                                                  (directory-file-name (file-name-directory file))))))
          (parents-file-name (concat file-dir "/.yas-parents"))
          (major-mode-name (and file-dir
@@ -2459,112 +2459,112 @@ there, otherwise, proposes to create the first option returned by
 (defvar yas/current-template nil
   "Holds the current template being expanded into a snippet.")
 
-(defvar yas/guessed-directories nil
-  "Supporting variable for `yas/load-snippet-buffer' and `yas/new-snippet'")
+(defvar yas/guessed-modes nil
+  "List of guessed modes supporting `yas/load-snippet-buffer'.")
 
 (defun yas/load-snippet-buffer (&optional kill)
   "Parse and load current buffer's snippet definition.
 
 With optional prefix argument KILL quit the window and buffer."
   (interactive "P")
-  (cond
-   ;; X) Option 1: We have `yas/editing-template', this buffer's
-   ;;  content comes from a template which is already loaded and
-   ;;  neatly positioned,...
-   ;;
-   ((and (boundp 'yas/editing-template)
-         yas/editing-template
-         (yas/template-p yas/editing-template))
 
-    (let ((parsed (yas/parse-template (yas/template-file yas/editing-template))))
-      ;; ... just change its template, expand-env, condition, key,
-      ;; keybinding and name. The group cannot be changed.
-      (yas/populate-template yas/editing-template
-                             :content    (second parsed)
-                             :key        (first parsed)
-                             :name       (third parsed)
-                             :condition  (fourth parsed)
-                             :expand-env (sixth parsed)
-                             :keybinding (yas/read-keybinding (eighth parsed)))
-      (yas/update-template (yas/template-table yas/editing-template)
-                           yas/editing-template)))
-   ;; X) Option 2: We have `yas/guessed-directories', but no
-   ;;  `yas/editing-template', which probablt means this buffer's
-   ;;  content comes from `yas/new-snippet' call. Prompt user for a
-   ;;  table, add the template to the table, then call
-   ;;
-   ((and (boundp 'yas/guessed-directories)
-         yas/guessed-directories)
-    (let* ((yas/prompt-functions '(yas/ido-prompt yas/completing-prompt))
-           (table (or (and yas/guessed-directories
-                           (y-or-n-p "Let yasnippet guess tables? ")
-                           (or (and (second yas/guessed-directories)
-                                    (car (some #'(lambda (fn)
-                                                   (funcall fn "Choose from guessed list of tables: "
-                                                            guessed-directories
-                                                            #'(lambda (option)
-                                                                (yas/table-name (car option)))))
-                                               yas/prompt-functions)))
-                               (car (first yas/guessed-directories))))
-                      (yas/table-get-create (intern (read-from-minibuffer "Enter new/existing table: "))))))
-      (set (make-local-variable 'yas/editing-template) 
-           (yas/define-snippets-1 (yas/parse-template buffer-file-name)
-                                  table
-                                  (and yas/use-menu (yas/menu-keymap-get-create table))))))
-   (;; X) Option 3: We have a file name, consider this a brand new
-    ;; snippet and calculate name, groups, etc from the current
-    ;; file-name and buffer content
+  (if (not (or yas/editing-template
+               yas/guessed-modes))
+      ;; X) Option 1: We have nothing to indicate where this snippet
+      ;; belongs to, guess a mode-list from `buffer-file-name' and
+      ;; call `yas/load-snippet-buffer' again with `yas/guessed-modes'
+      ;; set to it. If not even `buffer-file-name' then use
+      ;; `yas/guessed-modes' set to 'just-prompt.
+      ;;
+      (let* ((major-mode-and-parent (yas/compute-major-mode-and-parents buffer-file-name))
+             (yas/ignore-filenames-as-triggers (or yas/ignore-filenames-as-triggers
+                                                   (and buffer-file-name
+                                                        (locate-dominating-file
+                                                         buffer-file-name
+                                                         ".yas-ignore-filenames-as-triggers"))))
+             (yas/guessed-modes (or major-mode-and-parent
+                                    'just-prompt)))
+        (yas/load-snippet-buffer kill))
+    (cond
+     ;; X) Option 1: We have `yas/editing-template', this buffer's
+     ;;  content comes from a template which is already loaded and
+     ;;  neatly positioned,...
+     ;;
+     (yas/editing-template
+      (let ((parsed (yas/parse-template (yas/template-file yas/editing-template))))
+        ;; ... just change its template, expand-env, condition, key,
+        ;; keybinding and name. The group cannot be changed.
+        (yas/populate-template yas/editing-template
+                               :content    (second parsed)
+                               :key        (first parsed)
+                               :name       (third parsed)
+                               :condition  (fourth parsed)
+                               :expand-env (sixth parsed)
+                               :keybinding (yas/read-keybinding (eighth parsed)))
+        (yas/update-template (yas/template-table yas/editing-template)
+                             yas/editing-template)))
+     ;; X) Option 2: We have `yas/guessed-modes', but no
+     ;;  `yas/editing-template', which probablt means this buffer's
+     ;;  content comes from `yas/new-snippet' call. Prompt user for a
+     ;;  table, add the template to the table, then call
+     ;;
+     (yas/guessed-modes
+      (if (eq yas/guessed-modes 'just-prompt)
+          (setq yas/guessed-modes nil))
+      (let* ((prompt (if (and (featurep 'ido)
+                              ido-mode)
+                         'ido-completing-read 'completing-read))
+             (table (yas/table-get-create
+                     (intern
+                      (funcall prompt (format "Choose or enter a table (yas guesses %s): "
+                                              (if yas/guessed-modes
+                                                  (first yas/guessed-modes)
+                                                "nothing"))
+                               (mapcar #'symbol-name yas/guessed-modes)
+                               nil
+                               nil
+                               nil
+                               nil
+                               (if (first yas/guessed-modes)
+                                   (symbol-name (first yas/guessed-modes))))))))
+        (set (make-local-variable 'yas/editing-template) 
+             (yas/define-snippets-1 (yas/parse-template buffer-file-name)
+                                    table
+                                    (and yas/use-menu (yas/menu-keymap-get-create table)))))))
+    ;; Now, offer to save this shit
     ;;
-    buffer-file-name
-    (let ((major-mode-and-parent (yas/compute-major-mode-and-parents buffer-file-name)))
-      (if major-mode-and-parent
-          (let* ((yas/ignore-filenames-as-triggers (or yas/ignore-filenames-as-triggers
-                                                       (locate-dominating-file buffer-file-name ".yas-ignore-filenames-as-triggers")))
-                 (parsed (yas/parse-template buffer-file-name))
-                 (name (and parsed
-                            (third parsed))))
-            (when name
-              (set (make-local-variable 'yas/editing-template)
-                   (yas/define-snippets (car major-mode-and-parent)
-                                        (list parsed)
-                                        (cdr major-mode-and-parent)))))
-        (message (format "[yas] Unknown major mode for snippet at %s" buffer-file-name)))))
-   (t
-    (message (format "[yas] This case not implemented yet"))))
-  ;; Now, offer to save this shit
-  ;;
-  ;; 1) if `yas/snippet-dirs' is a list and its first element does not
-  ;; match this template's file (i.e. this is a library snippet, not
-  ;; a user snippet).
-  ;;
-  ;; 2) yas/editing-template comes from a file that we cannot write to...
-  ;;
+    ;; 1) if `yas/snippet-dirs' is a list and its first element does not
+    ;; match this template's file (i.e. this is a library snippet, not
+    ;; a user snippet).
+    ;;
+    ;; 2) yas/editing-template comes from a file that we cannot write to...
+    ;;
 
-  (when (or (not (yas/template-file yas/editing-template))
-            (not (file-writable-p (yas/template-file yas/editing-template)))
-            (and (listp yas/snippet-dirs)
-                 (second yas/snippet-dirs)
-                 (not (string-match (expand-file-name (first yas/snippet-dirs))
-                                    (yas/template-file yas/editing-template)))))
-    (set (make-local-variable 'yas/guessed-directories)
-         (yas/guess-snippet-directories (yas/template-table yas/editing-template)))
-    (when (y-or-n-p "[yas] Also save snippet buffer to new file? ")
-      (let* ((option (first yas/guessed-directories))
-             (chosen (and option
-                          (yas/make-directory-maybe option))))
-        (when chosen
-          (let ((default-file-name (or (and (yas/template-file yas/editing-template)
-                                            (file-name-nondirectory (yas/template-file yas/editing-template)))
-                                       (yas/template-name yas/editing-template))))
-            (write-file (concat chosen "/"
-                                (read-from-minibuffer (format "File name to create in %s? " chosen)
-                                                      default-file-name)))
-            (setf (yas/template-file yas/editing-template) buffer-file-name))))))
-  (when kill
-    (quit-window kill))
-  (message "[yas] Snippet \"%s\" loaded for %s."
-           (yas/template-name yas/editing-template)
-           (yas/table-name (yas/template-table yas/editing-template))))
+    (when (or (not (yas/template-file yas/editing-template))
+              (not (file-writable-p (yas/template-file yas/editing-template)))
+              (and (listp yas/snippet-dirs)
+                   (second yas/snippet-dirs)
+                   (not (string-match (expand-file-name (first yas/snippet-dirs))
+                                      (yas/template-file yas/editing-template)))))
+      (set (make-local-variable 'yas/guessed-modes)
+           (yas/guess-snippet-directories (yas/template-table yas/editing-template)))
+      (when (y-or-n-p "[yas] Also save snippet buffer to new file? ")
+        (let* ((option (first yas/guessed-modes))
+               (chosen (and option
+                            (yas/make-directory-maybe option))))
+          (when chosen
+            (let ((default-file-name (or (and (yas/template-file yas/editing-template)
+                                              (file-name-nondirectory (yas/template-file yas/editing-template)))
+                                         (yas/template-name yas/editing-template))))
+              (write-file (concat chosen "/"
+                                  (read-from-minibuffer (format "File name to create in %s? " chosen)
+                                                        default-file-name)))
+              (setf (yas/template-file yas/editing-template) buffer-file-name))))))
+    (when kill
+      (quit-window kill))
+    (message "[yas] Snippet \"%s\" loaded for %s."
+             (yas/template-name yas/editing-template)
+             (yas/table-name (yas/template-table yas/editing-template)))))
 
 
 (defun yas/tryout-snippet (&optional debug)
@@ -2575,8 +2575,8 @@ With optional prefix argument KILL quit the window and buffer."
          (test-mode (or (and (car major-mode-and-parent)
                              (fboundp (car major-mode-and-parent))
                              (car major-mode-and-parent))
-                        (and yas/guessed-directories
-                             (intern (yas/table-name (car (first yas/guessed-directories)))))
+                        (and yas/guessed-modes
+                             (intern (yas/table-name (car (first yas/guessed-modes)))))
                         (intern (read-from-minibuffer "[yas] please input a mode: "))))
          (yas/current-template
           (and parsed
