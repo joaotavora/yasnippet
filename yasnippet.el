@@ -408,8 +408,7 @@ This cafn only work when snippets are loaded from files."
   :group 'yasnippet)
 
 (defface yas/field-highlight-face
-  '((((class color) (background light)) (:background "DarkSeaGreen1"))
-    (t (:background "DimGrey")))
+  '((t (:inherit 'region)))
   "The face used to highlight the currently active field of a snippet"
   :group 'yasnippet)
 
@@ -2309,13 +2308,13 @@ visited file in `snippet-mode'."
   "Try to guess suitable directories based on the current active
 tables (or optional TABLE).
 
-Returns a a list of options alist TABLE -> DIRS where DIRS are
-all the possibly directories where snippets of table might be
-lurking."
+Returns a list of elemts (TABLE . DIRS) where TABLE is a
+`yas/table' object and DIRS is a list of all possible directories
+where snippets of table might exist."
   (let ((main-dir (replace-regexp-in-string
                    "/+$" ""
-                   (or (first (yas/snippet-dirs))
-                       (setq yas/snippet-dirs '("~/.emacs.d/snippets")))))
+                   (or (first (or (yas/snippet-dirs)
+                                  (setq yas/snippet-dirs '("~/.emacs.d/snippets")))))))
         (tables (or (and table
                          (list table))
                     (yas/get-snippet-tables))))
@@ -2361,7 +2360,9 @@ lurking."
     (erase-buffer)
     (set (make-local-variable 'yas/editing-template) nil)
     (snippet-mode)
-    (set (make-local-variable 'yas/guessed-modes) (mapcar #'car guessed-directories))
+    (set (make-local-variable 'yas/guessed-modes) (mapcar #'(lambda (d)
+                                                              (intern (yas/table-name (car d))))
+                                                          guessed-directories))
     (unless (and choose-instead-of-guess
                  (not (y-or-n-p "Insert a snippet with useful headers? ")))
       (yas/expand-snippet "\
@@ -2509,10 +2510,9 @@ With optional prefix argument KILL quit the window and buffer."
                  (second yas/snippet-dirs)
                  (not (string-match (expand-file-name (first yas/snippet-dirs))
                                     (yas/template-file yas/editing-template)))))
-    (set (make-local-variable 'yas/guessed-modes)
-         (yas/guess-snippet-directories (yas/template-table yas/editing-template)))
-    (when (y-or-n-p "[yas] Looks like a library snippet. Save to new file? ")
-      (let* ((option (first yas/guessed-modes))
+    
+    (when (y-or-n-p "[yas] Looks like a library or new snippet. Save to new file? ")
+      (let* ((option (first (yas/guess-snippet-directories (yas/template-table yas/editing-template))))
              (chosen (and option
                           (yas/make-directory-maybe option))))
         (when chosen
@@ -2538,8 +2538,7 @@ With optional prefix argument KILL quit the window and buffer."
          (test-mode (or (and (car major-mode-and-parent)
                              (fboundp (car major-mode-and-parent))
                              (car major-mode-and-parent))
-                        (and yas/guessed-modes
-                             (intern (yas/table-name (car (first yas/guessed-modes)))))
+                        (first yas/guessed-modes)
                         (intern (read-from-minibuffer "[yas] please input a mode: "))))
          (yas/current-template
           (and parsed
@@ -2551,7 +2550,7 @@ With optional prefix argument KILL quit the window and buffer."
                                       :name        (third parsed)
                                       :expand-env  (sixth parsed)))))
     (cond (yas/current-template
-           (let ((buffer-name (format "*YAS TEST: %s*" (yas/template-name yas/current-template))))
+           (let ((buffer-name (format "*testing snippet: %s*" (yas/template-name yas/current-template))))
              (set-buffer (switch-to-buffer buffer-name))
              (erase-buffer)
              (setq buffer-undo-list nil)
@@ -2638,15 +2637,15 @@ With optional prefix argument KILL quit the window and buffer."
     (maphash #'(lambda (k v)
                  (setq group (or (yas/template-fine-group v)
                                  "(top level)"))
-                 ;; FIXME: get rid of this intern call, use a hash
-                 ;; table or something...
-                 (aput 'groups-alist group (cons v (aget groups-alist group))))
+                 (when (yas/template-name v)
+                   
+                   (aput 'groups-alist group (cons v (aget groups-alist group)))))
              (yas/table-uuidhash table))
     (dolist (group-and-templates groups-alist)
-      (setq group (truncate-string-to-width (car group-and-templates) 25 0 ?  "..."))
-      (insert (make-string 100 ?-) "\n")
-      (dolist (p (cdr group-and-templates))
-        (when (yas/template-name p)
+      (when (rest groups-alist)
+        (setq group (truncate-string-to-width (car group-and-templates) 25 0 ?  "..."))
+        (insert (make-string 100 ?-) "\n")
+        (dolist (p (cdr group-and-templates))
           (let ((name (truncate-string-to-width (propertize (format "\\\\snippet `%s'" (yas/template-name p))
                                                             'yasnippet p)
                                                 50 0 ? "..."))
