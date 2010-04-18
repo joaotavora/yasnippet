@@ -3448,8 +3448,9 @@ considered when expanding the snippet."
            (let ((first-field (car (yas/snippet-fields snippet))))
              (when first-field
                (sit-for 0) ;; fix issue 125
-               (yas/move-to-field snippet first-field))))
-          (message "[yas] snippet expanded."))))
+               (yas/move-to-field snippet first-field)))
+           (message "[yas] snippet expanded.")
+           t))))
 
 (defun yas/take-care-of-redo (beg end snippet)
   "Commits SNIPPET, which in turn pushes an undo action for
