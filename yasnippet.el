@@ -1444,7 +1444,7 @@ Here's a list of currently recognized directives:
     (when yas/current-template
       (if yas/visit-from-menu
           (yas/visit-snippet-file-1 yas/current-template)
-        (let ((where (if mark-active
+        (let ((where (if (region-active-p)
                          (cons (region-beginning) (region-end))
                        (cons (point) (point)))))
           (yas/expand-snippet (yas/template-content yas/current-template)
@@ -1520,32 +1520,31 @@ TEMPLATES is a list of `yas/template'."
   "If non-nil, attempt to prompt for templates like TextMate.")
 (defun yas/x-pretty-prompt-templates (prompt templates)
   "Display TEMPLATES, grouping neatly by table name."
-  (let ((props (list))
+  (let ((pretty-alist (list))
         menu
         more-than-one-table
         prefix)
     (dolist (tl templates)
-      (push tl (getf props (intern (yas/table-name (yas/template-table tl))))))
-    (setq more-than-one-table (> (length props) 2))
+      (aput 'pretty-alist (yas/template-table tl) (cons tl (aget pretty-alist (yas/template-table tl)))))
+    (setq more-than-one-table (> (length pretty-alist) 1))
     (setq prefix (if more-than-one-table
                      "   " ""))
-    (dolist (thing props)
-      (cond ((listp thing)
-             (setq menu (nconc (mapcar #'(lambda (tl)
-                                           (cons (concat prefix (yas/template-name tl))
-                                                 tl))
-                                       thing)
-                               menu)))
-            (more-than-one-table
-             (push (symbol-name thing) menu))))
+    (dolist (table-and-templates pretty-alist)
+      (when (cdr table-and-templates)
+        (if more-than-one-table
+            (push (yas/table-name (car table-and-templates)) menu))
+        (dolist (template (cdr table-and-templates))
+          (push (cons (concat prefix (yas/template-name template))
+                      template) menu))))
     (setq menu (nreverse menu))
-    (x-popup-menu (if (fboundp 'posn-at-point)
-                      (let ((x-y (posn-x-y (posn-at-point (point)))))
-                        (list (list (+ (car x-y) 10)
-                                    (+ (cdr x-y) 20))
-                              (selected-window)))
-                    t)
-                  (list prompt (push "title" menu)))))
+    (or (x-popup-menu (if (fboundp 'posn-at-point)
+                          (let ((x-y (posn-x-y (posn-at-point (point)))))
+                            (list (list (+ (car x-y) 10)
+                                        (+ (cdr x-y) 20))
+                                  (selected-window)))
+                        t)
+                      (list prompt (push "title" menu)))
+        (keyboard-quit))))
 
 (defun yas/ido-prompt (prompt choices &optional display-fn)
   (when (and (featurep 'ido)
@@ -2241,7 +2240,7 @@ by condition."
                                     (or (and (rest templates) ;; more than one template for same key
                                              (yas/prompt-for-template templates))
                                         (car templates))))
-         (where (if mark-active
+         (where (if (region-active-p)
                     (cons (region-beginning) (region-end))
                   (cons (point) (point)))))
     (if yas/current-template
@@ -2260,20 +2259,20 @@ visited file in `snippet-mode'."
   (let* ((yas/buffer-local-condition 'always)
          (templates (yas/all-templates (yas/get-snippet-tables)))
          (template (and templates
-                        (or (and (rest templates) ;; more than one template for same key
-                                 (yas/prompt-for-template templates
-                                                          "Choose a snippet template to edit: "))
+                        (or (yas/prompt-for-template templates
+                                                     "Choose a snippet template to edit: ")
                             (car templates)))))
 
-    (when template
-      (yas/visit-snippet-file-1 template))))
+    (if template
+        (yas/visit-snippet-file-1 template)
+      (message "No snippets tables active!"))))
 
 (defun yas/visit-snippet-file-1 (template)
   (let ((file (yas/template-file template)))
     (cond ((and file (file-readable-p file))
            (find-file-other-window file)
            (snippet-mode)
-           (setq yas/editing-template template))
+           (set (make-local-variable 'yas/editing-template) template))
           (file
            (message "Original file %s no longer exists!" file))
           (t
@@ -2295,7 +2294,7 @@ visited file in `snippet-mode'."
                          (pp-to-string (yas/template-content template))
                        (yas/template-content template))))
            (snippet-mode)
-           (setq yas/editing-template template)))))
+           (set (make-local-variable 'yas/editing-template) template)))))
 
 (defun yas/guess-snippet-directories-1 (table)
   "Guesses possible snippet subdirectories for TABLE."
@@ -2359,7 +2358,7 @@ where snippets of table might exist."
 
     (switch-to-buffer "*new snippet*")
     (erase-buffer)
-    (set (make-local-variable 'yas/editing-template) nil)
+    (kill-all-local-variables)
     (snippet-mode)
     (set (make-local-variable 'yas/guessed-modes) (mapcar #'(lambda (d)
                                                               (intern (yas/table-name (car d))))
@@ -3358,7 +3357,7 @@ considered when expanding the snippet."
 
   ;; If a region is active, set `yas/selected-text'
   (setq yas/selected-text
-        (when mark-active
+        (when (region-active-p)
           (prog1 (buffer-substring-no-properties (region-beginning)
                                                  (region-end))
             (unless start (setq start (region-beginning))
