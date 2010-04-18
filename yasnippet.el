@@ -1053,7 +1053,8 @@ Also takes care of adding and updaring to the associated menu."
       ;; 
       (dolist (subgroup group)
         (let ((subgroup-keymap (lookup-key keymap (vector (make-symbol subgroup)))))
-          (unless subgroup-keymap
+          (unless (and subgroup-keymap
+                       (keymapp subgroup-keymap))
             (setq subgroup-keymap (make-sparse-keymap))
             (define-key keymap (vector (make-symbol subgroup))
               `(menu-item ,subgroup ,subgroup-keymap)))
