@@ -21,6 +21,11 @@ task :textmate_bundle do
   sh "tar czf pkg/yasnippet-textmate-bundle-#{$version}.el.tgz yasnippet-textmate-bundle.el"
 end
 
+desc "convert some textmate bundles to yasnippets"
+task :convert_bundles do
+  sh 'for bundle in html ruby rails; do ./extras/textmate_import.rb -d extras/bundles/$bundle-bundle -o extras/imported/$bundle-mode -q ; done'
+end
+
 desc "create a release package"
 task :package do
   release_dir = "pkg/yasnippet-#{$version}"
