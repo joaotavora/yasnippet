@@ -213,10 +213,15 @@
                       (region-end))
                  (point-max)))
         (orig (point))
-        (orig-line (count-screen-lines (window-start) (point))))
-    (shell-command-on-region start end "xmpfilter" (current-buffer) t (get-buffer-create "*xmpfilter errors*") t)
+        retval
+        (orig-line (count-screen-lines (window-start) (line-beginning-position))))
+    
+    (unless (zerop (shell-command-on-region start end "xmpfilter" (get-buffer-create "*xmpfilter*") t (get-buffer-create "*xmpfilter errors*") t))
+      ;;some undo actions here
+      )
     (goto-char (min (point-max) orig))
-    (recenter (1- orig-line))))
+    (recenter orig-line)
+    retval))
 
 ;; conditions
 ;; 
@@ -279,6 +284,7 @@
 ;; Substitutions for: condition
 ;;
 ;; 7990EE60-C850-4779-A8C0-7FD2C853B99B                                              =yyas> 'force-in-comment
+;; FBFC214F-B019-4967-95D2-028F374A3221                                              =yyas> 'force-in-comment
 ;; 88BC3896-DC39-4307-A271-21D33340F15A                                              =yyas> 'force-in-comment
 ;; 0F940CBC-2173-49FF-B6FD-98A62863F8F2                                              =yyas> 'force-in-comment
 ;; 451A0596-1F72-4AFB-AF2F-45900FABB0F7                                              =yyas> (not (yas/ruby-end-is-block-end-p))
