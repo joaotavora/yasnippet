@@ -395,7 +395,7 @@ An error string \"[yas] error\" is returned instead."
 (defcustom yas/ignore-filenames-as-triggers nil
   "If non-nil, don't derive tab triggers from filenames.
 
-This means a snippet without a \"# key:'\ directive wont have a
+This means a snippet without a \"# key:'\ directive won't have a
 tab trigger."
   :type 'boolean
   :group 'yasnippet)
@@ -407,6 +407,22 @@ This cafn only work when snippets are loaded from files."
   :type 'boolean
   :group 'yasnippet)
 
+(defcustom yas/expand-only-for-last-commands nil
+  "List of `last-command' values to restrict tab-triggering to, or nil.
+
+Leave this set at nil (the default) to be able to trigger an
+expansion simply by placing the cursor after a valid tab trigger,
+using whichever commands.
+
+Optionallly, set this to something like '(self-insert-command) if
+you to wish restrict expansion to only happen when the last
+letter of the snippet tab trigger was typed immediately before
+the trigger key itself."
+  :type '(repeat function)
+  :group 'yasnippet)
+
+;; Only two faces, and one of them shouldn't even be used...
+;;
 (defface yas/field-highlight-face
   '((t (:inherit 'region)))
   "The face used to highlight the currently active field of a snippet"
@@ -537,7 +553,7 @@ snippet itself contains a condition that returns the symbol
   "A list of mode which is well known but not part of emacs.")
 
 (defvar yas/escaped-characters
-  '(?\\ ?` ?' ?$ ?} )
+  '(?\\ ?` ?' ?$ ?} ?\( ?\))
   "List of characters which *might* need to be escaped.")
 
 (defconst yas/field-regexp
@@ -2120,14 +2136,20 @@ Optional argument FIELD is for non-interactive use and is an
 object satisfying `yas/field-p' to restrict the expansion to."
   (interactive)
   (setq yas/condition-cache-timestamp (current-time))
-  (multiple-value-bind (templates start end) (if field
-                                                 (save-restriction
-                                                   (narrow-to-region (yas/field-start field)
-                                                                     (yas/field-end field))
-                                                   (yas/current-key))
-                                               (yas/current-key))
-    (if templates
-        (yas/expand-or-prompt-for-template templates start end)
+  (let (templates-and-pos)
+    (unless (and yas/expand-only-for-last-commands
+                 (not (member last-command yas/expand-only-for-last-commands)))
+      (setq templates-and-pos (if field
+                                  (save-restriction
+                                    (narrow-to-region (yas/field-start field)
+                                                      (yas/field-end field))
+                                    (yas/current-key))
+                                (yas/current-key))))
+    (if (and templates-and-pos
+             (first templates-and-pos))
+        (yas/expand-or-prompt-for-template (first templates-and-pos)
+                                           (second templates-and-pos)
+                                           (third templates-and-pos))
       (yas/fallback 'trigger-key))))
 
 (defun yas/expand-from-keymap ()
@@ -2726,7 +2748,9 @@ Otherwise throw exception."
     (yas/throw (format "[yas] field only allows %s" possibilities))))
 
 (defun yas/field-value (number)
-  "A primary field transformation..."
+  "Get the string for field with NUMBER.
+
+Use this in primary and mirror transformations to tget."
   (let* ((snippet (car (yas/snippets-at-point)))
          (field (and snippet
                      (yas/snippet-find-field snippet number))))
@@ -2824,9 +2848,13 @@ Otherwise throw exception."
   marker
   next)
 
-(defun yas/apply-transform (field-or-mirror field)
-  "Calculate the value of the field/mirror. If there's a transform
-for this field, apply it. Otherwise, returned nil."
+(defun yas/apply-transform (field-or-mirror field &optional empty-on-nil-p)
+  "Calculate transformed string for FIELD-OR-MIRROR from FIELD.
+
+If there is no transform for ht field, return nil.
+
+If there is a transform but it returns nil, return the empty
+string iff EMPTY-ON-NIL-P is true."
   (let* ((yas/text (yas/field-text-for-display field))
          (text yas/text)
          (yas/modified-p (yas/field-modified-p field))
@@ -2841,7 +2869,7 @@ for this field, apply it. Otherwise, returned nil."
                            (save-excursion
                              (goto-char start-point)
                              (let ((ret (yas/eval-lisp transform)))
-                               (or ret ""))))))
+                               (or ret (and empty-on-nil-p "")))))))
     transformed))
 
 (defsubst yas/replace-all (from to &optional text)
@@ -4030,7 +4058,7 @@ When multiple expressions are found, only the last one counts."
   (let* ((mirror-parent-field (yas/mirror-parent-field mirror))
          (reflection (and (not (and mirror-parent-field
                                     (yas/field-modified-p mirror-parent-field)))
-                          (or (yas/apply-transform mirror field)
+                          (or (yas/apply-transform mirror field 'empty-on-nil)
                               (yas/field-text-for-display field)))))
     (when (and reflection
                (not (string= reflection (buffer-substring-no-properties (yas/mirror-start mirror)
