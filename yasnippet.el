@@ -1572,17 +1572,19 @@ TEMPLATES is a list of `yas/template'."
   (when (featurep 'dropdown-list)
     (let (formatted-choices
           filtered-choices
-          chosen
-          d)
+          d
+          n)
       (dolist (choice choices)
         (setq d (or (and display-fn (funcall display-fn choice))
                       choice))
         (when (stringp d)
           (push d formatted-choices)
           (push choice filtered-choices)))
-      (setq chosen (and formatted-choices
-                        (nth (dropdown-list formatted-choices)
-                             filtered-choices))))))
+
+      (setq n (and formatted-choices (dropdown-list formatted-choices)))
+      (if n
+          (nth n filtered-choices)
+        (keyboard-quit)))))
 
 (defun yas/completing-prompt (prompt choices &optional display-fn completion-fn)
   (let (formatted-choices
