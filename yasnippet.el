@@ -2666,7 +2666,7 @@ With optional prefix argument KILL quit the window and buffer."
                    (aput 'groups-alist group (cons v (aget groups-alist group)))))
              (yas/table-uuidhash table))
     (dolist (group-and-templates groups-alist)
-      (when (rest groups-alist)
+      (when (rest group-and-templates)
         (setq group (truncate-string-to-width (car group-and-templates) 25 0 ?  "..."))
         (insert (make-string 100 ?-) "\n")
         (dolist (p (cdr group-and-templates))
