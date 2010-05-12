@@ -1266,8 +1266,8 @@ return an expression that when evaluated will issue an error."
                                      keybinding)))
           (read-kbd-macro keybinding-string 'need-vector))
       (error
-       (message "[yas] warning: keybinding \"%s\" invalid for snippet \"%s\" since %s."
-                keybinding name (error-message-string err))
+       (message "[yas] warning: keybinding \"%s\" invalid since %s."
+                keybinding (error-message-string err))
        nil))))
 
 (defvar yas/extra-modes nil
@@ -2575,8 +2575,8 @@ With optional prefix argument KILL quit the window and buffer."
                                       :expand-env  (sixth parsed)))))
     (cond (yas/current-template
            (let ((buffer-name (format "*testing snippet: %s*" (yas/template-name yas/current-template))))
-             (set-buffer (switch-to-buffer buffer-name))
-             (erase-buffer)
+             (kill-buffer (get-buffer-create buffer-name))
+             (switch-to-buffer (get-buffer-create buffer-name))
              (setq buffer-undo-list nil)
              (condition-case nil (funcall test-mode) (error nil))
              (yas/expand-snippet (yas/template-content yas/current-template)
@@ -2618,7 +2618,7 @@ With optional prefix argument KILL quit the window and buffer."
              (while (and table-lists
                          continue)
                (dolist (table (car table-lists))
-                 (yas/describe-pretty-table table))
+                 (yas/describe-pretty-table table original-buffer))
                (setq table-lists (cdr table-lists))
                (when table-lists
                  (yas/create-snippet-xrefs)
@@ -2646,7 +2646,7 @@ With optional prefix argument KILL quit the window and buffer."
       (setq buffer-read-only t))
     (display-buffer buffer)))
 
-(defun yas/describe-pretty-table (table)
+(defun yas/describe-pretty-table (table &optional original-buffer)
   (insert (format "\nSnippet table `%s'"
                   (yas/table-name table)))
   (if (yas/table-parents table)
@@ -2676,7 +2676,8 @@ With optional prefix argument KILL quit the window and buffer."
                 (group (prog1 group 
                          (setq group (make-string (length group) ? ))))
                 (condition-string (let ((condition (yas/template-condition p)))
-                                    (if condition
+                                    (if (and condition
+                                             original-buffer)
                                         (with-current-buffer original-buffer
                                           (if (yas/eval-condition condition)
                                               "(y)"
@@ -2916,7 +2917,10 @@ have, compare through the field's start point"
   (and (zerop (- (yas/field-start field) (yas/field-end field)))
        (or (yas/field-parent-field field)
            (and (eq field (car (last (yas/snippet-fields snippet))))
-                (= (yas/field-start field) (overlay-end (yas/snippet-control-overlay snippet)))))))
+                (= (yas/field-start field) (overlay-end (yas/snippet-control-overlay snippet)))))
+       ;; the field numbered 0, just before the exit marker, should
+       ;; never be skipped
+       (not (zerop (yas/field-number field)))))
 
 (defun yas/snippets-at-point (&optional all-snippets)
   "Return a sorted list of snippets at point, most recently
@@ -2984,14 +2988,18 @@ delegate to `yas/next-field'."
 
 Also create some protection overlays"
   (goto-char (yas/field-start field))
-  (setf (yas/snippet-active-field snippet) field)
   (yas/place-overlays snippet field)
   (overlay-put yas/active-field-overlay 'yas/field field)
   (let ((number (yas/field-number field)))
+    ;; check for the special ${0: ...} field 
     (if (and number (zerop number))
         (progn
           (set-mark (yas/field-end field))
-          (setf (yas/snippet-force-exit snippet) t))
+          (setf (yas/snippet-force-exit snippet)
+                (or (yas/field-transform field)
+                    t)))
+      ;; make this field active
+      (setf (yas/snippet-active-field snippet) field)
       ;; primary field transform: first call to snippet transform
       (unless (yas/field-modified-p field)
         (if (yas/field-update-display field snippet)
@@ -3030,7 +3038,7 @@ Also create some protection overlays"
 
 ;;; Some low level snippet-routines
 
-(defun yas/commit-snippet (snippet &optional no-hooks)
+(defun yas/commit-snippet (snippet)
   "Commit SNIPPET, but leave point as it is.  This renders the
 snippet as ordinary text.
 
@@ -3077,30 +3085,24 @@ NO-HOOKS means don't run the `yas/after-exit-snippet-hook' hooks."
               buffer-undo-list)
       ;; Dismember the snippet... this is useful if we get called
       ;; again from `yas/take-care-of-redo'....
-      (setf (yas/snippet-fields snippet) nil))
+      (setf (yas/snippet-fields snippet) nil)))
 
-    ;; XXX: `yas/after-exit-snippet-hook' should be run with
-    ;; `yas/snippet-beg' and `yas/snippet-end' bound. That might not
-    ;; be the case if the main overlay had somehow already
-    ;; disappeared, which sometimes happens when the snippet's messed
-    ;; up...
-    ;;
-    (unless no-hooks (run-hooks 'yas/after-exit-snippet-hook)))
-
-  (message "[yas] snippet exited."))
+  (message "[yas] snippet %s exited." (yas/snippet-id snippet)))
 
 (defun yas/check-commit-snippet ()
   "Checks if point exited the currently active field of the
 snippet, if so cleans up the whole snippet up."
   (let* ((snippets (yas/snippets-at-point 'all-snippets))
-         (snippets-left snippets))
+         (snippets-left snippets)
+         (snippet-exit-transform))
     (dolist (snippet snippets)
       (let ((active-field (yas/snippet-active-field snippet)))
-        (cond ((or (prog1 (yas/snippet-force-exit snippet)
-                     (setf (yas/snippet-force-exit snippet) nil))
+        (setq snippet-exit-transform (yas/snippet-force-exit snippet)) 
+        (cond ((or snippet-exit-transform
                    (not (and active-field (yas/field-contains-point-p active-field))))
                (setq snippets-left (delete snippet snippets-left))
-               (yas/commit-snippet snippet snippets-left))
+               (setf (yas/snippet-force-exit snippet) nil)
+               (yas/commit-snippet snippet))
               ((and active-field
                     (or (not yas/active-field-overlay)
                         (not (overlay-buffer yas/active-field-overlay))))
@@ -3116,7 +3118,10 @@ snippet, if so cleans up the whole snippet up."
                nil))))
     (unless snippets-left
       (remove-hook 'post-command-hook 'yas/post-command-handler 'local)
-      (remove-hook 'pre-command-hook 'yas/pre-command-handler 'local))))
+      (remove-hook 'pre-command-hook 'yas/pre-command-handler 'local)
+      (if snippet-exit-transform
+          (yas/eval-lisp-no-saves snippet-exit-transform)
+        (run-hooks 'yas/after-exit-snippet-hook)))))
 
 ;; Apropos markers-to-points:
 ;;
@@ -3400,8 +3405,8 @@ considered when expanding the snippet."
   (let ((to-delete (and start end (buffer-substring-no-properties start end)))
         (start (or start (point)))
         (end (or end (point)))
-        (column (current-column))
         snippet)
+    (setq yas/indent-original-column (current-column))
     ;; Delete the region to delete, this *does* get undo-recorded.
     ;;
     (when (and to-delete
@@ -3490,7 +3495,7 @@ Meant to exit in the `buffer-undo-list'."
   ;; slightly optimize: this action is only needed for snippets with
   ;; at least one field
   (when (yas/snippet-fields snippet)
-    (yas/commit-snippet snippet 'no-hooks)))
+    (yas/commit-snippet snippet)))
 
 (defun yas/snippet-revive (beg end snippet)
   "Revives the SNIPPET and creates a control overlay from BEG to
@@ -3775,6 +3780,7 @@ SNIPPET-MARKERS."
               (set-marker marker (point)))
           trouble-markers)))
 
+(defvar yas/indent-original-column nil)
 (defun yas/indent (snippet)
   (let ((snippet-markers (yas/collect-snippet-markers snippet)))
     ;; Look for those $>
@@ -3788,7 +3794,7 @@ SNIPPET-MARKERS."
       (cond ((eq yas/indent-line 'fixed)
              (while (and (zerop (forward-line))
                          (zerop (current-column)))
-               (indent-to-column column)))
+               (indent-to-column yas/indent-original-column)))
             ((eq yas/indent-line 'auto)
              (let ((end (set-marker (make-marker) (point-max)))
                    (indent-first-line-p yas/also-auto-indent-first-line))
@@ -3860,12 +3866,13 @@ With optional string TEXT do it in string instead of the buffer."
 
 (defun yas/replace-backquotes ()
   "Replace all the \"`(lisp-expression)`\"-style expression
-  with their evaluated value"
+	with their evaluated value"
   (while (re-search-forward yas/backquote-lisp-expression-regexp nil t)
-    (let ((transformed (yas/eval-lisp (yas/read-lisp (yas/restore-escapes (match-string 1))))))
-      (goto-char (match-end 0))
-      (when transformed (insert transformed))
-      (delete-region (match-beginning 0) (match-end 0)))))
+    (let ((current-string (match-string 1)) transformed)
+      (delete-region (match-beginning 0) (match-end 0))
+      (setq transformed (yas/eval-lisp (yas/read-lisp (yas/restore-escapes current-string))))
+      (goto-char (match-beginning 0))
+      (when transformed (insert transformed)))))
 
 (defun yas/scan-sexps (from count)
   (condition-case err
@@ -4078,7 +4085,8 @@ When multiple expressions are found, only the last one counts."
   "Much like `yas/mirror-update-display', but for fields"
   (when (yas/field-transform field)
     (let ((inhibit-modification-hooks t)
-          (transformed (yas/apply-transform field field))
+          (transformed (and (not (eq (yas/field-number field) 0))
+                            (yas/apply-transform field field)))
           (point (point)))
       (when (and transformed
                  (not (string= transformed (buffer-substring-no-properties (yas/field-start field)
