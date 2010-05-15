@@ -354,7 +354,7 @@ This affects `yas/insert-snippet', `yas/visit-snippet-file'"
   :type 'boolean
   :group 'yasnippet)
 
-(defcustom yas/use-menu 'real-modes
+(defcustom yas/use-menu 'abbreviate
   "Display a YASnippet menu in the menu bar.
 
 When non-nil, submenus for each snippet table will be listed
@@ -480,8 +480,9 @@ Attention: These hooks are not run when exiting nested/stackd snippet expansion!
   "Hooks to run just before expanding a snippet.")
 
 (defvar yas/buffer-local-condition
-  '(if (or (fourth (syntax-ppss))
-           (fifth (syntax-ppss)))
+  '(if (and (or (fourth (syntax-ppss))
+                (fifth (syntax-ppss)))
+            (eq (symbol-function this-command) 'yas/expand-from-trigger-key))
        '(require-snippet-condition . force-in-comment)
      t)
   "Snippet expanding condition.
@@ -2282,6 +2283,7 @@ visited file in `snippet-mode'."
   (interactive)
   (let* ((yas/buffer-local-condition 'always)
          (templates (yas/all-templates (yas/get-snippet-tables)))
+         (yas/prompt-functions '(yas/ido-prompt yas/completing-prompt))
          (template (and templates
                         (or (yas/prompt-for-template templates
                                                      "Choose a snippet template to edit: ")
@@ -4149,7 +4151,8 @@ that the rest of `yas/post-command-handler' runs.")
 
 ;;; Fancy docs:
 
-(put 'yas/expand  'function-documentation '(yas/expand-from-trigger-key-doc))
+(put 'yas/expand  'function-documentation
+     '(yas/expand-from-trigger-key-doc))
 (defun yas/expand-from-trigger-key-doc ()
   "A doc synthethizer for `yas/expand-from-trigger-key-doc'."
   (let ((fallback-description
