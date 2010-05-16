@@ -17,8 +17,8 @@
 require 'rubygems'
 require 'plist'
 require 'choice'
-require 'FileUtils'
-require 'Shellwords' # String#shellescape
+require 'fileutils'
+require 'shellwords' # String#shellescape
 require 'ruby-debug' if $DEBUG
 
 Choice.options do
