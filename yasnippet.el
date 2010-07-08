@@ -810,11 +810,15 @@ Key bindings:
          ;; but it works). Then define variables named after modes to
          ;; index `yas/direct-keymaps'.
          ;;
+         ;; Also install the post-command-hook.
+         ;;
          (add-hook 'emulation-mode-map-alists 'yas/direct-keymaps)
+         (add-hook 'post-command-hook 'yas/post-command-handler nil t)
          (add-hook 'yas/minor-mode-hook 'yas/direct-keymaps-set-vars-runonce 'append))
         (t
-         ;; Uninstall the direct keymaps.
+         ;; Uninstall the direct keymaps and the post-command hook
          ;;
+         (remove-hook 'post-command-hook 'yas/post-command-handler t)
          (remove-hook 'emulation-mode-map-alists 'yas/direct-keymaps))))
 
 (defun yas/direct-keymaps-set-vars-runonce ()
@@ -2805,9 +2809,6 @@ Use this in primary and mirror transformations to tget."
 (defconst yas/prefix nil
   "A prefix argument for expansion direct from keybindings")
 
-(defvar yas/deleted-text nil
-  "The text deleted in the last snippet expansion.")
-
 (defvar yas/selected-text nil
   "The selected region deleted on the last snippet expansion.")
 
@@ -2816,7 +2817,8 @@ Use this in primary and mirror transformations to tget."
 
 (make-variable-buffer-local 'yas/active-field-overlay)
 (make-variable-buffer-local 'yas/field-protection-overlays)
-(make-variable-buffer-local 'yas/deleted-text)
+(put 'yas/active-field-overlay 'permanent-local t)
+(put 'yas/field-protection-overlays 'permanent-local t)
 
 (defstruct (yas/snippet (:constructor yas/make-snippet ()))
   "A snippet.
@@ -3119,8 +3121,6 @@ snippet, if so cleans up the whole snippet up."
               (t
                nil))))
     (unless snippets-left
-      (remove-hook 'post-command-hook 'yas/post-command-handler 'local)
-      (remove-hook 'pre-command-hook 'yas/pre-command-handler 'local)
       (if snippet-exit-transform
           (yas/eval-lisp-no-saves snippet-exit-transform)
         (run-hooks 'yas/after-exit-snippet-hook)))))
@@ -3413,8 +3413,7 @@ considered when expanding the snippet."
     ;;
     (when (and to-delete
                (> end start))
-      (delete-region start end)
-      (setq yas/deleted-text to-delete))
+      (delete-region start end))
 
     (cond ((listp content)
            ;; x) This is a snippet-command
@@ -3523,9 +3522,6 @@ After revival, push the `yas/take-care-of-redo' in the
 
       (yas/move-to-field snippet target-field)
 
-      (add-hook 'post-command-hook 'yas/post-command-handler nil t)
-      (add-hook 'pre-command-hook 'yas/pre-command-handler t t)
-
       (push `(apply yas/take-care-of-redo ,beg ,end ,snippet)
             buffer-undo-list))))
 
@@ -3546,10 +3542,6 @@ Returns the newly created snippet."
 
     ;; Move to end
     (goto-char (point-max))
-
-    ;; Setup hooks
-    (add-hook 'post-command-hook 'yas/post-command-handler nil t)
-    (add-hook 'pre-command-hook 'yas/pre-command-handler t t)
 
     snippet))
 
@@ -4103,7 +4095,7 @@ When multiple expressions are found, only the last one counts."
         t))))
 
 
-;;; Pre- and post-command hooks:
+;;; Post-command hooks:
 
 (defvar yas/post-command-runonce-actions nil
   "List of actions to run once  `post-command-hook'.
@@ -4114,8 +4106,6 @@ snippet command.
 
 After all actions have been run, this list is emptied, and after
 that the rest of `yas/post-command-handler' runs.")
-
-(defun yas/pre-command-handler () )
 
 (defun yas/post-command-handler ()
   "Handles various yasnippet conditions after each command."
