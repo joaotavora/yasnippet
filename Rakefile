@@ -16,7 +16,7 @@ task :bundle do
 end
 
 desc "generate bundle file for textmate snippets."
-task :textmate_bundle do
+task :textmate_bundle => [:convert] do
   sh 'emacs --batch -l yasnippet.el --eval "(yas/compile-textmate-bundle)"'
   sh "tar czf pkg/yasnippet-textmate-bundle-#{$version}.el.tgz yasnippet-textmate-bundle.el"
 end

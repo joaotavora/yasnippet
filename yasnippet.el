@@ -3273,7 +3273,7 @@ Only clears the field if it hasn't been modified and it point it
 at field start. This hook doesn't do anything if an undo is in
 progress."
   (unless (yas/undo-in-progress)
-    (let* ((field (overlay-get yas/active-field-overlay 'yas/field))
+    (let* ((field (overlay-get overlay 'yas/field))
            (number (and field (yas/field-number field)))
            (snippet (overlay-get yas/active-field-overlay 'yas/snippet)))
       (cond (after?

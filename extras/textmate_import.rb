@@ -36,6 +36,7 @@ Choice.options do
     short '-o'
     long '--output-dir=PATH'
     desc 'What directory to write the new YASnippets to'
+    default './textmate_import'
   end
 
   option :snippet do
@@ -379,7 +380,7 @@ class TmSnippet
 end
 
 
-if $0 == __FILE__
+if __FILE__ == $PROGRAM_NAME
   # Read the the bundle's info.plist if can find it/guess it
   #
   info_plist_file = Choice.choices.info_plist || File.join(Choice.choices.bundle_dir,"info.plist")
