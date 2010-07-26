@@ -66,8 +66,8 @@
         ppss)
     (save-excursion
       (condition-case nil
-          (while (not (eq (point) (point-min))) (backward-sexp))
-        (error nil))
+          (while (not (eq (point) (point-max))) (backward-sexp))
+        (error ))
       (when (eq (preceding-char) ?\[)
         (setq orig-ppss (syntax-ppss))
         (forward-sexp)
@@ -75,11 +75,14 @@
         (setq ppss (syntax-ppss))
         (condition-case nil
             (while (and (>= (car ppss) (car orig-ppss))
-                        (search-forward-regexp "[[:alpha:]]+:" nil 'noerror))
+                        (search-forward-regexp "[[:alpha:]]+:" orig-point 'noerror))
               (setq ppss (syntax-ppss))
               (when (eq (car ppss) (car orig-ppss))
                 (setq sig
                       (concat (or sig "") (match-string-no-properties 0))))
               (forward-sexp))
-          (error sig))
+          (error nil))
+        (save-excursion
+          (backward-word)
+          (concat sig (buffer-substring-no-properties (point) orig-point)))
         sig))))
