@@ -1,14 +1,7 @@
-TITLE: Emacs Idiom Template Set.
+-*- coding: utf-8 -*-
+Originally started by Xah Lee (xahlee.org) on 2009-02-22
+Released under GPL 3.
 
-Version 1.1. 2010-08-05
-Version 1. 2009-02-22
+Feel free to add missing ones or modify existing ones to improve.
 
-DESCRIPTION: Some useful templates for emacs lisp. This template set is based on useful elisp idioms on common tasks.
-
-LICENSING: GPL version 3.
-
-AUTHOR: Xah Lee
-
-Home Page: latest version at:
-• Emacs Lisp Idiom Templates
- http://xahlee.org/emacs/elisp_idiom_templates.html
+Those starting with “x-” are supposed to be idiom templates. Not sure it's very useful. They might start with “i-” or "id-" in the future.
