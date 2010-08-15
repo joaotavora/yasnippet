@@ -197,7 +197,7 @@ class TmSnippet
     "binding"   => {},
     "type"      => {}
   }
-
+  
   def self.extra_substitutions; @@extra_substitutions; end
   @@extra_substitutions = {
     "content"   => {},
@@ -360,10 +360,12 @@ class TmSnippet
         # Sort merged substitutions by length (bigger ones first,
         # regexps last), and apply them to the value gotten for plist.
         #
-        merged.sort_by do |what, with|
+        allsubs = merged.sort_by do |what, with|
           if what.respond_to? :length then -what.length else 0 end
-        end.each do |sub|
+        end
+        allsubs.each do |sub|
           if val.gsub!(sub[0],sub[1])
+            # puts "SUBBED #{sub[0]} for #{sub[1]}"
             return "# #{yas_directive}: "+ val + "\n" unless val.empty?
           end
         end
@@ -515,3 +517,4 @@ if __FILE__ == $PROGRAM_NAME
     end
   end
 end
+# ~> -:200: undefined method `length' for /shit/:Regexp (NoMethodError)

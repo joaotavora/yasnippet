@@ -838,10 +838,10 @@ behaviour.")
 (defun yas/minor-mode-on ()
   "Turn on YASnippet minor mode.
 
-Do this unless `yas/dont-activate' is t or the function
-`yas/get-snippet-tables' (which see), returns an empty list."
+Do this unless `yas/dont-activate' is t "
   (interactive)
-  (unless (or (and (functionp yas/dont-activate)
+  (unless (or (minibufferp)
+              (and (functionp yas/dont-activate)
                    (funcall yas/dont-activate))
               (and (not (functionp yas/dont-activate))
                    yas/dont-activate))
@@ -1265,11 +1265,10 @@ return an expression that when evaluated will issue an error."
   (when (and keybinding
              (not (string-match "keybinding" keybinding)))
     (condition-case err
-        (let ((keybinding-string (or (and (string-match "\".*\"" keybinding)
-                                          (read keybinding))
-                                     ;; "KEY-DESC" with quotes is deprecated..., but supported
-                                     keybinding)))
-          (read-kbd-macro keybinding-string 'need-vector))
+        (let ((res (or (and (string-match "^\\[.*\\]$" keybinding)
+                            (read keybinding))
+                       (read-kbd-macro keybinding 'need-vector))))
+          res)
       (error
        (message "[yas] warning: keybinding \"%s\" invalid since %s."
                 keybinding (error-message-string err))
@@ -2791,11 +2790,13 @@ Use this in primary and mirror transformations to tget."
 (defun yas/inside-string ()
   (equal 'font-lock-string-face (get-char-property (1- (point)) 'face)))
 
-(defun yas/unimplemented ()
+(defun yas/unimplemented (&optional missing-feature)
   (if yas/current-template
-      (if (y-or-n-p "This snippet is unimplemented. Visit the snippet definition? ")
+      (if (y-or-n-p (format "This snippet is unimplemented (missing %s) Visit the snippet definition? "
+                            (or missing-feature
+                                "something")))
           (yas/visit-snippet-file-1 yas/current-template))
-    (message "No implementation.")))
+    (message "No implementation. Missing %s" (or missing-feature "something"))))
 
 
 ;;; Snippet expansion and field management

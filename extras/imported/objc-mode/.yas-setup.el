@@ -26,14 +26,14 @@
       (add-to-list 'yas/objc-languages (match-string 1))
       (add-to-list 'yas/objc-defkinds (match-string 2)))))
 
-(put (intern-soft (setq chosen (completing-read "Method: " yas/objc-method-names)) yas/objc-method-names)
-     'someshit
-     'someday)
+;; (put (intern-soft (setq chosen (completing-read "Method: " yas/objc-method-names)) yas/objc-method-names)
+;;      'someshit
+;;      'someday)
 
-(completing-read "Class: " yas/objc-class-names)
+;; (completing-read "Class: " yas/objc-class-names)
 
-(get (intern-soft (setq chosen (completing-read "hey: " yas/objc-method-names)) yas/objc-method-names)
-     'someshit)
+;; (get (intern-soft (setq chosen (completing-read "hey: " yas/objc-method-names)) yas/objc-method-names)
+;;      'someshit)
 
 (defun yas/objc-current-method-signature ()
   (let ((orig-point (point))
