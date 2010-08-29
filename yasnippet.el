@@ -2068,11 +2068,11 @@ ommited from MODE's menu, even if they're manually loaded.
                                                       :table table
                                                       :perm-group group-list
                                                       :uuid (second e)))))
-             (define-key keymap (vector (make-symbol (second e)))
+             (define-key keymap (vector (gensym))
                (car (yas/snippet-menu-binding-pair-get-create template :stay)))))
           ((eq (first e) 'yas/submenu)
            (let ((subkeymap (make-sparse-keymap)))
-             (define-key keymap (vector (make-symbol(second e)))
+             (define-key keymap (vector (gensym))
                `(menu-item ,(second e) ,subkeymap))
              (yas/define-menu-1 table
                                 subkeymap
