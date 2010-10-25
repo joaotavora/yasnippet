@@ -455,17 +455,18 @@ the trigger key itself."
 
 (defvar yas/key-syntaxes (list "w" "w_" "w_." "w_.()" "^ ")
   "List of character syntaxes used to find a trigger key before point.
-Scanning backwards for a key, this list is tried in the
-order. For example, if the list is '(\"w\" \"w_\") first look
-trigger keys which are composed exclusively of \"word\"-syntax
-characters, and then, if that fails, look for keys which are
-either of \"word\" or \"symbol\" syntax. So triggering after
-triggering after:
+The list is tried in the order while scanning characters
+backwards from point. For example, if the list is '(\"w\" \"w_\")
+first look for trigger keys which are composed exclusively of
+\"word\"-syntax characters, and then, if that fails, look for
+keys which are either of \"word\" or \"symbol\"
+syntax. Triggering after
 
 foo-bar
 
-will first try \"bar\", if that trigger key isn't found found,
-\"foo-bar\" is tried.")
+will, according to the \"w\" element first try \"bar\". If that
+isn't a trigger key, \"foo-bar\" is tried, respecting a second
+\"w_\" element.")
 
 (defvar yas/after-exit-snippet-hook
   '()
@@ -1651,7 +1652,8 @@ TEMPLATES is a list of `yas/template'."
             (insert-file-contents file nil nil nil t)
             (push (yas/parse-template file)
                   snippet-defs))))
-      (when snippet-defs
+      (when (or snippet-defs
+                (cdr major-mode-and-parents))
         (yas/define-snippets (car major-mode-and-parents)
                              snippet-defs
                              (cdr major-mode-and-parents)))
