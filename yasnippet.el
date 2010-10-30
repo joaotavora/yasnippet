@@ -3214,6 +3214,7 @@ holds the keymap."
                                nil
                                t)))
     (overlay-put overlay 'keymap yas/keymap)
+    (overlay-put overlay 'priority 100)
     (overlay-put overlay 'yas/snippet snippet)
     overlay))
 
