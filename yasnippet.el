@@ -1639,6 +1639,7 @@ TEMPLATES is a list of `yas/template'."
                                        (cons mode-sym parents)
                                      (yas/compute-major-mode-and-parents (concat directory
                                                                                  "/dummy"))))
+           (default-directory directory)
            (yas/ignore-filenames-as-triggers
             (or yas/ignore-filenames-as-triggers
                 (file-exists-p (concat directory "/"
@@ -1807,7 +1808,7 @@ Here's the default value for all the parameters:
               "  \"Initialize YASnippet and load snippets in the bundle.\"")
       (flet ((yas/define-snippets
               (mode snippets &optional parent-or-parents)
-              (insert ";;; snippets for " (symbol-name mode) "\n")
+              (insert ";;; snippets for " (symbol-name mode) ", subdir " (file-name-nondirectory (replace-regexp-in-string "/$" "" default-directory)) "\n")
               (let ((literal-snippets (list)))
                 (dolist (snippet snippets)
                   (let ((key                    (first   snippet))
@@ -1835,9 +1836,13 @@ Here's the default value for all the parameters:
           (dolist (subdir (yas/subdirs dir))
             (let ((file (concat subdir "/.yas-setup.el")))
               (when (file-readable-p file)
-                (insert ";; Supporting elisp for subdir " (file-name-nondirectory subdir) "\n\n")
-                (goto-char (+ (point)
-                              (second (insert-file-contents file))))))
+                (insert "\n;; Supporting elisp for subdir " (file-name-nondirectory subdir) "\n\n")
+                (with-temp-buffer
+                  (insert-file-contents file)
+                  (replace-regexp "^;;.*$" "" nil (point-min) (point-max))
+                  (replace-regexp "^[\s\t]*\n\\([\s\t]*\n\\)+" "\n" nil (point-min) (point-max))
+                  (kill-region (point-min) (point-max)))
+                (yank)))
             (yas/load-directory-1 subdir nil))))
 
       (insert (pp-to-string `(yas/global-mode 1)))
