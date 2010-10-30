@@ -296,7 +296,7 @@ Can also be a list of strings."
            (if (fboundp 'yas/init-yas-in-snippet-keymap)
                (yas/init-yas-in-snippet-keymap))))
 
-(defcustom yas/skip-and-clear-key "C-d"
+(defcustom yas/skip-and-clear-key '("C-d" "<delete>" "<deletechar>")
   "The key to clear the currently active field.
 
 Value is a string that is converted to the internal Emacs key
@@ -550,10 +550,6 @@ snippet itself contains a condition that returns the symbol
 
 (defvar yas/menu-table (make-hash-table)
   "A hash table of MAJOR-MODE symbols to menu keymaps.")
-
-(defun teste ()
-  (interactive)
-  (message "AHAHA!"))
 
 (defvar yas/known-modes
   '(ruby-mode rst-mode markdown-mode)
