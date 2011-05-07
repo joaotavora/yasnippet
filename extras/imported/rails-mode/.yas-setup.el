@@ -166,6 +166,12 @@
       (string-match "app/views/" default-directory)))
 
 (yas/define-condition-cache
+ yas/rails-helper-p
+ "Non-nil if the current buffer is a rails helper."
+ (and (yas/rails-root)
+      (string-match "app/helpers/" default-directory)))
+
+(yas/define-condition-cache
  yas/rails-controller-p
 "Non-nil if the current buffer is a rails controller." 
  (and (yas/rails-root)
@@ -399,7 +405,7 @@ are recognized. Stolen from `rinari-mode' more or`' less."
 ;; text.html.ruby                                                                                                                                                                             =yyas> (yas/unknown)
 ;;
 ;;
-;; AC385ABF-96CD-4FCB-80AD-BF37D6EE79D2  =yyas> (yas/rails-view-p)
+;; AC385ABF-96CD-4FCB-80AD-BF37D6EE79D2  =yyas> (and (member major-mode '(nxml-mode html-mode rhtml-mode)) (yas/rails-view-p))
 
 
 ;; Substitutions for: binding
@@ -887,9 +893,9 @@ are recognized. Stolen from `rinari-mode' more or`' less."
                                                (yas/ignore-item "FD8CC811-2AD3-480F-B975-DF959DC96C67")
                                                ;; Drop / Create Table
                                                (yas/item "20375601-B13F-4314-B8E4-362706566636")
-                                               ;; Ignoring Change / Change Table
-                                               (yas/ignore-item "20FC02C5-32A3-4F20-B163-FF75C9FDFABF")
-                                               
+                                               ;; Change / Change Table
+                                               (yas/item "20FC02C5-32A3-4F20-B163-FF75C9FDFABF")
+                                               (yas/separator)
                                                (yas/submenu "Create columns t. drop-down list"
                                                             (;; t.string (tcs)
                                                              (yas/item "B757F7E5-E4BD-11DC-A11A-00112475D960")
@@ -1082,7 +1088,6 @@ are recognized. Stolen from `rinari-mode' more or`' less."
                        "7BC860E6-7561-4E6E-983B-507D7A6F6228"
                        "221969A1-A5EA-4A8E-8817-C74EBED63901"
                        "33057A79-677B-4DFB-99D4-1492778BDDC6"
-                       "20FC02C5-32A3-4F20-B163-FF75C9FDFABF"
                        "A219EBB8-004A-4012-B5B2-232C9A5C94F8"
                        "42DE1441-D1B7-4998-BAF9-16B1EC7E210C"
                        "25F8F5D8-2BD1-45D8-8B2A-9F2EA4F73AA2"
@@ -1112,9 +1117,6 @@ are recognized. Stolen from `rinari-mode' more or`' less."
 ;; 
 ;; # as in Commands/Autocomplete Foreign Key Fixture Reference (habtm).yasnippet
 ;; 275C0B86-F735-49B6-8A22-218A8F4CC2E0                                                       =yyas> (yas/unknown)
-;; 
-;; # as in Macros/Change Change Table.yasnippet
-;; 20FC02C5-32A3-4F20-B163-FF75C9FDFABF                                                       =yyas> (yas/unknown)
 ;; 
 ;; # as in Commands/Rake Migrate.yasnippet
 ;; 985F56D4-82ED-4C45-8250-2ECCFC71957E                                                       =yyas> (yas/unknown)

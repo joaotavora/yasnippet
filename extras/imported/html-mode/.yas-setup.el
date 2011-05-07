@@ -8,7 +8,7 @@
   "Html-mode snippets behave as close to TextMate as possible.")
 
 (defun yas/html-activate ()
-  (add-to-list 'yas/mode-symbol 'html-mode))
+  (add-to-list (make-local-variable 'yas/mode-symbol) 'html-mode))
 
 (add-hook 'nxml-mode-hook 'yas/html-activate)
 (add-hook 'rhtml-mode-hook 'yas/html-activate)
@@ -80,7 +80,7 @@
            (string-match (format "<%s>\\(.*\\)</%s>" wrap wrap)
                          string)
            (match-string 1 string))
-      (concat "<em>" string "</em>")))
+      (concat wrap string wrap)))
 
 (defun yas/html-between-tag-pair-p ()
   (save-excursion
@@ -648,6 +648,9 @@
 ;; 
 
 ;; Substitutions for: binding
+;; 
+;; # as in Commands/Persistent Include.yasnippet
+;;                                                                                            =yyas> (yas/unknown)
 ;; 
 ;; # as in Snippets/XHTML &nbsp NonBreakingSpace.yasnippet
 ;; ~                                                                                          =yyas> (yas/unknown)

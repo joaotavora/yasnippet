@@ -288,8 +288,8 @@ which means:
 
 * It usually looks beautiful. E.g. when you compile Emacs with gtk
   support, this menu will be rendered with your gtk theme.
-* Emacs have little control over it. E.g. you can't use ``C-n``,
-  ``C-p`` to navigate.
+* Your window system may or may not allow to you use ``C-n``, ``C-p``
+  to navigate this menu. 
 * This function can't be used when in a terminal.
 
 .. image:: images/ido-menu.png
