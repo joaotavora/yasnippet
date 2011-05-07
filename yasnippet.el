@@ -3053,9 +3053,7 @@ Also create some protection overlays"
 snippet as ordinary text.
 
 Return a buffer position where the point should be placed if
-exiting the snippet.
-
-NO-HOOKS means don't run the `yas/after-exit-snippet-hook' hooks."
+exiting the snippet."
 
   (let ((control-overlay (yas/snippet-control-overlay snippet))
         yas/snippet-beg
@@ -3099,6 +3097,13 @@ NO-HOOKS means don't run the `yas/after-exit-snippet-hook' hooks."
 
   (message "[yas] snippet %s exited." (yas/snippet-id snippet)))
 
+(defun yas/safely-run-hooks (hook-var)
+  (condition-case error
+      (run-hooks hook-var)
+    (error
+     (message "[yas] %s error: %s" hook-var (error-message-string error)))))
+
+
 (defun yas/check-commit-snippet ()
   "Checks if point exited the currently active field of the
 snippet, if so cleans up the whole snippet up."
@@ -3126,10 +3131,10 @@ snippet, if so cleans up the whole snippet up."
                  (yas/update-mirrors snippet)))
               (t
                nil))))
-    (unless snippets-left
+    (unless (or (null snippets) snippets-left)
       (if snippet-exit-transform
-          (yas/eval-lisp-no-saves snippet-exit-transform)
-        (run-hooks 'yas/after-exit-snippet-hook)))))
+          (yas/eval-lisp-no-saves snippet-exit-transform))
+      (yas/safely-run-hooks 'yas/after-exit-snippet-hook))))
 
 ;; Apropos markers-to-points:
 ;;
@@ -4105,7 +4110,7 @@ When multiple expressions are found, only the last one counts."
 ;;; Post-command hooks:
 
 (defvar yas/post-command-runonce-actions nil
-  "List of actions to run once  `post-command-hook'.
+  "List of actions to run once in `post-command-hook'.
 
 Each element of this list looks like (FN . ARGS) where FN is
 called with ARGS as its arguments after the currently executing
