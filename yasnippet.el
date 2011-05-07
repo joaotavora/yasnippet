@@ -556,7 +556,7 @@ snippet itself contains a condition that returns the symbol
   "A list of mode which is well known but not part of emacs.")
 
 (defvar yas/escaped-characters
-  '(?\\ ?` ?' ?$ ?} ?\( ?\))
+  '(?\\ ?` ?' ?$ ?} ?{ ?\( ?\))
   "List of characters which *might* need to be escaped.")
 
 (defconst yas/field-regexp
