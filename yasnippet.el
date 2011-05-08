@@ -1086,6 +1086,13 @@ Also takes care of adding and updaring to the associated menu."
       (let ((menu-binding-pair (yas/snippet-menu-binding-pair-get-create template)))
         (define-key keymap (vector (make-symbol (yas/template-uuid template))) (car menu-binding-pair))))))
 
+(defun yas/namehash-templates-alist (namehash)
+  (let (alist)
+    (maphash #'(lambda (k v)
+                 (push (cons k v) alist))
+             namehash)
+    alist))
+
 (defun yas/fetch (table key)
   "Fetch templates in TABLE by KEY.
 
@@ -1094,12 +1101,7 @@ string and TEMPLATE is a `yas/template' structure."
   (let* ((keyhash (yas/table-hash table))
          (namehash (and keyhash (gethash key keyhash))))
     (when namehash
-      (yas/filter-templates-by-condition
-       (let (alist)
-         (maphash #'(lambda (k v)
-                      (push (cons k v) alist))
-                  namehash)
-         alist)))))
+      (yas/filter-templates-by-condition (yas/namehash-templates-alist namehash)))))
 
 
 ;;; Filtering/condition logic
@@ -1204,8 +1206,8 @@ the template of a snippet in the current snippet-table."
 (defun yas/table-all-keys (table)
   (when table
     (let ((acc))
-      (maphash #'(lambda (key templates)
-                   (when (yas/filter-templates-by-condition templates)
+      (maphash #'(lambda (key namehash)
+                   (when (yas/filter-templates-by-condition (yas/namehash-templates-alist namehash))
                      (push key acc)))
                (yas/table-hash table))
       acc)))
