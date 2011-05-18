@@ -100,13 +100,13 @@ class TmSubmenu
     
     first = true;
 
-    string = ""
-    separator_useless = true;
-    items.each do |uuid|
-      if deleteditems.index(uuid)
-        $stderr.puts "#{uuid} has been deleted!"
-        next
-      end
+   string = ""
+   separator_useless = true;
+   items.each do |uuid|
+      if deleteditems && deleteditems.index(uuid)
+       $stderr.puts "#{uuid} has been deleted!"
+       next
+     end
       string += "\n"
       string += " " * indent
       string += (first ? thingy[0] : (" " * thingy[0].length))
@@ -151,7 +151,7 @@ class TmSubmenu
       all[k] = TmSubmenu.new(v["name"], v)
     end
 
-    excluded = mainmenu["excludedItems"] + TmSubmenu::excluded_items
+    excluded = (mainmenu["excludedItems"] || []) + TmSubmenu::excluded_items
     closing = "\n                    '("
     closing+= excluded.collect do |uuid|
       "\"" + uuid + "\"" 
