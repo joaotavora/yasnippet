@@ -165,7 +165,8 @@
   :group 'editing)
 
 ;;;###autoload
-(defcustom yas/snippet-dirs nil
+(defcustom yas/snippet-dirs (list "~/.emacs.d/snippets"
+                                  (concat (file-name-directory load-file-name) "snippets"))
   "Directory or list of snippet dirs for each major mode.
 
 The directory where user-created snippets are to be stored. Can
