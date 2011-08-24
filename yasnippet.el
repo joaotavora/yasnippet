@@ -836,10 +836,9 @@ behaviour. Can also be a function of zero arguments.")
 Do this unless `yas/dont-activate' is t "
   (interactive)
   (unless (or (minibufferp)
-              (and (functionp yas/dont-activate)
-                   (funcall yas/dont-activate))
-              (and (boundp yas/dont-activate)
-                   yas/dont-activate))
+              (if (functionp yas/dont-activate)
+                  (funcall yas/dont-activate)
+                yas/dont-activate))
     ;; Load all snippets definitions unless we still don't have a
     ;; root-directory or some snippets have already been loaded.
     ;;
