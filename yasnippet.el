@@ -1672,7 +1672,7 @@ of a snippet.  The file name is the trigger key and the
 content of the file is the template."
   (interactive "DSelect the root directory: ")
   (unless (file-directory-p directory)
-    (error "Error %s not a directory" directory))
+    (error "%s is not a directory" directory))
   (unless yas/snippet-dirs
     (setq yas/snippet-dirs directory))
   (dolist (dir (yas/subdirs directory))
@@ -1696,7 +1696,8 @@ content of the file is the template."
   (let ((restore-global-mode (prog1 yas/global-mode
                                (yas/global-mode -1)))
         (restore-minor-mode (prog1 yas/minor-mode
-                              (yas/minor-mode -1))))
+                              (yas/minor-mode -1)))
+        (errors))
     ;; Empty all snippet tables and all menu tables
     ;;
     (setq yas/tables (make-hash-table))
@@ -1714,7 +1715,10 @@ content of the file is the template."
     ;; Reload the directories listed in `yas/snippet-dirs' or prompt
     ;; the user to select one.
     ;;
-    (yas/load-snippet-dirs)
+    (condition-case oops
+        (yas/load-snippet-dirs)
+      (error (push oops errors)
+             (message "[yas] Check your `yas/snippet-dirs': %s" (second oops))))
     ;; Reload the direct keybindings
     ;;
     (yas/direct-keymaps-reload)
@@ -1724,8 +1728,7 @@ content of the file is the template."
       (yas/minor-mode 1))
     (when restore-global-mode
       (yas/global-mode 1))
-
-    (message "[yas] Reloading everything... Done.")))
+    (message "[yas] Reloaded everything...%s." (if errors " (some errors, check *Messages*)" ""))))
 
 (defun yas/quote-string (string)
   "Escape and quote STRING.
