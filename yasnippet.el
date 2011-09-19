@@ -1471,7 +1471,8 @@ Here's a list of currently recognized directives:
                        (cons (point) (point)))))
           (yas/expand-snippet (yas/template-content yas/current-template)
                               (car where)
-                              (cdr where)))))))
+                              (cdr where)
+                              (yas/template-expand-env yas/current-template)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Popping up for keys and templates
