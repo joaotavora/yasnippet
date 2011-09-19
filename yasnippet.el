@@ -833,7 +833,7 @@ behaviour. Can also be a function of zero arguments.")
 (defun yas/minor-mode-on ()
   "Turn on YASnippet minor mode.
 
-Do this unless `yas/dont-activate' is t "
+Do this unless `yas/dont-activate' is truish "
   (interactive)
   (unless (or (minibufferp)
               (if (functionp yas/dont-activate)
@@ -1688,16 +1688,12 @@ content of the file is the template."
         (yas/load-directory directory))
     (call-interactively 'yas/load-directory)))
 
-(defun yas/reload-all (&optional reset-root-directory)
+(defun yas/reload-all (&optional interactive)
   "Reload all snippets and rebuild the YASnippet menu. "
-  (interactive "P")
+  (interactive "p")
   ;; Turn off global modes and minor modes, save their state though
   ;;
-  (let ((restore-global-mode (prog1 yas/global-mode
-                               (yas/global-mode -1)))
-        (restore-minor-mode (prog1 yas/minor-mode
-                              (yas/minor-mode -1)))
-        (errors))
+  (let ((errors))
     ;; Empty all snippet tables and all menu tables
     ;;
     (setq yas/tables (make-hash-table))
@@ -1709,9 +1705,6 @@ content of the file is the template."
     (setf (cdr yas/minor-mode-map)
           (cdr (yas/init-minor-keymap)))
 
-    (when reset-root-directory
-      (setq yas/snippet-dirs nil))
-
     ;; Reload the directories listed in `yas/snippet-dirs' or prompt
     ;; the user to select one.
     ;;
@@ -1722,12 +1715,6 @@ content of the file is the template."
     ;; Reload the direct keybindings
     ;;
     (yas/direct-keymaps-reload)
-    ;; Restore the mode configuration
-    ;;
-    (when restore-minor-mode
-      (yas/minor-mode 1))
-    (when restore-global-mode
-      (yas/global-mode 1))
     (message "[yas] Reloaded everything...%s." (if errors " (some errors, check *Messages*)" ""))))
 
 (defun yas/quote-string (string)
