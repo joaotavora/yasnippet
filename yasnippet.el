@@ -3006,8 +3006,7 @@ Also create some protection overlays"
       ;; primary field transform: first call to snippet transform
       (unless (yas/field-modified-p field)
         (if (yas/field-update-display field snippet)
-            (let ((inhibit-modification-hooks t))
-              (yas/update-mirrors snippet))
+            (yas/update-mirrors snippet)
           (setf (yas/field-modified-p field) nil))))))
 
 (defun yas/prev-field ()
@@ -3041,6 +3040,12 @@ Also create some protection overlays"
 
 ;;; Some low level snippet-routines
 
+(defmacro yas/inhibit-overlay-hooks (&rest body)
+  "Run BODY with `yas/inhibit-overlay-hooks' set to t."
+  (declare (indent 0))
+  `(let ((yas/inhibit-overlay-hooks t))
+     (progn ,@body)))
+
 (defun yas/commit-snippet (snippet)
   "Commit SNIPPET, but leave point as it is.  This renders the
 snippet as ordinary text.
@@ -3061,7 +3066,7 @@ exiting the snippet."
       (setq yas/snippet-end (overlay-end control-overlay))
       (delete-overlay control-overlay))
 
-    (let ((inhibit-modification-hooks t))
+    (yas/inhibit-overlay-hooks
       (when yas/active-field-overlay
         (delete-overlay yas/active-field-overlay))
       (when yas/field-protection-overlays
@@ -3271,13 +3276,17 @@ Move the overlay, or create it if it does not exit."
     (overlay-put yas/active-field-overlay 'insert-behind-hooks
                  '(yas/on-field-overlay-modification))))
 
+(defvar yas/inhibit-overlay-hooks nil
+  "Bind this temporarity to non-nil to prevent running `yas/on-*-modification'.")
+
 (defun yas/on-field-overlay-modification (overlay after? beg end &optional length)
   "Clears the field and updates mirrors, conditionally.
 
 Only clears the field if it hasn't been modified and it point it
 at field start. This hook doesn't do anything if an undo is in
 progress."
-  (unless (yas/undo-in-progress)
+  (unless (or yas/inhibit-overlay-hooks
+              (yas/undo-in-progress))
     (let* ((field (overlay-get overlay 'yas/field))
            (number (and field (yas/field-number field)))
            (snippet (overlay-get yas/active-field-overlay 'yas/snippet)))
@@ -3327,7 +3336,7 @@ Move the overlays, or create them if they do not exit."
     ;;
     (when (< (buffer-size) end)
       (save-excursion
-        (let ((inhibit-modification-hooks t))
+        (yas/inhibit-overlay-hooks
           (goto-char (point-max))
           (newline))))
     ;; go on to normal overlay creation/moving
@@ -3358,10 +3367,11 @@ originated")
   "Signals a snippet violation, then issues error.
 
 The error should be ignored in `debug-ignored-errors'"
-  (cond ((not (or after?
-                  (yas/undo-in-progress)))
-         (setq yas/protection-violation (point))
-         (error "Exit the snippet first!"))))
+  (unless yas/inhibit-overlay-hooks
+    (cond ((not (or after?
+                    (yas/undo-in-progress)))
+           (setq yas/protection-violation (point))
+           (error "Exit the snippet first!")))))
 
 (add-to-list 'debug-ignored-errors "^Exit the snippet first!$")
 
@@ -3436,21 +3446,20 @@ considered when expanding the snippet."
            ;;    stacked expansion: also shoosh the overlay modification hooks
            (save-restriction
              (narrow-to-region start start)
-             (let ((inhibit-modification-hooks t)
-                   (buffer-undo-list t))
+             (let ((buffer-undo-list t))
                ;; snippet creation might evaluate users elisp, which
                ;; might generate errors, so we have to be ready to catch
                ;; them mostly to make the undo information
                ;;
                (setq yas/start-column (save-restriction (widen) (current-column)))
-
-               (setq snippet
-                     (if expand-env
-                         (eval `(let ,expand-env
-                                  (insert content)
-                                  (yas/snippet-create (point-min) (point-max))))
-                       (insert content)
-                       (yas/snippet-create (point-min) (point-max))))))
+               (yas/inhibit-overlay-hooks
+                 (setq snippet
+                       (if expand-env
+                           (eval `(let ,expand-env
+                                    (insert content)
+                                    (yas/snippet-create (point-min) (point-max))))
+                         (insert content)
+                         (yas/snippet-create (point-min) (point-max)))))))
 
            ;; stacked-expansion: This checks for stacked expansion, save the
            ;; `yas/previous-active-field' and advance its boudary.
@@ -4037,12 +4046,7 @@ When multiple expressions are found, only the last one counts."
            (field (car fields)))
       (while field
         (dolist (mirror (yas/field-mirrors field))
-          ;; stacked expansion: I added an `inhibit-modification-hooks'
-          ;; here, for safety, may need to remove if we the mechanism is
-          ;; altered.
-          ;;
-          (let ((inhibit-modification-hooks t)
-                (mirror-parent-field (yas/mirror-parent-field mirror)))
+          (let ((mirror-parent-field (yas/mirror-parent-field mirror)))
             ;; updatte this mirror
             ;;
             (yas/mirror-update-display mirror field)
@@ -4072,7 +4076,8 @@ When multiple expressions are found, only the last one counts."
                (not (string= reflection (buffer-substring-no-properties (yas/mirror-start mirror)
                                                                         (yas/mirror-end mirror)))))
       (goto-char (yas/mirror-start mirror))
-      (insert reflection)
+      (yas/inhibit-overlay-hooks
+        (insert reflection))
       (if (> (yas/mirror-end mirror) (point))
           (delete-region (point) (yas/mirror-end mirror))
         (set-marker (yas/mirror-end mirror) (point))
@@ -4083,8 +4088,7 @@ When multiple expressions are found, only the last one counts."
 (defun yas/field-update-display (field snippet)
   "Much like `yas/mirror-update-display', but for fields"
   (when (yas/field-transform field)
-    (let ((inhibit-modification-hooks t)
-          (transformed (and (not (eq (yas/field-number field) 0))
+    (let ((transformed (and (not (eq (yas/field-number field) 0))
                             (yas/apply-transform field field)))
           (point (point)))
       (when (and transformed
@@ -4092,12 +4096,13 @@ When multiple expressions are found, only the last one counts."
                                                                            (yas/field-end field)))))
         (setf (yas/field-modified-p field) t)
         (goto-char (yas/field-start field))
-        (insert transformed)
-        (if (> (yas/field-end field) (point))
-            (delete-region (point) (yas/field-end field))
-          (set-marker (yas/field-end field) (point))
-          (yas/advance-start-maybe (yas/field-next field) (point)))
-        t))))
+        (yas/inhibit-overlay-hooks
+          (insert transformed)
+          (if (> (yas/field-end field) (point))
+              (delete-region (point) (yas/field-end field))
+            (set-marker (yas/field-end field) (point))
+            (yas/advance-start-maybe (yas/field-next field) (point)))
+          t)))))
 
 
 ;;; Post-command hooks:
