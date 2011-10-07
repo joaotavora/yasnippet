@@ -2588,7 +2588,7 @@ With optional prefix argument KILL quit the window and buffer."
                                  (yas/template-expand-env yas/current-template))
              (when (and debug
                         (require 'yasnippet-debug nil t))
-               (add-hook 'post-command-hook 'yas/debug-snippet-vars 't 'local))))
+               (add-hook 'post-command-hook 'yas/debug-snippet-vars nil t))))
           (t
            (message "[yas] Cannot test snippet for unknown major mode")))))
 
@@ -3283,10 +3283,9 @@ progress."
            (snippet (overlay-get yas/active-field-overlay 'yas/snippet)))
       (cond (after?
              (yas/advance-end-maybe field (overlay-end overlay))
-             (let ((saved-point (point)))
-               (yas/field-update-display field (car (yas/snippets-at-point)))
-               (goto-char saved-point))
-             (yas/update-mirrors (car (yas/snippets-at-point))))
+             (save-excursion
+               (yas/field-update-display field snippet))
+             (yas/update-mirrors snippet))
             (field
              (when (and (not after?)
                         (not (yas/field-modified-p field))
@@ -3668,9 +3667,7 @@ exit-marker have identical start and end markers.
   (cond ((and fom (< (yas/fom-end fom) newend))
          (set-marker (yas/fom-end fom) newend)
          (yas/advance-start-maybe (yas/fom-next fom) newend)
-         (let ((parent (yas/fom-parent-field fom)))
-           (when parent
-             (yas/advance-end-maybe parent newend))))
+         (yas/advance-end-of-parents-maybe (yas/fom-parent-field fom) newend))
         ((yas/exit-p fom)
          (yas/advance-start-maybe (yas/fom-next fom) newend))))
 
@@ -3683,7 +3680,10 @@ If it does, also call `yas/advance-end-maybe' on FOM."
     (yas/advance-end-maybe fom newstart)))
 
 (defun yas/advance-end-of-parents-maybe (field newend)
-  "Like `yas/advance-end-maybe' but for parents."
+  "Like `yas/advance-end-maybe' but for parent fields.
+
+Only works for fields and doesn't care about the start of the
+next FOM. Works its way up recursively for parents of parents."
   (when (and field
              (< (yas/field-end field) newend))
     (set-marker (yas/field-end field) newend)
