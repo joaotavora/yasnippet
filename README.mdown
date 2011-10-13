@@ -58,14 +58,13 @@ following in your `.emacs` file:
 # How-tos, Bugs, Contributions...
 
 Please refer to the comprehensive [documentation] [docs] for full
-customization and support. <!-- If you find a bug, please report it on -->
+customization and support. 
+<!-- If you find a bug, please report it on -->
 <!-- [the GitHub issue tracker][issues].  (please **do not** the deprecated -->
 <!-- [googlecode tracker][googlecode tracker]) -->
 
-If you run into problems using YASnippet, or have snippets to
-contribute, post to the
-[yasnippet google group][forum]. Thank
-you very much for using YASnippet!
+If you run into problems using YASnippet, or have snippets to contribute, post
+to the [yasnippet google group][forum]. Thank you very much for using YASnippet!
 
 [docs]: http://yasnippet.googlecode.com/svn/trunk/doc/index.html
 [issues]: https://github.com/capitaomorte/yasnippet/issues
