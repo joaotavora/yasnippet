@@ -164,8 +164,12 @@
   "Yet Another Snippet extension"
   :group 'editing)
 
-(defcustom yas/snippet-dirs (list "~/.emacs.d/snippets"
-                                  (concat (file-name-directory load-file-name) "snippets"))
+(defvar yas/load-file-name load-file-name
+  "Store the filename that yasnippet.el was originally loaded from.")
+(defcustom yas/snippet-dirs (remove nil
+                                    (list "~/.emacs.d/snippets"
+                                          (when yas/load-file-name
+                                            (concat (file-name-directory yas/load-file-name) "snippets"))))
   "Directory or list of snippet dirs for each major mode.
 
 The directory where user-created snippets are to be stored. Can
