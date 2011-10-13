@@ -58,9 +58,9 @@ following in your `.emacs` file:
 # How-tos, Bugs, Contributions...
 
 Please refer to the comprehensive [documentation] [docs] for full
-customization and support. If you find a bug, please report it on
-[the GitHub issue tracker][issues].  (please **do not** the deprecated
-[googlecode tracker][googlecode tracker])
+customization and support. <!-- If you find a bug, please report it on -->
+<!-- [the GitHub issue tracker][issues].  (please **do not** the deprecated -->
+<!-- [googlecode tracker][googlecode tracker]) -->
 
 If you run into problems using YASnippet, or have snippets to
 contribute, post to the
