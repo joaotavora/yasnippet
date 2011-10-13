@@ -164,7 +164,6 @@
   "Yet Another Snippet extension"
   :group 'editing)
 
-;;;###autoload
 (defcustom yas/snippet-dirs (list "~/.emacs.d/snippets"
                                   (concat (file-name-directory load-file-name) "snippets"))
   "Directory or list of snippet dirs for each major mode.
@@ -852,6 +851,7 @@ Do this unless `yas/dont-activate' is truish "
   (interactive)
   (yas/minor-mode -1))
 
+;;;###autoload
 (define-globalized-minor-mode yas/global-mode yas/minor-mode yas/minor-mode-on
   :group 'yasnippet
   :require 'yasnippet)
