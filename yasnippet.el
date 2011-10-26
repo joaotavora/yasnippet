@@ -845,20 +845,17 @@ Do this unless `yas/dont-activate' is truish "
     ;; Load all snippets definitions unless we still don't have a
     ;; root-directory or some snippets have already been loaded.
     ;;
-    (unless (or (null yas/snippet-dirs)
-                (> (hash-table-count yas/tables) 0))
-      (yas/reload-all))
     (yas/minor-mode 1)))
-
-(defun yas/minor-mode-off ()
-  "Turn off YASnippet minor mode."
-  (interactive)
-  (yas/minor-mode -1))
 
 ;;;###autoload
 (define-globalized-minor-mode yas/global-mode yas/minor-mode yas/minor-mode-on
   :group 'yasnippet
   :require 'yasnippet)
+
+(add-hook 'yas/global-mode-hook 'yas/reload-all-maybe)
+(defun yas/reload-all-maybe ()
+  (if yas/global-mode
+      (yas/reload-all)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Major mode stuff
@@ -1696,8 +1693,6 @@ content of the file is the template."
 (defun yas/reload-all (&optional interactive)
   "Reload all snippets and rebuild the YASnippet menu. "
   (interactive "p")
-  ;; Turn off global modes and minor modes, save their state though
-  ;;
   (let ((errors))
     ;; Empty all snippet tables and all menu tables
     ;;
