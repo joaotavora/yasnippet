@@ -1,4 +1,5 @@
 #name : if (...) { ... } else { ... }
+# key: perl-modeife
 # --
 if ($1) {
     $2

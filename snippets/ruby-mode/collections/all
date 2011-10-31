@@ -1,3 +1,4 @@
 #name : all? { |...| ... }
+# key: collectionsall
 # --
 all? { |${e}| $0 }

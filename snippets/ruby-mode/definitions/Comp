@@ -1,4 +1,5 @@
 #name : include Comparable; def <=> ... end
+# key: definitionsComp
 # --
 include Comparable
 

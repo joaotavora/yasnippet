@@ -1,3 +1,4 @@
 #name : select { |...| ... }
+# key: collectionsselect
 # --
 select { |${1:element}| $0 }

@@ -1,3 +1,4 @@
 #name : ... if ...
+# key: perl-modexif
 # --
 ${1:expression} if ${2:condition}

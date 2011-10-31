@@ -1,5 +1,6 @@
 #Author : Anders Bach Nielsen <andersbach.nielsen@epfl.ch>
 #name : /** ... */
+# key: doc
 # --
 /**
  * ${1:description}

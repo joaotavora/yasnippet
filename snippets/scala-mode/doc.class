@@ -1,5 +1,6 @@
 #Author : Anders Bach Nielsen <andersbach.nielsen@epfl.ch>
 #name : /** cls/trt/obj name */
+# key: doc
 # --
 /** 
  * `(scala-mode-find-clstrtobj-name-doc)`

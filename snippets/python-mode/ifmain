@@ -1,4 +1,5 @@
 #name : if __name__ == '__main__': ...
+# key: python-modeifmain
 # --
 if __name__ == '__main__':
     $0

@@ -1,3 +1,4 @@
 #name : each_value { |val| ... }
+# key: collectionseav
 # --
 each_value { |${val}| $0 }

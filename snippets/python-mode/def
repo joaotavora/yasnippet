@@ -2,6 +2,7 @@
 # name: def
 # contributor: Orestis Markou
 # contributor: Yasser González Fernández <yglez@uh.cu>
+# key: def
 # --
 def ${1:name}($2):
     """$3

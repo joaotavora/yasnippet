@@ -1,5 +1,6 @@
 #contributor : Alejandro Espinoza Esparza <aespinoza@structum.com.mx>
 #name : create table ...
+# key: create
 # --
 CREATE TABLE [${1:dbo}].[${2:TableName}] 
 (

@@ -1,4 +1,5 @@
 #name : -ifdef(...). ... -endif.
+# key: erlang-modeifdef
 # --
 -ifdef($1).
 $0

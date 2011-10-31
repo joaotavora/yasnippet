@@ -1,5 +1,6 @@
 #Author : Jonas Bonèr <jonas@jonasboner.com>
 #name : def act(arg: T) = { ..}
+# key: act
 # --
 def act(${1:arg}: ${2:type}) = {
   loop {

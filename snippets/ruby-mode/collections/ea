@@ -1,3 +1,4 @@
 #name : each { |...| ... }
+# key: collectionsea
 # --
 each { |${e}| $0 }

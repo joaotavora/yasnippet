@@ -1,5 +1,6 @@
 #contributor : Julio Carlos Menendez <godinblack@gmail.com>
 #name : _get_foo ... _set_foo ... foo=property(...)
+# key: propsg
 # --
 def _set_${1:foo}(self, value):
     self._$1 = value

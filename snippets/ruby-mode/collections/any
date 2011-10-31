@@ -1,3 +1,4 @@
 #name : any? { |...| ... }
+# key: collectionsany
 # --
 any? { |${e}| $0 }

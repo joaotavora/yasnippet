@@ -1,3 +1,4 @@
 #name : require "..."
+# key: generalreq
 # --
 require "$0"

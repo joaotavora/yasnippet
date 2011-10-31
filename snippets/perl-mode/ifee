@@ -1,4 +1,5 @@
 #name : if, elsif, else ...
+# key: perl-modeifee
 # --
 if ($1) {
 	${2:# body...}

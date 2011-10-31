@@ -1,5 +1,6 @@
 # contributor: Mads D. Kristensen <madsdk@gmail.com>
 # name: prop
+# key: prop
 # --
 def ${1:foo}():
    doc = """${2:Doc string}"""

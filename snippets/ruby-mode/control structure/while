@@ -1,4 +1,5 @@
 #name : while ... end
+# key: while
 # --
 while ${condition}
   $0

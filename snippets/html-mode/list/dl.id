@@ -1,5 +1,6 @@
 #contributor : Rodrigo Setti <rodrigosetti@gmail.com>
 #name : <dl> ... </dl>
+# key: listdl
 # --
 <dl id="$1">
     $0

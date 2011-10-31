@@ -3,6 +3,7 @@
 # contributor: Orestis Markou
 # contributor: Nishio Hirokazu
 # contributor: Yasser González Fernández <yglez@uh.cu>
+# key: class
 # --
 class ${1:ClassName}(${2:object}):
     """$3

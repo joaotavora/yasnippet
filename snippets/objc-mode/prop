@@ -1,4 +1,5 @@
 #name : foo { ... } ; setFoo { ... }
+# key: prop
 # --
 - (${1:id})${2:foo}
 {

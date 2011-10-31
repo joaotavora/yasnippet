@@ -1,5 +1,6 @@
 #contributor : Alejandro Espinoza Esparza <aespinoza@structum.com.mx>
 #name : #region ... #endregion
+# key: region
 # --
 #region $1
 $0

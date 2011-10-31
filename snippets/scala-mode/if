@@ -1,5 +1,6 @@
 #Author : Jonas Bonèr <jonas@jonasboner.com>
 #name : if (cond) { .. }
+# key: scala-modeif
 # --
 if (${1:condition}) {
   $0

@@ -1,3 +1,4 @@
 #name : /usr/bin/ruby -wKU
+# key: generalrb
 # --
 #!/usr/bin/ruby -wKU

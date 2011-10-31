@@ -1,3 +1,4 @@
 #name : times { |n| ... }
+# key: tim
 # --
 times { |${n}| $0 }

@@ -1,5 +1,6 @@
 #contributor : Jimmy Wu <frozenthrone88@gmail.com>
 #name : <ol>...</ol>
+# key: listol
 # --
 <ol>
   $0

@@ -1,5 +1,6 @@
 #Author : Jonas Bonèr <jonas@jonasboner.com>
 #name : can match { case Full(res) => .. }
+# key: match
 # --
 ${1:option} match {
   case Full(res) => $0
