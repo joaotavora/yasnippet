@@ -396,14 +396,6 @@ An error string \"[yas] error\" is returned instead."
   :type 'boolean
   :group 'yasnippet)
 
-(defcustom yas/ignore-filenames-as-triggers nil
-  "If non-nil, don't derive tab triggers from filenames.
-
-This means a snippet without a \"# key:'\ directive won't have a
-tab trigger."
-  :type 'boolean
-  :group 'yasnippet)
-
 (defcustom yas/visit-from-menu nil
   "If non-nil visit snippets's files from menu, instead of expanding them.
 
@@ -703,11 +695,6 @@ snippet itself contains a condition that returns the symbol
                 (not yas/good-grace))
           :help "If non-nil don't raise errors in bad embedded eslip in snippets"
           :style toggle :selected yas/good-grace]
-         ["Ignore filenames as triggers"
-          (setq yas/ignore-filenames-as-triggers
-                (not yas/ignore-filenames-as-triggers))
-          :help "If non-nil don't derive tab triggers from filenames"
-          :style toggle :selected yas/ignore-filenames-as-triggers]
          )
         "----"
         ["Load snippets..."  yas/load-directory
@@ -1380,9 +1367,7 @@ Here's a list of currently recognized directives:
   (let* ((type 'snippet)
          (name (and file
                     (file-name-nondirectory file)))
-         (key (unless yas/ignore-filenames-as-triggers
-                (and name
-                     (file-name-sans-extension name))))
+         (key nil)
          template
          bound
          condition
@@ -1640,10 +1625,6 @@ TEMPLATES is a list of `yas/template'."
                                      (yas/compute-major-mode-and-parents (concat directory
                                                                                  "/dummy"))))
            (default-directory directory)
-           (yas/ignore-filenames-as-triggers
-            (or yas/ignore-filenames-as-triggers
-                (file-exists-p (concat directory "/"
-                                       ".yas-ignore-filenames-as-triggers"))))
            (snippet-defs nil))
       ;; load the snippet files
       ;;
@@ -1934,10 +1915,7 @@ not need to be a real mode."
   ;; `yas/parse-template'.
   ;;
   (let* ((file (seventh snippet))
-         (key (or (car snippet)
-                  (unless yas/ignore-filenames-as-triggers
-                    (and file
-                         (file-name-sans-extension (file-name-nondirectory file))))))
+         (key (car snippet))
          (name (or (third snippet)
                    (and file
                         (file-name-directory file))))
@@ -2483,50 +2461,44 @@ there, otherwise, proposes to create the first option returned by
 
 With optional prefix argument KILL quit the window and buffer."
   (interactive "P")
-  (let ((yas/ignore-filenames-as-triggers
-         (or yas/ignore-filenames-as-triggers
-             (and buffer-file-name
-                  (locate-dominating-file
-                   buffer-file-name
-                   ".yas-ignore-filenames-as-triggers")))))
-    (cond
-     ;;  We have `yas/editing-template', this buffer's
-     ;;  content comes from a template which is already loaded and
-     ;;  neatly positioned,...
-     ;;
-     (yas/editing-template
-      (yas/define-snippets-1 (yas/parse-template (yas/template-file yas/editing-template)) 
-                             (yas/template-table yas/editing-template)))
-     ;; Try to use `yas/guessed-modes'. If we don't have that use the
-     ;; value from `yas/compute-major-mode-and-parents'
-     ;;
-     (t
-      (unless yas/guessed-modes
-        (set (make-local-variable 'yas/guessed-modes) (or (yas/compute-major-mode-and-parents buffer-file-name))))
-      (let* ((prompt (if (and (featurep 'ido)
-                              ido-mode)
-                         'ido-completing-read 'completing-read))
-             (table (yas/table-get-create
-                     (intern
-                      (funcall prompt (format "Choose or enter a table (yas guesses %s): "
-                                              (if yas/guessed-modes
-                                                  (first yas/guessed-modes)
-                                                "nothing"))
-                               (mapcar #'symbol-name yas/guessed-modes)
-                               nil
-                               nil
-                               nil
-                               nil
-                               (if (first yas/guessed-modes)
-                                   (symbol-name (first yas/guessed-modes))))))))
-        (set (make-local-variable 'yas/editing-template) 
-             (yas/define-snippets-1 (yas/parse-template buffer-file-name)
-                                    table))))))
-  ;; Now, offer to save this shit
+  (cond
+   ;;  We have `yas/editing-template', this buffer's
+   ;;  content comes from a template which is already loaded and
+   ;;  neatly positioned,...
+   ;;
+   (yas/editing-template
+    (yas/define-snippets-1 (yas/parse-template (yas/template-file yas/editing-template)) 
+                           (yas/template-table yas/editing-template)))
+   ;; Try to use `yas/guessed-modes'. If we don't have that use the
+   ;; value from `yas/compute-major-mode-and-parents'
+   ;;
+   (t
+    (unless yas/guessed-modes
+      (set (make-local-variable 'yas/guessed-modes) (or (yas/compute-major-mode-and-parents buffer-file-name))))
+    (let* ((prompt (if (and (featurep 'ido)
+                            ido-mode)
+                       'ido-completing-read 'completing-read))
+           (table (yas/table-get-create
+                   (intern
+                    (funcall prompt (format "Choose or enter a table (yas guesses %s): "
+                                            (if yas/guessed-modes
+                                                (first yas/guessed-modes)
+                                              "nothing"))
+                             (mapcar #'symbol-name yas/guessed-modes)
+                             nil
+                             nil
+                             nil
+                             nil
+                             (if (first yas/guessed-modes)
+                                 (symbol-name (first yas/guessed-modes))))))))
+      (set (make-local-variable 'yas/editing-template) 
+           (yas/define-snippets-1 (yas/parse-template buffer-file-name)
+                                  table)))))
+  ;; Now, offer to save this shit iff:
   ;;
-  ;; 1) if `yas/snippet-dirs' is a list and its first element does not
+  ;; 1) `yas/snippet-dirs' is a list and its first element does not
   ;; match this template's file (i.e. this is a library snippet, not
-  ;; a user snippet).
+  ;; a user snippet) OR
   ;;
   ;; 2) yas/editing-template comes from a file that we cannot write to...
   ;;
