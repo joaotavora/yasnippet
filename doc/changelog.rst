@@ -7,6 +7,13 @@ ChangeLog
 .. _Writing Snippets: snippet-development.html
 .. _The YASnippet Menu: snippet-menu.html
 
+0.7.0b / ????-??-??
+===================
+
+* Filenames can no longer be snippet triggers. Please upgrade your snippet
+  collections.
+
+
 0.6.1c / 2009-08-13
 ===================
 

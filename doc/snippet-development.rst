@@ -91,19 +91,9 @@ Here's a list of currently supported directives:
 ``# key:`` snippet abbrev
 --------------------------
 
-This is the probably the most important directive, it's the
-abbreviation you type to expand a snippet just before hitting
-``yas/trigger-key``.
-
-If you don't specify this it will default to the name of the file the
-snippet is being loaded from, unless YASnippet is ignoring file names
-as triggers (see ``yas/ignore-filenames-as-triggers`` in `Organizing
-snippets`_), in which case this snippet
-will not be expandable through the key mechanism.
-
-Sometimes the key of a snippet is non-ASCII or not valid filename
-(e.g. contains ``/``). One can then define the ``key`` property which
-will overwrite the filename as the key to expand the snippet.
+This is the probably the most important directive, it's the abbreviation you
+type to expand a snippet just before hitting ``yas/trigger-key``. If you don't
+specify this the snippet will not be expandable through the key mechanism.
 
 ``# name:`` snippet name
 ------------------------
@@ -191,40 +181,20 @@ snippet.
 .. sourcecode:: text
 
   #name : <p>...</p>
-  #binding: "C-c C-c C-m"
+  #binding: C-c C-c C-m
   # --
   <p>`(when yas/prefix "\n")`$0`(when yas/prefix "\n")`</p>
 
-This binding will be recorded in the keymap ``html-mode-map``. To
-expand a paragraph tag newlines, just press "C-u C-c C-c
-C-m". Omitting the "C-u" will expand the paragraph tag without
-newlines.
-
-To override the keymap choice based on the major mode name. Use a cons
-cell where the first element specifies the name of the keymap where
-you want to record the keybinding.
-
-.. sourcecode:: text
-
-  #name : <p>...</p>
-  #binding: (rinari-minor-mode-map . "C-c C-c C-m")
-  # --
-  <p>`(when yas/prefix "\n")`$0`(when yas/prefix "\n")`</p>
-
-**Note**: this feature is still **experimental**, it might go away, be
-changed in future release, and should be used with caution: It is easy
-to override important keybindings for many basic modes and it is hard
-to undefine them. For the moment, the variable
-``yas/active-keybindings`` can tell you what snippet keybindings are
-active and the function ``yas/kill-snippet-keybindings`` will attempt
-to undefine all the keybindings.
+This binding will be recorded in the keymap
+``html-mode-map``. To expand a paragraph tag newlines, just
+press ``C-u C-c C-c C-m``. Omitting the ``C-u`` will expand the
+paragraph tag without newlines.
 
 ``# contributor:`` snippet author
 ---------------------------------------------------
 
 This is optional and has no effect whatsoever on snippet
 functionality, but it looks nice.
-
 
 Template syntax
 ===============
