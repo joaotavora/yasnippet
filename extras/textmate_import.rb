@@ -481,7 +481,6 @@ if __FILE__ == $PROGRAM_NAME
   if Choice.choices.output_dir
     FileUtils.mkdir_p Choice.choices.output_dir
     FileUtils.touch File.join(original_dir, Choice.choices.output_dir, ".yas-make-groups") unless menustr
-    FileUtils.touch File.join(original_dir, Choice.choices.output_dir, ".yas-ignore-filenames-as-triggers")
     
     # Now, output head + a new tail in (possibly new) .yas-setup.el
     # file
