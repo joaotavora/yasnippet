@@ -1,5 +1,5 @@
-#Author : Jonas Bonèr <jonas@jonasboner.com>
-#name : val a = actor { ..}
+# Author: Jonas Bonèr <jonas@jonasboner.com>
+# name: val a = actor { ..}
 # key: actor
 # --
 val a = actor {

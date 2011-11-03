@@ -1,4 +1,4 @@
-#name : for ... in ...; ... end
+# name: for ... in ...; ... end
 # key: forin
 # --
 for ${1:element} in ${2:collection}

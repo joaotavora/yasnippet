@@ -1,5 +1,5 @@
-#Author : Anders Bach Nielsen <andersbach.nielsen@epfl.ch>
-#name : trait T { .. }
+# Author: Anders Bach Nielsen <andersbach.nielsen@epfl.ch>
+# name: trait T { .. }
 # key: tr
 # --
 trait ${1:name} {

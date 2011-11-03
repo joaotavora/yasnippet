@@ -1,5 +1,5 @@
-#contributor : Jimmy Wu <frozenthrone88@gmail.com>
-#name : <h2>...</h2>
+# contributor: Jimmy Wu <frozenthrone88@gmail.com>
+# name: <h2>...</h2>
 # key: h2
 # --
 <h2>$1</h2>

@@ -1,4 +1,4 @@
-#name : when ... end
+# name: when ... end
 # key: when
 # --
 when ${condition}

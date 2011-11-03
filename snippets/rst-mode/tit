@@ -1,4 +1,4 @@
-#name : Document title
+# name: Document title
 # key: tit
 # --
 ${1:$(make-string (string-width text) ?\=)}

@@ -1,4 +1,4 @@
-#name : if (...) { ... } else { ... }
+# name: if (...) { ... } else { ... }
 # key: ife
 # --
 if ($1) {

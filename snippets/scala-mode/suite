@@ -1,5 +1,5 @@
-#Author : Jonas Bonèr <jonas@jonasboner.com>
-#name : class T extends Suite { .. }
+# Author: Jonas Bonèr <jonas@jonasboner.com>
+# name: class T extends Suite { .. }
 # key: suite
 # --
 import org.scalatest._
