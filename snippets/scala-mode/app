@@ -1,5 +1,5 @@
-#Author : Anders Bach Nielsen <andersbach.nielsen@epfl.ch>
-#name : object name extends Application
+# Author: Anders Bach Nielsen <andersbach.nielsen@epfl.ch>
+# name: object name extends Application
 # key: app
 # --
 object ${1:name} extends Application {

@@ -1,4 +1,4 @@
-#name : alias_method new, old
-# key: definitionsam
+# name: alias_method new, old
+# key: am
 # --
 alias_method :${new_name}, :${old_name}

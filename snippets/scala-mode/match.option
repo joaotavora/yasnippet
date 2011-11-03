@@ -1,5 +1,5 @@
-#Author : Jonas Bonèr <jonas@jonasboner.com>
-#name : option match { case None => .. }
+# Author: Jonas Bonèr <jonas@jonasboner.com>
+# name: option match { case None => .. }
 # key: match
 # --
 ${1:option} match {

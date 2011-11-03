@@ -1,5 +1,5 @@
-#name : Emphasis
-#contributor: Peng Deng <dengpeng@gmail.com>
+# name: Emphasis
+# contributor: Peng Deng <dengpeng@gmail.com>
 # key: _
 # --
 _${1:Text}_ $0

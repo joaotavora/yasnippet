@@ -1,4 +1,4 @@
-#name : classify { |...| ... }
-# key: ruby-modecollectionsclassify
+# name: classify { |...| ... }
+# key: classify
 # --
 classify { |${e}| $0 }

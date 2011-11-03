@@ -1,4 +1,4 @@
-#name : -include_lib("...").
+# name: -include_lib("...").
 # key: inc
 # --
 -include_lib("$1").

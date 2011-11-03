@@ -1,5 +1,5 @@
-#Author : Jonas Bonèr <jonas@jonasboner.com>
-#name : println("..")
+# Author: Jonas Bonèr <jonas@jonasboner.com>
+# name: println("..")
 # key: pr
 # --
 println("${1:msg}") $0

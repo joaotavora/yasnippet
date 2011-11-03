@@ -1,5 +1,6 @@
-#Author : Jonas Bonèr <jonas@jonasboner.com>
-#name : if (cond) { .. } else { .. }
+# Author: Jonas Bonèr <jonas@jonasboner.com>
+# name: if (cond) { .. } else { .. }
+# key: if
 # --
 if (${1:condition}) {
   $2

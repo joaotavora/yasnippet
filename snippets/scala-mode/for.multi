@@ -1,5 +1,5 @@
-#Author : Jonas Bonèr <jonas@jonasboner.com>
-#name : for {x <- xs \ y <- ys} { yield }
+# Author: Jonas Bonèr <jonas@jonasboner.com>
+# name: for {x <- xs \ y <- ys} { yield }
 # key: for
 # --
 for {
