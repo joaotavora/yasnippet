@@ -8,6 +8,5 @@
 # keybinding : ${5:keybinding}}${6:
 # expand-env : (${7:})}
 # contributor : $6
-# key: vars
 # --
 $0
