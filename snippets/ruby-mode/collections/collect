@@ -1,4 +1,4 @@
-#name : collect { |...| ... }
-# key: collectionscollect
+# name: collect { |...| ... }
+# key: collect
 # --
 collect { |${e}| $0 }

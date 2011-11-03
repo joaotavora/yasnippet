@@ -1,4 +1,4 @@
-#name : -define(...,...).
+# name: -define(...,...).
 # key: def
 # --
 -define($1,$2).

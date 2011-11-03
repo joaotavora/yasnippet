@@ -1,5 +1,5 @@
-#Author : Jonas Bonèr <jonas@jonasboner.com>
-#name : def act = { ..}
+# Author: Jonas Bonèr <jonas@jonasboner.com>
+# name: def act = { ..}
 # key: act
 # --
 def act = {

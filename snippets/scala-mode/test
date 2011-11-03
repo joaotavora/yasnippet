@@ -1,5 +1,5 @@
-#Author : Jonas Bonèr <jonas@jonasboner.com>
-#name : @Test def testX = ...
+# Author: Jonas Bonèr <jonas@jonasboner.com>
+# name: @Test def testX = ...
 # key: test
 # --
 //@Test
