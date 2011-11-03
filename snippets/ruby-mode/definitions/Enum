@@ -1,0 +1,8 @@
+# name: include Enumerable; def each ... end
+# key: Enum
+# --
+include Enumerable
+
+def each(&block)
+	$0
+end
