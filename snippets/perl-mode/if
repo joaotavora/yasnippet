@@ -1,5 +1,5 @@
 #name : if (...) { ... }
-# key: perl-modeif
+# key: if
 # --
 if ($1) {
     $0
