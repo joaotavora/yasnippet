@@ -1,5 +1,5 @@
 #name : def method_missing ... end
-# key: definitionsmm
+# key: mm
 # --
 def method_missing(method, *args)
   $0

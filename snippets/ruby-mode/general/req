@@ -1,4 +1,4 @@
 #name : require "..."
-# key: generalreq
+# key: req
 # --
 require "$0"

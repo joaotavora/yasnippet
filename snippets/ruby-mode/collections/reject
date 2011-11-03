@@ -1,4 +1,4 @@
 #name : reject { |...| ... }
-# key: collectionsreject
+# key: reject
 # --
 reject { |${1:element}| $0 }

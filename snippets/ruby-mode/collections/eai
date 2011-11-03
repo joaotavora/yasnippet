@@ -1,4 +1,4 @@
 #name : each_index { |i| ... }
-# key: collectionseai
+# key: eai
 # --
 each_index { |${i}| $0 }

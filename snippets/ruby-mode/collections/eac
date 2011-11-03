@@ -1,4 +1,4 @@
 #name : each_cons(...) { |...| ... }
-# key: collectionseac
+# key: eac
 # --
 each_cons(${1:2}) { |${group}| $0 }

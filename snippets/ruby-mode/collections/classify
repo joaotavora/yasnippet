@@ -1,4 +1,4 @@
 #name : classify { |...| ... }
-# key: collectionsclassify
+# key: classify
 # --
 classify { |${e}| $0 }

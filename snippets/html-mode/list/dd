@@ -1,5 +1,5 @@
 #contributor : Rodrigo Setti <rodrigosetti@gmail.com>
 #name : <dd> ... </dd>
-# key: listdd
+# key: dd
 # --
 <dd>$1</dd>

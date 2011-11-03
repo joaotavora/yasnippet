@@ -1,4 +1,4 @@
 #name : deep_copy(...)
-# key: generaldee
+# key: dee
 # --
 Marshal.load(Marshal.dump($0))

@@ -1,4 +1,4 @@
 #name : select { |...| ... }
-# key: collectionsselect
+# key: select
 # --
 select { |${1:element}| $0 }
