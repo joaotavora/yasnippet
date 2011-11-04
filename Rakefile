@@ -67,6 +67,24 @@ namespace :doc do
     sh "tar cjf pkg/yasnippet-doc-#{$version}.tar.bz2 " +
       "--exclude=doc/.svn --exclude=doc/images/.svn doc/*.html doc/images"
   end
+
+  task :upload do
+    if File.exists? 'doc/gh-pages'
+      Dir.chdir 'doc/gh-pages' do
+        sh "git checkout gh-pages"
+      end
+      Dir.glob("doc/*.{html,css}").each do |file|
+        FileUtils.cp file, 'doc/gh-pages'
+      end
+      Dir.glob("doc/images/*").each do |file|
+        FileUtils.cp file, 'doc/gh-pages/images'
+      end
+      Dir.chdir 'doc/gh-pages' do
+        sh "git commit -a -m 'Automatic documentation update.'"
+        sh "git push"
+      end
+    end
+  end
 end
 
 desc "Compile yasnippet.el into yasnippet.elc" 
