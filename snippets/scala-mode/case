@@ -1,5 +1,5 @@
-#Author : Jonas Bonèr <jonas@jonasboner.com>
-#name : case pattern => 
+# Author: Jonas Bonèr <jonas@jonasboner.com>
+# name: case pattern => 
 # key: case
 # --
 case ${1:pattern} => $0

@@ -1,4 +1,4 @@
-#name : -record(...,{...}).
+# name: -record(...,{...}).
 # key: rec
 # --
 -record($1,{$2}).

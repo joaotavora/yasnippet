@@ -142,8 +142,8 @@ valid filename, ``lt.yasnippet`` for example, using ``<`` for the
 
 .. sourcecode:: text
 
-  #key: <
-  #name: <...></...>
+  # key: <
+  # name: <...></...>
   # --
   <${1:div}>$0</$1>
 

@@ -1,5 +1,5 @@
-#name : -export([]).
-#contributor : hitesh <hitesh.jasani@gmail.com>
+# name: -export([]).
+# contributor: hitesh <hitesh.jasani@gmail.com>
 # key: exp
 # --
 -export([${1:start/0}]).

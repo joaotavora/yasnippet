@@ -1,4 +1,4 @@
-#name : each { |...| ... }
-# key: collectionsea
+# name: each { |...| ... }
+# key: ea
 # --
 each { |${e}| $0 }

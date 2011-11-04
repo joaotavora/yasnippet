@@ -1,4 +1,4 @@
-#name : case ... of ... end
+# name: case ... of ... end
 # key: case
 # --
 case $1 of

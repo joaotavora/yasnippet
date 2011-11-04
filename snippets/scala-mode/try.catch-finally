@@ -1,5 +1,5 @@
-#Author : Jonas Bonèr <jonas@jonasboner.com>
-#name : try { .. } catch { case e => ..} finally { ..}
+# Author: Jonas Bonèr <jonas@jonasboner.com>
+# name: try { .. } catch { case e => ..} finally { ..}
 # key: try
 # --
 try {

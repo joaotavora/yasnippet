@@ -1,4 +1,4 @@
-#name : receive after ... -> ... end
+# name: receive after ... -> ... end
 # key: rcv
 # --
 receive

@@ -1,5 +1,5 @@
-#contributor : Anders Bach Nielsen <abachn@abachn.net>
-#name : <style type="text/css" media="...">...</style>
+# contributor: Anders Bach Nielsen <abachn@abachn.net>
+# name: <style type="text/css" media="...">...</style>
 # key: style
 # --
 <style type="text/css" media="${1:screen}">

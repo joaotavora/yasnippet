@@ -81,8 +81,8 @@ Here's a typical example:
 
 .. sourcecode:: text
 
-  #contributor : pluskid <pluskid@gmail.com>
-  #name : __...__
+  # contributor: pluskid <pluskid@gmail.com>
+  # name: __...__
   # --
   __${init}__
 
@@ -151,7 +151,7 @@ your hard work. You can then use:
 
 .. sourcecode:: text
 
-  # name : ASCII home
+  # name: ASCII home
   # expand-env: ((yas/indent-line 'fixed) (yas/wrap-around-region 'nil))
   # --
                   welcome to my
@@ -180,8 +180,8 @@ snippet.
 
 .. sourcecode:: text
 
-  #name : <p>...</p>
-  #binding: C-c C-c C-m
+  # name: <p>...</p>
+  # binding: C-c C-c C-m
   # --
   <p>`(when yas/prefix "\n")`$0`(when yas/prefix "\n")`</p>
 

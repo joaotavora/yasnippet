@@ -1,5 +1,5 @@
-#contributor: Li Zhu <http://www.zhuli.name>
-#name : program ... end program ...
+# contributor: Li Zhu <http://www.zhuli.name>
+# name: program ... end program ...
 # key: pr
 # --
 program ${1:name}
