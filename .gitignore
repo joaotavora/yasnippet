@@ -1,1 +1,4 @@
 authors.txt
+doc/gh-pages
+doc/*.html
+pkg/
