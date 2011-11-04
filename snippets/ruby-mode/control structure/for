@@ -1,0 +1,6 @@
+# name: for ... end
+# key: for
+# --
+for ${1:i} in ${2:length}
+	$0
+end

@@ -1,8 +1,8 @@
-# name: class ... end
+# name: module ... end
 # contributor: hitesh <hitesh.jasani@gmail.com>
-# key: cls
+# key: mod
 # --
-class ${1:`(let ((fn (capitalize (file-name-nondirectory
+module ${1:`(let ((fn (capitalize (file-name-nondirectory
                                  (file-name-sans-extension
 				 (or (buffer-file-name)
 				     (buffer-name (current-buffer))))))))

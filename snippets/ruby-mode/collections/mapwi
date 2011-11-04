@@ -1,0 +1,4 @@
+# name: map_with_index { |...| ... }
+# key: mapwi
+# --
+map_with_index { |${e}| $0 }
