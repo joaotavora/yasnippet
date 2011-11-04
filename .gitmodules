@@ -1,0 +1,3 @@
+[submodule "extras/bundles/ruby-tmbundle"]
+	path = extras/bundles/ruby-tmbundle
+	url = https://github.com/drnic/ruby-tmbundle.git
