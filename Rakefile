@@ -23,7 +23,12 @@ end
 
 desc "convert some textmate bundles to yasnippets"
 task :convert_bundles do
-  sh 'for bundle in html ruby rails css; do ./extras/textmate_import.rb -d extras/bundles/$bundle-tmbundle -o extras/imported/$bundle-mode -q ; done'
+  Dir.glob "extras/bundles/*-tmbundle" do |bundle_dir|
+    puts "Converting from #{bundle_dir}"
+    mode_prefix = File.basename(bundle_dir).match(/[^-]*/)[0]
+    raise "Couldn't guess mode name for #{bundle_dir}" unless mode_prefix
+    sh "./extras/textmate_import.rb -d #{bundle_dir} -o ./extras/imported/#{mode_prefix}-mode -q" 
+  end
 end
 
 desc "create a release package"
