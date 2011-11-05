@@ -411,7 +411,7 @@ if __FILE__ == $PROGRAM_NAME
       File.open(file_to_create, 'w') do |f|
         f.write(snippet.to_yas)
       end
-      $stdout.print "done\n"
+      $stdout.print "done\n" unless opts.quiet
     rescue SkipSnippet => e
       $stdout.print "skipped! #{e.message}\n" unless opts.quiet
     rescue RuntimeError => e
