@@ -400,7 +400,7 @@ Choosing fields value from a list and other tricks
 
 As mentioned, the field transformation is invoked just after you enter
 the field, and with some useful variables bound, notably
-``yas/field-modified-p`` and ``yas/moving-away-p``. Because of this
+``yas/modified-p`` and ``yas/moving-away-p``. Because of this
 feature you can place a transformation in the primary field that lets
 you select default values for it.
 
