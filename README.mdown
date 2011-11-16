@@ -57,16 +57,15 @@ following in your `.emacs` file:
 
 # How-tos, Bugs, Contributions...
 
-Please refer to the comprehensive [documentation] [docs] for full
-customization and support. 
-<!-- If you find a bug, please report it on -->
-<!-- [the GitHub issue tracker][issues].  (please **do not** the deprecated -->
-<!-- [googlecode tracker][googlecode tracker]) -->
+Please refer to the comprehensive [documentation] [docs] for full customization
+and support.  If you find a bug, please report it on
+[the GitHub issue tracker][issues].  (please **do not** submit new issues to the old
+[googlecode tracker][googlecode tracker])
 
 If you run into problems using YASnippet, or have snippets to contribute, post
 to the [yasnippet google group][forum]. Thank you very much for using YASnippet!
 
-[docs]: http://yasnippet.googlecode.com/svn/trunk/doc/index.html
+[docs]: http://capitaomorte.github.com/yasnippet/
 [issues]: https://github.com/capitaomorte/yasnippet/issues
 [googlecode tracker]: http://code.google.com/p/yasnippet/issues/list
 [forum]: http://groups.google.com/group/smart-snippet
