@@ -2994,11 +2994,12 @@ Also create some protection overlays"
 
 (defun yas/exit-snippet (snippet)
   "Goto exit-marker of SNIPPET."
-  (interactive)
-  (setf (yas/snippet-force-exit snippet) t)
-  (goto-char (if (yas/snippet-exit snippet)
-                 (yas/exit-marker (yas/snippet-exit snippet))
-               (overlay-end (yas/snippet-control-overlay snippet)))))
+  (interactive (list (first (yas/snippets-at-point))))
+  (when snippet
+    (setf (yas/snippet-force-exit snippet) t)
+    (goto-char (if (yas/snippet-exit snippet)
+                   (yas/exit-marker (yas/snippet-exit snippet))
+                 (overlay-end (yas/snippet-control-overlay snippet))))))
 
 (defun yas/exit-all-snippets ()
   "Exit all snippets."
