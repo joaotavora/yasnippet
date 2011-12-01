@@ -2554,6 +2554,7 @@ With optional prefix argument KILL quit the window and buffer."
              (switch-to-buffer (get-buffer-create buffer-name))
              (setq buffer-undo-list nil)
              (condition-case nil (funcall test-mode) (error nil))
+             (setq buffer-read-only nil)
              (yas/expand-snippet (yas/template-content yas/current-template)
                                  (point-min)
                                  (point-max)
