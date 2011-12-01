@@ -489,7 +489,8 @@ Attention: These hooks are not run when exiting nested/stackd snippet expansion!
      t)
   "Snippet expanding condition.
 
-This variable is a lisp form:
+This variable is a lisp form which is evaluated everytime a
+snippet expansion is attemped:
 
     * If it evaluates to nil, no snippets can be expanded.
 
