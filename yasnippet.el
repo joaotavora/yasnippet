@@ -3428,7 +3428,7 @@ considered when expanding the snippet."
                (yas/inhibit-overlay-hooks
                  (setq snippet
                        (if expand-env
-                           (eval `(let ,expand-env
+                           (eval `(let* ,expand-env
                                     (insert content)
                                     (yas/snippet-create (point-min) (point-max))))
                          (insert content)
