@@ -1,0 +1,4 @@
+# -*- mode: snippet -*-
+#name : image_tag
+# --
+<%= image_tag("${1:source}", :alt => "alternate text", :class => "rounded") %>

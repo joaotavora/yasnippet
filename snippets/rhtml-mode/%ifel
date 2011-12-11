@@ -1,0 +1,7 @@
+#name : <% if  ...  -%> $. <% else -%> <% end -%>
+# --
+GOOD
+<% if $0cond} -%>
+$0
+<% else -%>
+<% end -%>

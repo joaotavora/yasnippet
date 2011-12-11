@@ -1,0 +1,3 @@
+#name : st => <%= stylesheet_link_tag  '$0' %>
+# --
+<%= stylesheet_link_tag  '$0' %> <!-- , :media => '' -->

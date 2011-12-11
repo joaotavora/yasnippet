@@ -1,0 +1,4 @@
+#contributor : charles magid
+#name : <tag>...</tag>
+# --
+<${1:tag}>$2</$1>$0
