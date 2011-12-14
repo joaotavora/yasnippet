@@ -1,0 +1,9 @@
+#contributor : Charles Magid (ChasManRors)
+#name : form_for([@user,@role], :url => {:controller => 'roles', :action => 'create', :user_id => @user}) do |f|
+# --
+<% form_for( [@${1:user},@${2:role}],
+   :url => { :controller => '$2s', :action => 'create', :$1_id => @$1 }) do |f| %>
+  <%= f.error_messages %>
+$0
+  <p><%= f.submit "Submit" %></p>
+<% end %>

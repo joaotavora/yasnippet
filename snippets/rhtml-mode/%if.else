@@ -1,8 +1,5 @@
 #name : <% if  ...  -%> $. <% else -%> <% end -%>
 # --
-
-GOOD 3
-
 <% if ${1:cond} -%>
 $0
 <% else -%>

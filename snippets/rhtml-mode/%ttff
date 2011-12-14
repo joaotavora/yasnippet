@@ -1,3 +1,0 @@
-#name : <%= text_field(" ... ", " ... ") %>
-# --
-<%= text_text_field_field("${object_name} ", "${method}"$0) %>

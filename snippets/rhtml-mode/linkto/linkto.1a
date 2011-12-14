@@ -1,0 +1,4 @@
+#contributor : charles magid
+#name : was edit_link :: link_to "Edit" edit_item_path(item)
+# --
+<%= link_to "Edit", edit_${1:item}_path($1) %>$0

@@ -1,0 +1,11 @@
+#contributor : Charles Magid (ChasManRors)
+#name : form_tag '/posts' do ... submit end
+# comment : => <form action="/posts" method="post"><div><input type="submit" name="submit" value="Save" /></div></form>
+# --
+<% form_tag '/${posts}' do -%>
+  $0
+  <div><%= submit_tag 'Save' %></div>
+<% end -%>
+
+  
+

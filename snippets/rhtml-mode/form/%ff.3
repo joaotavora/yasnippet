@@ -1,0 +1,15 @@
+#contributor : Charles Magid (ChasManRors)
+#name : form_for [@project, @task] do |f|
+# --
+<% form_for [${@project}, ${@task}] do |${f}| %>
+  <%= f.error_messages %>
+  <p>
+    <%= f.label :name %><br />
+    <%= f.text_field :name %>
+  </p>
+  <p>
+    <%= f.check_box :complete %>
+    <%= f.label :complete %>
+  </p>
+  <p><%= f.submit "Submit" %></p>
+<% end %>
