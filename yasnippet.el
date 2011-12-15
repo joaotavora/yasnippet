@@ -6,9 +6,9 @@
 ;; Authors: pluskid <pluskid@gmail.com>, joaotavora <joaotavora@gmail.com>
 ;; Version: 0.7.0
 ;; Package-version: 0.7.0
-;; X-URL: http://code.google.com/p/yasnippet/
+;; X-URL: http://github.com/capitaomorte/yasnippet
 ;; Keywords: convenience, emulation
-;; URL: http://code.google.com/p/yasnippet/
+;; URL: http://github.com/capitaomorte/yasnippet
 ;; EmacsWiki: YaSnippetMode
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -139,7 +139,7 @@
 ;;   `custom-set-variables' is executed in your .emacs file.
 ;;
 ;;   For more information and detailed usage, refer to the project page:
-;;      http://code.google.com/p/yasnippet/
+;;      http://github.com/capitaomorte/yasnippet
 
 ;;; Code:
 
