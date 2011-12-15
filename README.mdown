@@ -40,16 +40,6 @@ El-get is a nice way to get the most recent version, too
 
 See https://github.com/dimitri/el-get for instructions
 
-# Writing snippets, How-tos, Bugs, Contributions...
-
-Please refer to the comprehensive [documentation] [docs] for full customization
-and support.  If you find a bug, please report it on
-[the GitHub issue tracker][issues].  (please **do not** submit new issues to the old
-[googlecode tracker][googlecode tracker])
-
-If you run into problems using YASnippet, or have snippets to contribute, post
-to the [yasnippet google group][forum]. Thank you very much for using YASnippet!
-
 # Contributing snippets
 
 Please do not ask me to add snippets to the default collection under
@@ -71,6 +61,8 @@ rails development. It will convert `ruby`, `rails` and `html` bundles
 from drnic's github repositories based on corresponding
 `.yas-setup.el` files.
 
+## Using imported textmate snippets (rails example)
+
 After cloning this repository to `~/.emacs.d/plugins/yasnippet`
    
     cd ~/.emacs.d/plugins/yasnippet
@@ -89,10 +81,19 @@ Then, in your .emacs file
      
 Open some rails file (model, app, etc) and start using the textmate snippets.     
 
+# Documentation, issues, etc
+
+Please refer to the comprehensive [documentation] [docs] for full customization
+and support.  If you find a bug, please report it on
+[the GitHub issue tracker][issues].  (please **do not** submit new issues to the old
+[googlecode tracker][googlecode tracker])
+
+If you run into problems using YASnippet, or have snippets to contribute, post
+to the [yasnippet google group][forum]. Thank you very much for using YASnippet!
+
 [docs]: http://capitaomorte.github.com/yasnippet/
 [issues]: https://github.com/capitaomorte/yasnippet/issues
 [googlecode tracker]: http://code.google.com/p/yasnippet/issues/list
 [forum]: http://groups.google.com/group/smart-snippet
-
 
 
