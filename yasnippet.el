@@ -29,21 +29,12 @@
 ;;; Commentary:
 
 ;; Basic steps to setup:
+;; 
+;;    (add-to-list 'load-path
+;;                 "~/.emacs.d/plugins/yasnippet")
+;;    (require 'yasnippet) ;; not yasnippet-bundle
+;;    (yas/global-mode 1)
 ;;
-;;   1. In your .emacs file:
-;;        (add-to-list 'load-path "/dir/to/yasnippet.el")
-;;        (require 'yasnippet)
-;;   2. Place the `snippets' directory somewhere.  E.g: ~/.emacs.d/snippets
-;;   3. In your .emacs file
-;;        (setq yas/snippet-dirs "~/.emacs/snippets")
-;;        (yas/load-directory yas/snippet-dirs)
-;;   4. To enable the YASnippet menu and tab-trigger expansion
-;;        M-x yas/minor-mode
-;;   5. To globally enable the minor mode in *all* buffers
-;;        M-x yas/global-mode
-;;
-;;   Steps 4. and 5. are optional, you don't have to use the minor
-;;   mode to use YASnippet.
 ;;
 ;;   Interesting variables are:
 ;;
