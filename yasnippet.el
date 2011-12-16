@@ -1455,6 +1455,10 @@ Here's a list of currently recognized directives:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Popping up for keys and templates
 ;;
+(defvar yas/x-pretty-prompt-templates nil
+  "If non-nil, attempt to prompt for templates like TextMate.")
+
+
 (defun yas/prompt-for-template (templates &optional prompt)
   "Interactively choose a template from the list TEMPLATES.
 
@@ -1517,8 +1521,6 @@ TEMPLATES is a list of `yas/template'."
       (or chosen
           (keyboard-quit)))))
 
-(defvar yas/x-pretty-prompt-templates nil
-  "If non-nil, attempt to prompt for templates like TextMate.")
 (defun yas/x-pretty-prompt-templates (prompt templates)
   "Display TEMPLATES, grouping neatly by table name."
   (let ((pretty-alist (list))
