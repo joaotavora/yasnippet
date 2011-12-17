@@ -14,9 +14,11 @@ SQL, LaTeX, HTML, CSS and more. The snippet syntax is inspired from
 [textmate-snippets]: http://manual.macromates.com/en/snippets
 [import-docs]: http://yasnippet.googlecode.com/svn/trunk/doc/snippet-development.html#importing-textmate-snippets
 [youtube-demo]: http://www.youtube.com/watch?v=76Ygeg9miao
-[high-res-demo]: http://yasnippet.googlecode.com/files/yas_demo.avi 
+[high-res-demo]: http://yasnippet.googlecode.com/files/yas_demo.avi
 
-# Install the most recent version
+# Installation 
+
+## Install the most recent version
 
 Clone this repository somewhere
 
@@ -32,13 +34,54 @@ Add the following in your `.emacs` file:
 
 Add your own snippets to `~/.emacs.d/snippets` by placing files there or invoking `yas/new-snippet`.
 
-# Install yasnippet with el-get
+## Install yasnippet with el-get
 
 El-get is a nice way to get the most recent version, too
 
 See https://github.com/dimitri/el-get for instructions
 
-# How-tos, Bugs, Contributions...
+# Contributing snippets
+
+Please do not ask me to add snippets to the default collection under
+`/snippets`. This is considered frozen and by customizing
+`yas/snippet-dirs` you can point yasnippet to good snippet collections
+out there.
+
+There is a tool `extras/textmate-import.rb` than can import many
+actual Textmate snippets and there are
+`extras/imported/*-mode/.yas-setup.el` files that can help it with the
+more difficult importation. 
+
+I'm focusing on developping `textmate-import.rb` tool and the
+`yas-setup.el` files. In the future `/snippets` snippets will be
+deprecated and replaced with `extras/imported`. 
+
+Follow through the following example to start using these snippets for
+rails development. It will convert `ruby`, `rails` and `html` bundles
+from drnic's github repositories based on corresponding
+`.yas-setup.el` files.
+
+## Using imported textmate snippets (rails example)
+
+After cloning this repository to `~/.emacs.d/plugins/yasnippet`
+   
+    cd ~/.emacs.d/plugins/yasnippet
+    git submodule init
+    git submodule update
+    gem install plist trollop
+    rake convert_bundles             # will convert ruby, rails and html bundles from drnic
+    
+Then, in your .emacs file
+
+    (add-to-list 'load-path
+                  "~/.emacs.d/plugins/yasnippet")
+    (require 'yasnippet)
+    (setq yas/snippet-dirs "~/.emacs.d/snippets" "~/.emacs.d/extras/imported")
+    (yas/global-mode 1)    
+     
+Open some rails file (model, app, etc) and start using the textmate snippets.     
+
+# Documentation, issues, etc
 
 Please refer to the comprehensive [documentation] [docs] for full customization
 and support.  If you find a bug, please report it on
@@ -52,6 +95,5 @@ to the [yasnippet google group][forum]. Thank you very much for using YASnippet!
 [issues]: https://github.com/capitaomorte/yasnippet/issues
 [googlecode tracker]: http://code.google.com/p/yasnippet/issues/list
 [forum]: http://groups.google.com/group/smart-snippet
-
 
 
