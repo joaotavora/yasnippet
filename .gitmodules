@@ -1,9 +1,9 @@
 [submodule "extras/bundles/ruby-tmbundle"]
 	path = extras/bundles/ruby-tmbundle
-	url = https://github.com/drnic/ruby-tmbundle.git
+	url = http://github.com/drnic/ruby-tmbundle.git
 [submodule "extras/bundles/html-tmbundle"]
 	path = extras/bundles/html-tmbundle
-	url = https://github.com/drnic/html-tmbundle.git
+	url = http://github.com/drnic/html-tmbundle.git
 [submodule "extras/bundles/rails-tmbundle"]
 	path = extras/bundles/rails-tmbundle
-	url = https://github.com/drnic/ruby-on-rails-tmbundle.git
+	url = http://github.com/drnic/ruby-on-rails-tmbundle.git
