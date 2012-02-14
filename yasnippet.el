@@ -544,7 +544,7 @@ snippet itself contains a condition that returns the symbol
   "A list of mode which is well known but not part of emacs.")
 
 (defvar yas/escaped-characters
-  '(?\\ ?` ?' ?$ ?} ?{ ?\( ?\))
+  '(?\\ ?` ?\" ?' ?$ ?} ?{ ?\( ?\))
   "List of characters which *might* need to be escaped.")
 
 (defconst yas/field-regexp
@@ -3678,7 +3678,7 @@ Meant to be called in a narrowed buffer, does various passes"
     (setq yas/dollar-regions nil)
     ;; protect escaped quote, backquotes and backslashes
     ;;
-    (yas/protect-escapes nil '(?\\ ?` ?'))
+    (yas/protect-escapes nil `(?\\ ?` ?'))
     ;; replace all backquoted expressions
     ;;
     (goto-char parse-start)
