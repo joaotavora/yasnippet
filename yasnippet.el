@@ -2133,7 +2133,10 @@ object satisfying `yas/field-p' to restrict the expansion to."
 If expansion fails, execute the previous binding for this key"
   (interactive)
   (setq yas/condition-cache-timestamp (current-time))
-  (let* ((vec (this-command-keys-vector))
+  (let* ((yas/prefix current-prefix-arg)
+         (vec (subseq (this-command-keys-vector) (if current-prefix-arg
+                                                     universal-argument-num-events
+                                                   0)))
          (templates (mapcan #'(lambda (table)
                                 (yas/fetch table vec))
                             (yas/get-snippet-tables))))
