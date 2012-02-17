@@ -4,4 +4,5 @@ doc/*.html
 pkg/
 extras/imported/**
 !extras/imported/*/.yas_setup.el
+*.elc
 
