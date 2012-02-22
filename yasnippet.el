@@ -3016,16 +3016,14 @@ Also create some protection overlays"
   `(let ((yas/inhibit-overlay-hooks t))
      (progn ,@body)))
 
+(defvar yas/snippet-beg nil "Beginning position of the last snippet commited.")
+(defvar yas/snippet-end nil "End position of the last snippet commited.")
+
 (defun yas/commit-snippet (snippet)
   "Commit SNIPPET, but leave point as it is.  This renders the
-snippet as ordinary text.
+snippet as ordinary text."
 
-Return a buffer position where the point should be placed if
-exiting the snippet."
-
-  (let ((control-overlay (yas/snippet-control-overlay snippet))
-        yas/snippet-beg
-        yas/snippet-end)
+  (let ((control-overlay (yas/snippet-control-overlay snippet)))
     ;;
     ;; Save the end of the moribund snippet in case we need to revive it
     ;; its original expansion.
