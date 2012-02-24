@@ -27,7 +27,9 @@ task :convert_bundles do
     puts "Converting from #{bundle_dir}"
     mode_prefix = File.basename(bundle_dir).match(/[^-]*/)[0]
     raise "Couldn't guess mode name for #{bundle_dir}" unless mode_prefix
-    sh "./extras/textmate_import.rb -d #{bundle_dir} -o ./extras/imported/#{mode_prefix}-mode -q" 
+    output = "./extras/imported/#{mode_prefix}-mode"
+    FileUtils.mkdir_p output
+    sh "./extras/textmate_import.rb -d #{bundle_dir} -o #{output} -q" 
   end
 end
 
