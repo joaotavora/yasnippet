@@ -9,17 +9,6 @@ end
 find_version
 FileUtils.mkdir_p('pkg')
 
-desc "generate bundle file for classic snippets."
-task :bundle do
-  sh 'emacs --batch -l yasnippet.el --eval "(yas/compile-bundle)"'
-  sh "tar czf pkg/yasnippet-bundle-#{$version}.el.tgz yasnippet-bundle.el"
-end
-
-desc "generate bundle file for textmate snippets."
-task :textmate_bundle => [:convert] do
-  sh 'emacs --batch -l yasnippet.el --eval "(yas/compile-textmate-bundle)"'
-  sh "tar czf pkg/yasnippet-textmate-bundle-#{$version}.el.tgz yasnippet-textmate-bundle.el"
-end
 
 desc "convert some textmate bundles to yasnippets"
 task :convert_bundles do

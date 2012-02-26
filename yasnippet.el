@@ -32,7 +32,7 @@
 ;; 
 ;;    (add-to-list 'load-path
 ;;                 "~/.emacs.d/plugins/yasnippet")
-;;    (require 'yasnippet) ;; not yasnippet-bundle
+;;    (require 'yasnippet)
 ;;    (yas/global-mode 1)
 ;;
 ;;
@@ -1601,61 +1601,55 @@ TEMPLATES is a list of `yas/template'."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Loading snippets from files
 ;;
-(defun yas/load-directory-1 (directory &optional mode-sym parents)
+(defun yas/load-directory-1 (directory &optional mode-sym parents no-compiled-snippets)
   "Recursively load snippet templates from DIRECTORY."
-
-  ;; Load .yas-setup.el files wherever we find them
-  ;;
-  (let ((file (concat directory "/" ".yas-setup")))
-    (when (or (file-readable-p (concat file ".el"))
-              (file-readable-p (concat file ".elc")))
-      (load file)))
-
-  ;;
-  ;;
   (unless (file-exists-p (concat directory "/" ".yas-skip"))
-    (let* ((major-mode-and-parents (if mode-sym
-                                       (cons mode-sym parents)
-                                     (yas/compute-major-mode-and-parents (concat directory
-                                                                                 "/dummy"))))
-           (default-directory directory)
-           (snippet-defs nil))
-      ;; load the snippet files
-      ;;
-      (with-temp-buffer
-        (dolist (file (yas/subdirs directory 'no-subdirs-just-files))
-          (when (file-readable-p file)
-            (insert-file-contents file nil nil nil t)
-            (push (yas/parse-template file)
-                  snippet-defs))))
-      (when (or snippet-defs
-                (cdr major-mode-and-parents))
-        (yas/define-snippets (car major-mode-and-parents)
-                             snippet-defs
-                             (cdr major-mode-and-parents)))
-      ;; now recurse to a lower level
-      ;;
-      (dolist (subdir (yas/subdirs directory))
-        (yas/load-directory-1 subdir
-                              (car major-mode-and-parents)
-                              (cdr major-mode-and-parents))))))
+    ;; Load .yas-setup.el files wherever we find them
+    ;;
+    (load ".yas-setup" 'noerror)
+    (if (and (not no-compiled-snippets)
+             (load ".yas-compiled-snippets" 'noerror))
+        (message "Loading much faster .yas-compiled-snippets from %s" directory)
+      (let* ((major-mode-and-parents (if mode-sym
+                                         (cons mode-sym parents)
+                                       (yas/compute-major-mode-and-parents (concat directory
+                                                                                   "/dummy"))))
+             (default-directory directory)
+             (snippet-defs nil))
+        ;; load the snippet files
+        ;;
+        (with-temp-buffer
+          (dolist (file (yas/subdirs directory 'no-subdirs-just-files))
+            (when (file-readable-p file)
+              (insert-file-contents file nil nil nil t)
+              (push (yas/parse-template file)
+                    snippet-defs))))
+        (when (or snippet-defs
+                  (cdr major-mode-and-parents))
+          (yas/define-snippets (car major-mode-and-parents)
+                               snippet-defs
+                               (cdr major-mode-and-parents)))
+        ;; now recurse to a lower level
+        ;;
+        (dolist (subdir (yas/subdirs directory))
+          (yas/load-directory-1 subdir
+                                (car major-mode-and-parents)
+                                (cdr major-mode-and-parents)
+                                t))))))
 
-(defun yas/load-directory (directory)
-  "Load snippet definition from a directory hierarchy.
+(defun yas/load-directory (top-level-dir)
+  "Load snippet definition from directory hierarchy under TOP-LEVEL-DIR.
 
-Below the top-level directory, each directory is a mode
-name.  And under each subdirectory, each file is a definition
-of a snippet.  The file name is the trigger key and the
-content of the file is the template."
+Below TOP-LEVEL-DIR., each directory is a mode name."
   (interactive "DSelect the root directory: ")
-  (unless (file-directory-p directory)
-    (error "%s is not a directory" directory))
+  (unless (file-directory-p top-level-dir)
+    (error "%s is not a directory" top-level-dir))
   (unless yas/snippet-dirs
-    (setq yas/snippet-dirs directory))
-  (dolist (dir (yas/subdirs directory))
+    (setq yas/snippet-dirs top-level-dir))
+  (dolist (dir (yas/subdirs top-level-dir))
     (yas/load-directory-1 dir))
   (when (interactive-p)
-    (message "[yas] Loaded snippets from %s." directory)))
+    (message "[yas] Loaded snippets from %s." top-level-dir)))
 
 (defun yas/load-snippet-dirs ()
   "Reload the directories listed in `yas/snippet-dirs' or
@@ -1702,76 +1696,36 @@ foo\"bar\\! -> \"foo\\\"bar\\\\!\""
                                     t)
           "\""))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; Yasnippet Bundle
+;;; Snippet compilation function
 
 (defun yas/initialize ()
   "For backward compatibility, enable `yas/minor-mode' globally"
   (yas/global-mode 1))
 
-(defun yas/compile-bundle
-  (&optional yasnippet yasnippet-bundle snippet-roots code dropdown)
-  "Compile snippets in SNIPPET-ROOTS to a single bundle file.
+(defun yas/compile-top-level-dir (top-level-dir)
+  "Create .yas-compiled-snippets.el files under subdirs of TOP-LEVEL-DIR."
+  (interactive "DTop level snippet directory?")
+  (dolist (dir (yas/subdirs top-level-dir))
+    (yas/compile-snippets dir)))
 
-YASNIPPET is the yasnippet.el file path.
+(defun yas/compile-snippets (input-dir &optional output-file)
+  "Compile snippets files in INPUT-DIR to OUTPUT-FILE file.
 
-YASNIPPET-BUNDLE is the output file of the compile result.
-
-SNIPPET-ROOTS is a list of root directories that contains the
-snippets definition.
-
-CODE is the code to be placed at the end of the generated file
-and that can initialize the YASnippet bundle.
-
-Last optional argument DROPDOWN is the filename of the
-dropdown-list.el library.
-
-Here's the default value for all the parameters:
-
-  (yas/compile-bundle \"yasnippet.el\"
-                      \"yasnippet-bundle.el\"
-                      \"snippets\")
-                      \"(yas/initialize-bundle)
-                        ### autoload
-                        (require 'yasnippet-bundle)`\"
-                      \"dropdown-list.el\")
-"
-  (interactive (concat "ffind the yasnippet.el file: \nFTarget bundle file: "
-                       "\nDSnippet directory to bundle: \nMExtra code? \nfdropdown-library: "))
-
-  (let* ((yasnippet (or yasnippet
-                        "yasnippet.el"))
-         (yasnippet-bundle (or yasnippet-bundle
-                               "./yasnippet-bundle.el"))
-         (snippet-roots (or snippet-roots
-                            "snippets"))
-         (dropdown (or dropdown
-                       "dropdown-list.el"))
-         (code (or (and code
-                        (condition-case err (read code) (error nil))
-                        code)
-                   (concat "(yas/initialize-bundle)"
-                           "\n;;;###autoload" ; break through so that won't
-                           "(require 'yasnippet-bundle)")))
-         (dirs (or (and (listp snippet-roots) snippet-roots)
-                   (list snippet-roots)))
-         (bundle-buffer nil))
-    (with-temp-file yasnippet-bundle
-      (insert ";;; yasnippet-bundle.el --- "
-              "Yet another snippet extension (Auto compiled bundle)\n")
-      (insert-file-contents yasnippet)
-      (goto-char (point-max))
-      (insert "\n")
-      (when dropdown
-        (insert-file-contents dropdown))
-      (goto-char (point-max))
-      (insert ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;\n")
-      (insert ";;;;      Auto-generated code         ;;;;\n")
-      (insert ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;\n")
-      (insert "(defun yas/initialize-bundle ()\n"
-              "  \"Initialize YASnippet and load snippets in the bundle.\"")
+Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
+  (interactive (let* ((input-dir (read-directory-name "Snippet dir "))
+                      (output-file (let ((ido-everywhere nil))
+                                     (read-file-name "Output file "
+                                                     input-dir nil nil
+                                                     ".yas-compiled-snippets.el"
+                                                     nil))))
+                 (list input-dir output-file)))
+  (let ((default-directory input-dir))
+    (with-temp-file (setq output-file (or output-file ".yas-compiled-snippets.el"))
       (flet ((yas/define-snippets
               (mode snippets &optional parent-or-parents)
-              (insert ";;; snippets for " (symbol-name mode) ", subdir " (file-name-nondirectory (replace-regexp-in-string "/$" "" default-directory)) "\n")
+              (insert (format ";;; %s - automatically compiled snippets for `%s' , do not edit!\n"
+                              (file-name-nondirectory output-file) mode))
+              (insert ";;;\n")
               (let ((literal-snippets (list)))
                 (dolist (snippet snippets)
                   (let ((key                    (first   snippet))
@@ -1794,47 +1748,18 @@ Here's the default value for all the parameters:
                             ,uuid)
                           literal-snippets)))
                 (insert (pp-to-string `(yas/define-snippets ',mode ',literal-snippets ',parent-or-parents)))
-                (insert "\n\n"))))
-        (dolist (dir dirs)
-          (dolist (subdir (yas/subdirs dir))
-            (let ((file (concat subdir "/.yas-setup.el")))
-              (when (file-readable-p file)
-                (insert "\n;; Supporting elisp for subdir " (file-name-nondirectory subdir) "\n\n")
-                (with-temp-buffer
-                  (insert-file-contents file)
-                  (replace-regexp "^;;.*$" "" nil (point-min) (point-max))
-                  (replace-regexp "^[\s\t]*\n\\([\s\t]*\n\\)+" "\n" nil (point-min) (point-max))
-                  (kill-region (point-min) (point-max)))
-                (yank)))
-            (yas/load-directory-1 subdir nil))))
+                (insert "\n\n")
+                (insert (format ";;; %s - automatically compiled snippets for `%s' end here\n"
+                                (file-name-nondirectory output-file) mode))
+                (insert ";;;"))))
+        (yas/load-directory-1 input-dir nil nil 'no-compiled-snippets))))
+  
+  (if (and (called-interactively-p)
+           (yes-or-no-p (format "Open the resulting file (%s)? "
+                                (expand-file-name output-file))))
+      (find-file-other-window output-file)))
 
-      (insert (pp-to-string `(yas/global-mode 1)))
-      (insert ")\n\n" code "\n")
 
-      ;; bundle-specific provide and value for yas/dont-activate
-      (let ((bundle-feature-name (file-name-nondirectory
-                                  (file-name-sans-extension
-                                   yasnippet-bundle))))
-        (insert (pp-to-string `(set-default 'yas/dont-activate
-                                            #'(lambda ()
-                                                (and (or yas/snippet-dirs
-                                                         (featurep ',(make-symbol bundle-feature-name)))
-                                                     (null (yas/get-snippet-tables)))))))
-        (insert (pp-to-string `(provide ',(make-symbol bundle-feature-name)))))
-
-      (insert ";;; "
-              (file-name-nondirectory yasnippet-bundle)
-              " ends here\n"))))
-
-(defun yas/compile-textmate-bundle ()
-  (interactive)
-  (yas/compile-bundle "yasnippet.el"
-                      "./yasnippet-textmate-bundle.el"
-                      "extras/imported/"
-                      (concat "(yas/initialize-bundle)"
-                              "\n;;;###autoload" ; break through so that won't
-                              "(require 'yasnippet-textmate-bundle)")
-                      "dropdown-list.el"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Some user level functions
