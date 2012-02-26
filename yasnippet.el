@@ -2345,7 +2345,13 @@ there, otherwise, proposes to create the first option returned by
                 (snippet-mode)))))
       (message "Could not guess snippet dir!"))))
 
-(defun yas/compute-major-mode-and-parents (file &optional prompt-if-failed)
+(defun yas/compute-major-mode-and-parents (file)
+  "Given FILE, find the nearest snippet directory for a given
+mode, then return a list (MODE-SYM PARENTS), the mode's symbol and a list
+representing one or more of the mode's parents.
+
+Note that MODE-SYM need not be the symbol of a real major mode,
+neither do the elements of PARENTS."
   (let* ((file-dir (and file
                         (directory-file-name (or (some #'(lambda (special)
                                                            (locate-dominating-file file special))
@@ -2357,10 +2363,7 @@ there, otherwise, proposes to create the first option returned by
          (major-mode-name (and file-dir
                                (file-name-nondirectory file-dir)))
          (major-mode-sym (or (and major-mode-name
-                                  (intern major-mode-name))
-                             (when prompt-if-failed
-                               (read-from-minibuffer
-                                "[yas] Cannot auto-detect major mode! Enter a major mode: "))))
+                                  (intern major-mode-name))))
          (parents (when (file-readable-p parents-file-name)
                          (mapcar #'intern
                                  (split-string
