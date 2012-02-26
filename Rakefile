@@ -35,19 +35,8 @@ task :package do
 end
 
 desc "create a release package and upload it to google code"
-task :release => [:bundle, :package, 'doc:archive'] do
-  sh "googlecode_upload.py -s \"YASnippet Release #{$version}\"" +
-    " -p yasnippet -l \"Featured,Type-Package,OpSys-All\"" +
-    " pkg/yasnippet-#{$version}.tar.bz2"
-  sh "googlecode_upload.py -s \"YASnippet Bundle #{$version}\"" +
-    " -p yasnippet -l \"Featured,Type-Package,OpSys-All\"" +
-    " pkg/yasnippet-bundle-#{$version}.el.tgz"
-  sh "googlecode_upload.py -s \"YASnippet Document #{$version}\"" +
-    " -p yasnippet -l \"Featured,Type-Docs,OpSys-All\"" +
-    " pkg/yasnippet-doc-#{$version}.tar.bz2"
-  FileUtils.cp "yasnippet-bundle.el", "pkg/yasnippet-bundle-#{$version}.el"
-  sh "echo for ELPA | mutt -a pkg/yasnippet-bundle-#{$version}.el -s " +
-     "'YASnippet bundle v#{$version}' elpa@tromey.com"
+task :release => [:package, 'doc:archive'] do
+  raise "Not implemented for github yet!"
 end
 
 rule '.html' => '.rst' do |t|
