@@ -29,7 +29,7 @@ Add the following in your `.emacs` file:
 
     (add-to-list 'load-path
                   "~/.emacs.d/plugins/yasnippet")
-    (require 'yasnippet) ;; not yasnippet-bundle
+    (require 'yasnippet)
     (yas/global-mode 1)
 
 Add your own snippets to `~/.emacs.d/snippets` by placing files there or invoking `yas/new-snippet`.
