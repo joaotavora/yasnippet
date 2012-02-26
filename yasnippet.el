@@ -2277,8 +2277,11 @@ where snippets of table might exist."
               ;; create the .yas-parents file here...
               candidate)))))
 
-(defun yas/new-snippet (&optional choose-instead-of-guess)
-  ""
+(defun yas/new-snippet (&optional NO-TEMPLATE)
+  "Pops a new buffer for writing a snippet.
+
+Expands a snippet-writing snippet, unless the optional prefix arg
+NO-TEMPLATE is non-nil."
   (interactive "P")
   (let ((guessed-directories (yas/guess-snippet-directories)))
 
@@ -2286,12 +2289,11 @@ where snippets of table might exist."
     (erase-buffer)
     (kill-all-local-variables)
     (snippet-mode)
+    (yas/minor-mode 1)
     (set (make-local-variable 'yas/guessed-modes) (mapcar #'(lambda (d)
                                                               (intern (yas/table-name (car d))))
                                                           guessed-directories))
-    (unless (and choose-instead-of-guess
-                 (not (y-or-n-p "Insert a snippet with useful headers? ")))
-      (yas/expand-snippet "\
+    (unless no-template (yas/expand-snippet "\
 # -*- mode: snippet -*-
 # name: $1
 # key: $2${3:
