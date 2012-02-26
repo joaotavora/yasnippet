@@ -1419,8 +1419,8 @@ Here's a list of currently recognized directives:
                                                (directory-file-name extra-dir)))))
     group))
 
-(defun yas/subdirs (directory &optional file?)
-  "Return subdirs or files of DIRECTORY according to FILE?."
+(defun yas/subdirs (directory &optional filep)
+  "Return subdirs or files of DIRECTORY according to FILEP."
   (remove-if (lambda (file)
                (or (string-match "^\\."
                                  (file-name-nondirectory file))
@@ -1428,7 +1428,7 @@ Here's a list of currently recognized directives:
                                  (file-name-nondirectory file))
                    (string-match "~$"
                                  (file-name-nondirectory file))
-                   (if file?
+                   (if filep
                        (file-directory-p file)
                      (not (file-directory-p file)))))
              (directory-files directory t)))
