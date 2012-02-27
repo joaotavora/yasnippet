@@ -783,7 +783,11 @@ Key bindings:
   (cond (yas/minor-mode
          ;; Reload the trigger key
          ;;
-         (yas/trigger-key-reload)
+         (push (cons 'yas/minor-mode (let ((map (make-sparse-keymap)))
+                                       (define-key map [tab] 'yas/expand)
+                                       map))
+               minor-mode-overriding-map-alist)
+         ;; (yas/trigger-key-reload)
          ;; Install the direct keymaps in `emulation-mode-map-alists'
          ;; (we use `add-hook' even though it's not technically a hook,
          ;; but it works). Then define variables named after modes to
