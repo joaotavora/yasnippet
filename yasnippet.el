@@ -2277,7 +2277,7 @@ where snippets of table might exist."
               ;; create the .yas-parents file here...
               candidate)))))
 
-(defun yas/new-snippet (&optional NO-TEMPLATE)
+(defun yas/new-snippet (&optional no-template)
   "Pops a new buffer for writing a snippet.
 
 Expands a snippet-writing snippet, unless the optional prefix arg
