@@ -706,19 +706,24 @@ snippet itself contains a condition that returns the symbol
 (defvar yas/minor-mode-map (yas/init-minor-keymap)
   "The keymap used when `yas/minor-mode' is active.")
 
+(defvar yas/trigger-key-map (make-sparse-keymap)
+  "Keymap used only for adding the trigger key to `minor-mode-overriding-map-alist'")
+
 (defun yas/trigger-key-reload (&optional unbind-key)
-  "Rebind `yas/expand' to the new value of `yas/trigger-key'.
+    "Rebind `yas/expand' to the new value of `yas/trigger-key'.
 
 With optional UNBIND-KEY, try to unbind that key from
 `yas/minor-mode-map'."
-  (when (and unbind-key
-             (stringp unbind-key)
-             (not (string= unbind-key "")))
-    (define-key yas/minor-mode-map (read-kbd-macro unbind-key) nil))
-  (when  (and yas/trigger-key
-              (stringp yas/trigger-key)
-              (not (string= yas/trigger-key "")))
-    (define-key yas/minor-mode-map (read-kbd-macro yas/trigger-key) 'yas/expand)))
+    (pushnew (cons 'yas/minor-mode yas/trigger-key-map)
+          minor-mode-overriding-map-alist)
+    (when (and unbind-key
+               (stringp unbind-key)
+               (not (string= unbind-key "")))
+      (define-key yas/trigger-key-map (read-kbd-macro unbind-key) nil))
+    (when  (and yas/trigger-key
+                (stringp yas/trigger-key)
+                (not (string= yas/trigger-key "")))
+      (define-key yas/trigger-key-map (read-kbd-macro yas/trigger-key) 'yas/expand)))
 
 (defvar yas/tables (make-hash-table)
   "A hash table of MAJOR-MODE symbols to `yas/table' objects.")
@@ -783,11 +788,7 @@ Key bindings:
   (cond (yas/minor-mode
          ;; Reload the trigger key
          ;;
-         (push (cons 'yas/minor-mode (let ((map (make-sparse-keymap)))
-                                       (define-key map [tab] 'yas/expand)
-                                       map))
-               minor-mode-overriding-map-alist)
-         ;; (yas/trigger-key-reload)
+         (yas/trigger-key-reload)
          ;; Install the direct keymaps in `emulation-mode-map-alists'
          ;; (we use `add-hook' even though it's not technically a hook,
          ;; but it works). Then define variables named after modes to
