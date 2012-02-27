@@ -2102,8 +2102,10 @@ Common gateway for `yas/expand-from-trigger-key' and
          (let* ((yas/minor-mode nil)
                 (yas/direct-keymaps nil)
                 (keys-1 (this-command-keys-vector))
-                (keys-2 (and from-trigger-key-p
-                             (yas/read-kbd-macro yas/trigger-key)))
+                (keys-2 (and yas/trigger-key
+                             from-trigger-key-p
+                             (stringp yas/trigger-key)
+                             (read-kbd-macro yas/trigger-key)))
                 (command-1 (and keys-1 (key-binding keys-1)))
                 (command-2 (and keys-2 (key-binding keys-2)))
                 ;; An (ugly) safety: prevents infinite recursion of
