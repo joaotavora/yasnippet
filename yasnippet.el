@@ -1606,9 +1606,9 @@ TEMPLATES is a list of `yas/template'."
   (unless (file-exists-p (concat directory "/" ".yas-skip"))
     ;; Load .yas-setup.el files wherever we find them
     ;;
-    (load ".yas-setup" 'noerror)
+    (load (expand-file-name ".yas-setup" directory) 'noerror)
     (if (and (not no-compiled-snippets)
-             (load ".yas-compiled-snippets" 'noerror))
+             (load (expand-file-name ".yas-compiled-snippets" directory) 'noerror))
         (message "Loading much faster .yas-compiled-snippets from %s" directory)
       (let* ((major-mode-and-parents (if mode-sym
                                          (cons mode-sym parents)
