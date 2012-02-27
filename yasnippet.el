@@ -244,6 +244,16 @@ Naturally this is only valid when `yas/indent-line' is `auto'"
   :type 'boolean
   :group 'yasnippet)
 
+(defvar yas/trigger-key-map (make-sparse-keymap)
+  "Keymap used only for adding the trigger key to `minor-mode-overriding-map-alist'")
+
+(defun yas/read-kbd-macro (key)
+  (and key
+       (not (string= key ""))
+       (if (string= key "TAB")
+           [tab]
+         (read-kbd-macro key))))
+
 (defcustom yas/trigger-key "TAB"
   "The key bound to `yas/expand' when function `yas/minor-mode' is active.
 
@@ -252,13 +262,11 @@ representation using `read-kbd-macro'."
   :type 'string
   :group 'yasnippet
   :set #'(lambda (symbol key)
-           (let ((old (and (boundp symbol)
-                           (symbol-value symbol))))
-             (set-default symbol key)
-             ;; On very first loading of this defcustom,
-             ;; `yas/trigger-key' is *not* loaded.
-             (if (fboundp 'yas/trigger-key-reload)
-                 (yas/trigger-key-reload old)))))
+           (set-default symbol key)
+           (setcdr yas/trigger-key-map nil)
+           (let ((kbd (yas/read-kbd-macro key)))
+             (when kbd
+               (define-key yas/trigger-key-map kbd 'yas/expand)))))
 
 (defcustom yas/next-field-key '("TAB" "<tab>")
   "The key to navigate to next field when a snippet is active.
@@ -706,24 +714,16 @@ snippet itself contains a condition that returns the symbol
 (defvar yas/minor-mode-map (yas/init-minor-keymap)
   "The keymap used when `yas/minor-mode' is active.")
 
-(defvar yas/trigger-key-map (make-sparse-keymap)
-  "Keymap used only for adding the trigger key to `minor-mode-overriding-map-alist'")
-
-(defun yas/trigger-key-reload (&optional unbind-key)
-    "Rebind `yas/expand' to the new value of `yas/trigger-key'.
-
-With optional UNBIND-KEY, try to unbind that key from
-`yas/minor-mode-map'."
-    (pushnew (cons 'yas/minor-mode yas/trigger-key-map)
-          minor-mode-overriding-map-alist)
-    (when (and unbind-key
-               (stringp unbind-key)
-               (not (string= unbind-key "")))
-      (define-key yas/trigger-key-map (read-kbd-macro unbind-key) nil))
-    (when  (and yas/trigger-key
-                (stringp yas/trigger-key)
-                (not (string= yas/trigger-key "")))
-      (define-key yas/trigger-key-map (read-kbd-macro yas/trigger-key) 'yas/expand)))
+(defun yas/trigger-key-reload (&optional override)
+    "Rebind `yas/expand' to the new value of `yas/trigger-key'."
+    (let ((override (yas/read-kbd-macro override)))
+      (aput 'minor-mode-overriding-map-alist
+            'yas/minor-mode
+            (if override
+                (let ((map (make-sparse-keymap)))
+                  (define-key map override 'yas/expand)
+                  map)
+              yas/trigger-key-map))))
 
 (defvar yas/tables (make-hash-table)
   "A hash table of MAJOR-MODE symbols to `yas/table' objects.")
@@ -2102,10 +2102,8 @@ Common gateway for `yas/expand-from-trigger-key' and
          (let* ((yas/minor-mode nil)
                 (yas/direct-keymaps nil)
                 (keys-1 (this-command-keys-vector))
-                (keys-2 (and yas/trigger-key
-                             from-trigger-key-p
-                             (stringp yas/trigger-key)
-                             (read-kbd-macro yas/trigger-key)))
+                (keys-2 (and from-trigger-key-p
+                             (yas/read-kbd-macro yas/trigger-key)))
                 (command-1 (and keys-1 (key-binding keys-1)))
                 (command-2 (and keys-2 (key-binding keys-2)))
                 ;; An (ugly) safety: prevents infinite recursion of
