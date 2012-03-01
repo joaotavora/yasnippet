@@ -182,6 +182,7 @@ as the default for storing the user's new snippets."
                (yas/reload-all)))))
 (defun yas/snippet-dirs ()
   (if (listp yas/snippet-dirs) yas/snippet-dirs (list yas/snippet-dirs)))
+
 (defvaralias 'yas/root-directory 'yas/snippet-dirs)
 
 (defcustom yas/prompt-functions '(yas/x-prompt
@@ -1059,7 +1060,7 @@ Also takes care of adding and updaring to the associated menu."
             (setq subgroup-keymap (make-sparse-keymap))
             (define-key keymap (vector (make-symbol subgroup))
               `(menu-item ,subgroup ,subgroup-keymap)))
-            (setq keymap subgroup-keymap)))
+          (setq keymap subgroup-keymap)))
       
       ;; Add this entry to the keymap
       ;; 
@@ -1298,12 +1299,12 @@ Guessing is done by looking up the MODE-SYMBOL's
          (remove nil
                  (mapcar #'(lambda (mode)
                              (gethash mode yas/tables))
-                 (remove nil (append (list mode-symbol)
-                                     (yas/extra-modes)
-                                     (list major-mode
-                                           (and (not dont-search-parents)
-                                                (get major-mode
-                                                     'derived-mode-parent)))))))))
+                         (remove nil (append (list mode-symbol)
+                                             (yas/extra-modes)
+                                             (list major-mode
+                                                   (and (not dont-search-parents)
+                                                        (get major-mode
+                                                             'derived-mode-parent)))))))))
     (remove-duplicates 
      (append mode-tables
              (mapcan #'yas/table-get-all-parents mode-tables)))))
@@ -1316,11 +1317,11 @@ them in all `yas/menu-table'"
   (let* ((mode (intern (yas/table-name table)))
          (menu-keymap (or (gethash mode yas/menu-table)
                           (puthash mode (make-sparse-keymap) yas/menu-table)))
-        (parents (yas/table-parents table)))
+         (parents (yas/table-parents table)))
     (mapc #'yas/menu-keymap-get-create parents)
     (define-key yas/minor-mode-menu (vector mode)
-        `(menu-item ,(symbol-name mode) ,menu-keymap
-                    :visible (yas/show-menu-p ',mode)))
+      `(menu-item ,(symbol-name mode) ,menu-keymap
+                  :visible (yas/show-menu-p ',mode)))
     menu-keymap))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1562,7 +1563,7 @@ TEMPLATES is a list of `yas/template'."
           n)
       (dolist (choice choices)
         (setq d (or (and display-fn (funcall display-fn choice))
-                      choice))
+                    choice))
         (when (stringp d)
           (push d formatted-choices)
           (push choice filtered-choices)))
@@ -1581,7 +1582,7 @@ TEMPLATES is a list of `yas/template'."
                            #'completing-read)))
     (dolist (choice choices)
       (setq d (or (and display-fn (funcall display-fn choice))
-                    choice))
+                  choice))
       (when (stringp d)
         (push d formatted-choices)
         (push choice filtered-choices)))
@@ -1655,13 +1656,37 @@ Below TOP-LEVEL-DIR., each directory is a mode name."
   "Reload the directories listed in `yas/snippet-dirs' or
    prompt the user to select one."
   (if yas/snippet-dirs
-      (dolist (directory (reverse (yas/snippet-dirs)))
-        (yas/load-directory directory))
+      (if (not yas/jit-use-jit)
+          (progn
+            (dolist (directory (reverse (yas/snippet-dirs)))
+              (yas/load-directory directory)))
+        (yas/get-jit-loads)
+        (let ((modes '())
+              (bufs (buffer-list)))
+          ;; Load snippets for major modes of all open buffers
+          (mapc (lambda(x)
+                  (with-current-buffer x
+                    (yas/jit-hook) ;; Load current mode's snippets.
+                    ))
+                bufs)))
     (call-interactively 'yas/load-directory)))
 
 (defun yas/reload-all (&optional interactive)
   "Reload all snippets and rebuild the YASnippet menu. "
   (interactive "p")
+  (when (and yas/jit-use-jit
+             yas/jit-delete-cache-on-interactive-reload-all
+             (interactive-p))
+    (when (file-readable-p yas/jit-dir-cache-file)
+      (delete-file yas/jit-dir-cache-file))
+    (setq yas/get-jit-loads-again t)
+    (yas/get-jit-loads)
+    (mapc (lambda(dirs)
+            (let ((cache (yas/jit-dir-snippet-cache
+                          (nth 1 dirs))))
+              (when (file-readable-p cache)
+                (delete-file cache))))
+          yas/jit-loads))
   (let ((errors))
     ;; Empty all snippet tables and all menu tables
     ;;
@@ -1708,7 +1733,7 @@ foo\"bar\\! -> \"foo\\\"bar\\\\!\""
   (dolist (dir (yas/subdirs top-level-dir))
     (yas/compile-snippets dir)))
 
-(defun yas/compile-snippets (input-dir &optional output-file)
+(defun yas/compile-snippets (input-dir &optional output-file use-file)
   "Compile snippets files in INPUT-DIR to OUTPUT-FILE file.
 
 Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
@@ -1734,7 +1759,10 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
                         (condition              (fourth  snippet))
                         (group                  (fifth   snippet))
                         (expand-env             (sixth   snippet))
-                        (file                   nil) ;; (seventh snippet)) ;; omit on purpose
+                        (file                   (if use-file
+                                                    (seventh-snippet)
+                                                  nil)) 
+                        ;; (seventh snippet)) ;; omit on purpose
                         (binding                (eighth  snippet))
                         (uuid                    (ninth   snippet)))
                     (push `(,key
@@ -1842,7 +1870,7 @@ not need to be a real mode."
          (group (fifth snippet))
          (keybinding (yas/read-keybinding (eighth snippet)))
          (uuid (or (ninth snippet)
-                  name))
+                   name))
          (template (or (gethash uuid (yas/table-uuidhash snippet-table))
                        (yas/make-blank-template))))
     ;; X) populate the template object
@@ -2011,7 +2039,7 @@ It doesn't make any sense to call FUNC programatically."
   `(defun ,func () ,(if (and doc
                              (stringp doc))
                         (concat doc
-"\n\nFor use in snippets' conditions. Within each
+                                "\n\nFor use in snippets' conditions. Within each
 snippet-expansion routine like `yas/expand', computes actual
 value for the first time then always returns a cached value.")
                       (setq body (cons doc body))
@@ -2365,12 +2393,12 @@ neither do the elements of PARENTS."
          (major-mode-sym (or (and major-mode-name
                                   (intern major-mode-name))))
          (parents (when (file-readable-p parents-file-name)
-                         (mapcar #'intern
-                                 (split-string
-                                  (with-temp-buffer
-                                    (insert-file-contents parents-file-name)
-                                    (buffer-substring-no-properties (point-min)
-                                                                    (point-max))))))))
+                    (mapcar #'intern
+                            (split-string
+                             (with-temp-buffer
+                               (insert-file-contents parents-file-name)
+                               (buffer-substring-no-properties (point-min)
+                                                               (point-max))))))))
     (when major-mode-sym
       (cons major-mode-sym parents))))
 
@@ -2952,7 +2980,7 @@ Also create some protection overlays"
 (defun yas/commit-snippet (snippet)
   "Commit SNIPPET, but leave point as it is.  This renders the
 snippet as ordinary text."
-
+  
   (let ((control-overlay (yas/snippet-control-overlay snippet)))
     ;;
     ;; Save the end of the moribund snippet in case we need to revive it
@@ -3550,11 +3578,11 @@ deleted."
     (dolist (field (yas/snippet-fields snippet))
       (when (and (<= (yas/field-start field) (yas/mirror-start mirror))
                  (<= (yas/mirror-end mirror) (yas/field-end field))
-               (< min (yas/field-start field))
-               (< (yas/field-end field) max))
-          (setq min (yas/field-start field)
-                max (yas/field-end field))
-          (setf (yas/mirror-parent-field mirror) field)))))
+                 (< min (yas/field-start field))
+                 (< (yas/field-end field) max))
+        (setq min (yas/field-start field)
+              max (yas/field-end field))
+        (setf (yas/mirror-parent-field mirror) field)))))
 
 (defun yas/advance-end-maybe (fom newend)
   "Maybe advance FOM's end to NEWEND if it needs it.
@@ -4130,6 +4158,208 @@ Remaining args as in `yas/expand-snippet'."
                                     (gethash uuid (yas/table-uuidhash table)))))
     (when yas/current-template
       (yas/expand-snippet (yas/template-content yas/current-template)))))
+
+;;; yas/jit
+
+(defvar yas/jit-loads '()
+  "Alist of JIT loads for yas.")
+
+(defvar yas/get-jit-loads-again 't)
+
+(defcustom yas/jit-use-jit t
+  "Use JIT loading for Yasnippets"
+  :type 'boolean
+  :group 'yasnippet)
+
+(defcustom yas/jit-use-cache-dir nil
+  "Cache the directories used for Yasnippet."
+  :type 'boolean
+  :group 'yasnippet)
+
+(defcustom yas/jit-cache-snippets t
+  "Combine snippets of a directory into a single file for each mode."
+  :type 'boolean
+  :group 'yasnippet)
+
+(defcustom yas/jit-delete-cache-on-interactive-reload-all t
+  "Removes the snippet cache on a menu-based reload all."
+  :type 'boolean
+  :group 'yasnippet)
+
+(defcustom yas/jit-dir-cache-file "~/.emacs.d/.yas-jit-cache.el"
+  "The default dir for the yasnippet directories"
+  :type 'file
+  :group 'yasnippet)
+
+(defun yas/jit-cache ()
+  "Cache JIT loading to make it load even faster"
+  (with-temp-file yas/jit-dir-cache-file
+    (insert ";;Yasnippet JIT cache\n(setq yas/get-jit-loads-again nil)\n")
+    (insert (format  "(setq yas/jit-loads '(%s))"
+                     (mapconcat
+                      (lambda(a)
+                        (format "(%s \"%s\")" (symbol-name (nth 0 a))
+                                (abbreviate-file-name (nth 1 a))))
+                      yas/jit-loads
+                      "\n")))))
+
+(defun yas/jit-delete-cache ()
+  "Delete cache"
+  (interactive)
+  (when (file-readable-p yas/jit-dir-cache-file)
+    (delete-file yas/jit-dir-cache-file))
+  (let ((f (yas/jit-dir-snippet-cache (file-name-directory (buffer-file-name)))))
+    (message "Looking to delete cache: %s" f)
+    (when (file-readable-p f)
+      (delete-file f))))
+
+;;;###autoload
+(defun yas/get-jit-loads ()
+  "* Loads Snippet directories just in time.  Should speed up the start-up of Yasnippet"
+  (if (and yas/jit-use-cache-dir (file-readable-p yas/jit-dir-cache-file))
+      (progn
+        (load-file yas/jit-dir-cache-file)
+        (let ((major-mode 'text-mode))
+          (yas/jit-hook))
+        (setq yas/get-jit-loads-again nil))
+    (when yas/get-jit-loads-again
+      (let* ((dirs (yas/snippet-dirs))
+             files
+             modes
+             (files '())
+             (debug-on-error 't)
+             jit)
+        (when dirs
+          (mapc (lambda(x)
+                  (setq files (append files (directory-files x 't))))
+                (yas/snippet-dirs))
+          (setq modes
+                (remove-if-not
+                 #'(lambda(file)
+                     (and (file-directory-p file)
+                          (not (string-match "^[.]" (file-name-nondirectory file)))))
+                 (directory-files (pop dirs) 't)))
+          (setq jit (mapcar (lambda(x) (list (intern (file-name-nondirectory x)) x) ) modes))
+          ;; Now add more directories.
+          (when (> (length dirs) 0)
+            (mapc
+             (lambda(dir)
+               (let ( (modes (remove-if-not
+                              #'(lambda(file)
+                                  (and (file-directory-p file)
+                                       (not (string-match "^[.]" (file-name-nondirectory file)))))
+                              (directory-files dir 't))))
+                 (mapc (lambda(mode)
+                         (if (not (assoc (intern (file-name-nondirectory mode)) jit))
+                             (add-to-list 'jit (list (intern (file-name-nondirectory mode)) mode))
+                           (setq jit (mapcar
+                                      (lambda(m)
+                                        (if (eq (intern (file-name-nondirectory mode)) (car m))
+                                            (append m (list mode))
+                                          m))
+                                      jit))))
+                       modes)))
+             dirs))
+          (setq yas/jit-loads jit)
+          (when yas/jit-use-cache-dir
+            (yas/jit-cache))
+          (let ((major-mode 'text-mode))
+            (yas/jit-hook)))
+        (setq yas/get-jit-loads-again nil)))))
+
+(defun yas/jit-hook ()
+  "Have Yas load directories as needed."
+  (interactive)
+  (let ((modes-to-activate (list major-mode))
+        (mode major-mode)
+        (debug-on-error 't)
+        (debug-on-quit 't))
+    (while (setq mode (get mode 'derived-mode-parent))
+      (push mode modes-to-activate))
+    (when (fboundp 'yas/extra-modes)
+      (dolist (mode (yas/extra-modes))
+        (push mode modes-to-activate)))
+    (dolist (mode modes-to-activate)
+      (let ((test-mode mode)
+            (other-modes '())
+            cur-mode
+            tmp)
+        (setq tmp (assoc test-mode yas/jit-loads))
+        (while tmp
+          (setq yas/get-jit-loads-again 't) ;; Get loads since some of the JIT loads have left.
+          (setq cur-mode (pop tmp))
+          (setq yas/jit-loads
+                (remove-if
+                 #'(lambda(x)
+                     (eq cur-mode (car x)))
+                 yas/jit-loads))
+          (mapc (lambda(dir)
+                  (cond
+                   (yas/jit-cache-snippets
+                    (let ((snippet-cache (yas/jit-dir-snippet-cache dir)))
+                      (if (not (file-exists-p snippet-cache))
+                          (progn
+                            (message "Caching snippets in %s" dir)
+                            (yas/compile-snippets dir nil t)))
+                      (message "Loading snippets in cached file, %s " snippet-cache)
+                      (load-file snippet-cache)))
+                   (t
+                    (message "Loading snippet directory %s" dir)
+                    (yas/load-directory-1 dir cur-mode
+                                          (if (not (file-readable-p (concat dir "/.yas-parents")))
+                                              nil
+                                            (mapcar #'intern
+                                                    (split-string
+                                                     (with-temp-buffer
+                                                       (insert-file-contents (concat dir "/.yas-parents"))
+                                                       (buffer-substring-no-properties (point-min)
+                                                                                       (point-max)))))))))
+                  (when (file-exists-p (concat dir "/.yas-parents"))
+                    (with-temp-buffer
+                      (insert-file-contents (concat dir "/.yas-parents"))
+                      (mapc (lambda(x)
+                              (add-to-list 'other-modes x))
+                            (split-string (buffer-substring (point-min) (point-max)) nil 't)))))
+                tmp)
+          (setq other-modes (remove-if-not #'(lambda(x) (assoc (intern x) yas/jit-loads)) other-modes))
+          (setq tmp nil)
+          (when (> (length other-modes) 0)
+            (setq test-mode (intern (pop other-modes)))
+            (setq tmp (assoc test-mode yas/jit-loads))))))))
+
+;;;###autoload
+(defalias 'yas/jit-load 'yas/get-jit-loads)
+
+(defun yas/jit-hook-run ()
+  "* Run yas/jit-hook and setup hooks again..."
+  (add-hook 'after-change-major-mode-hook 'yas/jit-hook-run)
+  (add-hook 'find-file-hook 'yas/jit-hook-run)
+  (add-hook 'change-major-mode-hook 'yas/jit-hook-run)
+  (yas/jit-hook))
+
+(defun yas/jit-snippet-mode-hook ()
+  "Snippet mode hooks to delete the snippet caches."
+  (add-hook 'after-save-hook 'yas/jit-delete-cache nil t)
+  (add-hook 'write-contents-hook 'yas/jit-delete-cache nil t))
+
+(defun yas/jit-mode-activate ()
+  "Activates JIT loading"
+  (add-hook 'after-change-major-mode-hook 'yas/jit-hook-run)
+  (add-hook 'find-file-hook 'yas/jit-hook-run)
+  (add-hook 'change-major-mode-hook 'yas/jit-hook-run)
+  (add-hook 'write-contents-hook 'yas/jit-delete-cache)
+  
+  (add-hook 'snippet-mode-hook 'yas/jit-snippet-mode-hook))
+
+(when yas/jit-use-jit
+  (yas/jit-mode-activate))
+
+(defun yas/jit-dir-snippet-cache (dir)
+  "Returns the load-file based on the directory listed."
+  (expand-file-name ".yas-compiled-snippets.el" dir))
+
+
+
 
 
 ;;; Some hacks:
@@ -4141,7 +4371,7 @@ Remaining args as in `yas/expand-snippet'."
 (unless (>= emacs-major-version 23)
   (unless (fboundp 'region-active-p)
     (defun region-active-p ()  (and transient-mark-mode mark-active)))
-
+  
   (unless (fboundp 'locate-dominating-file)
     (defvar locate-dominating-stop-dir-regexp
       "\\`\\(?:[\\/][\\/][^\\/]+[\\/]\\|/\\(?:net\\|afs\\|\\.\\.\\.\\)/\\)\\'"
@@ -4152,7 +4382,7 @@ when it bumps into it.
 The default regexp prevents fruitless and time-consuming attempts to find
 special files in directories in which filenames are interpreted as hostnames,
 or mount points potentially requiring authentication as a different user.")
-
+    
     (defun locate-dominating-file (file name)
       "Look up the directory hierarchy from FILE for a file named NAME.
 Stop at the first parent directory containing a file NAME,
@@ -4161,7 +4391,7 @@ and return the directory.  Return nil if not found."
       ;; directory-files call is very costly, so we're much better off doing
       ;; multiple calls using the code in here.
       ;;
-      ;; Represent /home/luser/foo as ~/foo so that we don't try to look for
+      ;; Represent /home/luser/foo as ~/foo so that we don't try to look fo3r
       ;; `name' in /home or in /.
       (setq file (abbreviate-file-name file))
       (let ((root nil)
