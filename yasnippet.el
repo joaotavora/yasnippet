@@ -878,10 +878,8 @@ Do this unless `yas/dont-activate' is truish "
 
 (define-derived-mode snippet-mode text-mode "Snippet"
   "A mode for editing yasnippets"
-  (set-syntax-table (standard-syntax-table))
   (setq font-lock-defaults '(yas/font-lock-keywords))
   (set (make-local-variable 'require-final-newline) nil)
-  (use-local-map snippet-mode-map))
   (set (make-local-variable 'comment-start) "#")
   (set (make-local-variable 'comment-start-skip) "#+[\t ]*"))
 
