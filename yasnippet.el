@@ -29,7 +29,7 @@
 ;;; Commentary:
 
 ;; Basic steps to setup:
-;; 
+;;
 ;;    (add-to-list 'load-path
 ;;                 "~/.emacs.d/plugins/yasnippet")
 ;;    (require 'yasnippet)
@@ -899,7 +899,7 @@ Do this unless `yas/dont-activate' is truish "
   keybinding
   uuid
   menu-binding-pair
-  group      ;; as dictated by the #group: directive or .yas-make-groups 
+  group      ;; as dictated by the #group: directive or .yas-make-groups
   perm-group ;; as dictated by `yas/define-menu'
   )
 
@@ -1051,7 +1051,7 @@ Also takes care of adding and updaring to the associated menu."
       (yas/delete-from-keymap keymap (yas/template-uuid template))
 
       ;; Add necessary subgroups as necessary.
-      ;; 
+      ;;
       (dolist (subgroup group)
         (let ((subgroup-keymap (lookup-key keymap (vector (make-symbol subgroup)))))
           (unless (and subgroup-keymap
@@ -1060,9 +1060,9 @@ Also takes care of adding and updaring to the associated menu."
             (define-key keymap (vector (make-symbol subgroup))
               `(menu-item ,subgroup ,subgroup-keymap)))
             (setq keymap subgroup-keymap)))
-      
+
       ;; Add this entry to the keymap
-      ;; 
+      ;;
       (let ((menu-binding-pair (yas/snippet-menu-binding-pair-get-create template)))
         (define-key keymap (vector (make-symbol (yas/template-uuid template))) (car menu-binding-pair))))))
 
@@ -1304,7 +1304,7 @@ Guessing is done by looking up the MODE-SYMBOL's
                                            (and (not dont-search-parents)
                                                 (get major-mode
                                                      'derived-mode-parent)))))))))
-    (remove-duplicates 
+    (remove-duplicates
      (append mode-tables
              (mapcan #'yas/table-get-all-parents mode-tables)))))
 
@@ -1895,7 +1895,7 @@ not need to be a real mode."
   "Recursively delete items with UUID from KEYMAP and its submenus."
 
   ;; XXX: This used to skip any submenus named \"parent mode\"
-  ;; 
+  ;;
   ;; First of all, recursively enter submenus, i.e. the tree is
   ;; searched depth first so that stale submenus can be found in the
   ;; higher passes.
@@ -1906,10 +1906,10 @@ not need to be a real mode."
               (yas/delete-from-keymap (third (cdr item)) uuid)))
         (rest keymap))
   ;; Set the uuid entry to nil
-  ;; 
+  ;;
   (define-key keymap (vector (make-symbol uuid)) nil)
   ;; Destructively modify keymap
-  ;; 
+  ;;
   (setcdr keymap (delete-if #'(lambda (item)
                                 (or (null (cdr item))
                                     (and (keymapp (third (cdr item)))
@@ -2394,7 +2394,7 @@ With optional prefix argument KILL quit the window and buffer."
    ;;  neatly positioned,...
    ;;
    (yas/editing-template
-    (yas/define-snippets-1 (yas/parse-template (yas/template-file yas/editing-template)) 
+    (yas/define-snippets-1 (yas/parse-template (yas/template-file yas/editing-template))
                            (yas/template-table yas/editing-template)))
    ;; Try to use `yas/guessed-modes'. If we don't have that use the
    ;; value from `yas/compute-major-mode-and-parents'
@@ -2418,7 +2418,7 @@ With optional prefix argument KILL quit the window and buffer."
                              nil
                              (if (first yas/guessed-modes)
                                  (symbol-name (first yas/guessed-modes))))))))
-      (set (make-local-variable 'yas/editing-template) 
+      (set (make-local-variable 'yas/editing-template)
            (yas/define-snippets-1 (yas/parse-template buffer-file-name)
                                   table)))))
   ;; Now, offer to save this shit iff:
@@ -2435,7 +2435,7 @@ With optional prefix argument KILL quit the window and buffer."
                  (second yas/snippet-dirs)
                  (not (string-match (expand-file-name (first yas/snippet-dirs))
                                     (yas/template-file yas/editing-template)))))
-    
+
     (when (y-or-n-p "[yas] Looks like a library or new snippet. Save to new file? ")
       (let* ((option (first (yas/guess-snippet-directories (yas/template-table yas/editing-template))))
              (chosen (and option
@@ -2564,7 +2564,7 @@ With optional prefix argument KILL quit the window and buffer."
                  (setq group (or (yas/template-fine-group v)
                                  "(top level)"))
                  (when (yas/template-name v)
-                   
+
                    (aput 'groups-alist group (cons v (aget groups-alist group)))))
              (yas/table-uuidhash table))
     (dolist (group-and-templates groups-alist)
@@ -2575,7 +2575,7 @@ With optional prefix argument KILL quit the window and buffer."
           (let ((name (truncate-string-to-width (propertize (format "\\\\snippet `%s'" (yas/template-name p))
                                                             'yasnippet p)
                                                 50 0 ? "..."))
-                (group (prog1 group 
+                (group (prog1 group
                          (setq group (make-string (length group) ? ))))
                 (condition-string (let ((condition (yas/template-condition p)))
                                     (if (and condition
@@ -2587,7 +2587,7 @@ With optional prefix argument KILL quit the window and buffer."
                                       "(a)"))))
             (insert group " ")
             (insert condition-string " ")
-            (insert name 
+            (insert name
                     (if (string-match "\\.\\.\\.$" name)
                         "'"
                       " ")
@@ -2893,7 +2893,7 @@ Also create some protection overlays"
   (yas/place-overlays snippet field)
   (overlay-put yas/active-field-overlay 'yas/field field)
   (let ((number (yas/field-number field)))
-    ;; check for the special ${0: ...} field 
+    ;; check for the special ${0: ...} field
     (if (and number (zerop number))
         (progn
           (set-mark (yas/field-end field))
@@ -3008,7 +3008,7 @@ snippet, if so cleans up the whole snippet up."
          (snippet-exit-transform))
     (dolist (snippet snippets)
       (let ((active-field (yas/snippet-active-field snippet)))
-        (setq snippet-exit-transform (yas/snippet-force-exit snippet)) 
+        (setq snippet-exit-transform (yas/snippet-force-exit snippet))
         (cond ((or snippet-exit-transform
                    (not (and active-field (yas/field-contains-point-p active-field))))
                (setq snippets-left (delete snippet snippets-left))
@@ -4133,10 +4133,10 @@ Remaining args as in `yas/expand-snippet'."
 
 
 ;;; Some hacks:
-;;; 
-;; `locate-dominating-file' 
+;;;
+;; `locate-dominating-file'
 ;; `region-active-p'
-;; 
+;;
 ;; added for compatibility in emacs < 23
 (unless (>= emacs-major-version 23)
   (unless (fboundp 'region-active-p)
