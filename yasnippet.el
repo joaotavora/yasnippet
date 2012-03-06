@@ -746,7 +746,8 @@ all defined direct keybindings to the command
                      (cons table (yas/table-get-all-parents table))))
            yas/tables))
 
-(defun yas/direct-keymaps-set-vars ()
+(defun yas/modes-to-activate ()
+  "Compute list of mode symbols that are active for `yas/expand' and friends."
   (let ((modes-to-activate (list major-mode))
         (mode major-mode))
     (while (setq mode (get mode 'derived-mode-parent))
@@ -754,9 +755,10 @@ all defined direct keybindings to the command
     (dolist (mode (yas/extra-modes))
       (push mode modes-to-activate))
     (dolist (mode modes-to-activate)
-      (let ((name (intern (format "yas//direct-%s" mode))))
-        (set-default name nil)
-        (set (make-local-variable name) t)))))
+      (dolist (parent (get mode 'yas/parents))
+        
+        (pushnew parent modes-to-activate)))
+    modes-to-activate))
 
 (defvar yas/minor-mode-hook nil
   "Hook run when yas/minor-mode is turned on")
@@ -793,16 +795,28 @@ Key bindings:
          ;;
          (add-hook 'emulation-mode-map-alists 'yas/direct-keymaps)
          (add-hook 'post-command-hook 'yas/post-command-handler nil t)
-         (add-hook 'yas/minor-mode-hook 'yas/direct-keymaps-set-vars-runonce 'append))
+         (add-hook 'yas/minor-mode-hook 'yas/runonce-on-minor-mode-hook 'append))
         (t
          ;; Uninstall the direct keymaps and the post-command hook
          ;;
          (remove-hook 'post-command-hook 'yas/post-command-handler t)
          (remove-hook 'emulation-mode-map-alists 'yas/direct-keymaps))))
 
-(defun yas/direct-keymaps-set-vars-runonce ()
-  (yas/direct-keymaps-set-vars)
-  (remove-hook 'yas/minor-mode-hook 'yas/direct-keymaps-set-vars-runonce))
+(defun yas/runonce-on-minor-mode-hook ()
+  ;; Set the `yas//direct-%s' vars for direct keymap expansion
+  ;;
+  (dolist (mode (yas/modes-to-activate))
+    (let ((name (intern (format "yas//direct-%s" mode))))
+      (set-default name nil)
+      (set (make-local-variable name) t)))
+  ;; Perform JIT loads
+  ;;
+  (dolist (mode (yas/modes-to-activate))
+    (let ((forms (aget yas/scheduled-jit-loads mode)))
+      (message  "Evaling %s!!!" forms)))
+  ;; Remove self from the yas/minor-mode-hook
+  ;;
+  (remove-hook 'yas/minor-mode-hook 'yas/runonce-on-minor-mode-hook))
 
 (defvar yas/dont-activate nil
   "If non-nil don't let `yas/minor-mode-on' active yas for this buffer.
@@ -1282,28 +1296,16 @@ already have such a property."
             (yas/table-direct-keymap table)))
     table))
 
-(defun yas/get-snippet-tables (&optional mode-symbol dont-search-parents)
+(defun yas/get-snippet-tables ()
   "Get snippet tables for current buffer.
 
-Return a list of 'yas/table' objects indexed by mode.
-
-The modes are tried in this order: optional MODE-SYMBOL, then
-`yas/extra-modes', then `major-mode' then, unless
-DONT-SEARCH-PARENTS is non-nil, the guessed parent mode of either
-MODE-SYMBOL or `major-mode'.
-
-Guessing is done by looking up the MODE-SYMBOL's
-`derived-mode-parent' property, see also `derived-mode-p'."
+Return a list of `yas/table' objects indexed by mode. The list of
+modes to consider is returned by `yas/modes-to-activate'"
   (let ((mode-tables
          (remove nil
                  (mapcar #'(lambda (mode)
                              (gethash mode yas/tables))
-                 (remove nil (append (list mode-symbol)
-                                     (yas/extra-modes)
-                                     (list major-mode
-                                           (and (not dont-search-parents)
-                                                (get major-mode
-                                                     'derived-mode-parent)))))))))
+                         (yas/modes-to-activate)))))
     (remove-duplicates
      (append mode-tables
              (mapcan #'yas/table-get-all-parents mode-tables)))))
@@ -1643,11 +1645,16 @@ Below TOP-LEVEL-DIR., each directory is a mode name."
   (unless yas/snippet-dirs
     (setq yas/snippet-dirs top-level-dir))
   (dolist (dir (yas/subdirs top-level-dir))
-    (let ((major-mode-and-parents (yas/compute-major-mode-and-parents
-                                   (concat dir "/dummy"))))
-      (yas/load-directory-1 dir
-                            (car major-mode-and-parents)
-                            (cdr major-mode-and-parents))))
+    (let* ((major-mode-and-parents (yas/compute-major-mode-and-parents
+                                    (concat dir "/dummy")))
+           (mode-sym (car major-mode-and-parents))
+           (parents (cdr major-mode-and-parents)))
+      (message "HEY putting %s in %s" parents mode-sym)
+      (put mode-sym 'yas/parents parents)
+      (yas/schedule-jit mode-sym
+                        `(yas/load-directory-1 ,dir
+                                               ',mode-sym
+                                               ',(cdr major-mode-and-parents)))))
   (when (interactive-p)
     (message "[yas] Loaded snippets from %s." top-level-dir)))
 
@@ -1759,6 +1766,15 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
                                 (expand-file-name output-file))))
       (find-file-other-window output-file)))
 
+
+;;; JIT loading
+;;;
+
+(defvar yas/scheduled-jit-loads (list)
+  "Alist of mode-symbols to forms to be evaled when `yas/minor-mode' kicks in.")
+
+(defun yas/schedule-jit (mode form)
+  (aput 'yas/scheduled-jit-loads mode (cons form (aget yas/scheduled-jit-loads mode))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
