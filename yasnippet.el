@@ -1601,7 +1601,7 @@ TEMPLATES is a list of `yas/template'."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Loading snippets from files
 ;;
-(defun yas/load-directory-1 (directory &optional mode-sym parents no-compiled-snippets)
+(defun yas/load-directory-1 (directory mode-sym parents &optional no-compiled-snippets)
   "Recursively load snippet templates from DIRECTORY."
   (unless (file-exists-p (concat directory "/" ".yas-skip"))
     ;; Load .yas-setup.el files wherever we find them
@@ -1610,11 +1610,7 @@ TEMPLATES is a list of `yas/template'."
     (if (and (not no-compiled-snippets)
              (load (expand-file-name ".yas-compiled-snippets" directory) 'noerror))
         (message "Loading much faster .yas-compiled-snippets from %s" directory)
-      (let* ((major-mode-and-parents (if mode-sym
-                                         (cons mode-sym parents)
-                                       (yas/compute-major-mode-and-parents (concat directory
-                                                                                   "/dummy"))))
-             (default-directory directory)
+      (let* ((default-directory directory)
              (snippet-defs nil))
         ;; load the snippet files
         ;;
@@ -1626,15 +1622,15 @@ TEMPLATES is a list of `yas/template'."
                     snippet-defs))))
         (when (or snippet-defs
                   (cdr major-mode-and-parents))
-          (yas/define-snippets (car major-mode-and-parents)
+          (yas/define-snippets mode-sym
                                snippet-defs
-                               (cdr major-mode-and-parents)))
+                               parents))
         ;; now recurse to a lower level
         ;;
         (dolist (subdir (yas/subdirs directory))
           (yas/load-directory-1 subdir
-                                (car major-mode-and-parents)
-                                (cdr major-mode-and-parents)
+                                mode-sym
+                                parents
                                 t))))))
 
 (defun yas/load-directory (top-level-dir)
@@ -1647,7 +1643,11 @@ Below TOP-LEVEL-DIR., each directory is a mode name."
   (unless yas/snippet-dirs
     (setq yas/snippet-dirs top-level-dir))
   (dolist (dir (yas/subdirs top-level-dir))
-    (yas/load-directory-1 dir))
+    (let ((major-mode-and-parents (yas/compute-major-mode-and-parents
+                                   (concat dir "/dummy"))))
+      (yas/load-directory-1 dir
+                            (car major-mode-and-parents)
+                            (cdr major-mode-and-parents))))
   (when (interactive-p)
     (message "[yas] Loaded snippets from %s." top-level-dir)))
 
