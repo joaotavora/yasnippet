@@ -244,6 +244,7 @@ Naturally this is only valid when `yas/indent-line' is `auto'"
   :type 'boolean
   :group 'yasnippet)
 
+(defvar yas/trigger-key-overriding nil)
 (defvar yas/trigger-key-map (make-sparse-keymap)
   "Keymap used only for adding the trigger key to `minor-mode-overriding-map-alist'")
 
@@ -592,138 +593,133 @@ snippet itself contains a condition that returns the symbol
 (defvar yas/minor-mode-menu nil
   "Holds the YASnippet menu")
 
-(defun yas/init-minor-keymap ()
+(defvar yas/minor-mode nil)
+
+(defvar yas/minor-mode-map
   (let ((map (make-sparse-keymap)))
-    (easy-menu-define yas/minor-mode-menu
-      map
-      "Menu used when YAS/minor-mode is active."
-      '("YASnippet"
-        "----"
-        ["Expand trigger" yas/expand
-         :help "Possibly expand tab trigger before point"]
-        ["Insert at point..." yas/insert-snippet
-         :help "Prompt for an expandable snippet and expand it at point"]
-        ["New snippet..." yas/new-snippet
-         :help "Create a new snippet in an appropriate directory"]
-        ["Visit snippet file..." yas/visit-snippet-file
-         :help "Prompt for an expandable snippet and find its file"]
-        ["Find snippets..." yas/find-snippets
-         :help "Invoke `find-file' in the appropriate snippet directory"]
-        "----"
-        ("Snippet menu behaviour"
-         ["Visit snippets" (setq yas/visit-from-menu t)
-          :help "Visit snippets from the menu"
-          :active t :style radio   :selected yas/visit-from-menu]
-         ["Expand snippets" (setq yas/visit-from-menu nil)
-          :help "Expand snippets from the menu"
-          :active t :style radio :selected (not yas/visit-from-menu)]
-         "----"
-         ["Show \"Real\" modes only" (setq yas/use-menu 'real-modes)
-          :help "Show snippet submenus for modes that appear to be real major modes"
-          :active t :style radio   :selected (eq yas/use-menu 'real-modes)]
-         ["Show all modes" (setq yas/use-menu 't)
-          :help "Show one snippet submenu for each loaded table"
-          :active t :style radio   :selected (eq yas/use-menu 't)]
-         ["Abbreviate according to current mode" (setq yas/use-menu 'abbreviate)
-          :help "Show only snippet submenus for the current active modes"
-          :active t :style radio   :selected (eq yas/use-menu 'abbreviate)])
-        ("Indenting"
-         ["Auto" (setq yas/indent-line 'auto)
-          :help "Indent each line of the snippet with `indent-according-to-mode'"
-          :active t :style radio   :selected (eq yas/indent-line 'auto)]
-         ["Fixed" (setq yas/indent-line 'fixed)
-          :help "Indent the snippet to the current column"
-          :active t :style radio   :selected (eq yas/indent-line 'fixed)]
-         ["None" (setq yas/indent-line 'none)
-          :help "Don't apply any particular snippet indentation after expansion"
-          :active t :style radio   :selected (not (member yas/indent-line '(fixed auto)))]
-         "----"
-         ["Also auto indent first line" (setq yas/also-auto-indent-first-line
-                                              (not yas/also-auto-indent-first-line))
-          :help "When auto-indenting also, auto indent the first line menu"
-          :active (eq yas/indent-line 'auto)
-          :style toggle :selected yas/also-auto-indent-first-line]
-         )
-        ("Prompting method"
-         ["System X-widget" (setq yas/prompt-functions
-                                  (cons 'yas/x-prompt
-                                        (remove 'yas/x-prompt
-                                                yas/prompt-functions)))
-          :help "Use your windowing system's (gtk, mac, windows, etc...) default menu"
-          :active t :style radio   :selected (eq (car yas/prompt-functions)
-                                                 'yas/x-prompt)]
-         ["Dropdown-list" (setq yas/prompt-functions
-                                (cons 'yas/dropdown-prompt
-                                      (remove 'yas/dropdown-prompt
-                                              yas/prompt-functions)))
-          :help "Use a special dropdown list"
-          :active t :style radio   :selected (eq (car yas/prompt-functions)
-                                                 'yas/dropdown-prompt)]
-         ["Ido" (setq yas/prompt-functions
-                      (cons 'yas/ido-prompt
-                            (remove 'yas/ido-prompt
-                                    yas/prompt-functions)))
-          :help "Use an ido-style minibuffer prompt"
-          :active t :style radio   :selected (eq (car yas/prompt-functions)
-                                                 'yas/ido-prompt)]
-         ["Completing read" (setq yas/prompt-functions
-                                  (cons 'yas/completing-prompt
-                                        (remove 'yas/completing-prompt-prompt
-                                                yas/prompt-functions)))
-          :help "Use a normal minibuffer prompt"
-          :active t :style radio   :selected (eq (car yas/prompt-functions)
-                                                 'yas/completing-prompt-prompt)]
-         )
-        ("Misc"
-         ["Wrap region in exit marker"
-          (setq yas/wrap-around-region
-                (not yas/wrap-around-region))
-          :help "If non-nil automatically wrap the selected text in the $0 snippet exit"
-          :style toggle :selected yas/wrap-around-region]
-         ["Allow stacked expansions "
-          (setq yas/triggers-in-field
-                (not yas/triggers-in-field))
-          :help "If non-nil allow snippets to be triggered inside other snippet fields"
-          :style toggle :selected yas/triggers-in-field]
-         ["Revive snippets on undo "
-          (setq yas/snippet-revival
-                (not yas/snippet-revival))
-          :help "If non-nil allow snippets to become active again after undo"
-          :style toggle :selected yas/snippet-revival]
-         ["Good grace "
-          (setq yas/good-grace
-                (not yas/good-grace))
-          :help "If non-nil don't raise errors in bad embedded eslip in snippets"
-          :style toggle :selected yas/good-grace]
-         )
-        "----"
-        ["Load snippets..."  yas/load-directory
-         :help "Load snippets from a specific directory"]
-        ["Reload everything" yas/reload-all
-         :help "Cleanup stuff, reload snippets, rebuild menus"]
-        ["About"            yas/about
-         :help "Display some information about YASsnippet"]))
     ;; Now for the stuff that has direct keybindings
     ;;
     (define-key map "\C-c&\C-s" 'yas/insert-snippet)
     (define-key map "\C-c&\C-n" 'yas/new-snippet)
     (define-key map "\C-c&\C-v" 'yas/visit-snippet-file)
     (define-key map "\C-c&\C-f" 'yas/find-snippets)
-    map))
-
-(defvar yas/minor-mode-map (yas/init-minor-keymap)
+    map)
   "The keymap used when `yas/minor-mode' is active.")
 
+(easy-menu-define yas/minor-mode-menu yas/minor-mode-map
+  "Menu used when YAS/minor-mode is active."
+  '("YASnippet"
+    "----"
+    ["Expand trigger" yas/expand
+     :help "Possibly expand tab trigger before point"]
+    ["Insert at point..." yas/insert-snippet
+     :help "Prompt for an expandable snippet and expand it at point"]
+    ["New snippet..." yas/new-snippet
+     :help "Create a new snippet in an appropriate directory"]
+    ["Visit snippet file..." yas/visit-snippet-file
+     :help "Prompt for an expandable snippet and find its file"]
+    ["Find snippets..." yas/find-snippets
+     :help "Invoke `find-file' in the appropriate snippet directory"]
+    "----"
+    ("Snippet menu behaviour"
+     ["Visit snippets" (setq yas/visit-from-menu t)
+      :help "Visit snippets from the menu"
+      :active t :style radio   :selected yas/visit-from-menu]
+     ["Expand snippets" (setq yas/visit-from-menu nil)
+      :help "Expand snippets from the menu"
+      :active t :style radio :selected (not yas/visit-from-menu)]
+     "----"
+     ["Show \"Real\" modes only" (setq yas/use-menu 'real-modes)
+      :help "Show snippet submenus for modes that appear to be real major modes"
+      :active t :style radio   :selected (eq yas/use-menu 'real-modes)]
+     ["Show all modes" (setq yas/use-menu 't)
+      :help "Show one snippet submenu for each loaded table"
+      :active t :style radio   :selected (eq yas/use-menu 't)]
+     ["Abbreviate according to current mode" (setq yas/use-menu 'abbreviate)
+      :help "Show only snippet submenus for the current active modes"
+      :active t :style radio   :selected (eq yas/use-menu 'abbreviate)])
+    ("Indenting"
+     ["Auto" (setq yas/indent-line 'auto)
+      :help "Indent each line of the snippet with `indent-according-to-mode'"
+      :active t :style radio   :selected (eq yas/indent-line 'auto)]
+     ["Fixed" (setq yas/indent-line 'fixed)
+      :help "Indent the snippet to the current column"
+      :active t :style radio   :selected (eq yas/indent-line 'fixed)]
+     ["None" (setq yas/indent-line 'none)
+      :help "Don't apply any particular snippet indentation after expansion"
+      :active t :style radio   :selected (not (member yas/indent-line '(fixed auto)))]
+     "----"
+     ["Also auto indent first line" (setq yas/also-auto-indent-first-line
+                                          (not yas/also-auto-indent-first-line))
+      :help "When auto-indenting also, auto indent the first line menu"
+      :active (eq yas/indent-line 'auto)
+      :style toggle :selected yas/also-auto-indent-first-line]
+     )
+    ("Prompting method"
+     ["System X-widget" (setq yas/prompt-functions
+                              (cons 'yas/x-prompt
+                                    (remove 'yas/x-prompt
+                                            yas/prompt-functions)))
+      :help "Use your windowing system's (gtk, mac, windows, etc...) default menu"
+      :active t :style radio   :selected (eq (car yas/prompt-functions)
+                                             'yas/x-prompt)]
+     ["Dropdown-list" (setq yas/prompt-functions
+                            (cons 'yas/dropdown-prompt
+                                  (remove 'yas/dropdown-prompt
+                                          yas/prompt-functions)))
+      :help "Use a special dropdown list"
+      :active t :style radio   :selected (eq (car yas/prompt-functions)
+                                             'yas/dropdown-prompt)]
+     ["Ido" (setq yas/prompt-functions
+                  (cons 'yas/ido-prompt
+                        (remove 'yas/ido-prompt
+                                yas/prompt-functions)))
+      :help "Use an ido-style minibuffer prompt"
+      :active t :style radio   :selected (eq (car yas/prompt-functions)
+                                             'yas/ido-prompt)]
+     ["Completing read" (setq yas/prompt-functions
+                              (cons 'yas/completing-prompt
+                                    (remove 'yas/completing-prompt-prompt
+                                            yas/prompt-functions)))
+      :help "Use a normal minibuffer prompt"
+      :active t :style radio   :selected (eq (car yas/prompt-functions)
+                                             'yas/completing-prompt-prompt)]
+     )
+    ("Misc"
+     ["Wrap region in exit marker"
+      (setq yas/wrap-around-region
+            (not yas/wrap-around-region))
+      :help "If non-nil automatically wrap the selected text in the $0 snippet exit"
+      :style toggle :selected yas/wrap-around-region]
+     ["Allow stacked expansions "
+      (setq yas/triggers-in-field
+            (not yas/triggers-in-field))
+      :help "If non-nil allow snippets to be triggered inside other snippet fields"
+      :style toggle :selected yas/triggers-in-field]
+     ["Revive snippets on undo "
+      (setq yas/snippet-revival
+            (not yas/snippet-revival))
+      :help "If non-nil allow snippets to become active again after undo"
+      :style toggle :selected yas/snippet-revival]
+     ["Good grace "
+      (setq yas/good-grace
+            (not yas/good-grace))
+      :help "If non-nil don't raise errors in bad embedded eslip in snippets"
+      :style toggle :selected yas/good-grace]
+     )
+    "----"
+    ["Load snippets..."  yas/load-directory
+     :help "Load snippets from a specific directory"]
+    ["Reload everything" yas/reload-all
+     :help "Cleanup stuff, reload snippets, rebuild menus"]
+    ["About"            yas/about
+     :help "Display some information about YASsnippet"]))
+
+(defvar yas/trigger-key-active nil)
 (defun yas/trigger-key-reload (&optional override)
     "Rebind `yas/expand' to the new value of `yas/trigger-key'."
     (let ((override (yas/read-kbd-macro override)))
-      (aput 'minor-mode-overriding-map-alist
-            'yas/minor-mode
-            (if override
-                (let ((map (make-sparse-keymap)))
-                  (define-key map override 'yas/expand)
-                  map)
-              yas/trigger-key-map))))
+      ))
 
 (defvar yas/tables (make-hash-table)
   "A hash table of MAJOR-MODE symbols to `yas/table' objects.")
@@ -770,7 +766,7 @@ all defined direct keybindings to the command
 (define-minor-mode yas/minor-mode
   "Toggle YASnippet mode.
 
-When YASnippet mode is enabled, the `tas/trigger-key' key expands
+When YASnippet mode is enabled, the `yas/trigger-key' key expands
 snippets of code depending on the mode.
 
 With no argument, this command toggles the mode.
@@ -781,29 +777,33 @@ You can customize the key through `yas/trigger-key'.
 
 Key bindings:
 \\{yas/minor-mode-map}"
-  nil
-  ;; The indicator for the mode line.
-  " yas"
   :group 'yasnippet
+  :lighter " yas"
+  :keymap yas/minor-mode-map
   (cond (yas/minor-mode
-         ;; Reload the trigger key
+         ;; Install the trigger key binding
          ;;
-         (yas/trigger-key-reload)
+         (setq yas/trigger-key-overriding t)
+         (aput 'minor-mode-overriding-map-alist 'yas/trigger-key-overriding yas/trigger-key-map)
          ;; Install the direct keymaps in `emulation-mode-map-alists'
          ;; (we use `add-hook' even though it's not technically a hook,
          ;; but it works). Then define variables named after modes to
          ;; index `yas/direct-keymaps'.
-         ;;
-         ;; Also install the post-command-hook.
-         ;;
+         ;; 
          (add-hook 'emulation-mode-map-alists 'yas/direct-keymaps)
+         ;; Also install the post-command-hook and a run-once call to
+         ;; `yas/direct-keymaps-set-vars'.
+         ;;
          (add-hook 'post-command-hook 'yas/post-command-handler nil t)
          (add-hook 'yas/minor-mode-hook 'yas/direct-keymaps-set-vars-runonce 'append))
         (t
          ;; Uninstall the direct keymaps and the post-command hook
          ;;
          (remove-hook 'post-command-hook 'yas/post-command-handler t)
-         (remove-hook 'emulation-mode-map-alists 'yas/direct-keymaps))))
+         (remove-hook 'emulation-mode-map-alists 'yas/direct-keymaps)
+         ;; Uninstall the trigger key binding
+         ;;
+         (setq yas/trigger-key-overriding nil))))
 
 (defun yas/direct-keymaps-set-vars-runonce ()
   (yas/direct-keymaps-set-vars)
@@ -1672,12 +1672,6 @@ Below TOP-LEVEL-DIR., each directory is a mode name."
     ;;
     (setq yas/tables (make-hash-table))
     (setq yas/menu-table (make-hash-table))
-
-    ;; Init the `yas/minor-mode-map', taking care not to break the
-    ;; menu....
-    ;;
-    (setf (cdr yas/minor-mode-map)
-          (cdr (yas/init-minor-keymap)))
 
     ;; Reload the directories listed in `yas/snippet-dirs' or prompt
     ;; the user to select one.
