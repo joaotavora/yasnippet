@@ -721,44 +721,55 @@ With optional UNBIND-KEY, try to unbind that key from
     (define-key yas/minor-mode-map (read-kbd-macro yas/trigger-key) 'yas/expand)))
 
 (defvar yas/tables (make-hash-table)
-  "A hash table of MAJOR-MODE symbols to `yas/table' objects.")
+  "A hash table of mode symbols to `yas/table' objects.")
+
+(defvar yas/parents (make-hash-table)
+  "A hash table of mode symbols do lists of direct parent mode symbols.
+
+This list is populated when reading the \".yas-parents\" files
+found when traversing snippet directories with
+`yas/load-directory'.
+
+There might be additionalal parenting information stored in the
+`derived-mode-parent' property of some mode symbols, but that is
+not recorded here.")
 
 (defvar yas/direct-keymaps (list)
   "Keymap alist supporting direct snippet keybindings.
 
-This variable is is placed `emulation-mode-map-alists'.
+This variable is is placed in `emulation-mode-map-alists'.
 
-Its elements looks like (TABLE-NAME . KEYMAP) and are
-calculated when loading snippets. TABLE-NAME is a variable
-set buffer-locally when entering `yas/minor-mode'. KEYMAP binds
-all defined direct keybindings to the command
-`yas/expand-from-keymap', which acts similarly to `yas/expand'")
+Its elements looks like (TABLE-NAME . KEYMAP). They're
+instantiated on `yas/reload-all' but KEYMAP is added to only when
+loading snippets. `yas//direct-TABLE-NAME' is then a variable set
+buffer-locally when entering `yas/minor-mode'. KEYMAP binds all
+defined direct keybindings to the command
+`yas/expand-from-keymap' which then which snippet to expand.")
 
 (defun yas/direct-keymaps-reload ()
   "Force reload the direct keybinding for active snippet tables."
   (interactive)
   (setq yas/direct-keymaps nil)
   (maphash #'(lambda (name table)
-               (mapc #'(lambda (table)
-                         (push (cons (intern (format "yas//direct-%s" name))
-                                     (yas/table-direct-keymap table))
-                               yas/direct-keymaps))
-                     (cons table (yas/table-get-all-parents table))))
+               (push (cons (intern (format "yas//direct-%s" name))
+                           (yas/table-direct-keymap table))
+                     yas/direct-keymaps))
            yas/tables))
 
 (defun yas/modes-to-activate ()
-  "Compute list of mode symbols that are active for `yas/expand' and friends."
+  "Compute list of mode symbols that are active for `yas/expand'
+and friends."
   (let ((modes-to-activate (list major-mode))
         (mode major-mode))
     (while (setq mode (get mode 'derived-mode-parent))
       (push mode modes-to-activate))
     (dolist (mode (yas/extra-modes))
       (push mode modes-to-activate))
-    (dolist (mode modes-to-activate)
-      (dolist (parent (get mode 'yas/parents))
-        
-        (pushnew parent modes-to-activate)))
-    modes-to-activate))
+    (remove-duplicates
+     (append modes-to-activate
+             (mapcan #'(lambda (mode)
+                         (yas/all-parents mode))
+                     modes-to-activate)))))
 
 (defvar yas/minor-mode-hook nil
   "Hook run when yas/minor-mode is turned on")
@@ -795,28 +806,26 @@ Key bindings:
          ;;
          (add-hook 'emulation-mode-map-alists 'yas/direct-keymaps)
          (add-hook 'post-command-hook 'yas/post-command-handler nil t)
-         (add-hook 'yas/minor-mode-hook 'yas/runonce-on-minor-mode-hook 'append))
+         ;; Set the `yas//direct-%s' vars for direct keymap expansion
+         ;;
+         (dolist (mode (yas/modes-to-activate))
+           (let ((name (intern (format "yas//direct-%s" mode))))
+             (set-default name nil)
+             (set (make-local-variable name) t)))
+         ;; Perform JIT loads
+         ;;
+         (dolist (mode (yas/modes-to-activate))
+           (let ((forms (gethash mode yas/scheduled-jit-loads)))
+             (dolist (form forms)
+               (message  "[yas] Loading snippets for %s, just in time: %s!" mode form)
+               (eval form))
+             (remhash mode yas/scheduled-jit-loads))))
         (t
          ;; Uninstall the direct keymaps and the post-command hook
          ;;
          (remove-hook 'post-command-hook 'yas/post-command-handler t)
          (remove-hook 'emulation-mode-map-alists 'yas/direct-keymaps))))
 
-(defun yas/runonce-on-minor-mode-hook ()
-  ;; Set the `yas//direct-%s' vars for direct keymap expansion
-  ;;
-  (dolist (mode (yas/modes-to-activate))
-    (let ((name (intern (format "yas//direct-%s" mode))))
-      (set-default name nil)
-      (set (make-local-variable name) t)))
-  ;; Perform JIT loads
-  ;;
-  (dolist (mode (yas/modes-to-activate))
-    (let ((forms (aget yas/scheduled-jit-loads mode)))
-      (message  "Evaling %s!!!" forms)))
-  ;; Remove self from the yas/minor-mode-hook
-  ;;
-  (remove-hook 'yas/minor-mode-hook 'yas/runonce-on-minor-mode-hook))
 
 (defvar yas/dont-activate nil
   "If non-nil don't let `yas/minor-mode-on' active yas for this buffer.
@@ -845,10 +854,15 @@ Do this unless `yas/dont-activate' is truish "
   :group 'yasnippet
   :require 'yasnippet)
 
-(add-hook 'yas/global-mode-hook 'yas/reload-all-maybe)
-(defun yas/reload-all-maybe ()
-  (if yas/global-mode
-      (yas/reload-all)))
+(defadvice yas/global-mode (before yas/reload-with-jit (arg) activate)
+  (cond ((and arg
+              (numberp arg)
+              (> arg 1))
+         ;; explicitly enabling
+         (yas/reload-all 'with-jit))
+        ((not yas/global-mode)
+         ;; toggling
+         (yas/reload-all 'with-jit))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Major mode stuff
@@ -946,11 +960,6 @@ Has the following fields:
   and the latter means it's a direct keybinding. NAMEHASH is yet
   another hash of (NAME . TEMPLATE) where NAME is the snippet's
   name and TEMPLATE is a `yas/template' object.
-
-`yas/table-parents'
-
-  A list of tables considered parents of this table: i.e. when
-  searching for expansions they are searched as well.
 
 `yas/table-direct-keymap'
 
@@ -1153,12 +1162,11 @@ conditions to filter out potential expansions."
           (t
            (eq requirement result)))))
 
-(defun yas/table-get-all-parents (table)
-  "Returns a list of all parent tables of TABLE"
-  (let ((parents (yas/table-parents table)))
-    (when parents
-      (append (copy-list parents)
-              (mapcan #'yas/table-get-all-parents parents)))))
+(defun yas/all-parents (mode)
+  "Returns a list of all parent modes of MODE"
+  (let ((parents (gethash mode yas/parents)))
+    (append parents
+            (mapcan #'yas/all-parents parents))))
 
 (defun yas/table-templates (table)
   (when table
@@ -1282,11 +1290,7 @@ ensure your use `make-local-variable' when you set it.")
 (defvaralias 'yas/mode-symbol 'yas/extra-modes)
 
 (defun yas/table-get-create (mode)
-  "Get the snippet table corresponding to MODE.
-
-Optional DIRECTORY gets recorded as the default directory to
-search for snippet files if the retrieved/created table didn't
-already have such a property."
+  "Get or create the snippet table corresponding to MODE."
   (let ((table (gethash mode
                         yas/tables)))
     (unless table
@@ -1299,16 +1303,12 @@ already have such a property."
 (defun yas/get-snippet-tables ()
   "Get snippet tables for current buffer.
 
-Return a list of `yas/table' objects indexed by mode. The list of
-modes to consider is returned by `yas/modes-to-activate'"
-  (let ((mode-tables
-         (remove nil
-                 (mapcar #'(lambda (mode)
-                             (gethash mode yas/tables))
-                         (yas/modes-to-activate)))))
-    (remove-duplicates
-     (append mode-tables
-             (mapcan #'yas/table-get-all-parents mode-tables)))))
+Return a list of `yas/table' objects. The list of modes to
+consider is returned by `yas/modes-to-activate'"
+  (remove nil
+          (mapcar #'(lambda (mode-name)
+                      (gethash mode-name yas/tables))
+                  (yas/modes-to-activate))))
 
 (defun yas/menu-keymap-get-create (table)
   "Get or create the main menu keymap correspondong to MODE.
@@ -1579,7 +1579,7 @@ TEMPLATES is a list of `yas/template'."
         filtered-choices
         chosen
         d
-        (completion-fn (or completion-fn
+        (completion-fn (or completion-fnn
                            #'completing-read)))
     (dolist (choice choices)
       (setq d (or (and display-fn (funcall display-fn choice))
@@ -1603,7 +1603,7 @@ TEMPLATES is a list of `yas/template'."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Loading snippets from files
 ;;
-(defun yas/load-directory-1 (directory mode-sym parents &optional no-compiled-snippets)
+(defun yas/load-directory-1 (directory mode-sym &optional no-compiled-snippets)
   "Recursively load snippet templates from DIRECTORY."
   (unless (file-exists-p (concat directory "/" ".yas-skip"))
     ;; Load .yas-setup.el files wherever we find them
@@ -1611,7 +1611,7 @@ TEMPLATES is a list of `yas/template'."
     (load (expand-file-name ".yas-setup" directory) 'noerror)
     (if (and (not no-compiled-snippets)
              (load (expand-file-name ".yas-compiled-snippets" directory) 'noerror))
-        (message "Loading much faster .yas-compiled-snippets from %s" directory)
+        (message "[yas] Loading much faster .yas-compiled-snippets from %s" directory)
       (let* ((default-directory directory)
              (snippet-defs nil))
         ;; load the snippet files
@@ -1625,14 +1625,12 @@ TEMPLATES is a list of `yas/template'."
         (when (or snippet-defs
                   (cdr major-mode-and-parents))
           (yas/define-snippets mode-sym
-                               snippet-defs
-                               parents))
+                               snippet-defs))
         ;; now recurse to a lower level
         ;;
         (dolist (subdir (yas/subdirs directory))
           (yas/load-directory-1 subdir
                                 mode-sym
-                                parents
                                 t))))))
 
 (defun yas/load-directory (top-level-dir)
@@ -1649,12 +1647,13 @@ Below TOP-LEVEL-DIR., each directory is a mode name."
                                     (concat dir "/dummy")))
            (mode-sym (car major-mode-and-parents))
            (parents (cdr major-mode-and-parents)))
-      (message "HEY putting %s in %s" parents mode-sym)
-      (put mode-sym 'yas/parents parents)
+      (puthash mode-sym (remove-duplicates
+                         (append parents
+                                 (gethash mode-sym yas/parents)))
+               yas/parents)
       (yas/schedule-jit mode-sym
                         `(yas/load-directory-1 ,dir
-                                               ',mode-sym
-                                               ',(cdr major-mode-and-parents)))))
+                                               ',mode-sym))))
   (when (interactive-p)
     (message "[yas] Loaded snippets from %s." top-level-dir)))
 
@@ -1666,14 +1665,19 @@ Below TOP-LEVEL-DIR., each directory is a mode name."
         (yas/load-directory directory))
     (call-interactively 'yas/load-directory)))
 
-(defun yas/reload-all (&optional interactive)
+(defun yas/reload-all (&optional with-jit)
   "Reload all snippets and rebuild the YASnippet menu. "
   (interactive "p")
   (let ((errors))
-    ;; Empty all snippet tables and all menu tables
+    ;; Empty all snippet tables, parenting info and all menu tables
     ;;
     (setq yas/tables (make-hash-table))
+    (setq yas/parents (make-hash-table))
     (setq yas/menu-table (make-hash-table))
+    
+    ;; Cancel all pending 'yas/scheduled-jit-loads'
+    ;;
+    (setq yas/scheduled-jit-loads (make-hash-table))
 
     ;; Init the `yas/minor-mode-map', taking care not to break the
     ;; menu....
@@ -1729,7 +1733,7 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
   (let ((default-directory input-dir))
     (with-temp-file (setq output-file (or output-file ".yas-compiled-snippets.el"))
       (flet ((yas/define-snippets
-              (mode snippets &optional parent-or-parents)
+              (mode snippets)
               (insert (format ";;; %s - automatically compiled snippets for `%s' , do not edit!\n"
                               (file-name-nondirectory output-file) mode))
               (insert ";;;\n")
@@ -1759,7 +1763,7 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
                 (insert (format ";;; %s - automatically compiled snippets for `%s' end here\n"
                                 (file-name-nondirectory output-file) mode))
                 (insert ";;;"))))
-        (yas/load-directory-1 input-dir nil nil 'no-compiled-snippets))))
+        (yas/load-directory-1 input-dir nil 'no-compiled-snippets))))
   
   (if (and (called-interactively-p)
            (yes-or-no-p (format "Open the resulting file (%s)? "
@@ -1770,11 +1774,14 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
 ;;; JIT loading
 ;;;
 
-(defvar yas/scheduled-jit-loads (list)
+(defvar yas/scheduled-jit-loads (make-hash-table)
   "Alist of mode-symbols to forms to be evaled when `yas/minor-mode' kicks in.")
 
 (defun yas/schedule-jit (mode form)
-  (aput 'yas/scheduled-jit-loads mode (cons form (aget yas/scheduled-jit-loads mode))))
+  (puthash mode
+           (cons form
+                 (gethash mode yas/scheduled-jit-loads))
+           yas/scheduled-jit-loads))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1787,7 +1794,7 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
                    yas/version
                    ") -- pluskid <pluskid@gmail.com>/joaotavora <joaotavora@gmail.com>")))
 
-(defun yas/define-snippets (mode snippets &optional parent-mode)
+(defun yas/define-snippets (mode snippets)
   "Define SNIPPETS for MODE.
 
 SNIPPETS is a list of snippet definitions, each taking the
@@ -1813,32 +1820,9 @@ UUID is the snippets \"unique-id\". Loading a second snippet file
 with the same uuid replaced the previous snippet.
 
 You can use `yas/parse-template' to return such lists based on
-the current buffers contents.
-
-Optional PARENT-MODE can be used to specify the parent tables of
-MODE. It can be a mode symbol of a list of mode symbols. It does
-not need to be a real mode."
-  ;; X) `snippet-table' is created or retrieved for MODE, same goes
-  ;;    for the list of snippet tables `parent-tables'.
-  ;;
+the current buffers contents."
   (let ((snippet-table (yas/table-get-create mode))
-        (parent-tables (mapcar #'yas/table-get-create
-                               (if (listp parent-mode)
-                                   parent-mode
-                                 (list parent-mode))))
         (template nil))
-    ;; X) Connect `snippet-table' with `parent-tables'.
-    ;;
-    ;; TODO: this should be a remove-duplicates of the concatenation
-    ;; of `snippet-table's existings parents with the new parents...
-    ;;
-    (dolist (parent parent-tables)
-      (unless (find parent (yas/table-parents snippet-table))
-        (push parent
-              (yas/table-parents snippet-table))))
-
-    ;; X) Now, iterate for evey snippet def list
-    ;;
     (dolist (snippet snippets)
       (setq template (yas/define-snippets-1 snippet
                                             snippet-table)))
@@ -1990,7 +1974,7 @@ ommited from MODE's menu, even if they're manually loaded.
            (define-key keymap (vector (gensym))
              '(menu-item "----")))
           (t
-           (message "[yas] don't know anything about menu entry %s" (first e))))))
+           (message "[yas] Don't know anything about menu entry %s" (first e))))))
 
 (defun yas/define (mode key template &optional name condition group)
   "Define a snippet.  Expanding KEY into TEMPLATE.
@@ -2480,7 +2464,7 @@ With optional prefix argument KILL quit the window and buffer."
                              (fboundp (car major-mode-and-parent))
                              (car major-mode-and-parent))
                         (first yas/guessed-modes)
-                        (intern (read-from-minibuffer "[yas] please input a mode: "))))
+                        (intern (read-from-minibuffer "[yas] Please input a mode: "))))
          (yas/current-template
           (and parsed
                (fboundp test-mode)
@@ -2666,7 +2650,7 @@ If found, the content of subexp group SUBEXP (default 0) is
 
 Otherwise throw exception."
   (when (and yas/moving-away-p (notany #'(lambda (pos) (string= pos yas/text)) possibilities))
-    (yas/throw (format "[yas] field only allows %s" possibilities))))
+    (yas/throw (format "[yas] Field only allows %s" possibilities))))
 
 (defun yas/field-value (number)
   "Get the string for field with NUMBER.
@@ -3007,7 +2991,7 @@ snippet as ordinary text."
       ;; again from `yas/take-care-of-redo'....
       (setf (yas/snippet-fields snippet) nil)))
 
-  (message "[yas] snippet %s exited." (yas/snippet-id snippet)))
+  (message "[yas] Snippet %s exited." (yas/snippet-id snippet)))
 
 (defun yas/safely-run-hooks (hook-var)
   (condition-case error
@@ -3696,7 +3680,7 @@ SNIPPET-MARKERS."
       (widen)
       (condition-case err
           (indent-according-to-mode)
-        (error (message "[yas] warning: yas/indent-according-to-mode habing problems running %s" indent-line-function)
+        (error (message "[yas] warning: `yas/indent-according-to-mode' having problems running %s" indent-line-function)
                nil)))
     (mapc #'(lambda (marker)
               (set-marker marker (point)))
@@ -4039,7 +4023,7 @@ that the rest of `yas/post-command-handler' runs.")
                   (apply (car fn-and-args)
                          (cdr fn-and-args)))
               yas/post-command-runonce-actions)
-      (error (message "[yas] problem running `yas/post-command-runonce-actions'!")))
+      (error (message "[yas] Problem running `yas/post-command-runonce-actions'!")))
     (setq yas/post-command-runonce-actions nil))
   (cond (yas/protection-violation
          (goto-char yas/protection-violation)
