@@ -1654,10 +1654,17 @@ Below TOP-LEVEL-DIR., each directory is a mode name."
 (defun yas/load-snippet-dirs ()
   "Reload the directories listed in `yas/snippet-dirs' or
    prompt the user to select one."
-  (if yas/snippet-dirs
-      (dolist (directory (reverse (yas/snippet-dirs)))
-        (yas/load-directory directory))
-    (call-interactively 'yas/load-directory)))
+  (let (errors)
+    (if yas/snippet-dirs
+        (dolist (directory (reverse (yas/snippet-dirs)))
+          (condition-case oops
+              (progn
+                (yas/load-directory directory)
+                (message "[yas] Loaded %s" directory))
+            (error (push oops errors)
+                   (message "[yas] Check your `yas/snippet-dirs': %s" (second oops)))))
+      (call-interactively 'yas/load-directory))
+    errors))
 
 (defun yas/reload-all (&optional interactive)
   "Reload all snippets and rebuild the YASnippet menu. "
@@ -1677,10 +1684,7 @@ Below TOP-LEVEL-DIR., each directory is a mode name."
     ;; Reload the directories listed in `yas/snippet-dirs' or prompt
     ;; the user to select one.
     ;;
-    (condition-case oops
-        (yas/load-snippet-dirs)
-      (error (push oops errors)
-             (message "[yas] Check your `yas/snippet-dirs': %s" (second oops))))
+    (setq errors (yas/load-snippet-dirs))
     ;; Reload the direct keybindings
     ;;
     (yas/direct-keymaps-reload)
