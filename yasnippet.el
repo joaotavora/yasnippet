@@ -1396,6 +1396,8 @@ Here's a list of currently recognized directives:
                    (setq binding (match-string-no-properties 2)))))
       (setq template
             (buffer-substring-no-properties (point-min) (point-max))))
+    (unless (or key binding)
+      (setq key (and file (file-name-nondirectory file))))
     (when (eq type 'command)
       (setq template (yas/read-lisp (concat "(progn" template ")"))))
     (when group
