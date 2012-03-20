@@ -109,6 +109,34 @@ TODO: correct this bug!"
                      "brother from another mother") ;; no newline should be here!
             )))
 
+;;; Loading
+;;;
+(ert-deftest basic-loading ()
+  "Test basic loading and expansion of snippets"
+  (yas/saving-variables
+   (with-snippet-dirs
+    '((".emacs.d/snippets"
+       ("c-mode"
+        (".yas-parents" . "cc-mode")
+        ("printf" . "printf($1);"))
+       ("emacs-lisp-mode" ("ert-deftest" . "(ert-deftest ${1:name} () $0)"))
+       ("lisp-interaction-mode" (".yas-parents" . "emacs-lisp-mode")))
+      ("library/snippets"
+       ("c-mode" (".yas-parents" . "c++-mode"))
+       ("cc-mode" ("def" . "# define"))
+       ("emacs-lisp-mode" ("dolist" . "(dolist)"))
+       ("lisp-interaction-mode" ("sc" . "brother from another mother"))))
+    (yas/reload-all)
+    (with-temp-buffer
+      (lisp-interaction-mode)
+      (yas/minor-mode 1)
+      (insert "sc")
+      (ert-simulate-command '(yas/expand))
+      (should (string= (buffer-substring-no-properties (point-min) (point-max))
+                       "brother from another mother"))))))
+
+
+
 ;;; Helpers
 ;;; 
 
@@ -117,6 +145,43 @@ TODO: correct this bug!"
   (do ((i 0 (1+ i)))
       ((= i (length string)))
     (insert (aref string i))))
+
+(defun yas/make-file-or-dirs (ass)
+  (let ((file-or-dir-name (car ass))
+        (content (cdr ass)))
+    (cond ((listp content)
+           (make-directory file-or-dir-name 'parents)
+           (let ((default-directory (concat default-directory "/" file-or-dir-name)))
+             (mapc #'yas/make-file-or-dirs content)))
+          ((stringp content)
+           (with-current-buffer (find-file file-or-dir-name)
+             (insert content)
+             (save-buffer)
+             (kill-buffer)))
+          (t
+           (message "[yas] oops don't know this content")))))
+
+
+(defun yas/variables ()
+  (let ((syms))
+    (mapatoms #'(lambda (sym)
+                  (if (and (string-match "^yas/[^/]" (symbol-name sym))
+                           (boundp sym))
+                      (push sym syms))))
+    syms))
+
+
+(defmacro yas/saving-variables (&rest body)
+  `(let ,(mapcar #'(lambda (sym)
+                     `(,sym ,sym))
+                 (yas/variables))
+     ,@body))
+
+(defmacro with-snippet-dirs (dirs &rest body)
+  `(let ((default-directory (make-temp-file "yasnippet-fixture" t)))
+     (setq yas/snippet-dirs ',(mapcar #'car (cadr dirs)))
+     (mapc #'yas/make-file-or-dirs ,dirs)
+     ,@body))
 
 
 (provide 'yasnippet-tests)
