@@ -889,7 +889,6 @@ Do this unless `yas/dont-activate' is truish "
 
 (defstruct (yas/template (:constructor yas/make-blank-template))
   "A template for a snippet."
-  table
   key
   content
   name
@@ -901,6 +900,7 @@ Do this unless `yas/dont-activate' is truish "
   menu-binding-pair
   group      ;; as dictated by the #group: directive or .yas-make-groups
   perm-group ;; as dictated by `yas/define-menu'
+  table
   )
 
 (defun yas/populate-template (template &rest args)
