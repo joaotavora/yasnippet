@@ -1093,8 +1093,7 @@ string and TEMPLATE is a `yas/template' structure."
           (save-match-data
             (eval condition))))
     (error (progn
-             (message (format "[yas] error in condition evaluation: %s"
-                              (error-message-string err)))
+             (yas/message 1 "Error in condition evaluation: %s" (error-message-string err))
              nil))))
 
 
@@ -1216,8 +1215,8 @@ a list of modes like this to help the judgement."
                               (when result
                                 (format "%s" result))))))
                     (error (if yas/good-grace
-                               (format "[yas] elisp error! %s" (error-message-string err))
-                             (error (format "[yas] elisp error: %s"
+                               (yas/format "elisp error! %s" (error-message-string err))
+                             (error (yas/format "elisp error: %s"
                                             (error-message-string err)))))))))
     (when (and (consp retval)
                (eq 'yas/exception (car retval)))
@@ -1228,8 +1227,8 @@ a list of modes like this to help the judgement."
   (condition-case err
       (eval form)
     (error (if yas/good-grace
-               (format "[yas] elisp error! %s" (error-message-string err))
-             (error (format "[yas] elisp error: %s"
+               (yas/format "elisp error! %s" (error-message-string err))
+             (error (yas/format "elisp error: %s"
                             (error-message-string err)))))))
 
 (defun yas/read-lisp (string &optional nil-on-error)
@@ -1252,7 +1251,7 @@ return an expression that when evaluated will issue an error."
                        (read-kbd-macro keybinding 'need-vector))))
           res)
       (error
-       (message "[yas] warning: keybinding \"%s\" invalid since %s."
+       (yas/message 3 "warning: keybinding \"%s\" invalid since %s."
                 keybinding (error-message-string err))
        nil))))
 
@@ -1651,7 +1650,7 @@ Below TOP-LEVEL-DIR., each directory is a mode name."
                             (car major-mode-and-parents)
                             (cdr major-mode-and-parents))))
   (when (interactive-p)
-    (message "[yas] Loaded snippets from %s." top-level-dir)))
+    (yas/message 3 "Loaded snippets from %s." top-level-dir)))
 
 (defun yas/load-snippet-dirs ()
   "Reload the directories listed in `yas/snippet-dirs' or
@@ -1662,9 +1661,9 @@ Below TOP-LEVEL-DIR., each directory is a mode name."
           (condition-case oops
               (progn
                 (yas/load-directory directory)
-                (message "[yas] Loaded %s" directory))
+                (yas/message 3 "Loaded %s" directory))
             (error (push oops errors)
-                   (message "[yas] Check your `yas/snippet-dirs': %s" (second oops)))))
+                   (yas/message 3 "Check your `yas/snippet-dirs': %s" (second oops)))))
       (call-interactively 'yas/load-directory))
     errors))
 
@@ -1690,7 +1689,7 @@ Below TOP-LEVEL-DIR., each directory is a mode name."
     ;; Reload the direct keybindings
     ;;
     (yas/direct-keymaps-reload)
-    (message "[yas] Reloaded everything...%s." (if errors " (some errors, check *Messages*)" ""))))
+    (yas/message 3 "Reloaded everything...%s." (if errors " (some errors, check *Messages*)" ""))))
 
 (defun yas/quote-string (string)
   "Escape and quote STRING.
@@ -1980,7 +1979,7 @@ ommited from MODE's menu, even if they're manually loaded.
            (define-key keymap (vector (gensym))
              '(menu-item "----")))
           (t
-           (message "[yas] don't know anything about menu entry %s" (first e))))))
+           (yas/message 3 "don't know anything about menu entry %s" (first e))))))
 
 (defun yas/define (mode key template &optional name condition group)
   "Define a snippet.  Expanding KEY into TEMPLATE.
@@ -2179,7 +2178,7 @@ by condition."
                             (car where)
                             (cdr where)
                             (yas/template-expand-env yas/current-template))
-      (message "[yas] No snippets can be inserted here!"))))
+      (yas/message 3 "No snippets can be inserted here!"))))
 
 (defun yas/visit-snippet-file ()
   "Choose a snippet to edit, selection like `yas/insert-snippet'.
@@ -2268,7 +2267,7 @@ where snippets of table might exist."
   (or (some #'(lambda (dir) (when (file-directory-p dir) dir)) (cdr table-and-dirs))
       (let ((candidate (first (cdr table-and-dirs))))
         (unless (file-writable-p (file-name-directory candidate))
-          (error "[yas] %s is not writable." candidate))
+          (error (yas/format "%s is not writable." candidate)))
         (if (y-or-n-p (format "Guessed directory (%s) for%s%s table \"%s\" does not exist! Create? "
                               candidate
                               (if (gethash (intern (yas/table-name (car table-and-dirs)))
@@ -2442,7 +2441,7 @@ With optional prefix argument KILL quit the window and buffer."
                  (not (string-match (expand-file-name (first yas/snippet-dirs))
                                     (yas/template-file yas/editing-template)))))
 
-    (when (y-or-n-p "[yas] Looks like a library or new snippet. Save to new file? ")
+    (when (y-or-n-p (yas/format "Looks like a library or new snippet. Save to new file? "))
       (let* ((option (first (yas/guess-snippet-directories (yas/template-table yas/editing-template))))
              (chosen (and option
                           (yas/make-directory-maybe option))))
@@ -2456,7 +2455,7 @@ With optional prefix argument KILL quit the window and buffer."
             (setf (yas/template-file yas/editing-template) buffer-file-name))))))
   (when kill
     (quit-window kill))
-  (message "[yas] Snippet \"%s\" loaded for %s."
+  (yas/message 3 "Snippet \"%s\" loaded for %s."
            (yas/template-name yas/editing-template)
            (yas/table-name (yas/template-table yas/editing-template))))
 
@@ -2470,7 +2469,7 @@ With optional prefix argument KILL quit the window and buffer."
                              (fboundp (car major-mode-and-parent))
                              (car major-mode-and-parent))
                         (first yas/guessed-modes)
-                        (intern (read-from-minibuffer "[yas] please input a mode: "))))
+                        (intern (read-from-minibuffer (yas/format "Please input a mode: ")))))
          (yas/current-template
           (and parsed
                (fboundp test-mode)
@@ -2495,7 +2494,7 @@ With optional prefix argument KILL quit the window and buffer."
                         (require 'yasnippet-debug nil t))
                (add-hook 'post-command-hook 'yas/debug-snippet-vars nil t))))
           (t
-           (message "[yas] Cannot test snippet for unknown major mode")))))
+           (yas/message 3 "Cannot test snippet for unknown major mode")))))
 
 (defun yas/template-fine-group (template)
   (car (last (or (yas/template-group template)
@@ -2656,7 +2655,7 @@ If found, the content of subexp group SUBEXP (default 0) is
 
 Otherwise throw exception."
   (when (and yas/moving-away-p (notany #'(lambda (pos) (string= pos yas/text)) possibilities))
-    (yas/throw (format "[yas] field only allows %s" possibilities))))
+    (yas/throw (yas/format "Field only allows %s" possibilities))))
 
 (defun yas/field-value (number)
   "Get the string for field with NUMBER.
@@ -2997,13 +2996,13 @@ snippet as ordinary text."
       ;; again from `yas/take-care-of-redo'....
       (setf (yas/snippet-fields snippet) nil)))
 
-  (message "[yas] snippet %s exited." (yas/snippet-id snippet)))
+  (yas/message 3 "snippet %s exited." (yas/snippet-id snippet)))
 
 (defun yas/safely-run-hooks (hook-var)
   (condition-case error
       (run-hooks hook-var)
     (error
-     (message "[yas] %s error: %s" hook-var (error-message-string error)))))
+     (yas/message 3 "%s error: %s" hook-var (error-message-string error)))))
 
 
 (defun yas/check-commit-snippet ()
@@ -3402,7 +3401,7 @@ considered when expanding the snippet."
              (when first-field
                (sit-for 0) ;; fix issue 125
                (yas/move-to-field snippet first-field)))
-           (message "[yas] snippet expanded.")
+           (yas/message 3 "snippet expanded.")
            t))))
 
 (defun yas/take-care-of-redo (beg end snippet)
@@ -3686,7 +3685,7 @@ SNIPPET-MARKERS."
       (widen)
       (condition-case err
           (indent-according-to-mode)
-        (error (message "[yas] warning: yas/indent-according-to-mode habing problems running %s" indent-line-function)
+        (error (yas/message 3 "warning: yas/indent-according-to-mode habing problems running %s" indent-line-function)
                nil)))
     (mapc #'(lambda (marker)
               (set-marker marker (point)))
@@ -4029,7 +4028,7 @@ that the rest of `yas/post-command-handler' runs.")
                   (apply (car fn-and-args)
                          (cdr fn-and-args)))
               yas/post-command-runonce-actions)
-      (error (message "[yas] problem running `yas/post-command-runonce-actions'!")))
+      (error (yas/message 3 "problem running `yas/post-command-runonce-actions'!")))
     (setq yas/post-command-runonce-actions nil))
   (cond (yas/protection-violation
          (goto-char yas/protection-violation)
@@ -4136,6 +4135,18 @@ Remaining args as in `yas/expand-snippet'."
                                     (gethash uuid (yas/table-uuidhash table)))))
     (when yas/current-template
       (yas/expand-snippet (yas/template-content yas/current-template)))))
+
+;;; Utils
+;;;
+
+(defvar yas/verbosity 4
+  "Log level for `yas/message' 4 means trace most anything, 0 means nothing.")
+(defun yas/message (level message &rest args)
+  (when (> yas/verbosity level)
+    (message (apply #'yas/format message args))))
+
+(defun yas/format (format-control &rest format-args)
+  (apply #'format (concat "[yas] " format-control) format-args))
 
 
 ;;; Some hacks:
