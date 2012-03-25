@@ -917,7 +917,6 @@ Do this unless `yas/dont-activate' is truish "
 
 (defstruct (yas/template (:constructor yas/make-blank-template))
   "A template for a snippet."
-  table
   key
   content
   name
@@ -929,6 +928,7 @@ Do this unless `yas/dont-activate' is truish "
   menu-binding-pair
   group      ;; as dictated by the #group: directive or .yas-make-groups
   perm-group ;; as dictated by `yas/define-menu'
+  table
   )
 
 (defun yas/populate-template (template &rest args)
@@ -1398,6 +1398,8 @@ Here's a list of currently recognized directives:
                    (setq binding (match-string-no-properties 2)))))
       (setq template
             (buffer-substring-no-properties (point-min) (point-max))))
+    (unless (or key binding)
+      (setq key (and file (file-name-nondirectory file))))
     (when (eq type 'command)
       (setq template (yas/read-lisp (concat "(progn" template ")"))))
     (when group
@@ -1660,10 +1662,17 @@ Below TOP-LEVEL-DIR., each directory is a mode name."
 (defun yas/load-snippet-dirs ()
   "Reload the directories listed in `yas/snippet-dirs' or
    prompt the user to select one."
-  (if yas/snippet-dirs
-      (dolist (directory (reverse (yas/snippet-dirs)))
-        (yas/load-directory directory))
-    (call-interactively 'yas/load-directory)))
+  (let (errors)
+    (if yas/snippet-dirs
+        (dolist (directory (reverse (yas/snippet-dirs)))
+          (condition-case oops
+              (progn
+                (yas/load-directory directory)
+                (message "[yas] Loaded %s" directory))
+            (error (push oops errors)
+                   (message "[yas] Check your `yas/snippet-dirs': %s" (second oops)))))
+      (call-interactively 'yas/load-directory))
+    errors))
 
 (defun yas/reload-all (&optional with-jit)
   "Reload all snippets and rebuild the YASnippet menu. "
@@ -1688,10 +1697,7 @@ Below TOP-LEVEL-DIR., each directory is a mode name."
     ;; Reload the directories listed in `yas/snippet-dirs' or prompt
     ;; the user to select one.
     ;;
-    (condition-case oops
-        (yas/load-snippet-dirs)
-      (error (push oops errors)
-             (message "[yas] Check your `yas/snippet-dirs': %s" (second oops))))
+    (setq errors (yas/load-snippet-dirs))
     ;; Reload the direct keybindings
     ;;
     (yas/direct-keymaps-reload)
