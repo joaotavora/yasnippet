@@ -1624,8 +1624,7 @@ TEMPLATES is a list of `yas/template'."
               (insert-file-contents file nil nil nil t)
               (push (yas/parse-template file)
                     snippet-defs))))
-        (when (or snippet-defs
-                  (cdr major-mode-and-parents))
+        (when snippet-defs
           (yas/define-snippets mode-sym
                                snippet-defs))
         ;; now recurse to a lower level
