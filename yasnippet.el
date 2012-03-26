@@ -2940,7 +2940,7 @@ Also create some protection overlays"
   (mapc #'(lambda (snippet)
             (yas/exit-snippet snippet)
             (yas/check-commit-snippet))
-        (yas/snippets-at-point)))
+        (yas/snippets-at-point 'all-snippets)))
 
 
 ;;; Some low level snippet-routines
