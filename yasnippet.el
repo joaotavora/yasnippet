@@ -1607,9 +1607,9 @@ TEMPLATES is a list of `yas/template'."
   (unless (file-exists-p (concat directory "/" ".yas-skip"))
     ;; Load .yas-setup.el files wherever we find them
     ;;
-    (load (expand-file-name ".yas-setup" directory) 'noerror)
+    (load (expand-file-name ".yas-setup" directory) 'noerror yas/loadmessage)
     (if (and (not no-compiled-snippets)
-             (load (expand-file-name ".yas-compiled-snippets" directory) 'noerror))
+             (load (expand-file-name ".yas-compiled-snippets" directory) 'noerror yas/loadmessage))
         (message "Loading much faster .yas-compiled-snippets from %s" directory)
       (let* ((default-directory directory)
              (snippet-defs nil))
@@ -4144,6 +4144,8 @@ Remaining args as in `yas/expand-snippet'."
 (defun yas/message (level message &rest args)
   (when (> yas/verbosity level)
     (message (apply #'yas/format message args))))
+(defvar yas/loadmessage 'nil	
+  "Show message when loading emacs lisp files. 'nil to show and 'nomessage to hide.")
 
 (defun yas/format (format-control &rest format-args)
   (apply #'format (concat "[yas] " format-control) format-args))
