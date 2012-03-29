@@ -1604,35 +1604,36 @@ TEMPLATES is a list of `yas/template'."
 ;;
 (defun yas/load-directory-1 (directory mode-sym parents &optional no-compiled-snippets)
   "Recursively load snippet templates from DIRECTORY."
-  (unless (file-exists-p (concat directory "/" ".yas-skip"))
-    ;; Load .yas-setup.el files wherever we find them
-    ;;
-    (load (expand-file-name ".yas-setup" directory) 'noerror yas/loadmessage)
-    (if (and (not no-compiled-snippets)
-             (load (expand-file-name ".yas-compiled-snippets" directory) 'noerror yas/loadmessage))
-        (message "Loading much faster .yas-compiled-snippets from %s" directory)
-      (let* ((default-directory directory)
-             (snippet-defs nil))
-        ;; load the snippet files
-        ;;
-        (with-temp-buffer
-          (dolist (file (yas/subdirs directory 'no-subdirs-just-files))
-            (when (file-readable-p file)
-              (insert-file-contents file nil nil nil t)
-              (push (yas/parse-template file)
-                    snippet-defs))))
-        (when (or snippet-defs
-                  (cdr major-mode-and-parents))
-          (yas/define-snippets mode-sym
-                               snippet-defs
-                               parents))
-        ;; now recurse to a lower level
-        ;;
-        (dolist (subdir (yas/subdirs directory))
-          (yas/load-directory-1 subdir
-                                mode-sym
-                                parents
-                                t))))))
+  (let ((loadmessage (when (< yas/verbosity 3) t )))
+    (unless (file-exists-p (concat directory "/" ".yas-skip"))
+      ;; Load .yas-setup.el files wherever we find them
+      ;;
+      (load (expand-file-name ".yas-setup" directory) 'noerror loadmessage)
+      (if (and (not no-compiled-snippets)
+               (load (expand-file-name ".yas-compiled-snippets" directory) 'noerror loadmessage))
+          (message "Loading much faster .yas-compiled-snippets from %s" directory)
+        (let* ((default-directory directory)
+               (snippet-defs nil))
+          ;; load the snippet files
+          ;;
+          (with-temp-buffer
+            (dolist (file (yas/subdirs directory 'no-subdirs-just-files))
+              (when (file-readable-p file)
+                (insert-file-contents file nil nil nil t)
+                (push (yas/parse-template file)
+                      snippet-defs))))
+          (when (or snippet-defs
+                    (cdr major-mode-and-parents))
+            (yas/define-snippets mode-sym
+                                 snippet-defs
+                                 parents))
+          ;; now recurse to a lower level
+          ;;
+          (dolist (subdir (yas/subdirs directory))
+            (yas/load-directory-1 subdir
+                                  mode-sym
+                                  parents
+                                  t)))))))
 
 (defun yas/load-directory (top-level-dir)
   "Load snippet definition from directory hierarchy under TOP-LEVEL-DIR.
@@ -4144,8 +4145,6 @@ Remaining args as in `yas/expand-snippet'."
 (defun yas/message (level message &rest args)
   (when (> yas/verbosity level)
     (message (apply #'yas/format message args))))
-(defvar yas/loadmessage 'nil	
-  "Show message when loading emacs lisp files. 'nil to show and 'nomessage to hide.")
 
 (defun yas/format (format-control &rest format-args)
   (apply #'format (concat "[yas] " format-control) format-args))
