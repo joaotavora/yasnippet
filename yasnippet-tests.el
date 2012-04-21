@@ -204,12 +204,13 @@ TODO: correct this bug!"
      ,@body))
 
 (defmacro with-snippet-dirs (dirs &rest body)
-  `(let ((default-directory (make-temp-file "yasnippet-fixture" t)))
-     (setq yas/snippet-dirs ',(mapcar #'car (cadr dirs)))
-     (mapc #'yas/make-file-or-dirs ,dirs)
-     ,@body
+  `(unwind-protect
+       (let ((default-directory (make-temp-file "yasnippet-fixture" t)))
+         (setq yas/snippet-dirs ',(mapcar #'car (cadr dirs)))
+         (mapc #'yas/make-file-or-dirs ,dirs)
+         ,@body)
      (when (>= emacs-major-version 23)
-         (delete-directory default-directory 'recursive))))
+       (delete-directory default-directory 'recursive))))
 
 ;;; Older emacsen
 ;;;
