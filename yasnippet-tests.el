@@ -155,7 +155,8 @@ TODO: correct this bug!"
     (let ((yas/fallback-behavior nil))
       (ert-simulate-command '(yas/expand)))
     (should (string= (buffer-substring-no-properties (point-min) (point-max))
-                       (cdr key-and-expansion)))))
+                       (cdr key-and-expansion))))
+  (yas/exit-all-snippets))
 
 (defun yas/should-not-expand (keys)
   (dolist (key keys)
