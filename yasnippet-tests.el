@@ -112,8 +112,31 @@ TODO: correct this bug!"
 
 ;;; Loading
 ;;;
-(ert-deftest basic-loading ()
+(defmacro with-some-interesting-snippet-dirs (&rest body)
+  `(yas/saving-variables
+    (with-snippet-dirs
+     '((".emacs.d/snippets"
+        ("c-mode"
+         (".yas-parents" . "cc-mode")
+         ("printf" . "printf($1);"))
+        ("emacs-lisp-mode" ("ert-deftest" . "(ert-deftest ${1:name} () $0)"))
+        ("lisp-interaction-mode" (".yas-parents" . "emacs-lisp-mode")))
+       ("library/snippets"
+        ("c-mode" (".yas-parents" . "c++-mode"))
+        ("cc-mode" ("def" . "# define"))
+        ("emacs-lisp-mode" ("dolist" . "(dolist)"))
+        ("lisp-interaction-mode" ("sc" . "brother from another mother"))))
+     ,@body)))
+
+(ert-deftest basic-jit-loading ()
   "Test basic loading and expansion of snippets"
+  (yas/basic-jit-loading-1))
+
+(ert-deftest basic-jit-loading-with-compiled-snippets ()
+  "Test basic loading and expansion of snippets"
+  (yas/basic-jit-loading-1 'compile))
+
+(defun yas/basic-jit-loading-1 (&optional compile)
   (yas/saving-variables
    (with-snippet-dirs
     '((".emacs.d/snippets"
@@ -127,7 +150,7 @@ TODO: correct this bug!"
        ("cc-mode" ("def" . "# define"))
        ("emacs-lisp-mode" ("dolist" . "(dolist)"))
        ("lisp-interaction-mode" ("sc" . "brother from another mother"))))
-    (yas/reload-all 'with-jit)
+    (yas/reload-all)
     (with-temp-buffer
       (should (= 4 (hash-table-count yas/scheduled-jit-loads)))
       (should (= 0 (hash-table-count yas/tables)))
@@ -140,6 +163,7 @@ TODO: correct this bug!"
                            ("dolist" . "(dolist)")
                            ("ert-deftest" . "(ert-deftest name () )")))
       (c-mode)
+      (yas/minor-mode 1)
       (yas/should-expand '(("printf" . "printf();")
                            ("def" . "# define")))
       (yas/should-not-expand '("sc" "dolist" "ert-deftest"))))))
