@@ -181,6 +181,7 @@ as the default for storing the user's new snippets."
                          (equal old new))
                (yas/reload-all)))))
 (defun yas/snippet-dirs ()
+  "Returns `yas/snippet-dirs' (which see) as a list."
   (if (listp yas/snippet-dirs) yas/snippet-dirs (list yas/snippet-dirs)))
 (defvaralias 'yas/root-directory 'yas/snippet-dirs)
 
@@ -1621,6 +1622,7 @@ Below TOP-LEVEL-DIR each directory is a mode name."
                                     (concat dir "/dummy")))
            (mode-sym (car major-mode-and-parents))
            (parents (cdr major-mode-and-parents)))
+      (yas/define-parents mode-sym parents)
       (let ((form `(yas/load-directory-1 ,dir
                                          ',mode-sym
                                          ',parents)))
@@ -1640,7 +1642,6 @@ Below TOP-LEVEL-DIR each directory is a mode name."
       (yas/load-directory-2 directory mode-sym parents))))
 
 (defun yas/load-directory-2 (directory mode-sym parents)
-  (yas/define-parents mode-sym parents)
   ;; Load .yas-setup.el files wherever we find them
   ;;
   (yas/load-yas-setup-file (expand-file-name ".yas-setup" directory))
@@ -1736,10 +1737,6 @@ This works by stubbing a few functions, then calling
             (when (file-exists-p elfile)
               (insert ";;; .yas-setup.el support file if any:\n;;;\n")
               (insert-file-contents elfile))))
-         (yas/define-parents
-          (mode parents)
-          (insert ";;; Parent definitions:\n;;;\n")
-          (insert (pp-to-string `(yas/define-parents ',mode ',parents))))
          (yas/define-snippets
           (mode snippets)
           (insert ";;; Snippet definitions:\n;;;\n")
