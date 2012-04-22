@@ -1775,6 +1775,9 @@ This works by stubbing a few functions, then calling
               (insert (format ";;; Do not edit! File generated at %s\n" (current-time-string)))))))
     (yas/load-directory top-level-dir 'im-compiling-so-no-jit-ok?)))
 
+(defun yas/recompile-all ()
+  (mapc #'yas/compile-directory (yas/snippet-dirs)))
+
 
 ;;; JIT loading
 ;;;
