@@ -765,7 +765,7 @@ all defined direct keybindings to the command
 (define-minor-mode yas/minor-mode
   "Toggle YASnippet mode.
 
-When YASnippet mode is enabled, the `tas/trigger-key' key expands
+When YASnippet mode is enabled, the `yas/trigger-key' key expands
 snippets of code depending on the mode.
 
 With no argument, this command toggles the mode.
