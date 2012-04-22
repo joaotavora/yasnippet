@@ -1610,7 +1610,7 @@ TEMPLATES is a list of `yas/template'."
     (load (expand-file-name ".yas-setup" directory) 'noerror)
     (if (and (not no-compiled-snippets)
              (load (expand-file-name ".yas-compiled-snippets" directory) 'noerror))
-        (message "Loading much faster .yas-compiled-snippets from %s" directory)
+        (yas/message 3 "Loading much faster .yas-compiled-snippets from %s" directory)
       (let* ((default-directory directory)
              (snippet-defs nil))
         ;; load the snippet files
