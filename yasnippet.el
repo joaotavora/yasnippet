@@ -1776,6 +1776,8 @@ This works by stubbing a few functions, then calling
     (yas/load-directory top-level-dir 'im-compiling-so-no-jit-ok?)))
 
 (defun yas/recompile-all ()
+  "Compile every dir in `yas/snippet-dirs'."
+  (interactive)
   (mapc #'yas/compile-directory (yas/snippet-dirs)))
 
 
