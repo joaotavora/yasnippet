@@ -1736,7 +1736,9 @@ This works by stubbing a few functions, then calling
           (let ((elfile (concat file ".el")))
             (when (file-exists-p elfile)
               (insert ";;; .yas-setup.el support file if any:\n;;;\n")
-              (insert-file-contents elfile))))
+              (insert-file-contents elfile)
+              (end-of-buffer)
+              )))
          (yas/define-snippets
           (mode snippets)
           (insert ";;; Snippet definitions:\n;;;\n")
