@@ -1720,7 +1720,7 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
   (interactive (let* ((input-dir (read-directory-name "Snippet dir "))
                       (output-file (let ((ido-everywhere nil))
                                      (read-file-name "Output file "
-                                                     input-dir nil nil
+                                                     (file-name-as-directory input-dir) nil nil
                                                      ".yas-compiled-snippets.el"
                                                      nil))))
                  (list input-dir output-file)))
@@ -1757,8 +1757,13 @@ Prompts for INPUT-DIR and OUTPUT-FILE if called-interactively"
                 (insert (format ";;; %s - automatically compiled snippets for `%s' end here\n"
                                 (file-name-nondirectory output-file) mode))
                 (insert ";;;"))))
-        (yas/load-directory-1 input-dir nil nil 'no-compiled-snippets))))
-  
+        (let ((major-mode-and-parents (yas/compute-major-mode-and-parents
+                                       (concat (file-name-as-directory input-dir) "dummy"))))
+          (yas/load-directory-1 input-dir
+                                (car major-mode-and-parents)
+                                (cdr major-mode-and-parents)
+                                'no-compiled-snippets)))))
+
   (if (and (called-interactively-p)
            (yes-or-no-p (format "Open the resulting file (%s)? "
                                 (expand-file-name output-file))))
