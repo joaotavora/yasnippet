@@ -1638,7 +1638,7 @@ Below TOP-LEVEL-DIR each directory is a mode name."
   (unless (file-exists-p (concat directory "/" ".yas-skip"))
     (if (and (not no-compiled-snippets)
              (load (expand-file-name ".yas-compiled-snippets" directory) 'noerror))
-        (message "[yas] Loading much faster .yas-compiled-snippets from %s" directory)
+        (yas/message 2 "Loading much faster .yas-compiled-snippets from %s" directory)
       (yas/load-directory-2 directory mode-sym parents))))
 
 (defun yas/load-directory-2 (directory mode-sym parents)
