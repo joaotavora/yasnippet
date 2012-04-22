@@ -1742,7 +1742,8 @@ This works by stubbing a few functions, then calling
          (yas/define-snippets
           (mode snippets)
           (insert ";;; Snippet definitions:\n;;;\n")
-          (let ((literal-snippets (list)))
+          (let ((literal-snippets (list))
+                (print-length nil))
             (dolist (snippet snippets)
               (let ((key                    (first   snippet))
                     (template-content       (second  snippet))
