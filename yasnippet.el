@@ -1689,6 +1689,9 @@ Below TOP-LEVEL-DIR., each directory is a mode name."
     ;; Reload the direct keybindings
     ;;
     (yas/direct-keymaps-reload)
+    ;; Reload the trigger-key (shoudn't be needed, but see issue #237)
+    ;; 
+    (yas/trigger-key-reload)
     (yas/message 3 "Reloaded everything...%s." (if errors " (some errors, check *Messages*)" ""))))
 
 (defun yas/quote-string (string)
