@@ -20,13 +20,14 @@
 
 ;;; Commentary:
 
-;; Attempt to test basic snippet mechanics and the loading system 
+;; Test basic snippet mechanics and the loading system 
 
 ;;; Code:
 
 (require 'yasnippet)
 (require 'ert)
 (require 'ert-x)
+
 
 
 ;;; Snippet mechanics
@@ -111,34 +112,84 @@ TODO: correct this bug!"
 
 ;;; Loading
 ;;;
-(ert-deftest basic-loading ()
+(defmacro with-some-interesting-snippet-dirs (&rest body)
+  `(yas/saving-variables
+    (with-snippet-dirs
+     '((".emacs.d/snippets"
+        ("c-mode"
+         (".yas-parents" . "cc-mode")
+         ("printf" . "printf($1);"))
+        ("emacs-lisp-mode" ("ert-deftest" . "(ert-deftest ${1:name} () $0)"))
+        ("lisp-interaction-mode" (".yas-parents" . "emacs-lisp-mode")))
+       ("library/snippets"
+        ("c-mode" (".yas-parents" . "c++-mode"))
+        ("cc-mode" ("def" . "# define"))
+        ("emacs-lisp-mode" ("dolist" . "(dolist)"))
+        ("lisp-interaction-mode" ("sc" . "brother from another mother"))))
+     ,@body)))
+
+(ert-deftest basic-jit-loading ()
   "Test basic loading and expansion of snippets"
-  (yas/saving-variables
-   (with-snippet-dirs
-    '((".emacs.d/snippets"
-       ("c-mode"
-        (".yas-parents" . "cc-mode")
-        ("printf" . "printf($1);"))
-       ("emacs-lisp-mode" ("ert-deftest" . "(ert-deftest ${1:name} () $0)"))
-       ("lisp-interaction-mode" (".yas-parents" . "emacs-lisp-mode")))
-      ("library/snippets"
-       ("c-mode" (".yas-parents" . "c++-mode"))
-       ("cc-mode" ("def" . "# define"))
-       ("emacs-lisp-mode" ("dolist" . "(dolist)"))
-       ("lisp-interaction-mode" ("sc" . "brother from another mother"))))
-    (yas/reload-all)
-    (with-temp-buffer
-      (lisp-interaction-mode)
-      (yas/minor-mode 1)
-      (insert "sc")
-      (ert-simulate-command '(yas/expand))
-      (should (string= (buffer-substring-no-properties (point-min) (point-max))
-                       "brother from another mother"))))))
+  (with-some-interesting-snippet-dirs
+   (yas/reload-all)
+   (yas/basic-jit-loading-1)))
 
+(ert-deftest basic-jit-loading-with-compiled-snippets ()
+  "Test basic loading and expansion of snippets"
+  (with-some-interesting-snippet-dirs
+   (yas/reload-all)
+   (yas/recompile-all)
+   (flet ((yas/load-directory-2
+           (&rest dummies)
+           (ert-fail "yas/load-directory-2 shouldn't be called when snippets have been compiled")))
+     (yas/reload-all)
+     (yas/basic-jit-loading-1))))
 
+(defun yas/basic-jit-loading-1 (&optional compile)
+  (with-temp-buffer
+    (should (= 4 (hash-table-count yas/scheduled-jit-loads)))
+    (should (= 0 (hash-table-count yas/tables)))
+    (lisp-interaction-mode)
+    (yas/minor-mode 1)
+    (should (= 2 (hash-table-count yas/scheduled-jit-loads)))
+    (should (= 2 (hash-table-count yas/tables)))
+    (should (= 1 (hash-table-count (yas/table-uuidhash (gethash 'lisp-interaction-mode yas/tables)))))
+    (should (= 2 (hash-table-count (yas/table-uuidhash (gethash 'emacs-lisp-mode yas/tables)))))
+    (yas/should-expand '(("sc" . "brother from another mother")
+                         ("dolist" . "(dolist)")
+                         ("ert-deftest" . "(ert-deftest name () )")))
+    (c-mode)
+    (yas/minor-mode 1)
+    (should (= 0 (hash-table-count yas/scheduled-jit-loads)))
+    (should (= 4 (hash-table-count yas/tables)))
+    (should (= 1 (hash-table-count (yas/table-uuidhash (gethash 'c-mode yas/tables)))))
+    (should (= 1 (hash-table-count (yas/table-uuidhash (gethash 'cc-mode yas/tables)))))
+    (yas/should-expand '(("printf" . "printf();")
+                         ("def" . "# define")))
+    (yas/should-not-expand '("sc" "dolist" "ert-deftest"))))
 
 ;;; Helpers
-;;; 
+;;;
+
+(defun yas/should-expand (keys-and-expansions)
+  (dolist (key-and-expansion keys-and-expansions)
+    (yas/exit-all-snippets)
+    (erase-buffer)
+    (insert (car key-and-expansion))
+    (let ((yas/fallback-behavior nil))
+      (ert-simulate-command '(yas/expand)))
+    (should (string= (buffer-substring-no-properties (point-min) (point-max))
+                       (cdr key-and-expansion))))
+  (yas/exit-all-snippets))
+
+(defun yas/should-not-expand (keys)
+  (dolist (key keys)
+    (yas/exit-all-snippets)
+    (erase-buffer)
+    (insert key)
+    (let ((yas/fallback-behavior nil))
+      (ert-simulate-command '(yas/expand)))
+    (should (string= (buffer-substring-no-properties (point-min) (point-max)) key))))
 
 (defun yas/mock-insert (string)
   (interactive)
@@ -157,7 +208,7 @@ TODO: correct this bug!"
            (with-current-buffer (find-file file-or-dir-name)
              (insert content)
              (save-buffer)
-             (kill-buffer)))
+             (kill-buffer (current-buffer))))
           (t
            (message "[yas] oops don't know this content")))))
 
@@ -179,10 +230,23 @@ TODO: correct this bug!"
 
 (defmacro with-snippet-dirs (dirs &rest body)
   `(let ((default-directory (make-temp-file "yasnippet-fixture" t)))
-     (setq yas/snippet-dirs ',(mapcar #'car (cadr dirs)))
-     (mapc #'yas/make-file-or-dirs ,dirs)
-     ,@body))
+     (unwind-protect
+         (progn       
+           (setq yas/snippet-dirs ',(mapcar #'car (cadr dirs)))
+           (mapc #'yas/make-file-or-dirs ,dirs)
+           ,@body)
+       (when (>= emacs-major-version 23)
+         (delete-directory default-directory 'recursive)))))
 
+;;; Older emacsen
+;;;
+(unless (fboundp 'special-mode)
+  (define-minor-mode special-mode "Just a placeholder for something isn't in emacs 22"))
+
+;;; btw to test this in emacs22 mac osx:
+;;; curl -L -O https://github.com/mirrors/emacs/raw/master/lisp/emacs-lisp/ert.el
+;;; curl -L -O https://github.com/mirrors/emacs/raw/master/lisp/emacs-lisp/ert-x.el
+;;; /usr/bin/emacs -nw -Q -L . -l yasnippet-tests.el --batch -e ert
 
 (provide 'yasnippet-tests)
 ;;; yasnippet-tests.el ends here
