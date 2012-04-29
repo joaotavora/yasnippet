@@ -815,12 +815,7 @@ Key bindings:
              (set (make-local-variable name) t)))
          ;; Perform JIT loads
          ;;
-         (dolist (mode (yas/modes-to-activate))
-           (let ((forms (gethash mode yas/scheduled-jit-loads)))
-             (dolist (form forms)
-               (message  "[yas] Loading snippets for %s, just in time: %s!" mode form)
-               (eval form))
-             (remhash mode yas/scheduled-jit-loads))))
+         (yas/load-pending-jits))
         (t
          ;; Uninstall the direct keymaps and the post-command hook
          ;;
@@ -1708,6 +1703,18 @@ Below TOP-LEVEL-DIR each directory is a mode name."
     ;;
     (yas/direct-keymaps-reload)
     (yas/message 3 "Reloaded everything...%s." (if errors " (some errors, check *Messages*)" ""))))
+
+(defun yas/load-pending-jits ()
+  (when yas/minor-mode 
+    (dolist (mode (yas/modes-to-activate))
+      (let ((forms (gethash mode yas/scheduled-jit-loads)))
+        (dolist (form forms)
+          (yas/message  3 "Loading snippets for %s, just in time: %s!" mode form)
+          (eval form))
+        (remhash mode yas/scheduled-jit-loads)))))
+
+;; (when (<= emacs-major-version 22)
+;;   (add-hook 'after-change-major-mode-hook 'yas/load-pending-jits))
 
 (defun yas/quote-string (string)
   "Escape and quote STRING.

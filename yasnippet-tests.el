@@ -130,43 +130,43 @@ TODO: correct this bug!"
 
 (ert-deftest basic-jit-loading ()
   "Test basic loading and expansion of snippets"
-  (yas/basic-jit-loading-1))
+  (with-some-interesting-snippet-dirs
+   (yas/reload-all)
+   (yas/basic-jit-loading-1)))
 
 (ert-deftest basic-jit-loading-with-compiled-snippets ()
   "Test basic loading and expansion of snippets"
-  (yas/basic-jit-loading-1 'compile))
+  (with-some-interesting-snippet-dirs
+   (yas/reload-all)
+   (yas/recompile-all)
+   (flet ((yas/load-directory-2
+           (&rest dummies)
+           (ert-fail "yas/load-directory-2 shouldn't be called when snippets have been compiled")))
+     (yas/reload-all)
+     (yas/basic-jit-loading-1))))
 
 (defun yas/basic-jit-loading-1 (&optional compile)
-  (yas/saving-variables
-   (with-snippet-dirs
-    '((".emacs.d/snippets"
-       ("c-mode"
-        (".yas-parents" . "cc-mode")
-        ("printf" . "printf($1);"))
-       ("emacs-lisp-mode" ("ert-deftest" . "(ert-deftest ${1:name} () $0)"))
-       ("lisp-interaction-mode" (".yas-parents" . "emacs-lisp-mode")))
-      ("library/snippets"
-       ("c-mode" (".yas-parents" . "c++-mode"))
-       ("cc-mode" ("def" . "# define"))
-       ("emacs-lisp-mode" ("dolist" . "(dolist)"))
-       ("lisp-interaction-mode" ("sc" . "brother from another mother"))))
-    (yas/reload-all)
-    (with-temp-buffer
-      (should (= 4 (hash-table-count yas/scheduled-jit-loads)))
-      (should (= 0 (hash-table-count yas/tables)))
-      (lisp-interaction-mode) (yas/minor-mode 1) ;; either one will load two tables depending on yas/global-mode (FIXME)
-      (should (= 2 (hash-table-count yas/scheduled-jit-loads)))
-      (should (= 2 (hash-table-count yas/tables)))
-      (should (= 1 (hash-table-count (yas/table-uuidhash (gethash 'lisp-interaction-mode yas/tables)))))
-      (should (= 2 (hash-table-count (yas/table-uuidhash (gethash 'emacs-lisp-mode yas/tables)))))
-      (yas/should-expand '(("sc" . "brother from another mother")
-                           ("dolist" . "(dolist)")
-                           ("ert-deftest" . "(ert-deftest name () )")))
-      (c-mode)
-      (yas/minor-mode 1)
-      (yas/should-expand '(("printf" . "printf();")
-                           ("def" . "# define")))
-      (yas/should-not-expand '("sc" "dolist" "ert-deftest"))))))
+  (with-temp-buffer
+    (should (= 4 (hash-table-count yas/scheduled-jit-loads)))
+    (should (= 0 (hash-table-count yas/tables)))
+    (lisp-interaction-mode)
+    (yas/minor-mode 1)
+    (should (= 2 (hash-table-count yas/scheduled-jit-loads)))
+    (should (= 2 (hash-table-count yas/tables)))
+    (should (= 1 (hash-table-count (yas/table-uuidhash (gethash 'lisp-interaction-mode yas/tables)))))
+    (should (= 2 (hash-table-count (yas/table-uuidhash (gethash 'emacs-lisp-mode yas/tables)))))
+    (yas/should-expand '(("sc" . "brother from another mother")
+                         ("dolist" . "(dolist)")
+                         ("ert-deftest" . "(ert-deftest name () )")))
+    (c-mode)
+    (yas/minor-mode 1)
+    (should (= 0 (hash-table-count yas/scheduled-jit-loads)))
+    (should (= 4 (hash-table-count yas/tables)))
+    (should (= 1 (hash-table-count (yas/table-uuidhash (gethash 'c-mode yas/tables)))))
+    (should (= 1 (hash-table-count (yas/table-uuidhash (gethash 'cc-mode yas/tables)))))
+    (yas/should-expand '(("printf" . "printf();")
+                         ("def" . "# define")))
+    (yas/should-not-expand '("sc" "dolist" "ert-deftest"))))
 
 ;;; Helpers
 ;;;
