@@ -1576,7 +1576,7 @@ TEMPLATES is a list of `yas/template'."
         filtered-choices
         chosen
         d
-        (completion-fn (or completion-fnn
+        (completion-fn (or completion-fn
                            #'completing-read)))
     (dolist (choice choices)
       (setq d (or (and display-fn (funcall display-fn choice))
