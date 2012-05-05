@@ -1,0 +1,5 @@
+#name : func Name(...) (...) { ... }
+# --
+func ${name}(${params}) (${result}) {
+	$0
+}

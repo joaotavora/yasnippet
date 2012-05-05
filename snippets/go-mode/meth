@@ -1,0 +1,5 @@
+#name : func (...) Name(...) (...) { ... }
+# --
+func (${struct}) ${name}(${params}) (${result}) {
+	$0
+}
