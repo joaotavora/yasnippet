@@ -855,10 +855,10 @@ Do this unless `yas/dont-activate' is truish "
               (numberp arg)
               (> arg 1))
          ;; explicitly enabling
-         (yas/reload-all 'with-jit))
+         (yas/reload-all))
         ((not yas/global-mode)
          ;; toggling
-         (yas/reload-all 'with-jit))))
+         (yas/reload-all))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Major mode stuff
@@ -1675,8 +1675,12 @@ Below TOP-LEVEL-DIR each directory is a mode name."
       (call-interactively 'yas/load-directory))
     errors))
 
-(defun yas/reload-all (&optional nojit)
-  "Reload all snippets and rebuild the YASnippet menu. "
+(defvar yas/no-jit nil
+  "Non-nil forces `yas/reload-all' to skip jit-loading and load every directory.")
+(defun yas/reload-all ()
+  "Reload all snippets and rebuild the YASnippet menu.
+
+Behaviour is affected by `yas/no-jit', which see."
   (interactive "p")
   (let ((errors))
     ;; Empty all snippet tables, parenting info and all menu tables
@@ -1698,7 +1702,7 @@ Below TOP-LEVEL-DIR each directory is a mode name."
     ;; Reload the directories listed in `yas/snippet-dirs' or prompt
     ;; the user to select one.
     ;;
-    (setq errors (yas/load-snippet-dirs nojit))
+    (setq errors (yas/load-snippet-dirs yas/no-jit))
     ;; Reload the direct keybindings
     ;;
     (yas/direct-keymaps-reload)
