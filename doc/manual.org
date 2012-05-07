@@ -1,0 +1,1903 @@
+# -*- mode: org; fill-column: 80 -*-
+#+TITLE: Yet another snippet extension
+#+OPTIONS: toc:1
+#+STARTUP: showall
+
+#+STYLE: <link rel="stylesheet" type="text/css" href="assets/stylesheet.css" />
+
+# External links
+#
+#+LINK: smart-snippet http://code.google.com/p/smart-snippet
+#+LINK: pluskid       http://pluskid.lifegoo.org
+
+
+#+LINK: screencast         http://www.youtube.com/watch?v=ZCGmZK4V7Sg
+#+LINK: docs               http://capitaomorte.github.com/yasnippet
+#+LINK: issues             https://github.com/capitaomorte/yasnippet/issues
+#+LINK: googlecode-tracker http://code.google.com/p/yasnippet/issues/list
+#+LINK: forum              http://groups.google.com/group/smart-snippet
+
+
+# Internal links
+
+.. _Organizing Snippets: snippet-organization.html
+.. _Expanding Snippets: snippet-expansion.html
+.. _Writing Snippets: snippet-development.html
+.. _The YASnippet Menu: snippet-menu.html
+
+*YASnippet* is a template system for Emacs. It allows you to type an
+abbreviation and automatically expand it into function templates. Bundled
+language templates includes: C, C++, C#, Perl, Python, Ruby, SQL, LaTeX, HTML,
+CSS and more. The snippet syntax is inspired from TextMate's syntax, you can
+even [[#import-textmate][import most TextMate snippets]]
+
+YASnippet is an original creation of [[pluskid]] who also wrote its predecessor
+[[smart-snippet]].
+
+* Quick start
+
+** Watch a demo [[screencast]]
+
+*YASnippet* is a template system for Emacs. It allows you to type an
+
+** Install the most recent version with git
+
+Clone this repository somewhere
+
+    $ cd ~/.emacs.d/plugins
+    $ git clone https://github.com/capitaomorte/yasnippet
+
+Add the following in your =.emacs= file:
+
+example
+    (add-to-list 'load-path
+                  "~/.emacs.d/plugins/yasnippet")
+    (require 'yasnippet)
+    (yas/global-mode 1)
+
+Add your own snippets to `~/.emacs.d/snippets` by placing files there or invoking `yas/new-snippet`.
+
+## Install yasnippet with el-get
+
+El-get is a nice way to get the most recent version, too
+
+** Import textmate snippets (rails example)
+:PROPERTIES:
+:CUSTOM_ID: import-textmate
+:END:
+
+Clone the yasnippet repository to `~/.emacs.d/plugins/yasnippet`
+
+    cd ~/.emacs.d/plugins/yasnippet
+    git submodule init
+    git submodule update
+    gem install plist trollop
+    rake convert_bundles             # will convert ruby, rails and html bundles from drnic
+
+Then, in your .emacs file
+
+    (add-to-list 'load-path
+                  "~/.emacs.d/plugins/yasnippet")
+    (require 'yasnippet)
+    (setq yas/snippet-dirs '("~/.emacs.d/snippets" "~/.emacs.d/extras/imported"))
+    (yas/global-mode 1)
+
+Open some rails file (model, app, etc) and start using the textmate snippets.
+
+** Contributing snippets
+
+Please do not ask me to add snippets to the default collection under
+=/snippets=. This is considered frozen and by customizing =yas/snippet-dirs= you
+can point yasnippet to good snippet collections out there.
+
+The =extras/textmate-import.rb= tool can import many actual Textmate
+snippets. See [[import-textmate]].
+
+I'm focusing on developping =textmate-import.rb= tool and the =yas-setup.el=
+files that guide it with more difficult importation. In the future =/snippets=
+snippets will be deprecated and replaced with =extras/imported=.
+
+** Documentation, issues, etc
+
+Please refer to the comprehensive [[docs][documentation]] for full customization and
+support.  If you think you've found a bug, please report it on [[issues][the GitHub issue
+tracker]].  (please **do not** submit new issues to the old [[googlecode-tracker][googlecode tracker]])
+
+If you run into problems using YASnippet, or have snippets to contribute, post
+to the [[forum][yasnippet forum]]. Thank you very much for using YASnippet!
+
+* Organizing snippets
+** Setting up =yas/snippet-dirs= before calling =yas/global-mode=
+
+Snippet collections are stored in specially organized file hierarchies. These
+are loaded by YASnippet into *snippet tables* which the triggering mechanism
+(see [[expand-snippets][Expanding snippets]]) looks up and (hopefully) cause the right snippet to be
+expanded for you.
+
+An emacs variable =yas/snippet-dirs= tells YASnippet which collections to
+consider.
+
+If you don't tweak it the default value of =yas/snippet-dirs= considers:
+
+ - a personal collection that YASnippet decides lives in =~/.emacs.d/snippets=
+ - the bundled collection, taken as a relative path to =yasnippet.el= localtion
+
+You might and probably want to try out more snippet collections though:
+
+#+begin_src emacs-lisp :exports both
+  ;; Develop in ~/emacs.d/mysnippets, but also
+  ;; try out snippets in ~/Downloads/interesting-snippets
+  (setq yas/snippet-dirs '("~/emacs.d/mysnippets"
+                             "~/Downloads/interesting-snippets"))
+
+  ;; OR, keeping yasnippet's defaults try out ~/Downloads/interesting-snippets
+  (setq yas/snippet-dirs (append yas/snippet-dirs
+                                 '("~/Downloads/interesting-snippets")))
+#+end_src
+
+Collections appearing earlier in the list shadow any conflicting snippets from
+collections later in the list. =yas/new-snippet= always stores snippets in the
+first collection.
+
+# Snippet definitions are put in plain text files. They are arranged
+# by sub-directories, and the snippet tables are named after these
+# directories.
+
+# The name corresponds to the Emacs mode where you want expansion to
+# take place. For example, snippets for ``c-mode`` are put in the
+# ``c-mode`` sub-directory.
+
+
+
+# 2. `Expanding Snippets`_
+
+#   Describes how YASnippet chooses snippets for expansion at point.
+
+#   Maybe, you'll want some snippets to be expanded in a particular
+#   mode, or only under certain conditions, or be prompted using
+#   ``ido``, etc...
+
+# 3. `Writing Snippets`_
+
+#   Describes the YASnippet definition syntax, which is very close (but
+#   not equivalent) to Textmate's. Includes a section about converting
+#   TextMate snippets.
+
+# 4. `The YASnippet menu`_
+
+#   Explains how to use the YASnippet menu to explore, learn and modify
+#   snippets.
+
+
+
+# Loading snippets
+# ================
+
+
+
+# Organizing snippets
+# ===================
+
+# Once you've setup ``yas/root-directory`` , you can store snippets
+# inside sub-directories of these directories.
+
+
+
+# The ``.yas.parents`` file
+# -------------------------
+
+# It's very useful to have certain modes share snippets between
+# themselves. To do this, choose a mode subdirectory and place a
+# ``.yas-parents`` containing a whitespace-separated list of other
+# mode names. When you reload those modes become parents of the
+# original mode.
+
+# .. sourcecode:: text
+
+#   $ tree
+#   .
+#   |-- c-mode
+#   |   |-- .yas-parents    # contains "cc-mode text-mode"
+#   |   `-- printf
+#   |-- cc-mode
+#   |   |-- for
+#   |   `-- while
+#   |-- java-mode
+#   |   |-- .yas-parents    # contains "cc-mode text-mode"
+#   |   `-- println
+#   `-- text-mode
+#       |-- email
+#       `-- time
+
+# The ``.yas-make-groups`` file
+# -----------------------------
+
+# .. image:: images/menu-groups.png
+#    :align: right
+
+# If you place an empty plain text file ``.yas-make-groups`` inside one
+# of the mode directories, the names of these sub-directories are
+# considered groups of snippets and `The YASnippet Menu`_ is organized
+# much more cleanly, as you can see in the image.
+
+# Another alternative way to achieve this is to place a ``# group:``
+# directive inside the snippet definition. See `Writing Snippets`_.
+
+# .. sourcecode:: text
+
+#   $ tree ruby-mode/
+#   ruby-mode/
+#   |-- .yas-make-groups
+#   |-- collections
+#   |   |-- each
+#   |   `-- ...
+#   |-- control structure
+#   |   |-- forin
+#   |   `-- ...
+#   |-- definitions
+#   |   `-- ...
+#   `-- general
+#       `-- ...
+
+
+# YASnippet bundle
+# ================
+
+# The most convenient way to define snippets for YASnippet is to put
+# them in a directory arranged by the mode and use
+# ``yas/load-directory`` to load them.
+
+# However, this might slow down the Emacs start-up speed if you have many
+# snippets. You can use ``yas/define-snippets`` to define a bunch of
+# snippets for a particular mode in an Emacs-lisp file.
+
+# Since this is hard to maintain, there's a better way: define your
+# snippets in directory and then call ``M-x yas/compile-bundle`` to
+# compile it into a bundle file when you modified your snippets.
+
+# The release bundle of YASnippet is produced by
+# ``yas/compile-bundle``. The bundle uses ``yas/define-snippets`` to
+# define snippets. This avoids the IO and parsing overhead when loading
+# snippets.
+
+# Further more, the generated bundle is a stand-alone file not depending
+# on ``yasnippet.el``. The released bundles of YASnippet are all
+# generated this way.
+
+# See the internal documentation for these functions
+
+# \* ``M-x describe-function RET yas/define-snippets RET``
+# \* ``M-x describe-function RET yas/compile-bundle RET``.
+
+# Customizable variables
+# ======================
+
+# ``yas/root-directory``
+# ----------------------
+
+# Root directory that stores the snippets for each major mode.
+
+# If you set this from your .emacs, can also be a list of strings,
+# for multiple root directories. If you make this a list, the first
+# element is always the user-created snippets directory. Other
+# directories are used for bulk reloading of all snippets using
+# ``yas/reload-all``
+
+# ``yas/ignore-filenames-as-triggers``
+# ------------------------------------
+
+# If non-nil, don't derive tab triggers from filenames.
+
+# This means a snippet without a ``# key:`` directive wont have a tab
+# trigger.
+
+# ..  LocalWords:  html YASnippet filesystem yas sourcecode setq mapc printf perl
+# ..  LocalWords:  println cperl forin filenames filename ERb's yasnippet Avar el
+# ..  LocalWords:  rjs RET
+
+# * snippet-expansion.org
+# ==================
+# Expanding snippets
+# ==================
+
+# .. _Organizing Snippets: snippet-organization.html
+# .. _Expanding Snippets: snippet-expansion.html
+# .. _Writing Snippets: snippet-development.html
+# .. _The YASnippet Menu: snippet-menu.html
+
+# .. contents::
+
+
+# Triggering expansion
+# ====================
+
+# You can use YASnippet to expand snippets in different ways:
+
+# \* By typing an abbrev, the snippet *trigger key*, and then pressing
+#   the key defined in ``yas/trigger-key`` (which defaults to
+#   "TAB"). This works in buffers where the minor mode
+#   ``yas/minor-mode`` is active;
+
+# \* By invoking the command ``yas/insert-snippet`` (either by typing
+#   ``M-x yas/insert-snippet`` or its keybinding). This does *not*
+#   require ``yas/minor-mode`` to be active.
+
+# \* By using the keybinding associated with an active snippet. This also
+#   requires ``yas/minor-mode`` to be active;
+
+# \* By expanding directly from the "YASnippet" menu in the menu-bar
+
+# \* By using hippie-expand
+
+# \* Expanding from emacs-lisp code
+
+# Trigger key
+# -----------
+
+# When ``yas/minor-mode`` is enabled, the keybinding taken from
+# ``yas/trigger-key`` will take effect.
+
+# ``yas/trigger-key`` invokes ``yas/expand``, which tries to expand a
+# \*snippet abbrev* (also known as *snippet key*) before point.
+
+# The default key is ``"TAB"``, however, you can freely set it to some
+# other key.
+
+# .. image:: images/minor-mode-indicator.png
+#    :align: left
+
+# To enable the YASnippet minor mode in all buffers globally use the
+# command ``yas/global-mode``.
+
+# When you use ``yas/global-mode`` you can also selectively disable
+# YASnippet in some buffers by setting the buffer-local variable
+# ``yas/dont-active`` in the buffer's mode hook.
+
+# Trouble when using or understanding the ``yas/trigger-key`` is easily
+# the most controversial issue in YASsnippet. See the `FAQ <faq.html>`_.
+
+# Fallback bahaviour
+# ~~~~~~~~~~~~~~~~~~
+
+# ``yas/fallback-behaviour`` is a customization variable bound to
+# ``'call-other-command`` by default. If ``yas/expand`` failed to find
+# any suitable snippet to expand, it will disable the minor mode
+# temporarily and find if there's any other command bound the
+# ``yas/trigger-key``.
+
+# If found, the command will be called. Usually this works very well --
+# when there's a snippet, expand it, otherwise, call whatever command
+# originally bind to the trigger key.
+
+# However, you can change this behavior by customizing the
+# ``yas/fallback-behavior`` variable. If you set this variable to
+# ``'return-nil``, it will return ``nil`` instead of trying to call the
+# \*original* command when no snippet is found.
+
+# Insert at point
+# ---------------
+
+# The command ``M-x yas/insert-snippet`` lets you insert snippets at
+# point *for you current major mode*. It prompts you for the snippet
+# key first, and then for a snippet template if more than one template
+# exists for the same key.
+
+# The list presented contains the snippets that can be inserted at
+# point, according to the condition system. If you want to see all
+# applicable snippets for the major mode, prefix this command with
+# ``C-u``.
+
+# The prompting methods used are again controlled by
+# ``yas/prompt-functions``.
+
+# Snippet keybinding
+# ------------------
+
+# See the section of the ``# binding:`` directive in `Writing
+# Snippets`_.
+
+
+# Expanding from the menu
+# -----------------------
+
+# See `the YASnippet Menu`_.
+
+# Expanding with ``hippie-expand``
+# ----------------------------------
+
+# To integrate with ``hippie-expand``, just put
+# ``yas/hippie-try-expand`` in
+# ``hippie-expand-try-functions-list``. This probably makes more sense
+# when placed at the top of the list, but it can be put anywhere you
+# prefer.
+
+# Expanding from emacs-lisp code
+# ------------------------------
+
+# Sometimes you might want to expand a snippet directly from you own
+# elisp code. You should call ``yas/expand-snippet`` instead of
+# ``yas/expand`` in this case.
+
+# As with expanding from the menubar, the condition system and multiple
+# candidates doesn't affect expansion. In fact, expanding from the
+# YASnippet menu has the same effect of evaluating the follow code:
+
+# .. sourcecode:: common-lisp
+
+#   (yas/expand-snippet template)
+
+# See the internal documentation on ``yas/expand-snippet`` for more
+# information.
+
+# Controlling expansion
+# =====================
+
+# Eligible snippets
+# -----------------
+
+# YASnippet does quite a bit of filtering to find out which snippets are
+# eligible for expanding at the current cursor position.
+
+# In particular, the following things matter:
+
+# \* Currently loaded snippets tables
+
+#   These are loaded from a directory hierarchy in your file system. See
+#   `Organizing Snippets`_. They are named after major modes like
+#   ``html-mode``, ``ruby-mode``, etc...
+
+# \* Major mode of the current buffer
+
+#   If the currrent major mode matches one of the loaded snippet tables,
+#   then all that table's snippets are considered for expansion. Use
+#   ``M-x describe-variable RET major-mode RET`` to find out which major
+#   mode you are in currently.
+
+# \* Parent tables
+
+#   Snippet tables defined as the parent of some other eligible table
+#   are also considered. This works recursively, i.e. parents of parents
+#   of eligible tables are also considered.
+
+# \* Buffer-local ``yas/mode-symbol`` variable
+
+#   This can be used to consider snippet tables whose name does not
+#   correspond to a major mode. If you set this variable to a name ,
+#   like ``rinari-minor-mode``, you can have some snippets expand only
+#   in that minor mode. Naturally, you want to set this conditionally,
+#   i.e. only when entering that minor mode, so using a hook is a good
+#   idea.
+
+# .. sourcecode:: common-lisp
+
+#   ;; When entering rinari-minor-mode, consider also the snippets in the
+#   ;; snippet table "rails-mode"
+#   (add-hook 'rinari-minor-mode-hook
+#             #'(lambda ()
+#                 (setq yas/mode-symbol 'rails-mode)))
+
+# \* Buffer-local ``yas/buffer-local-condition`` variable
+
+#   This variable provides finer grained control over what snippets can
+#   be expanded in the current buffer. The default value won't let you
+#   expand snippets inside comments or string literals for example. See
+#   `The condition system`_ for more info.
+
+# The condition system
+# --------------------
+
+# Consider this scenario: you are an old Emacs hacker. You like the
+# abbrev-way and set ``yas/trigger-key`` to ``"SPC"``. However,
+# you don't want ``if`` to be expanded as a snippet when you are typing
+# in a comment block or a string (e.g. in ``python-mode``).
+
+# If you use the ``# condition :`` directive (see `Writing Snippets`_)
+# you could just specify the condition for ``if`` to be ``(not
+# (python-in-string/comment))``. But how about ``while``, ``for``,
+# etc. ? Writing the same condition for all the snippets is just
+# boring. So has a buffer local variable
+# ``yas/buffer-local-condition``. You can set this variable to ``(not
+# (python-in-string/comment))`` in ``python-mode-hook``.
+
+# Then, what if you really want some particular snippet to expand even
+# inside a comment? This is also possible! But let's stop telling the
+# story and look at the rules:
+
+# \* If ``yas/buffer-local-condition`` evaluate to nil, no snippets will
+#   be considered for expansion.
+
+# \* If it evaluates to the a *cons cell* where the ``car`` is the symbol
+#   ``require-snippet-condition`` and the ``cdr`` is a symbol (let's
+#   call it ``requirement``), then:
+
+#   * Snippets having no ``# condition:`` directive won't be considered;
+
+#   * Snippets with conditions that evaluate to nil (or produce an
+#     error) won't be considered;
+
+#   * If the snippet has a condition that evaluates to non-nil (let's
+#     call it ``result``):
+
+#     * If ``requirement`` is ``t``, the snippet is ready to be
+#       expanded;
+
+#     * If ``requirement`` is ``eq`` to ``result``, the snippet is ready
+#       to be expanded;
+
+#     * Otherwise the snippet won't be considered.
+
+# \* If it evaluates to the symbol ``always``, all snippets are
+#   considered for expansion, regardless of any conditions.
+
+# \* If it evaluate to ``t`` or some other non-nil value:
+
+#   * If the snippet has no condition, or has a condition that evaluate
+#     to non-nil, it is ready to be expanded.
+
+#   * Otherwise, it won't be considered.
+
+# In the mentioned scenario, set ``yas/buffer-local-condition`` like
+# this
+
+# .. sourcecode:: common-lisp
+
+#   (add-hook 'python-mode-hook
+#             '(lambda ()
+#                (setq yas/buffer-local-condition
+#                      '(if (python-in-string/comment)
+#                           '(require-snippet-condition . force-in-comment)
+#                         t))))
+
+# ... and specify the condition for a snippet that you're going to
+# expand in comment to be evaluated to the symbol
+# ``force-in-comment``. Then it can be expanded as you expected, while
+# other snippets like ``if`` still can't expanded in comment.
+
+# Multiples snippet with the same key
+# -----------------------------------
+
+# The rules outlined `above <Eligible snippets>`_ can return more than
+# one snippet to be expanded at point.
+
+# When there are multiple candidates, YASnippet will let you select
+# one. The UI for selecting multiple candidate can be customized through
+# ``yas/prompt-functions`` , which defines your preferred methods of
+# being prompted for snippets.
+
+# You can customize it with ``M-x customize-variable RET
+# yas/prompt-functions RET``. Alternatively you can put in your
+# emacs-file:
+
+# .. sourcecode:: common-lisp
+
+#    (setq yas/prompt-functions '(yas/x-prompt yas/dropdown-prompt))
+
+# Currently there are some alternatives solution with YASnippet.
+
+# .. image:: images/x-menu.png
+#    :align: right
+
+# Use the X window system
+# ~~~~~~~~~~~~~~~~~~~~~~~
+
+# The function ``yas/x-prompt`` can be used to show a popup menu for you
+# to select. This menu will be part of you native window system widget,
+# which means:
+
+# \* It usually looks beautiful. E.g. when you compile Emacs with gtk
+#   support, this menu will be rendered with your gtk theme.
+# \* Your window system may or may not allow to you use ``C-n``, ``C-p``
+#   to navigate this menu.
+# \* This function can't be used when in a terminal.
+
+# .. image:: images/ido-menu.png
+#    :align: right
+
+# Minibuffer prompting
+# ~~~~~~~~~~~~~~~~~~~~
+
+# You can use functions ``yas/completing-prompt`` for the classic emacs
+# completion method or ``yas/ido-prompt`` for a much nicer looking
+# method. The best way is to try it. This works in a terminal.
+
+# .. image:: images/dropdown-menu.png
+#    :align: right
+
+# Use ``dropdown-menu.el``
+# ~~~~~~~~~~~~~~~~~~~~~~~~
+
+# The function ``yas/dropdown-prompt`` can also be placed in the
+# ``yas/prompt-functions`` list.
+
+# This works in both window system and terminal and is customizable, you
+# can use ``C-n``, ``C-p`` to navigate, ``q`` to quit and even press
+# ``6`` as a shortcut to select the 6th candidate.
+
+# Roll your own
+# ~~~~~~~~~~~~~
+
+# See below for the documentation on variable ``yas/prompt-functions``
+
+# Customizable Variables
+# ======================
+
+# ``yas/prompt-functions``
+# ------------------------
+
+# You can write a function and add it to the ``yas/prompt-functions``
+# list. These functions are called with the following arguments:
+
+# \* PROMPT: A string to prompt the user;
+
+# \* CHOICES: A list of strings or objects;
+
+# \* optional DISPLAY-FN : A function. When applied to each of the
+#   objects in CHOICES it will return a string;
+
+# The return value of any function you put here should be one of
+# the objects in CHOICES, properly formatted with DISPLAY-FN (if
+# that is passed).
+
+# \* To signal that your particular style of prompting is unavailable at
+#   the moment, you can also have the function return nil.
+
+# \* To signal that the user quit the prompting process, you can signal
+#   ``quit`` with ``(signal 'quit "user quit!")``
+
+# ``yas/fallback-behavior``
+# -------------------------
+
+# How to act when ``yas/expand`` does *not* expand a snippet.
+
+# ``call-other-command`` means try to temporarily disable YASnippet and
+#     call the next command bound to ``yas/trigger-key``.
+
+# ``return-nil`` means return nil. (i.e. do nothing)
+
+# An entry (apply COMMAND . ARGS) means interactively call COMMAND, if
+# ARGS is non-nil, call COMMAND non-interactively with ARGS as
+# arguments.
+
+# ``yas/choose-keys-first``
+# -------------------------
+
+# If non-nil, prompt for snippet key first, then for template.
+
+# Otherwise prompts for all possible snippet names.
+
+# This affects ``yas/insert-snippet`` and ``yas/visit-snippet-file``.
+
+# ``yas/choose-tables-first``
+# ---------------------------
+
+# If non-nil, and multiple eligible snippet tables, prompts user for
+# tables first.
+
+# Otherwise, user chooses between the merging together of all
+# eligible tables.
+
+# This affects ``yas/insert-snippet``, ``yas/visit-snippet-file``
+
+# ``yas/key-syntaxes``
+# --------------------
+
+# The default searching strategy is quite powerful. For example, in
+# ``c-mode``, ``bar``, ``foo_bar``, ``"#foo_bar"`` can all be recognized
+# as a snippet key. Furthermore, the searching is in that order. In
+# other words, if ``bar`` is found to be a key to some *valid* snippet,
+# then that snippet is expanded and replaces the ``bar``. Snippets
+# pointed to by ``foo_bar`` and ``"#foobar`` won't be considered.
+
+# However, this strategy can also be customized easily from the
+# ``yas/key-syntaxes`` variable. It is a list of syntax rules, the
+# default value is ``("w" "w_" "w_." "^ ")``. Which means search the
+# following thing until found one:
+
+# \* a word.
+# \* a symbol. In lisp, ``-`` and ``?`` can all be part of a symbol.
+# \* a sequence of characters of either word, symbol or punctuation.
+# \* a sequence of characters of non-whitespace characters.
+
+# But you'd better keep the default value unless you want to understand
+# how Emacs's syntax rules work...
+
+
+
+# * snippet-development.org
+# ================
+# Writing snippets
+# ================
+
+# .. _Organizing Snippets: snippet-organization.html
+# .. _Expanding Snippets: snippet-expansion.html
+# .. _Writing Snippets: snippet-development.html
+# .. _The YASnippet Menu: snippet-menu.html
+
+# .. contents::
+
+# Snippet development
+# ===================
+
+# Quickly finding snippets
+# ------------------------
+
+# There are some ways you can quickly find a snippet file:
+
+# \* ``M-x yas/new-snippet``
+
+#   Prompts you for a snippet name, then tries to guess a suitable
+#   directory to store it, prompting you for creation if it does not
+#   exist. Finally, places you in a new buffer set to ``snippet-mode``
+#   so you can write your snippet.
+
+# \* ``M-x yas/find-snippets``
+
+#   Lets you find the snippet file in the directory the snippet was
+#   loaded from (if it exists) like ``find-file-other-window``. The
+#   directory searching logic is similar to ``M-x yas/new-snippet``.
+
+# \* ``M-x yas/visit-snippet-file``
+
+#   Prompts you for possible snippet expansions like
+#   ``yas/insert-snippet``, but instead of expanding it, takes you
+#   directly to the snippet definition's file, if it exists.
+
+# Once you find this file it will be set to ``snippet-mode`` (see ahead)
+# and you can start editing your snippet.
+
+
+# Using the ``snippet-mode`` major mode
+# -------------------------------------
+
+# There is a major mode ``snippet-mode`` to edit snippets. You can set
+# the buffer to this mode with ``M-x snippet-mode``. It provides
+# reasonably useful syntax highlighting.
+
+# Two commands are defined in this mode:
+
+# \* ``M-x yas/load-snippet-buffer``
+
+#     When editing a snippet, this loads the snippet into the correct
+#     mode and menu. Bound to ``C-c C-c`` by default while in
+#     ``snippet-mode``.
+
+# \* ``M-x yas/tryout-snippet``
+
+#     When editing a snippet, this opens a new empty buffer, sets it to
+#     the appropriate major mode and inserts the snippet there, so you
+#     can see what it looks like. This is bound to ``C-c C-t`` while in
+#     ``snippet-mode``.
+
+# There are also *snippets for writing snippets*: ``vars``, ``$f`` and
+# ``$m`` :-).
+
+# File content
+# ============
+
+# A file defining a snippet generally contains the template to be
+# expanded.
+
+# Optionally, if the file contains a line of ``# --``, the lines above
+# it count as comments, some of which can be *directives* (or meta
+# data). Snippet directives look like ``# property: value`` and tweak
+# certain snippets properties described below. If no ``# --`` is found,
+# the whole file is considered the snippet template.
+
+# Here's a typical example:
+
+# .. sourcecode:: text
+
+#   # contributor: pluskid <pluskid@gmail.com>
+#   # name: __...__
+#   # --
+#   __${init}__
+
+# Here's a list of currently supported directives:
+
+# ``# key:`` snippet abbrev
+# --------------------------
+
+# This is the probably the most important directive, it's the abbreviation you
+# type to expand a snippet just before hitting ``yas/trigger-key``. If you don't
+# specify this the snippet will not be expandable through the key mechanism.
+
+# ``# name:`` snippet name
+# ------------------------
+
+# This is a one-line description of the snippet. It will be displayed in
+# the menu. It's a good idea to select a descriptive name for a
+# snippet -- especially distinguishable among similar snippets.
+
+# If you omit this name it will default to the file name the snippet was
+# loaded from.
+
+# ``# condition:`` snippet condition
+# ----------------------------------
+# This is a piece of Emacs-lisp code. If a snippet has a condition, then it
+# will only be expanded when the condition code evaluate to some non-nil
+# value.
+
+# See also ``yas/buffer-local-condition`` in `Expanding snippets`_
+
+
+# ``# group:`` snippet menu grouping
+# ----------------------------------
+
+# When expanding/visiting snippets from the menu-bar menu, snippets for a
+# given mode can be grouped into sub-menus . This is useful if one has
+# too many snippets for a mode which will make the menu too
+# long.
+
+# The ``# group:`` property only affect menu construction (See `the
+# YASnippet menu`_) and the same effect can be achieved by grouping
+# snippets into sub-directories and using the ``.yas-make-groups``
+# special file (for this see `Organizing Snippets`_
+
+
+# Refer to the bundled snippets for ``ruby-mode`` for examples on the
+# ``# group:`` directive. Group can also be nested, e.g.  ``control
+# structure.loops`` tells that the snippet is under the ``loops`` group
+# which is under the ``control structure`` group.
+
+# ``# expand-env:`` expand environment
+# ------------------------------------
+
+# This is another piece of Emacs-lisp code in the form of a ``let``
+# \*varlist form*, i.e. a list of lists assigning values to variables. It
+# can be used to override variable values while the snippet is being
+# expanded.
+
+# Interesting variables to override are ``yas/wrap-around-region`` and
+# ``yas/indent-line`` (see `Expanding Snippets`_).
+
+# As an example, you might normally have ``yas/indent-line`` set to
+# ``'auto`` and ``yas/wrap-around-region`` set to ``t``, but for this
+# particularly brilliant piece of ASCII art these values would mess up
+# your hard work. You can then use:
+
+# .. sourcecode:: text
+
+#   # name: ASCII home
+#   # expand-env: ((yas/indent-line 'fixed) (yas/wrap-around-region 'nil))
+#   # --
+#                   welcome to my
+#               X      humble
+#              / \      home,
+#             /   \      $0
+#            /     \
+#           /-------\
+#           |       |
+#           |  +-+  |
+#           |  | |  |
+#           +--+-+--+
+
+# ``# binding:`` direct keybinding
+# ---------------------------------
+
+# You can use this directive to expand a snippet directly from a normal
+# Emacs keybinding. The keybinding will be registered in the Emacs
+# keymap named after the major mode the snippet is active
+# for.
+
+# Additionally a variable ``yas/prefix`` is set to to the prefix
+# argument you normally use for a command. This allows for small
+# variations on the same snippet, for example in this "html-mode"
+# snippet.
+
+# .. sourcecode:: text
+
+#   # name: <p>...</p>
+#   # binding: C-c C-c C-m
+#   # --
+#   <p>`(when yas/prefix "\n")`$0`(when yas/prefix "\n")`</p>
+
+# This binding will be recorded in the keymap
+# ``html-mode-map``. To expand a paragraph tag newlines, just
+# press ``C-u C-c C-c C-m``. Omitting the ``C-u`` will expand the
+# paragraph tag without newlines.
+
+# ``# contributor:`` snippet author
+# ---------------------------------------------------
+
+# This is optional and has no effect whatsoever on snippet
+# functionality, but it looks nice.
+
+# Template syntax
+# ===============
+
+# The syntax of the snippet template is simple but powerful, very
+# similar to TextMate's.
+
+# Plain Text
+# ----------
+
+# Arbitrary text can be included as the content of a template. They are
+# usually interpreted as plain text, except ``$`` and `````. You need to
+# use ``\`` to escape them: ``\$`` and ``\```. The ``\`` itself may also
+# needed to be escaped as ``\\`` sometimes.
+
+# Embedded Emacs-lisp code
+# ------------------------
+
+# Emacs-Lisp code can be embedded inside the template, written inside
+# back-quotes (`````). The lisp forms are evaluated when the snippet is
+# being expanded. The evaluation is done in the same buffer as the
+# snippet being expanded.
+
+# Here's an example for ``c-mode`` to calculate the header file guard
+# dynamically:
+
+# .. sourcecode:: text
+
+#   #ifndef ${1:_`(upcase (file-name-nondirectory (file-name-sans-extension (buffer-file-name))))`_H_}
+#   #define $1
+
+#   $0
+
+#   #endif /* $1 */
+
+# From version 0.6, snippets expansions are run with some special
+# Emacs-lisp variables bound. One of this is ``yas/selected-text``. You
+# can therefore define a snippet like:
+
+# .. sourcecode:: text
+
+#    for ($1;$2;$3) {
+#      `yas/selected-text`$0
+#    }
+
+# to "wrap" the selected region inside your recently inserted
+# snippet. Alternatively, you can also customize the variable
+# ``yas/wrap-around-region`` to ``t`` which will do this automatically.
+
+# Tab stop fields
+# ---------------
+
+# Tab stops are fields that you can navigate back and forth by ``TAB``
+# and ``S-TAB``. They are written by ``$`` followed with a
+# number. ``$0`` has the special meaning of the *exit point* of a
+# snippet. That is the last place to go when you've traveled all the
+# fields. Here's a typical example:
+
+# .. sourcecode:: text
+
+#   <div$1>
+#       $0
+#   </div>
+
+# Placeholder fields
+# ------------------
+
+# Tab stops can have default values -- a.k.a placeholders. The syntax is
+# like this:
+
+# .. sourcecode:: text
+
+#   ${N:default value}
+
+# They acts as the default value for a tab stop. But when you firstly
+# type at a tab stop, the default value will be replaced by your
+# typing. The number can be omitted if you don't want to create
+# `mirrors`_ or `transformations`_ for this field.
+
+# .. _mirrors:
+
+# Mirrors
+# -------
+
+# We refer the tab stops with placeholders as a *field*. A field can have
+# mirrors. Its mirrors will get updated when you change the text of a
+# field. Here's an example:
+
+# .. sourcecode:: text
+
+#   \begin{${1:enumerate}}
+#       $0
+#   \end{$1}
+
+# When you type ``"document"`` at ``${1:enumerate}``, the word
+# ``"document"`` will also be inserted at ``\end{$1}``. The best
+# explanation is to see the screencast(`YouTube
+# <http://www.youtube.com/watch?v=vOj7btx3ATg>`_ or `avi video
+# <http://yasnippet.googlecode.com/files/yasnippet.avi>`_).
+
+# The tab stops with the same number to the field act as its mirrors. If
+# none of the tab stops has an initial value, the first one is selected
+# as the field and others mirrors.
+
+# .. _transformations:
+
+# Mirrors with transformations
+# ----------------------------
+
+# If the value of an ``${n:``-construct starts with and contains ``$(``,
+# then it is interpreted as a mirror for field ``n`` with a
+# transformation. The mirror's text content is calculated according to
+# this transformation, which is Emacs-lisp code that gets evaluated in
+# an environment where the variable ``text`` (or ``yas/text``) is bound
+# to the text content (string) contained in the field ``n``.Here's an
+# example for Objective-C:
+
+# .. sourcecode:: text
+
+#   - (${1:id})${2:foo}
+#   {
+#       return $2;
+#   }
+
+#   - (void)set${2:$(capitalize text)}:($1)aValue
+#   {
+#       [$2 autorelease];
+#       $2 = [aValue retain];
+#   }
+#   $0
+
+# Look at ``${2:$(capitalize text)}``, it is a mirror with
+# transformation instead of a field. The actual field is at the first
+# line: ``${2:foo}``. When you type text in ``${2:foo}``, the
+# transformation will be evaluated and the result will be placed there
+# as the transformed text. So in this example, if you type "baz" in the
+# field, the transformed text will be "Baz". This example is also
+# available in the screencast.
+
+# Another example is for ``rst-mode``. In reStructuredText, the document
+# title can be some text surrounded by "===" below and above. The "==="
+# should be at least as long as the text. So
+
+# .. sourcecode:: text
+
+#   =====
+#   Title
+#   =====
+
+# is a valid title but
+
+# .. sourcecode:: text
+
+#   ===
+#   Title
+#   ===
+
+# is not. Here's an snippet for rst title:
+
+# .. sourcecode:: text
+
+#   ${1:$(make-string (string-width text) ?\=)}
+#   ${1:Title}
+#   ${1:$(make-string (string-width text) ?\=)}
+
+#   $0
+
+# Fields with transformations
+# ---------------------------
+
+# From version 0.6 on, you can also have lisp transformation inside
+# fields. These work mostly mirror transformations but are evaluated
+# when you first enter the field, after each change you make to the
+# field and also just before you exit the field.
+
+# The syntax is also a tiny bit different, so that the parser can
+# distinguish between fields and mirrors. In the following example
+
+# .. sourcecode:: text
+
+#   #define "${1:mydefine$(upcase yas/text)}"
+
+# ``mydefine`` gets automatically upcased to ``MYDEFINE`` once you enter
+# the field. As you type text, it gets filtered through the
+# transformation every time.
+
+# Note that to tell this kind of expression from a mirror with a
+# transformation, YASnippet needs extra text between the ``:`` and the
+# transformation's ``$``. If you don't want this extra-text, you can use
+# two ``$``'s instead.
+
+# .. sourcecode:: text
+
+#   #define "${1:$$(upcase yas/text)}"
+
+# Please note that as soon as a transformation takes place, it changes
+# the value of the field and sets it its internal modification state to
+# ``true``. As a consequence, the auto-deletion behaviour of normal
+# fields does not take place. This is by design.
+
+# Choosing fields value from a list and other tricks
+# --------------------------------------------------
+
+# As mentioned, the field transformation is invoked just after you enter
+# the field, and with some useful variables bound, notably
+# ``yas/modified-p`` and ``yas/moving-away-p``. Because of this
+# feature you can place a transformation in the primary field that lets
+# you select default values for it.
+
+# The ``yas/choose-value`` does this work for you. For example:
+
+# .. sourcecode:: text
+
+#   <div align="${2:$$(yas/choose-value '("right" "center" "left"))}">
+#     $0
+#   </div>
+
+# See the definition of ``yas/choose-value`` to see how it was written
+# using the two variables.
+
+# Here's another use, for LaTeX-mode, which calls reftex-label just as
+# you enter snippet field 2. This one makes use of ``yas/modified-p``
+# directly.
+
+# .. sourcecode:: text
+
+#   \section{${1:"Titel der Tour"}}%
+#   \index{$1}%
+#   \label{{2:"waiting for reftex-label call..."$(unless yas/modified-p (reftex-label nil 'dont-
+#   insert))}}%
+
+# The function ``yas/verify-value`` has another neat trick, and makes
+# use of ``yas/moving-away-p``. Try it and see! Also, check out this
+# `thread
+# <http://groups.google.com/group/smart-snippet/browse_thread/thread/282a90a118e1b662>`_
+
+# Nested placeholder fields
+# -------------------------
+
+# From version 0.6 on, you can also have nested placeholders of the type:
+
+# .. sourcecode:: text
+
+#    <div${1: id="${2:some_id}"}>$0</div>
+
+# This allows you to choose if you want to give this ``div`` an ``id``
+# attribute. If you tab forward after expanding it will let you change
+# "some_id" to whatever you like. Alternatively, you can just press
+# ``C-d`` (which executes ``yas/skip-and-clear-or-delete-char``) and go
+# straight to the exit marker.
+
+# By the way, ``C-d`` will only clear the field if you cursor is at the
+# beginning of the field *and* it hasn't been changed yet. Otherwise, it
+# performs the normal Emacs ``delete-char`` command.
+
+# Customizable variables
+# ======================
+
+# ``yas/trigger-key``
+# -------------------
+
+# The key bound to ``yas/expand`` when function ``yas/minor-mode`` is
+# active.
+
+# Value is a string that is converted to the internal Emacs key
+# representation using ``read-kbd-macro``.
+
+# Default value is ``"TAB"``.
+
+# ``yas/next-field-key``
+# ----------------------
+
+# The key to navigate to next field when a snippet is active.
+
+# Value is a string that is converted to the internal Emacs key
+# representation using ``read-kbd-macro``.
+
+# Can also be a list of keys.
+
+# Default value is ``"TAB"``.
+
+# ``yas/prev-field-key``
+# ----------------------
+
+# The key to navigate to previous field when a snippet is active.
+
+# Value is a string that is converted to the internal Emacs key
+# representation using ``read-kbd-macro``.
+
+# Can also be a list of keys.
+
+# Default value is ``("<backtab>" "<S-tab>)"``.
+
+# ``yas/skip-and-clear-key``
+# --------------------------
+
+# The key to clear the currently active field.
+
+# Value is a string that is converted to the internal Emacs key
+# representation using ``read-kbd-macro``.
+
+# Can also be a list of keys.
+
+# Default value is ``"C-d"``.
+
+# ``yas/good-grace``
+# ------------------
+
+# If non-nil, don't raise errors in inline Emacs-lisp evaluation inside
+# snippet definitions. An error string "[yas] error" is returned instead.
+
+# ``yas/indent-line``
+# -------------------
+
+# The variable ``yas/indent-line`` controls the indenting. It is bound
+# to ``'auto`` by default, which causes your snippet to be indented
+# according to the mode of the buffer it was inserted in.
+
+# Another variable ``yas/also-auto-indent-first-line``, when non-nil
+# does exactly that :-).
+
+# To use the hard-coded indentation in your snippet template, set this
+# variable to ``fixed``.
+
+# To control indentation on a per-snippet basis, see also the directive
+# ``# expand-env:`` in `Writing Snippets`_.
+
+# For backward compatibility with earlier versions of YASnippet, you can
+# also place a ``$>`` in your snippet, an ``(indent-according-to-mode)``
+# will be executed there to indent the line. This only takes effect when
+# ``yas/indent-line`` is set to something other than ``'auto``.
+
+# .. sourcecode:: text
+
+#   for (${int i = 0}; ${i < 10}; ${++i})
+#   {$>
+#   $0$>
+#   }$>
+
+# ``yas/wrap-around-region``
+# --------------------------
+
+# If non-nil, YASnippet will try to expand the snippet's exit marker
+# around the currently selected region. When this variable is set to t,
+# this has the same effect has using the ```yas/selected-text``` inline
+# evaluation.
+
+# Because on most systems starting to type deletes the currently
+# selected region, this works mostly for snippets with direct
+# keybindings or with the ``yas/insert-snippet`` command.
+
+# However, when the value is of this variable is ``cua`` YASnippet will
+# additionally look-up any recently selected that you deleted by starting
+# typing. This allows you select a region, type a snippet key (deleting
+# the region), then press ``yas/trigger-key`` to see the deleted region
+# spring back to life inside your new snippet.
+
+# ``yas/triggers-in-field``
+# --------------------------
+
+# If non-nil, ``yas/next-field-key`` can trigger stacked expansions,
+# that is a snippet expansion inside another snippet
+# expansion. Otherwise, ``yas/next-field-key`` just tries to move on to
+# the next field.
+
+# ``yas/snippet-revival``
+# -----------------------
+
+# Non-nil means re-activate snippet fields after undo/redo.
+
+# ``yas/after-exit-snippet-hook`` and ``yas/before-expand-snippet-hook``
+# ----------------------------------------------------------------------
+
+# These hooks are called, respectively, before the insertion of a
+# snippet and after exiting the snippet. If you find any strange but
+# functional use for them, that's probably a design flaw in YASnippet,
+# so let us know.
+
+# Importing TextMate snippets
+# ===========================
+
+# There are a couple of tools that take TextMate's ".tmSnippet" xml
+# files and create YASnippet definitions:
+
+#  * `a python script by Jeff Wheeler
+#    <http://code.nokrev.com/?p=snippet-copier.git;a=blob_plain;f=snippet_copier.py>`_
+
+#  * a `ruby tool
+#    <http://yasnippet.googlecode.com/svn/trunk/extras/textmate_import.rb>`_
+#    , ``textmate_import.rb`` adapted from `Rob Christie's
+#    <http://www.neutronflux.net/2009/07/28/shoulda-snippets-for-emacs/>`_,
+#    which I have uploaded to the repository.
+
+# In this section, i'll shortly cover the **second** option.
+
+# Download the ``textmate_import.rb`` tool and the TextMate
+# bundle you're interested in.
+
+# .. sourcecode:: text
+
+#   $ curl -O http://yasnippet.googlecode.com/svn/trunk/extras/textmate_import.rb
+#   $ svn export http://svn.textmate.org/trunk/Bundles/HTML.tmbundle/
+
+
+# Then invoke ``textmate_import.rb`` like this:
+
+# .. sourcecode:: text
+
+#   $ ./textmate_import.rb -d HTML.tmbundle/Snippets/ -o html-mode -g HTML.tmbundle/info.plist
+
+# You should end up with a ``html-mode`` subdir containing snippets
+# exported from textmate.
+
+# .. sourcecode:: text
+
+#   $ tree html-mode # to view dir contents, if you have 'tree' installed
+
+# The ``-g`` is optional but helps the tool figure out the grouping.
+# According to `Organizing Snippets`_, don't forget to touch
+# ``.yas-make-groups`` and ``.yas-ignore-filename-triggers`` inside the
+# ``html-mode`` dir.
+
+# Also try ``textmate_import.rb --help`` for a list of options.
+
+# Please note that snippet importation is not yet perfect. You'll
+# probably have some adjustments to some/many snippets. Please
+# contribute these adjustments to the google group or, better yet, patch
+# the ``textmate_import.rb`` to automatically perform them and submit
+# that.
+
+# ..  LocalWords:  html YASnippet yas sourcecode pluskid init filenames filename
+# ..  LocalWords:  env varlist keybinding keymap rinari ifndef upcase endif
+# ..  LocalWords:  nondirectory autorelease aValue inline
+
+# * snippet-menu.org
+# ==============
+# YASnippet menu
+# ==============
+
+# .. contents::
+
+# When ``yas/minor-mode`` is active, YASnippet will setup a menu just
+# after the "Buffers" menu in the menubar.
+
+# In this menu, you can find
+
+# \* The currently loaded snippet definitions, organized by major mode,
+#   and optional grouping.
+
+# \* A rundown of the most common commands, (followed by their
+#   keybindings) including commands to load directories and reload all
+#   snippet definitions.
+
+# \* A series of submenus for customizing and exploring YASnippet
+#   behavior.
+
+# .. image:: images/menu-1.png
+#    :align: right
+
+# Loading snippets from menu
+# --------------------------
+
+# Invoking "Load snippets..." from the menu invokes
+# ``yas/load-directory`` and prompts you for a snippet directory
+# hierarchy to load.
+
+# Also useful is the "Reload all" options which uncondionally reloads
+# all the snippets directories defined in ``yas/root-directory`` and
+# rebuilds the menus.
+
+# Snippet menu behavior
+# ---------------------
+
+# YASnippet will list in this section all the loaded snippet definitions
+# organized by snippet table name.
+
+# You can use this section to explore currently loaded snippets. If you
+# click on one of them, the default behavior is to expand it,
+# unconditionally, inside the current buffer.
+
+# You can however, customize variable ``yas/visit-from-menu`` to be
+# ``t`` which will take you to the snippet definition file when you
+# select it from the menu.
+
+# If you want the menu show only snippet tables whose name corresponds
+# to a "real" major mode. You do this by setting ``yas/use-menu`` to
+# ``'real-modes``.
+
+# Finally, to have the menu show only the tables for the currently
+# active mode, set ``yas/use-menu`` to ``abbreviate``.
+
+# These customizations can also be found in the menu itself, under the
+# "Snippet menu behavior" submenu.
+
+
+# Controlling indenting
+# ---------------------
+
+# The "Indenting" submenu contains options to control the values of
+# ``yas/indent-line`` and ``yas/also-auto-indent-first-line``. See
+# `Writing snippets <snippet-development.html>`_ .
+
+# Prompting method
+# ----------------
+
+# The "Prompting method" submenu contains options to control the value
+# of ``yas/prompt-functions``. See `Expanding snippets <snippet-expansion.html>`_ .
+
+# Misc
+# ----
+
+# The "Misc" submenu contains options to control the values of more
+# variables.
+
+
+
+
+
+
+
+
+# * faq.org
+# ============================
+#  Frequently Asked Questions
+# ============================
+
+# Why is there an extra newline?
+# ==============================
+
+# If you have a newline at the end of the snippet definition file, then
+# YASnippet will add a newline when you expanding a snippet. Please
+# don't add a newline at the end if you don't want it when you saving
+# the snippet file.
+
+# Note some editors will automatically add a newline for you. In Emacs,
+# if you set ``require-final-newline`` to ``t``, it will add the final
+# newline for you automatically.
+
+# Why doesn't TAB expand a snippet?
+# =================================
+
+# First check the mode line to see if there's ``yas``. If not, then try
+# ``M-x yas/minor-mode`` to manually turn on the minor mode and try to
+# expand the snippet again. If it works, then, you can add the following
+# code to your ``.emacs`` *before* loading YASnippet:
+
+# .. sourcecode:: lisp
+
+#   (add-hook 'the-major-mode-hook 'yas/minor-mode-on)
+
+# where ``the-major-mode`` is the major mode in which ``yas/minor-mode``
+# isn't enabled by default.
+
+# From YASnippet 0.6 you can also use the command ``M-x
+# yas/global-mode`` to turn on YASnippet automatically for *all* major
+# modes.
+
+# If ``yas/minor-mode`` is on but the snippet still not expanded. Then
+# try to see what command is bound to the ``TAB`` key: press ``C-h k``
+# and then press ``TAB``. Emacs will show you the result.
+
+# You'll see a buffer prompted by Emacs saying that ``TAB runs the
+# command ...``. Alternatively, you might see ``<tab> runs the command
+# ...``, note the difference between ``TAB`` and ``<tab>`` where the
+# latter has priority. If you see ``<tab>`` bound to a command other
+# than ``yas/expand``, (e.g. in ``org-mode``) you can try the following
+# code to work around:
+
+# .. sourcecode:: lisp
+
+#   (add-hook 'org-mode-hook
+#             (let ((original-command (lookup-key org-mode-map [tab])))
+#               `(lambda ()
+#                  (setq yas/fallback-behavior
+#                        '(apply ,original-command))
+#                  (local-set-key [tab] 'yas/expand))))
+
+# replace ``org-mode-hook`` and ``org-mode-map`` with the major mode
+# hook you are dealing with (Use ``C-h m`` to see what major mode you
+# are in).
+
+# As an alternative, you can also try
+
+# .. sourcecode:: lisp
+
+#   (defun yas/advise-indent-function (function-symbol)
+#     (eval `(defadvice ,function-symbol (around yas/try-expand-first activate)
+#              ,(format
+#                "Try to expand a snippet before point, then call `%s' as usual"
+#                function-symbol)
+#              (let ((yas/fallback-behavior nil))
+#                (unless (and (interactive-p)
+#                             (yas/expand))
+#                  ad-do-it)))))
+
+#   (yas/advise-indent-function 'ruby-indent-line)
+
+# To *advise* the modes indentation function bound to TAB, (in this case
+# ``ruby-indent-line``) to first try to run ``yas/expand``.
+
+# If the output of ``C-h k RET <tab>`` tells you that ``<tab>`` is
+# indeed bound to ``yas/expand`` but YASnippet still doesn't work, check
+# your configuration and you may also ask for help on the `discussion
+# group <http://groups.google.com/group/smart-snippet>`_. See this
+# particular `thread
+# <http://code.google.com/p/yasnippet/issues/detail?id=93&can=1>`_ for
+# quite some solutions and alternatives.
+
+# Don't forget to attach the information on what command is bound to TAB
+# as well as the mode information (Can be obtained by ``C-h m``).
+
+# Why doesn't TAB navigation work with flyspell
+# =============================================
+
+# A workaround is to inhibit flyspell overlays while the snippet is active:
+
+# .. sourcecode:: lisp
+
+#   (add-hook 'flyspell-incorrect-hook
+#           #'(lambda (dummy1 dummy2 dymmy3)
+#               (and yas/active-field-overlay
+#                    (overlay-buffer yas/active-field-overlay))))
+
+# This is apparently related to overlay priorities. For some reason, the
+# ``keymap`` property of flyspell's overlays always takes priority over
+# the same property in yasnippet's overlays, even if one sets the
+# latter's ``priority`` property to something big. If you know
+# emacs-lisp and can solve this problem, drop a line in the `discussion
+# group`_.
+
+# How do I turn off the minor mode where in some buffers
+# ======================================================
+
+# The best way, since version 0.6.1c, is to set the default value of the
+# variable ``yas/dont-activate`` to a lambda function like so:
+
+# .. sourcecode:: lisp
+
+#   (set-default 'yas/dont-activate
+#              #'(lambda ()
+#                  (and yas/root-directory
+#                       (null (yas/get-snippet-tables)))))
+
+# This is also the default value starting for that version. It skips the
+# minor mode in buffers where it is not applicable (no snippet tables),
+# but only once you have setup your yas/root-directory.
+
+
+# How do I define an abbrev key containing characters not supported by the filesystem?
+# ====================================================================================
+
+# \**Note**: This question applies if you're still defining snippets
+#   whose key *is* the filename. This is behavior stil provided by
+#   version 0.6 for backward compatibilty, but is somewhat deprecated...
+
+# For example, you want to define a snippet by the key ``<`` which is
+# not a valid character for filename on Windows. This means you can't
+# use the filename as a trigger key in this case.
+
+# You should rather use the ``# key:`` directive to specify the key of
+# the defined snippet explicitly and name your snippet with an arbitrary
+# valid filename, ``lt.yasnippet`` for example, using ``<`` for the
+# ``# key:`` directive:
+
+# .. sourcecode:: text
+
+#   # key: <
+#   # name: <...></...>
+#   # --
+#   <${1:div}>$0</$1>
+
+# .. _discussion group: http://groups.google.com/group/smart-snippet
+
+# * changelog.org
+# =========
+# ChangeLog
+# =========
+
+# .. _Organizing Snippets: snippet-organization.html
+# .. _Expanding Snippets: snippet-expansion.html
+# .. _Writing Snippets: snippet-development.html
+# .. _The YASnippet Menu: snippet-menu.html
+
+# 0.7.0b / ????-??-??
+# ===================
+
+# \* Filenames can no longer be snippet triggers. Please upgrade your snippet
+#   collections.
+
+
+# 0.6.1c / 2009-08-13
+# ===================
+
+# \* Fixed `issues <http://code.google.com/p/yasnippet/issues>`_ 99, 98, 93,
+#   90, 91, 88, 87. Thanks everybody.
+# \* More compliant customization group `Issue94
+#   <http://code.google.com/p/yasnippet/issues/detail?id=94>`_, (thanks
+#   wyuenho).
+# \* Added workaround for issue 97 in the FAQ
+# \* Small updates to documentation.
+
+# 0.6.1b / 2009-08-29
+# ===================
+
+# \* Much more powerful menu. See `The YASnippet menu`_.
+# \* New ways to organize snippets. See `Organizing snippets`_.
+# \* Added ``yas/also-auto-indent-first-line`` customization variable.
+# \* Renamed directive ``# env:`` to ``# expand-env:``
+# \* Rewrote much of the documentation.
+# \* Added TextMate import tool ``textmate-import.rb`` to to svn
+#   repository (see "extras/")
+# \* Added *experimental* bundle of textmate snippets
+#   ``yasnippet-textmate-bundle.el``
+# \* Fixed `Issue 74
+#   <http://code.google.com/p/yasnippet/issues/detail?id=74>`_ (thanks
+#   rmartin.k...@gmail.com)
+# \* Fixed `Issues 80 through 84
+#   <http://code.google.com/p/yasnippet/issues/detail?id=80>`_ (thanks
+#   Moritz Bunkus)
+# \* Fixed many more issues...
+
+
+# 0.6.0c / 2009-07-27
+# ===================
+
+# \* Now byte compiles correctly with no warnings.
+# \* Fixed `Issue 68
+#   <http://code.google.com/p/yasnippet/issues/detail?id=68>`_ with
+#   mouse-clicking alternatives in ``ido-mode``.
+# \* Added ``yas/also-auto-indent-first-line`` customization variable.
+
+
+# 0.6.0b / 2009-07-25
+# ===================
+
+# \* Nested placeholders of the type ``<div${1: id="${2:someid}"}> $0``.
+
+# \* More robust undo/redo support.
+
+# \* Stacked snippet expansion (*snippet in snippet*).
+
+# \* Transformation on a primary field with syntax ``${1:default$(transform)}``
+
+# \* Validations on field exit through the ``yas/verify-value``
+#   primary field transformation.
+
+# \* Wrapping the region in the exit marker ``$0`` of the snippet. Use
+#   ``yas/wrap-around-region``.
+
+# \* Auto-indentation. Use ``yas/indent-line`` set to ``'auto``
+
+# \* Easier definition of snippets. Use ``yas/find-snippets`` or
+#   ``yas/visit-snippet-file``. In the new ``snippet-mode`` use
+#   ``yas/load-snippet-buffer`` and ``yas/tryout-snippet``.
+
+# \* Customization group ``yasnippet``.
+
+# \* Overriding customization variables in snippets. Use the ``env:
+#   let-form`` template keyword.
+
+# \* Fixed `Issue 60
+#   <http://code.google.com/p/yasnippet/issues/detail?id=60>`_
+# \* Fixed `Issue 65
+#   <http://code.google.com/p/yasnippet/issues/detail?id=65>`_
+# \* Fixed `Issue 56
+#   <http://code.google.com/p/yasnippet/issues/detail?id=56>`_
+
+# 0.5.10 / 2009-02-11
+# ===================
+
+# \* Added *grouping* support so that the snippets in the menu can be
+#   groupped together.
+# \* Make the bundle `ELPA <http://tromey.com/elpa/index.html>`_
+#   compatible.
+
+# 0.5.9 / 2009-01-21
+# ==================
+
+# \* Fixed the bug of disabling the auto-indenting of ``cc-mode``.
+
+# 0.5.8 / 2009-01-15
+# ==================
+
+# \* Added a ``key`` property in snippet definition for snippet names
+#   that are not valid path name.
+# \* Fixed some bugs of indenting (`Issue 44
+#   <http://code.google.com/p/yasnippet/issues/detail?id=44>`_, `Issue
+#   46 <http://code.google.com/p/yasnippet/issues/detail?id=46>`_).
+# \* Fixed `Issue 45
+#   <http://code.google.com/p/yasnippet/issues/detail?id=45>`_ by
+#   providing a proper default value for ``yas/buffer-local-condition``.
+# \* Added helper function ``yas/substr`` for convenient mirror
+#   transformation.
+# \* Make variable ``yas/registered-snippet`` properly initialized.
+# \* Fixed the overlay error when overlay becomes empty (`Issue 49
+#   <http://code.google.com/p/yasnippet/issues/detail?id=49>`_ and
+#   `Issue 48
+#   <http://code.google.com/p/yasnippet/issues/detail?id=48>`_). This
+#   bug has occurred and been fixed earlier, and should not have
+#   happened if we have proper regression test.
+# \* Added a workaround for ``c-electric-`` serial commands (`Issue 27
+#   <http://code.google.com/p/yasnippet/issues/detail?id=27>`_).
+
+# 0.5.7 / 2008-12-03
+# ==================
+
+# \* Fixed `Issue 28
+#   <http://code.google.com/p/yasnippet/issues/detail?id=28>`_ of
+#   properly clean up snippet (by joaotavora).
+# \* Added a new section "Field-level undo functionality" to correct
+#   `Issue 33 <http://code.google.com/p/yasnippet/issues/detail?id=33>`_
+#   (by joaotavora).
+# \* Added some snippets from users for sql, erlang, scala, html, xml, latex, etc.
+# \* Fixed `Issue 16
+#   <http://code.google.com/p/yasnippet/issues/detail?id=16>`_ by adding
+#   ``$>`` support. Here's the `doc for $> indenting
+#   <http://pluskid.lifegoo.com/upload/project/yasnippet/doc/define_snippet.html#indenting>`_.
+
+# 0.5.6 / 2008-08-07
+# ==================
+
+# \* Added a buffer local variable ``yas/dont-activate`` to turn off
+#   ``yas/minor-mode`` in some major modes. See `Issue 29
+#   <http://code.google.com/p/yasnippet/issues/detail?id=29>`_.
+# \* Make the environment of elisp evaluation more friendly to
+#   ``(current-column)``.
+# \* Fixed the regular expression bug in python-mode snippets.
+# \* Use filename or full key extension for snippet name if no ``name``
+#   property is defined.
+
+# 0.5.5 / 2008-05-29
+# ==================
+
+# \* Tweak ``yas/extra-mode-hooks`` so that it can be more easily
+#   customized.
+# \* Add an entry in FAQ about why ``TAB`` key doesn't work in some
+#   modes.
+
+# 0.5.4 / 2008-05-15
+# ==================
+
+# \* Added ``ox-mode-hook`` and ``python-mode-hook`` to
+#   ``yas/extra-mode-hooks`` to fix the problem YASnippet is not enabled
+#   in those modes.
+
+# 0.5.3 / 2008-05-07
+# ==================
+
+# \* Fix indent of python-mode snippets.
+# \* Fix a bug of dropdown-list: conflicts with color-theme (`Issue 23
+#   <http://code.google.com/p/yasnippet/issues/detail?id=23>`_). Thanks
+#   Mike.
+# \* Fix a bug of condition system.
+
+# 0.5.2 / 2008-04-20
+# ==================
+
+# \* Fix a bug for comparing string to symbol using ``string=`` (which
+#   will fire an error).
+
+# 0.5.1 / 2008-04-14
+# ==================
+
+# \* Use a beautiful css style in the document.
+
+# 0.5.0 / 2008-04-10
+# ==================
+
+# \* Integrate with hippie-expand. Just add ``yas/hippie-try-expand`` to
+#   ``hippie-expand-try-functions-list``.
+# \* If you set ``yas/fall-back-behavior`` to ``'return-nil``, YASnippet
+#   will return nil when it can't find a snippet to expand.
+# \* Defect fix: the condition of a snippet was evaluated twice in
+#   earlier version.
+# \* Deleting snippet (using ``C-w`` or ``C-k``) won't cause serious
+#   problem now.
+# \* Several complex snippet for python-mode from Yasser included in the
+#   distribution.
+
+# 0.4.5 / 2008-04-07
+# ==================
+
+# \* Merge the latest dropdown-list.el.
+# \* Add snippets for f90-mode from Li Zhu.
+# \* Bug fix: l-safe-expr-p: Lisp nesting exceeds ``max-lisp-eval-depth``
+#   error when several (more than two) snippets overlaps. Thanks
+#   sunwaybupt@newsmth for reporting this bug.
+
+# 0.4.4 / 2008-03-24
+# ==================
+
+# \* Bug fix: dropdown-list.el doesn't recognize [return] properly.
+
+# 0.4.3 / 2008-03-23
+# ==================
+
+# \* Bug fix: failed to recognize user customized yas/trigger-key.
+
+# 0.4.2 / 2008-03-22
+# ==================
+
+# \* Make a separate document package for release. Also make document
+#   available online.
+
+# 0.4.1 / 2008-03-21
+# ==================
+
+# \* Make sure ``yas/minor-mode``'s key bindings always take priority to
+#   other minor modes.
+
+# 0.4.0 / 2008-03-20
+# ==================
+
+# \* Document refinement and released with YASnippet. Most of the Online
+#   wiki document will be deprecated soon.
+# \* Powerful condition system added to yasnippet!
+# \* Incorporate ``dropdown-list.el`` and make it default way for
+#   selecting multiple candidates. Thanks to `Jaeyoun Chung
+#   <http://groups.google.com/group/smart-snippet/browse_thread/thread/c869158b76addeb3/e7c6372ba457189e>`_.
+# \* yas/before-expand-snippet-hook
+
+# 0.3.2 / 2008-03-19
+# ==================
+
+# \* Enhancement: A better way to define minor-mode. Thanks to Kentaro
+#   Kuribayashi. See `this thread
+#   <https://groups.google.com/group/smart-snippet/browse_thread/thread/65cb3b5583eda887?hl=en>`_
+#   for more details.
+
+# 0.3.1 / 2008-03-17
+# ==================
+
+# \* Bug fix: Emacs get confused when a field is deleted. See `issue 10
+#   <http://code.google.com/p/yasnippet/issues/detail?id=10>`_.
+
+# 0.3.0 / 2008-03-16
+# ==================
+
+# \* Add a ``yas/after-exit-snippet-hook`` so that you can do something like
+#   ``indent-region`` or ``fill-region`` after finish the snippet.
+# \* Use minor-mode instead of ``global-set-key`` to bind the trigger
+#   key. Now the trigger key and fall-back behavior can be more
+#   flexible. Not constrained to ``<tab>``. Thanks to Trey Jackson. See
+#   this `thread
+#   <https://groups.google.com/group/smart-snippet/browse_thread/thread/937f32a2a6dea4f2?hl=en>`_
+#   for more details.
+# \* Now user can customize the popup function for selecting multiple
+#   candidate for the same snippet key.
+# \* Support ``dropdown-list.el`` to be a better way to select multiple
+#   candidate when in text mode.
+
+# 0.2.3 / 2008-03-15
+# ==================
+
+# \* Bug in non-window (-nw) mode when there's multiple candidate to
+#   expand. See `issue 7
+#   <http://code.google.com/p/yasnippet/issues/detail?id=7>`_.
+# \* Allow expanding another snippet as long as not currently inside a
+#   field.
+
+# 0.2.2 / 2008-03-13
+# ==================
+
+# \* Added customized face for fields and mirrors. Better in dark
+#   background. And users can customize it.
+
+# 0.2.1 / 2008-03-10
+# ==================
+
+# \* Fix the insert-behind problem under both Emacs 22 and Emacs 23.
+
+# 0.2.0 / 2008-03-10
+# ==================
+
+# \* Use big keymap overlay to detect ``insert-behind`` event manually to
+#   avoid sometimes missed hook calls. See `issue 3
+#   <http://code.google.com/p/yasnippet/issues/detail?id=3>`_ for more
+#   details.
+# \* Support parent snippet table. Now you can set (for example)
+#   ``cc-mode`` as common mode for ``c++-mode``, ``c-mode`` and
+#   ``java-mode``. They'll share snippets defined for ``cc-mode``.
+
+# 0.1.1 / 2008-03-08
+# ==================
+
+# \* Add a rake task to upload to google code.
+# \* Use elisp compile-bundle function instead of python scrip
+
+# 0.1.0 / 2008-03-07
+# ==================
+
+# \* Embedded elisp support.
+# \* Fields navigation support.
+# \* Mirror of fields support.
+# \* Menu-bar support.
+# \* Multiple snippets with same name support.
+# \* Popup menu for multiple snippet with same name support.
+# \* Transformation of fields support.
+# \* Load directory support.
+# \* Compile bundle support.
