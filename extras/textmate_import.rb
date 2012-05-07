@@ -19,6 +19,7 @@ require 'fileutils'
 require 'shellwords' # String#shellescape
 require 'ruby-debug' if $DEBUG
 
+Encoding.default_external = Encoding::UTF_8 if RUBY_VERSION > '1.8.7'
 
 opts = Trollop::options do
   opt :bundle_dir, "TextMate bundle directory", :short => '-d', :type => :string
