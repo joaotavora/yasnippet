@@ -18,13 +18,6 @@
 #+LINK: forum              http://groups.google.com/group/smart-snippet
 
 
-# Internal links
-
-.. _Organizing Snippets: snippet-organization.html
-.. _Expanding Snippets: snippet-expansion.html
-.. _Writing Snippets: snippet-development.html
-.. _The YASnippet Menu: snippet-menu.html
-
 *YASnippet* is a template system for Emacs. It allows you to type an
 abbreviation and automatically expand it into function templates. Bundled
 language templates includes: C, C++, C#, Perl, Python, Ruby, SQL, LaTeX, HTML,
