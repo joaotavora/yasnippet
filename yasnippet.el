@@ -1674,10 +1674,8 @@ Optional USE-JIT use jit-loading of snippets."
     errors))
 
 (defun yas/reload-all (&optional no-jit)
-  "Reload all snippets and rebuild the YASnippet menu.
-
-Behaviour is affected by `yas/no-jit', which see."
-  (interactive "p")
+  "Reload all snippets and rebuild the YASnippet menu."
+  (interactive "P")
   (catch 'abort
     (let ((errors)
           (snippet-editing-buffers
