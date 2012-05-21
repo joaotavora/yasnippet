@@ -1723,7 +1723,7 @@ Behaviour is affected by `yas/no-jit', which see."
       (yas/message 3 "Reloaded everything...%s." (if errors " (some errors, check *Messages*)" "")))))
 
 (defun yas/load-pending-jits ()
-  (when yas/minor-mode 
+  (when yas/minor-mode
     (dolist (mode (yas/modes-to-activate))
       (let ((forms (gethash mode yas/scheduled-jit-loads)))
         (dolist (form forms)
@@ -1911,7 +1911,10 @@ the current buffers contents."
     template))
 
 (defun yas/snippet-menu-binding-pair-get-create (template &optional type)
-  "Get TEMPLATE's menu binding or assign it a new one."
+  "Get TEMPLATE's menu binding or assign it a new one.
+
+TYPE may be `:stay', signalling this menu binding should be
+static in the menu."
   (or (yas/template-menu-binding-pair template)
       (let ((key (yas/template-key template))
             (keybinding (yas/template-keybinding template)))
@@ -1965,7 +1968,7 @@ MENU is a list, its elements can be:
 
 - (yas/item UUID) : Creates an entry the snippet identified with
   UUID. The menu entry for a snippet thus identified is
-  permanent, i.e. it will never move in the menu.
+  permanent, i.e. it will never move (be reordered) in the menu.
 
 - (yas/separator) : Creates a separator
 
