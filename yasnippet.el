@@ -1018,7 +1018,6 @@ Has the following fields:
         ;;
         (remhash uuid (yas/table-uuidhash table))))))
 
-
 (defun yas/add-template (table template)
   "Store in TABLE the snippet template TEMPLATE.
 
@@ -1027,7 +1026,7 @@ keybinding)."
   (let ((name (yas/template-name template))
         (key (yas/template-key template))
         (keybinding (yas/template-keybinding template))
-        (menu-binding (car (yas/template-menu-binding-pair template))))
+        (menu-binding-pair (yas/snippet-menu-binding-pair-get-create template)))
     (dolist (k (remove nil (list key keybinding)))
       (puthash name
                template
@@ -1039,28 +1038,27 @@ keybinding)."
       (when (vectorp k)
         (define-key (yas/table-direct-keymap table) k 'yas/expand-from-keymap)))
 
-    (when menu-binding
-      (setf (getf (cdr menu-binding) :keys)
-            (or (and keybinding (key-description keybinding))
-                (and key (concat key yas/trigger-symbol))))
-      (setcar (cdr menu-binding)
-              name))
+    ;; Update trigger & keybinding in the menu-binding pair
+    ;;
+    (setf (getf (cdr (car menu-binding-pair)) :keys)
+          (or (and keybinding (key-description keybinding))
+              (and key (concat key yas/trigger-symbol))))
 
     (puthash (yas/template-uuid template) template (yas/table-uuidhash table))))
 
-(defun yas/update-template (snippet-table template)
-  "Add or update TEMPLATE in SNIPPET-TABLE.
+(defun yas/update-template (table template)
+  "Add or update TEMPLATE in TABLE.
 
-Also takes care of adding and updaring to the associated menu."
+Also takes care of adding and updating to the associated menu."
   ;; Remove from table by uuid
   ;;
-  (yas/remove-template-by-uuid snippet-table (yas/template-uuid template))
+  (yas/remove-template-by-uuid table (yas/template-uuid template))
   ;; Add to table again
   ;;
-  (yas/add-template snippet-table template)
+  (yas/add-template table template)
   ;; Take care of the menu
   ;;
-  (let ((keymap (yas/menu-keymap-get-create snippet-table))
+  (let ((keymap (yas/menu-keymap-get-create table))
         (group (yas/template-group template)))
     (when (and yas/use-menu
                keymap
@@ -1680,34 +1678,49 @@ Below TOP-LEVEL-DIR each directory is a mode name."
 
 Behaviour is affected by `yas/no-jit', which see."
   (interactive "p")
-  (let ((errors))
-    ;; Empty all snippet tables, parenting info and all menu tables
-    ;;
-    (setq yas/tables (make-hash-table))
-    (setq yas/parents (make-hash-table))
-    (setq yas/menu-table (make-hash-table))
-    
-    ;; Cancel all pending 'yas/scheduled-jit-loads'
-    ;;
-    (setq yas/scheduled-jit-loads (make-hash-table))
+  (catch 'abort
+    (let ((errors)
+          (snippet-editing-buffers
+           (remove-if-not #'(lambda (buffer)
+                              (with-current-buffer buffer yas/editing-template))
+                          (buffer-list))))
+      ;; Warn if there are buffers visiting snippets, since reloading will break
+      ;; any on-line editing of those buffers.
+      ;;
+      (if snippet-editing-buffers
+          (if (y-or-n-p "Some buffers editing live snippets, close them and proceed with reload?")
+              (mapcar #'kill-buffer snippet-editing-buffers)
+            (yas/message 1 "Aborted reload...")
+            (throw 'abort nil)))
 
-    ;; Init the `yas/minor-mode-map', taking care not to break the
-    ;; menu....
-    ;;
-    (setf (cdr yas/minor-mode-map)
-          (cdr (yas/init-minor-keymap)))
+      ;; Empty all snippet tables, parenting info and all menu tables
+      ;;
+      (setq yas/tables (make-hash-table))
+      (setq yas/parents (make-hash-table))
+      (setq yas/menu-table (make-hash-table))
 
-    ;; Reload the directories listed in `yas/snippet-dirs' or prompt
-    ;; the user to select one.
-    ;;
-    (setq errors (yas/load-snippet-dirs no-jit))
-    ;; Reload the direct keybindings
-    ;;
-    (yas/direct-keymaps-reload)
-    ;; Reload the trigger-key (shoudn't be needed, but see issue #237)
-    ;; 
-    (yas/trigger-key-reload)
-    (yas/message 3 "Reloaded everything...%s." (if errors " (some errors, check *Messages*)" ""))))
+      ;; Cancel all pending 'yas/scheduled-jit-loads'
+      ;;
+      (setq yas/scheduled-jit-loads (make-hash-table))
+
+      ;; Init the `yas/minor-mode-map', taking care not to break the
+      ;; menu....
+      ;;
+      (setf (cdr yas/minor-mode-map)
+            (cdr (yas/init-minor-keymap)))
+
+      ;; Reload the directories listed in `yas/snippet-dirs' or prompt
+      ;; the user to select one.
+      ;;
+      (setq errors (yas/load-snippet-dirs no-jit))
+      ;; Reload the direct keybindings
+      ;;
+      (yas/direct-keymaps-reload)
+      ;; Reload the trigger-key (shoudn't be needed, but see issue #237)
+      ;;
+      (yas/trigger-key-reload)
+
+      (yas/message 3 "Reloaded everything...%s." (if errors " (some errors, check *Messages*)" "")))))
 
 (defun yas/load-pending-jits ()
   (when yas/minor-mode 
