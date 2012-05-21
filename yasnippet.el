@@ -1675,9 +1675,7 @@ Below TOP-LEVEL-DIR each directory is a mode name."
       (call-interactively 'yas/load-directory))
     errors))
 
-(defvar yas/no-jit nil
-  "Non-nil forces `yas/reload-all' to skip jit-loading and load every directory.")
-(defun yas/reload-all ()
+(defun yas/reload-all (&optional no-jit)
   "Reload all snippets and rebuild the YASnippet menu.
 
 Behaviour is affected by `yas/no-jit', which see."
@@ -1702,7 +1700,7 @@ Behaviour is affected by `yas/no-jit', which see."
     ;; Reload the directories listed in `yas/snippet-dirs' or prompt
     ;; the user to select one.
     ;;
-    (setq errors (yas/load-snippet-dirs yas/no-jit))
+    (setq errors (yas/load-snippet-dirs no-jit))
     ;; Reload the direct keybindings
     ;;
     (yas/direct-keymaps-reload)
