@@ -118,8 +118,8 @@
   (let* ((start  (point))
          (end (save-excursion
                 (search-forward-regexp "^\s*def\sself\.down" nil 'noerror)))
-         (up (aget (aget yas/rails-intelligent-migration-snippet-bits type) :up))
-         (down (aget (aget yas/rails-intelligent-migration-snippet-bits type) :down))
+         (up (cdr (assoc :up (cdr (assoc type yas/rails-intelligent-migration-snippet-bits)))))
+         (down (cdr (assoc :down (cdr (assoc type yas/rails-intelligent-migration-snippet-bits)))))
          (snippet
           (and up down start end (concat up
                                          (buffer-substring-no-properties start end)

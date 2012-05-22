@@ -108,7 +108,7 @@
   (interactive)
   (let* ((tag-at-point (sgml-beginning-of-tag))
          (fragment (and tag-at-point
-                        (aget yas/html-tag-description-urls (upcase tag-at-point)))))
+                        (cdr (assoc (upcase tag-at-point) yas/html-tag-description-urls)))))
     (if fragment
         (browse-url (concat "http://www.w3.org/TR/html4/index/"
                             fragment))
