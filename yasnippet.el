@@ -1604,13 +1604,13 @@ TEMPLATES is a list of `yas/template'."
 (defun yas/load-yas-setup-file (file)
   (load file 'noerror))
 
-(defun yas/load-directory (top-level-dir &optional nojit)
-  "Load snippet definition from directory hierarchy under TOP-LEVEL-DIR.
+(defun yas/load-directory (top-level-dir &optional use-jit)
+  "Load snippets in directory hierarchy TOP-LEVEL-DIR.
 
-Below TOP-LEVEL-DIR each directory is a mode name."
+Below TOP-LEVEL-DIR each directory should be a mode name.
+
+Optional USE-JIT use jit-loading of snippets."
   (interactive "DSelect the root directory: ")
-  (unless (file-directory-p top-level-dir)
-    (error "%s is not a directory" top-level-dir))
   (unless yas/snippet-dirs
     (setq yas/snippet-dirs top-level-dir))
   (dolist (dir (yas/subdirs top-level-dir))
@@ -1622,10 +1622,9 @@ Below TOP-LEVEL-DIR each directory is a mode name."
       (let ((form `(yas/load-directory-1 ,dir
                                          ',mode-sym
                                          ',parents)))
-        (if (or (called-interactively-p)
-                nojit)
-            (eval form)
-          (yas/schedule-jit mode-sym form)))))
+        (if use-jit
+            (yas/schedule-jit mode-sym form)
+            (eval form)))))
   (when (interactive-p)
     (yas/message 3 "Loaded snippets from %s." top-level-dir)))
 
@@ -1635,9 +1634,9 @@ Below TOP-LEVEL-DIR each directory is a mode name."
     (if (and (not no-compiled-snippets)
              (load (expand-file-name ".yas-compiled-snippets" directory) 'noerror (<= yas/verbosity 2)))
         (yas/message 2 "Loading much faster .yas-compiled-snippets from %s" directory)
-      (yas/load-directory-2 directory mode-sym parents))))
+      (yas/load-directory-2 directory mode-sym))))
 
-(defun yas/load-directory-2 (directory mode-sym parents)
+(defun yas/load-directory-2 (directory mode-sym)
   ;; Load .yas-setup.el files wherever we find them
   ;;
   (yas/load-yas-setup-file (expand-file-name ".yas-setup" directory))
@@ -1658,8 +1657,7 @@ Below TOP-LEVEL-DIR each directory is a mode name."
     ;;
     (dolist (subdir (yas/subdirs directory))
       (yas/load-directory-2 subdir
-                            mode-sym
-                            nil))))
+                            mode-sym))))
 
 (defun yas/load-snippet-dirs (&optional nojit)
   "Reload the directories listed in `yas/snippet-dirs' or
@@ -1667,12 +1665,11 @@ Below TOP-LEVEL-DIR each directory is a mode name."
   (let (errors)
     (if yas/snippet-dirs
         (dolist (directory (reverse (yas/snippet-dirs)))
-          (condition-case oops
-              (progn
-                (yas/load-directory directory nojit)
-                (yas/message 3 "Loaded %s" directory))
-            (error (push oops errors)
-                   (yas/message 3 "Check your `yas/snippet-dirs': %s" (second oops)))))
+          (cond ((file-directory-p directory)
+                 (yas/load-directory directory (not nojit))
+                 (yas/message 3 "Loaded %s" directory))
+                (t
+                 (push (yas/message 0 "Check your `yas/snippet-dirs': %s is not a directory" directory) errors))))
       (call-interactively 'yas/load-directory))
     errors))
 
@@ -1799,9 +1796,9 @@ This works by stubbing a few functions, then calling
           (let ((output-file (concat (file-name-as-directory dir) ".yas-compiled-snippets.el")))
             (with-temp-file output-file
               (insert (format ";;; Compiled snippets and support files for `%s'\n" mode))
-              (yas/load-directory-2 dir mode parents)
+              (yas/load-directory-2 dir mode)
               (insert (format ";;; Do not edit! File generated at %s\n" (current-time-string)))))))
-    (yas/load-directory top-level-dir 'im-compiling-so-no-jit-ok?)))
+    (yas/load-directory top-level-dir nil)))
 
 (defun yas/recompile-all ()
   "Compile every dir in `yas/snippet-dirs'."
