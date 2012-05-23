@@ -76,10 +76,12 @@ Then, in your .emacs file
     (add-to-list 'load-path
                   "~/.emacs.d/plugins/yasnippet")
     (require 'yasnippet)
-    (setq yas/snippet-dirs '("~/.emacs.d/snippets" "~/.emacs.d/extras/imported"))
+    (setq yas/snippet-dirs '("~/.emacs.d/snippets" "~/.emacs.d/plugins/yasnippet/extras/imported"))
     (yas/global-mode 1)    
      
-Open some rails file (model, app, etc) and start using the textmate snippets.     
+Open some rails file (model, app, etc) and start using the textmate snippets. 
+Note thqt in the example above we abandon the default snippet collection on 
+`~/.emacs.d/plugins/yasnippet/snippets`
 
 # Documentation, issues, etc
 
