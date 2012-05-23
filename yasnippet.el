@@ -2860,13 +2860,24 @@ have, compare through the field's start point"
 
 (defun yas/field-probably-deleted-p (snippet field)
   "Guess if SNIPPET's FIELD should be skipped."
-  (and (zerop (- (yas/field-start field) (yas/field-end field)))
-       (or (yas/field-parent-field field)
-           (and (eq field (car (last (yas/snippet-fields snippet))))
-                (= (yas/field-start field) (overlay-end (yas/snippet-control-overlay snippet)))))
-       ;; the field numbered 0, just before the exit marker, should
-       ;; never be skipped
-       (not (zerop (yas/field-number field)))))
+  (and
+   ;; field must be zero lentgh
+   ;;
+   (zerop (- (yas/field-start field) (yas/field-end field)))
+   ;; skip if:
+   (or
+    ;;  1) is a nested field and it's been modified
+    ;;
+    (and (yas/field-parent-field field)
+         (yas/field-modified-p field))
+    ;;  2) ends just before the snippet end
+    ;;
+    (and (eq field (car (last (yas/snippet-fields snippet))))
+         (= (yas/field-start field) (overlay-end (yas/snippet-control-overlay snippet)))))
+   ;; the field numbered 0, just before the exit marker, should
+   ;; never be skipped
+   ;;
+   (not (zerop (yas/field-number field)))))
 
 (defun yas/snippets-at-point (&optional all-snippets)
   "Return a sorted list of snippets at point, most recently
