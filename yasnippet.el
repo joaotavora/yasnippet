@@ -2341,7 +2341,7 @@ NO-TEMPLATE is non-nil."
     (unless no-template (yas/expand-snippet "\
 # -*- mode: snippet -*-
 # name: $1
-# key: $2${3:
+# key: ${2:${1:$(replace-regexp-in-string \"\\\\\\\\(\\\\\\\\w+\\\\\\\\).*\" \"\\\\\\\\1\" yas/text)}}${3:
 # binding: ${4:direct-keybinding}}${5:
 # expand-env: ((${6:some-var} ${7:some-value}))}${8:
 # type: command}
