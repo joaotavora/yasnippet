@@ -26,12 +26,17 @@ desc "create a release package"
 task :package do
   release_dir = "pkg/yasnippet-#{$version}"
   FileUtils.mkdir_p(release_dir)
-  files = ['extras', 'snippets', 'yasnippet.el', 'dropdown-list.el']
+  files = ['snippets', 'yasnippet.el', 'dropdown-list.el']
   FileUtils.cp_r files, release_dir
-  FileUtils.rm_r Dir[release_dir + "/**/.svn"]
-  FileUtils.cd 'pkg'
-  sh "tar cjf yasnippet-#{$version}.tar.bz2 yasnippet-#{$version}"
-  FileUtils.cd ".."
+  File.open(File.join(release_dir,'yasnippet-pkg.el'), 'w') do |file|
+    file.puts <<END
+(define-package "yasnippet-mode"
+                "#{$version}"
+                "A template system for Emacs")
+END
+  end
+  sh "git clean -f snippets"
+  sh "tar cf pkg/yasnippet-#{$version}.tar pkg/yasnippet-#{$version}"
 end
 
 desc "create a release package and upload it to google code"
@@ -72,7 +77,7 @@ namespace :doc do
   end
 end
 
-desc "Compile yasnippet.el into yasnippet.elc" 
+desc "Compile yasnippet.el into yasnippet.elc"
 
 rule '.elc' => '.el' do |t|
   sh "emacs --batch -L . --eval \"(byte-compile-file \\\"#{t.source}\\\")\""
