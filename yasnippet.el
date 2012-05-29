@@ -1673,7 +1673,7 @@ Optional USE-JIT use jit-loading of snippets."
       (call-interactively 'yas/load-directory))
     errors))
 
-(defun yas/reload-all (&optional no-jit)
+(defun yas/reload-all (&optional interactive)
   "Reload all snippets and rebuild the YASnippet menu."
   (interactive "P")
   (catch 'abort
@@ -1685,11 +1685,15 @@ Optional USE-JIT use jit-loading of snippets."
       ;; Warn if there are buffers visiting snippets, since reloading will break
       ;; any on-line editing of those buffers.
       ;;
-      (if snippet-editing-buffers
-          (if (y-or-n-p "Some buffers editing live snippets, close them and proceed with reload?")
-              (mapcar #'kill-buffer snippet-editing-buffers)
-            (yas/message 1 "Aborted reload...")
-            (throw 'abort nil)))
+      (when snippet-editing-buffers
+          (if interactive
+              (if (y-or-n-p "Some buffers editing live snippets, close them and proceed with reload?")
+                  (mapcar #'kill-buffer snippet-editing-buffers)
+                (yas/message 1 "Aborted reload...")
+                (throw 'abort nil))
+            ;; in a non-interactive use, at least set
+            ;; `yas/editing-template' to nil, make it guess it next time around
+            (mapc #'(lambda (buffer) (setq yas/editing-template nil)) (buffer-list))))
 
       ;; Empty all snippet tables, parenting info and all menu tables
       ;;
@@ -1710,7 +1714,7 @@ Optional USE-JIT use jit-loading of snippets."
       ;; Reload the directories listed in `yas/snippet-dirs' or prompt
       ;; the user to select one.
       ;;
-      (setq errors (yas/load-snippet-dirs no-jit))
+      (setq errors (yas/load-snippet-dirs interactive))
       ;; Reload the direct keybindings
       ;;
       (yas/direct-keymaps-reload)
