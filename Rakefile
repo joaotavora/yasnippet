@@ -36,7 +36,9 @@ task :package do
 END
   end
   sh "git clean -f snippets"
-  sh "tar cf pkg/yasnippet-#{$version}.tar pkg/yasnippet-#{$version}"
+  FileUtils.cd 'pkg' do
+    sh "tar cf yasnippet-#{$version}.tar yasnippet-#{$version}"
+  end
 end
 
 desc "create a release package and upload it to google code"
