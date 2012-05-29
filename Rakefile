@@ -3,7 +3,7 @@
 require 'fileutils'
 
 def find_version
-  File.read("yasnippet.el") =~ /;; Package-version: *([0-9.]+[a-z]?) *$/
+  File.read("yasnippet.el") =~ /;; Package-version: *([0-9.]+?) *$/
   $version = $1
 end
 find_version
@@ -18,7 +18,7 @@ task :convert_bundles do
     raise "Couldn't guess mode name for #{bundle_dir}" unless mode_prefix
     output = "./extras/imported/#{mode_prefix}-mode"
     FileUtils.mkdir_p output
-    sh "./extras/textmate_import.rb -d #{bundle_dir} -o #{output} -q" 
+    sh "./extras/textmate_import.rb -d #{bundle_dir} -o #{output} -q"
   end
 end
 
