@@ -80,13 +80,6 @@
 ;;           expansion conditions.  With prefix argument, ignore these
 ;;           conditions.
 ;;
-;;       M-x yas/find-snippets
-;;
-;;           Lets you find the snippet files in the correct
-;;           subdirectory of `yas/snippet-dirs', according to the
-;;           active major mode (if it exists) like
-;;           `find-file-other-window'.
-;;
 ;;       M-x yas/visit-snippet-file
 ;;
 ;;           Prompts you for possible snippet expansions like
@@ -599,8 +592,6 @@ snippet itself contains a condition that returns the symbol
          :help "Create a new snippet in an appropriate directory"]
         ["Visit snippet file..." yas/visit-snippet-file
          :help "Prompt for an expandable snippet and find its file"]
-        ["Find snippets..." yas/find-snippets
-         :help "Invoke `find-file' in the appropriate snippet directory"]
         "----"
         ("Snippet menu behaviour"
          ["Visit snippets" (setq yas/visit-from-menu t)
@@ -700,7 +691,6 @@ snippet itself contains a condition that returns the symbol
     (define-key map "\C-c&\C-s" 'yas/insert-snippet)
     (define-key map "\C-c&\C-n" 'yas/new-snippet)
     (define-key map "\C-c&\C-v" 'yas/visit-snippet-file)
-    (define-key map "\C-c&\C-f" 'yas/find-snippets)
     map))
 
 (defvar yas/minor-mode-map (yas/init-minor-keymap)
@@ -2349,48 +2339,6 @@ NO-TEMPLATE is non-nil."
 # type: command}
 # --
 $0"))))
-
-(defun yas/find-snippets (&optional same-window )
-  "Find snippet file in guessed current mode's directory.
-
-Calls `find-file' interactively in the guessed directory.
-
-With prefix arg SAME-WINDOW opens the buffer in the same window.
-
-Because snippets can be loaded from many different locations,
-this has to guess the correct directory using
-`yas/guess-snippet-directories', which returns a list of
-options.
-
-If any one of these exists, it is taken and `find-file' is called
-there, otherwise, proposes to create the first option returned by
-`yas/guess-snippet-directories'."
-  (interactive "P")
-  (let* ((guessed-directories (yas/guess-snippet-directories))
-         (chosen)
-         (buffer))
-    (setq chosen (yas/make-directory-maybe (first guessed-directories) " main"))
-    (unless chosen
-      (if (y-or-n-p (format "Continue guessing for other active tables %s? "
-                            (mapcar #'(lambda (table-and-dirs)
-                                        (yas/table-name (car table-and-dirs)))
-                                    (rest guessed-directories))))
-          (setq chosen (some #'yas/make-directory-maybe
-                             (rest guessed-directories)))))
-    (unless chosen
-      (when (y-or-n-p "Having trouble... go to snippet root dir? ")
-        (setq chosen (first (yas/snippet-dirs)))))
-    (if chosen
-        (let ((default-directory chosen))
-          (setq buffer (call-interactively (if same-window
-                                               'find-file
-                                             'find-file-other-window)))
-          (when buffer
-            (save-excursion
-              (set-buffer buffer)
-              (when (eq major-mode 'fundamental-mode)
-                (snippet-mode)))))
-      (message "Could not guess snippet dir!"))))
 
 (defun yas/compute-major-mode-and-parents (file)
   "Given FILE, find the nearest snippet directory for a given
