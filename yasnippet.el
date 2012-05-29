@@ -1,9 +1,9 @@
-;;; Yasnippet.el --- Yet another snippet extension for Emacs.
+;;; yasnippet.el --- Yet another snippet extension for Emacs.
 
 ;; Copyright 2008 pluskid
-;;           2009 pluskid, joaotavora
-
-;; Authors: pluskid <pluskid@gmail.com>, joaotavora <joaotavora@gmail.com>
+;;           2009 pluskid, João Távora
+;;           2010,2011,2012 João Távora
+;; Authors: pluskid <pluskid@gmail.com>,  João Távora <joaotavora@gmail.com>
 ;; Version: 0.7.0
 ;; Package-version: 0.7.0
 ;; X-URL: http://github.com/capitaomorte/yasnippet
@@ -27,11 +27,11 @@
 ;; Boston, MA 02111-1307, USA.
 
 ;;; Commentary:
-
-;; Basic steps to setup:
+;;
+;;   Basic steps to setup:
 ;;
 ;;    (add-to-list 'load-path
-;;                 "~/.emacs.d/plugins/yasnippet")
+;;                 "~/path-to-yasnippet")
 ;;    (require 'yasnippet)
 ;;    (yas/global-mode 1)
 ;;
@@ -527,7 +527,7 @@ snippet itself contains a condition that returns the symbol
 
 ;;; Internal variables
 
-(defvar yas/version "0.7.0")
+(defvar yas/version "0.7.0 (beta)")
 
 (defvar yas/menu-table (make-hash-table)
   "A hash table of MAJOR-MODE symbols to menu keymaps.")
