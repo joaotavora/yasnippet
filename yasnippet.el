@@ -2026,11 +2026,12 @@ will only be expanded when the condition evaluated to non-nil."
 (defun yas/hippie-try-expand (first-time?)
   "Integrate with hippie expand.  Just put this function in
 `hippie-expand-try-functions-list'."
-  (if (not first-time?)
-      (let ((yas/fallback-behavior 'return-nil))
-        (yas/expand))
-    (undo 1)
-    nil))
+  (when yas/minor-mode
+    (if (not first-time?)
+        (let ((yas/fallback-behavior 'return-nil))
+          (yas/expand))
+      (undo 1)
+      nil)))
 
 
 ;;; Apropos condition-cache:
