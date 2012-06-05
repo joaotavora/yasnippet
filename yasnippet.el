@@ -812,8 +812,13 @@ Key bindings:
          (remove-hook 'emulation-mode-map-alists 'yas/direct-keymaps))))
 
 
-(defvar yas/dont-activate nil
+(defvar yas/dont-activate '(minibufferp)
   "If non-nil don't let `yas/minor-mode-on' active yas for this buffer.
+
+If a function, then its result is used.
+
+If a list of functions, then all functions must return nil to
+activate yas for this buffer.
 
 `yas/minor-mode-on' is usually called by `yas/global-mode' so
 this effectively lets you define exceptions to the \"global\"
@@ -825,10 +830,11 @@ behaviour. Can also be a function of zero arguments.")
 
 Do this unless `yas/dont-activate' is truish "
   (interactive)
-  (unless (or (minibufferp)
-              (if (functionp yas/dont-activate)
-                  (funcall yas/dont-activate)
-                yas/dont-activate))
+  (unless (cond ((functionp yas/dont-activate)
+                 (funcall yas/dont-activate))
+                ((consp yas/dont-activate)
+                 (some #'funcall yas/dont-activate))
+                (yas/dont-activate))
     ;; Load all snippets definitions unless we still don't have a
     ;; root-directory or some snippets have already been loaded.
     ;;
@@ -2026,11 +2032,12 @@ will only be expanded when the condition evaluated to non-nil."
 (defun yas/hippie-try-expand (first-time?)
   "Integrate with hippie expand.  Just put this function in
 `hippie-expand-try-functions-list'."
-  (if (not first-time?)
-      (let ((yas/fallback-behavior 'return-nil))
-        (yas/expand))
-    (undo 1)
-    nil))
+  (when yas/minor-mode
+    (if (not first-time?)
+        (let ((yas/fallback-behavior 'return-nil))
+          (yas/expand))
+      (undo 1)
+      nil)))
 
 
 ;;; Apropos condition-cache:
