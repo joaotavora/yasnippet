@@ -4,6 +4,6 @@
 # --
 import org.scalatest._
 
-class ${1:$(file-name-nondirectory (file-name-sans-extension (buffer-file-name)))} extends Suite {
+class ${1:`(file-name-nondirectory (file-name-sans-extension (or (buffer-file-name) (buffer-name) "Name")))`} extends Suite {
   $0
 }

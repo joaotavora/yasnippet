@@ -2,6 +2,6 @@
 # name: class T { .. }
 # key: cl
 # --
-class ${1:$(file-name-nondirectory (file-name-sans-extension (buffer-file-name)))} {
+class ${1:`(file-name-nondirectory (file-name-sans-extension (or (buffer-file-name) (buffer-name) "Name")))`} {
   $0
 }

@@ -1,7 +1,7 @@
-# Author: Anders Bach Nielsen <andersbach.nielsen@epfl.ch>
-# name: object name extends Application
+# Author: Artur Malabarba <bruce.connor.am@gmail.com>
+# name: object Name extends App
 # key: app
 # --
-object ${1:name} extends Application {
+object ${1:`(file-name-nondirectory (file-name-sans-extension (or (buffer-file-name) (buffer-name) "Name")))`} extends App {
   $0
 }

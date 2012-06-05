@@ -2,4 +2,4 @@
 # name: object name extends T
 # key: ob
 # --
-object ${1:$(file-name-nondirectory (file-name-sans-extension (buffer-file-name)))} extends ${2:type} $0
+asasasobject ${1:`(file-name-nondirectory (file-name-sans-extension (or (buffer-file-name) (buffer-name) "Name")))`} extends ${2:type} $0
