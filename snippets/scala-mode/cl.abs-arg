@@ -1,7 +1,7 @@
-# Author: Jonas Bonèr <jonas@jonasboner.com>
+# Author: Artur Malabarba <bruce.connor.am@gmail.com>
 # name: abstract class T(args) { .. }
 # key: cl
 # --
-abstract class ${1:name}(${2:args}) {
+abstract class ${1:`(file-name-nondirectory (file-name-sans-extension (or (buffer-file-name) (buffer-name) "Name")))`}(${2:args}) {
   $0
 }
