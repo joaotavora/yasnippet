@@ -976,17 +976,58 @@ Has the following fields:
     (when table
       (gethash uuid (yas/table-uuidhash table)))))
 
-;; Apropos storing/updating, this works with two steps:
+;; Apropos storing/updating in TABLE, this works in two steps:
 ;;
-;; 1. `yas/remove-template-by-uuid' to remove any existing mappings by
-;;    snippet uuid
+;; 1. `yas/remove-template-by-uuid' removes any
+;;    keyhash-namehash-template mappings from TABLE, grabing the
+;;    snippet by its uuid. Also removes mappings from TABLE's
+;;    `yas/table-direct-keymap' (FIXME: and should probably take care
+;;    of potentially stale menu bindings right?.)
 ;;
-;; 2. `yas/add-template' to add the mappings again:
+;; 2. `yas/add-template' adds this all over again.
 ;;
-;;    Create or index the entry in TABLES's `yas/table-hash'
-;;    linking KEY to a namehash. That namehash links NAME to
-;;    TEMPLATE, and is also created a new namehash inside that
-;;    entry.
+;;    Create a new or add to an existing keyhash-namehash mapping.
+;;
+;;  For reference on understanding this, consider three snippet
+;;  definitions:
+;;
+;;  A:   # name: The Foo
+;;       # key: foo
+;;       # binding: C-c M-l
+;;
+;;  B:   # name: Mrs Foo
+;;       # key: foo
+;;
+;;  C:   # name: The Bar
+;;       # binding: C-c M-l
+;;
+;;  D:   # name: Baz
+;;       # key: baz
+;;
+;;  keyhash       namehashes(3)      yas/template structs(4)
+;;  -----------------------------------------------------
+;;                                            __________
+;;                                           /          \
+;;  "foo"      --->  "The Foo" --->  [yas/template A]   |
+;;                   "Mrs Foo" --->  [yas/template B]   |
+;;                                                      |
+;;  [C-c M-l]  --->  "The Foo" -------------------------/
+;;                   "The Bar" --->  [yas/template C]
+;;
+;;  "baz"      --->  "Baz"     --->  [yas/template D]
+;;
+;; Additionally, since uuid defaults to the name, we have a
+;; `yas/table-uuidhash' for TABLE
+;;
+;; uuidhash       yas/template structs
+;; -------------------------------
+;; "The Foo" ---> [yas/template A]
+;; "Mrs Foo" ---> [yas/template B]
+;; "The Bar" ---> [yas/template C]
+;; "Baz"     ---> [yas/template D]
+;;
+;; FIXME: the more I look at this data-structure the more I think I'm
+;; stupid. There has to be an easier way (but beware lots of code depends on this).
 ;;
 (defun yas/remove-template-by-uuid (table uuid)
   "Remove from TABLE a template identified by UUID."
@@ -1004,9 +1045,11 @@ Has the following fields:
                          (when (zerop (hash-table-count v))
                            (push k empty-keys)))))
                  (yas/table-hash table))
-        ;; Remove the namehashed themselves if they've become empty
+        ;; Remove the namehash themselves if they've become empty
         ;;
         (dolist (key empty-keys)
+          (when (vectorp key)
+            (define-key (yas/table-direct-keymap table) key nil))
           (remhash key (yas/table-hash table)))
 
         ;; Finally, remove the uuid from the uuidhash
