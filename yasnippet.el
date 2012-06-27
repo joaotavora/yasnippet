@@ -1078,9 +1078,10 @@ keybinding)."
 
     ;; Update trigger & keybinding in the menu-binding pair
     ;;
-    (setf (getf (cdr (car menu-binding-pair)) :keys)
-          (or (and keybinding (key-description keybinding))
-              (and key (concat key yas/trigger-symbol))))
+    (unless (eq (cdr menu-binding-pair) :none)
+      (setf (getf (cdr (car menu-binding-pair)) :keys)
+            (or (and keybinding (key-description keybinding))
+                (and key (concat key yas/trigger-symbol)))))
 
     (puthash (yas/template-uuid template) template (yas/table-uuidhash table))))
 
