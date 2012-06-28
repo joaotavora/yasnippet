@@ -401,6 +401,43 @@ the trigger key itself."
   :type '(repeat function)
   :group 'yasnippet)
 
+(defcustom yas/compile-on-load-dir t
+  "Defines if the snippets should be compiled when loading (if they are not already compiled)."
+  :type 'boolean
+  :group 'yasnippet)
+
+(defcustom yas/expire-compile-on-edit-snippet t
+  "Expires any compiled snippet information when you edit a snippet in the current mode."
+  :type 'boolean
+  :group 'yasnippet)
+
+(defun yas/expire-compile-on-edit ()
+  "Expires the compiled snippets when one edits a snippet in the directory structure."
+  (when yas/expire-compile-on-edit-snippet
+    (let ((directory (file-name-directory (buffer-file-name))))
+      (when (file-readable-p (expand-file-name ".yas-compiled-snippets.el" directory))
+        (delete-file (expand-file-name ".yas-compiled-snippets.el" directory)))
+      (when (file-readable-p (expand-file-name ".yas-compiled-snippets.elc" directory))
+        (delete-file (expand-file-name ".yas-compiled-snippets.elc" directory))))))
+
+(defun yas/turn-on-compile-expire-in-snippet-mode ()
+  "Turns on compiled snippet expiring in `snippet-mode'."
+  (add-hook 'after-save-hook 'yas/expire-compile-on-edit nil t)
+  (add-hook 'write-contents-hook 'yas/expire-compile-on-edit nil t))
+
+(add-hook 'snippet-mode-hook 'yas/turn-on-compile-expire-in-snippet-mode)
+
+(defcustom yas/expire-compile-on-reload-everything t
+  "Expires all compiled snippets on reload everything.  They will may be recompiled on opening."
+  :type 'boolean
+  :group 'yasnippet)
+
+(defcustom yas/save-snippet-location-on-compile t
+  "Saves the snippet location on compile.  Allows editing of snippets from menu, but causes the snippet source to be non-transferable to other systems."
+  :type 'boolean
+  :group 'yasnippet)
+
+
 ;; Only two faces, and one of them shouldn't even be used...
 ;;
 (defface yas/field-highlight-face
@@ -1104,7 +1141,7 @@ Also takes care of adding and updating to the associated menu."
       ;; Remove from menu keymap
       ;;
       (yas/delete-from-keymap keymap (yas/template-uuid template))
-
+      
       ;; Add necessary subgroups as necessary.
       ;;
       (dolist (subgroup group)
@@ -1114,7 +1151,7 @@ Also takes care of adding and updating to the associated menu."
             (setq subgroup-keymap (make-sparse-keymap))
             (define-key keymap (vector (make-symbol subgroup))
               `(menu-item ,subgroup ,subgroup-keymap)))
-            (setq keymap subgroup-keymap)))
+          (setq keymap subgroup-keymap)))
 
       ;; Add this entry to the keymap
       ;;
@@ -1271,7 +1308,7 @@ a list of modes like this to help the judgement."
                     (error (if yas/good-grace
                                (yas/format "elisp error! %s" (error-message-string err))
                              (error (yas/format "elisp error: %s"
-                                            (error-message-string err)))))))))
+                                                (error-message-string err)))))))))
     (when (and (consp retval)
                (eq 'yas/exception (car retval)))
       (error (cdr retval)))
@@ -1283,7 +1320,7 @@ a list of modes like this to help the judgement."
     (error (if yas/good-grace
                (yas/format "elisp error! %s" (error-message-string err))
              (error (yas/format "elisp error: %s"
-                            (error-message-string err)))))))
+                                (error-message-string err)))))))
 
 (defun yas/read-lisp (string &optional nil-on-error)
   "Read STRING as a elisp expression and return it.
@@ -1306,7 +1343,7 @@ return an expression that when evaluated will issue an error."
           res)
       (error
        (yas/message 3 "warning: keybinding \"%s\" invalid since %s."
-                keybinding (error-message-string err))
+                    keybinding (error-message-string err))
        nil))))
 
 (defvar yas/extra-modes nil
@@ -1350,11 +1387,11 @@ them in all `yas/menu-table'"
   (let* ((mode (intern (yas/table-name table)))
          (menu-keymap (or (gethash mode yas/menu-table)
                           (puthash mode (make-sparse-keymap) yas/menu-table)))
-        (parents (yas/table-parents table)))
+         (parents (yas/table-parents table)))
     (mapc #'yas/menu-keymap-get-create parents)
     (define-key yas/minor-mode-menu (vector mode)
-        `(menu-item ,(symbol-name mode) ,menu-keymap
-                    :visible (yas/show-menu-p ',mode)))
+      `(menu-item ,(symbol-name mode) ,menu-keymap
+                  :visible (yas/show-menu-p ',mode)))
     menu-keymap))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1601,7 +1638,7 @@ TEMPLATES is a list of `yas/template'."
           n)
       (dolist (choice choices)
         (setq d (or (and display-fn (funcall display-fn choice))
-                      choice))
+                    choice))
         (when (stringp d)
           (push d formatted-choices)
           (push choice filtered-choices)))
@@ -1620,7 +1657,7 @@ TEMPLATES is a list of `yas/template'."
                            #'completing-read)))
     (dolist (choice choices)
       (setq d (or (and display-fn (funcall display-fn choice))
-                    choice))
+                  choice))
       (when (stringp d)
         (push d formatted-choices)
         (push choice filtered-choices)))
@@ -1658,18 +1695,30 @@ Optional USE-JIT use jit-loading of snippets."
            (mode-sym (car major-mode-and-parents))
            (parents (cdr major-mode-and-parents)))
       (yas/define-parents mode-sym parents)
+      (when (and yas/expire-compile-on-reload-everything (interactive-p))
+        (when (file-readable-p (expand-file-name ".yas-compiled-snippets.el" dir))
+          (yas/message  3 "Expiring compiled snippets in %s!" dir)
+          (delete-file (expand-file-name ".yas-compiled-snippets.el" dir)))
+        (when (file-readable-p (expand-file-name ".yas-compiled-snippets.elc" dir))
+          (delete-file (expand-file-name ".yas-compiled-snippets.elc" dir))))
       (let ((form `(yas/load-directory-1 ,dir
                                          ',mode-sym
                                          ',parents)))
         (if use-jit
             (yas/schedule-jit mode-sym form)
-            (eval form)))))
+          (eval form)))))
   (when (interactive-p)
     (yas/message 3 "Loaded snippets from %s." top-level-dir)))
 
 (defun yas/load-directory-1 (directory mode-sym parents &optional no-compiled-snippets)
   "Recursively load snippet templates from DIRECTORY."
   (unless (file-exists-p (concat directory "/" ".yas-skip"))
+    (when (and yas/compile-on-load-dir
+               (not (or
+                     (file-exists-p (expand-file-name ".yas-compiled-snippets.el" directory)) 
+                     (file-exists-p (expand-file-name ".yas-compiled-snippets.elc" directory)))))
+      (yas/message  3 "Compiling snippets for %s!" directory)
+      (yas/compile-directory directory))
     (if (and (not no-compiled-snippets)
              (load (expand-file-name ".yas-compiled-snippets" directory) 'noerror (<= yas/verbosity 2)))
         (yas/message 2 "Loading much faster .yas-compiled-snippets from %s" directory)
@@ -1725,31 +1774,31 @@ Optional USE-JIT use jit-loading of snippets."
       ;; any on-line editing of those buffers.
       ;;
       (when snippet-editing-buffers
-          (if interactive
-              (if (y-or-n-p "Some buffers editing live snippets, close them and proceed with reload?")
-                  (mapcar #'kill-buffer snippet-editing-buffers)
-                (yas/message 1 "Aborted reload...")
-                (throw 'abort nil))
-            ;; in a non-interactive use, at least set
-            ;; `yas/editing-template' to nil, make it guess it next time around
-            (mapc #'(lambda (buffer) (setq yas/editing-template nil)) (buffer-list))))
-
+        (if interactive
+            (if (y-or-n-p "Some buffers editing live snippets, close them and proceed with reload?")
+                (mapcar #'kill-buffer snippet-editing-buffers)
+              (yas/message 1 "Aborted reload...")
+              (throw 'abort nil))
+          ;; in a non-interactive use, at least set
+          ;; `yas/editing-template' to nil, make it guess it next time around
+          (mapc #'(lambda (buffer) (setq yas/editing-template nil)) (buffer-list))))
+      
       ;; Empty all snippet tables, parenting info and all menu tables
       ;;
       (setq yas/tables (make-hash-table))
       (setq yas/parents (make-hash-table))
       (setq yas/menu-table (make-hash-table))
-
+      
       ;; Cancel all pending 'yas/scheduled-jit-loads'
       ;;
       (setq yas/scheduled-jit-loads (make-hash-table))
-
+      
       ;; Init the `yas/minor-mode-map', taking care not to break the
       ;; menu....
       ;;
       (setf (cdr yas/minor-mode-map)
             (cdr (yas/init-minor-keymap)))
-
+      
       ;; Reload the directories listed in `yas/snippet-dirs' or prompt
       ;; the user to select one.
       ;;
@@ -1760,7 +1809,10 @@ Optional USE-JIT use jit-loading of snippets."
       ;; Reload the trigger-key (shoudn't be needed, but see issue #237)
       ;;
       (yas/trigger-key-reload)
-
+      
+      (when (interactive-p)
+        (yas/load-pending-jits))
+      
       (yas/message 3 "Reloaded everything...%s." (if errors " (some errors, check *Messages*)" "")))))
 
 (defun yas/load-pending-jits ()
@@ -1791,7 +1843,7 @@ foo\"bar\\! -> \"foo\\\"bar\\\\!\""
   "For backward compatibility, enable `yas/minor-mode' globally"
   (yas/global-mode 1))
 
-(defun yas/compile-directory (top-level-dir)
+(defun yas/compile-directory (top-level-dir &optional force-no-file)
   "Create .yas-compiled-snippets.el files under subdirs of TOP-LEVEL-DIR.
 
 This works by stubbing a few functions, then calling
@@ -1817,7 +1869,9 @@ This works by stubbing a few functions, then calling
                     (condition              (fourth  snippet))
                     (group                  (fifth   snippet))
                     (expand-env             (sixth   snippet))
-                    (file                   nil) ;; (seventh snippet)) ;; omit on purpose
+                    (file                   (if (and yas/save-snippet-location-on-compile (not force-no-file))
+                                                (seventh snippet)
+                                              nil)) ;; (seventh snippet)) ;; omit on purpose
                     (binding                (eighth  snippet))
                     (uuid                    (ninth   snippet)))
                 (push `(,key
@@ -1925,7 +1979,7 @@ the current buffers contents."
          (group (fifth snippet))
          (keybinding (yas/read-keybinding (eighth snippet)))
          (uuid (or (ninth snippet)
-                  name))
+                   name))
          (template (or (gethash uuid (yas/table-uuidhash snippet-table))
                        (yas/make-blank-template))))
     ;; X) populate the template object
@@ -2098,7 +2152,7 @@ It doesn't make any sense to call FUNC programatically."
   `(defun ,func () ,(if (and doc
                              (stringp doc))
                         (concat doc
-"\n\nFor use in snippets' conditions. Within each
+                                "\n\nFor use in snippets' conditions. Within each
 snippet-expansion routine like `yas/expand', computes actual
 value for the first time then always returns a cached value.")
                       (setq body (cons doc body))
@@ -2410,12 +2464,12 @@ neither do the elements of PARENTS."
          (major-mode-sym (or (and major-mode-name
                                   (intern major-mode-name))))
          (parents (when (file-readable-p parents-file-name)
-                         (mapcar #'intern
-                                 (split-string
-                                  (with-temp-buffer
-                                    (insert-file-contents parents-file-name)
-                                    (buffer-substring-no-properties (point-min)
-                                                                    (point-max))))))))
+                    (mapcar #'intern
+                            (split-string
+                             (with-temp-buffer
+                               (insert-file-contents parents-file-name)
+                               (buffer-substring-no-properties (point-min)
+                                                               (point-max))))))))
     (when major-mode-sym
       (cons major-mode-sym parents))))
 
@@ -2496,8 +2550,8 @@ With optional prefix argument KILL quit the window and buffer."
   (when kill
     (quit-window kill))
   (yas/message 3 "Snippet \"%s\" loaded for %s."
-           (yas/template-name yas/editing-template)
-           (yas/table-name (yas/template-table yas/editing-template))))
+               (yas/template-name yas/editing-template)
+               (yas/table-name (yas/template-table yas/editing-template))))
 
 
 (defun yas/tryout-snippet (&optional debug)
@@ -3605,11 +3659,11 @@ deleted."
     (dolist (field (yas/snippet-fields snippet))
       (when (and (<= (yas/field-start field) (yas/mirror-start mirror))
                  (<= (yas/mirror-end mirror) (yas/field-end field))
-               (< min (yas/field-start field))
-               (< (yas/field-end field) max))
-          (setq min (yas/field-start field)
-                max (yas/field-end field))
-          (setf (yas/mirror-parent-field mirror) field)))))
+                 (< min (yas/field-start field))
+                 (< (yas/field-end field) max))
+        (setq min (yas/field-start field)
+              max (yas/field-end field))
+        (setf (yas/mirror-parent-field mirror) field)))))
 
 (defun yas/advance-end-maybe (fom newend)
   "Maybe advance FOM's end to NEWEND if it needs it.

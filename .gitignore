@@ -5,3 +5,5 @@ pkg/
 extras/imported/**
 !extras/imported/*/.yas-setup.el
 *.elc
+.yas-compiled-snippets.el
+.yas-compiled-snippets.elc
