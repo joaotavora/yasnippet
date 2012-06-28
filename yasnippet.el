@@ -1715,7 +1715,7 @@ Optional USE-JIT use jit-loading of snippets."
 
 (defun yas/reload-all (&optional interactive)
   "Reload all snippets and rebuild the YASnippet menu."
-  (interactive "P")
+  (interactive "p")
   (catch 'abort
     (let ((errors)
           (snippet-editing-buffers
