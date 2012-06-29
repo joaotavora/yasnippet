@@ -406,6 +406,28 @@ the trigger key itself."
   :type 'boolean
   :group 'yasnippet)
 
+(defcustom yas/expire-compile-on-edit-snippet t
+  "Expires any compiled snippet information when you edit a snippet in the current mode."
+  :type 'boolean
+  :group 'yasnippet)
+
+(defun yas/expire-compile-on-edit ()
+  "Expires the compiled snippets when one edits a snippet in the directory structure."
+  (when yas/expire-compile-on-edit-snippet
+    (let ((directory (file-name-directory (buffer-file-name))))
+      (when (file-readable-p (expand-file-name ".yas-compiled-snippets.el" directory))
+        (delete-file (expand-file-name ".yas-compiled-snippets.el" directory)))
+      (when (file-readable-p (expand-file-name ".yas-compiled-snippets.elc" directory))
+        (delete-file (expand-file-name ".yas-compiled-snippets.elc" directory))))))
+
+
+(defun yas/turn-on-compile-expire-in-snippet-mode ()
+  "Turns on compiled snippet expiring in `snippet-mode'."
+  (add-hook 'after-save-hook 'yas/expire-compile-on-edit nil t)
+  (add-hook 'write-contents-hook 'yas/expire-compile-on-edit nil t))
+
+(add-hook 'snippet-mode-hook 'yas/turn-on-compile-expire-in-snippet-mode)
+
 ;; Only two faces, and one of them shouldn't even be used...
 ;;
 (defface yas/field-highlight-face
