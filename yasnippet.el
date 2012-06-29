@@ -401,6 +401,11 @@ the trigger key itself."
   :type '(repeat function)
   :group 'yasnippet)
 
+(defcustom yas/compile-on-load-dir t
+  "Defines if the snippets should be compiled when loading (if they are not already compiled)."
+  :type 'boolean
+  :group 'yasnippet)
+
 ;; Only two faces, and one of them shouldn't even be used...
 ;;
 (defface yas/field-highlight-face
@@ -1671,6 +1676,13 @@ Optional USE-JIT use jit-loading of snippets."
 (defun yas/load-directory-1 (directory mode-sym parents &optional no-compiled-snippets)
   "Recursively load snippet templates from DIRECTORY."
   (unless (file-exists-p (concat directory "/" ".yas-skip"))
+    (when (and (not no-compiled-snippets) yas/compile-on-load-dir
+               (not (or
+                     (file-exists-p (expand-file-name ".yas-compiled-snippets.el" directory)) 
+                     (file-exists-p (expand-file-name ".yas-compiled-snippets.elc" directory)))))
+      (yas/message  3 "Compiling snippets for %s!" directory)
+      (yas/compile-directory directory))
+    
     (if (and (not no-compiled-snippets)
              (load (expand-file-name ".yas-compiled-snippets" directory) 'noerror (<= yas/verbosity 2)))
         (yas/message 2 "Loading much faster .yas-compiled-snippets from %s" directory)
