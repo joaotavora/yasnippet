@@ -411,6 +411,11 @@ the trigger key itself."
   :type 'boolean
   :group 'yasnippet)
 
+(defcustom yas/save-snippet-location-on-compile t
+  "Saves the snippet location on compile.  Allows editing of snippets from menu, but causes the snippet source to be non-transferable to other systems."
+  :type 'boolean
+  :group 'yasnippet)
+
 (defun yas/expire-compile-on-edit ()
   "Expires the compiled snippets when one edits a snippet in the directory structure."
   (when yas/expire-compile-on-edit-snippet
@@ -1852,7 +1857,9 @@ This works by stubbing a few functions, then calling
                     (condition              (fourth  snippet))
                     (group                  (fifth   snippet))
                     (expand-env             (sixth   snippet))
-                    (file                   nil) ;; (seventh snippet)) ;; omit on purpose
+                    (file                   (if (and yas/save-snippet-location-on-compile (not force-no-file))
+                                                (seventh snippet)
+                                              nil)) 
                     (binding                (eighth  snippet))
                     (uuid                    (ninth   snippet)))
                 (push `(,key
@@ -2310,9 +2317,11 @@ visited file in `snippet-mode'."
                         (or (yas/prompt-for-template templates
                                                      "Choose a snippet template to edit: ")
                             (car templates)))))
-
+    
     (if template
-        (yas/visit-snippet-file-1 template)
+        (if (file-readable-p template)
+            (yas/visit-snippet-file-1 template)
+          (message "Snippet not found and snippet root directory not found."))
       (message "No snippets tables active!"))))
 
 (defun yas/visit-snippet-file-1 (template)
