@@ -412,7 +412,7 @@ the trigger key itself."
   :group 'yasnippet)
 
 (defcustom yas/save-snippet-location-on-compile t
-  "Saves the snippet location on compile.  Allows editing of snippets from menu, but causes the snippet source to be non-transferable to other systems."
+  "Saves the snippet location on compile.  Allows editing of snippets from menu, if the file is found."
   :type 'boolean
   :group 'yasnippet)
 
