@@ -20,7 +20,7 @@
 
 ;;; Commentary:
 
-;; Test basic snippet mechanics and the loading system 
+;; Test basic snippet mechanics and the loading system
 
 ;;; Code:
 
@@ -38,7 +38,7 @@
     (yas/expand-snippet "${1:brother} from another ${2:mother}")
     (should (string= (buffer-substring-no-properties (point-min) (point-max))
                      "brother from another mother"))
-    
+
     (should (looking-at "brother"))
     (ert-simulate-command '(yas/next-field-or-maybe-expand))
     (should (looking-at "mother"))
@@ -96,7 +96,7 @@
 
 
 ;;; Misc tests
-;;; 
+;;;
 
 (ert-deftest protection-overlay-no-cheating ()
   "Protection overlays at the very end of the buffer, are dealt by cheatingly inserting a newline!
@@ -205,10 +205,9 @@ TODO: correct this bug!"
            (let ((default-directory (concat default-directory "/" file-or-dir-name)))
              (mapc #'yas/make-file-or-dirs content)))
           ((stringp content)
-           (with-current-buffer (find-file file-or-dir-name)
+           (with-temp-buffer
              (insert content)
-             (save-buffer)
-             (kill-buffer (current-buffer))))
+             (write-region nil nil file-or-dir-name nil 'nomessage)))
           (t
            (message "[yas] oops don't know this content")))))
 
@@ -228,15 +227,22 @@ TODO: correct this bug!"
                  (yas/variables))
      ,@body))
 
+(defun yas/call-with-snippet-dirs (dirs fn)
+  (let ((default-directory (make-temp-file "yasnippet-fixture" t))
+        (message-log-max nil)
+        (yas/snippet-dirs (mapcar #'car (cadr dirs))))
+    (with-temp-message ""
+      (unwind-protect
+          (progn
+            (mapc #'yas/make-file-or-dirs dirs)
+            (funcall fn))
+        (when (>= emacs-major-version 23)
+          (delete-directory default-directory 'recursive))))))
+
 (defmacro with-snippet-dirs (dirs &rest body)
-  `(let ((default-directory (make-temp-file "yasnippet-fixture" t)))
-     (unwind-protect
-         (progn       
-           (setq yas/snippet-dirs ',(mapcar #'car (cadr dirs)))
-           (mapc #'yas/make-file-or-dirs ,dirs)
-           ,@body)
-       (when (>= emacs-major-version 23)
-         (delete-directory default-directory 'recursive)))))
+  `(yas/call-with-snippet-dirs ,dirs
+                               #'(lambda ()
+                                   ,@body)))
 
 ;;; Older emacsen
 ;;;
