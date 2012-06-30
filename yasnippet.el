@@ -1685,7 +1685,8 @@ Optional USE-JIT use jit-loading of snippets."
   (interactive "DSelect the root directory: ")
   (unless yas/snippet-dirs
     (setq yas/snippet-dirs top-level-dir))
-  (dolist (dir (yas/subdirs top-level-dir))
+  (dolist (dir (or (yas/subdirs top-level-dir)
+                   (list (expand-file-name "." top-level-dir))))
     (let* ((major-mode-and-parents (yas/compute-major-mode-and-parents
                                     (concat dir "/dummy")))
            (mode-sym (car major-mode-and-parents))
