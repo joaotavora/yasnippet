@@ -406,33 +406,6 @@ the trigger key itself."
   :type 'boolean
   :group 'yasnippet)
 
-(defcustom yas/expire-compile-on-edit-snippet t
-  "Expires any compiled snippet information when you edit a snippet in the current mode."
-  :type 'boolean
-  :group 'yasnippet)
-
-(defcustom yas/save-snippet-location-on-compile t
-  "Saves the snippet location on compile.  Allows editing of snippets from menu, if the file is found."
-  :type 'boolean
-  :group 'yasnippet)
-
-(defun yas/expire-compile-on-edit ()
-  "Expires the compiled snippets when one edits a snippet in the directory structure."
-  (when yas/expire-compile-on-edit-snippet
-    (let ((directory (file-name-directory (buffer-file-name))))
-      (when (file-readable-p (expand-file-name ".yas-compiled-snippets.el" directory))
-        (delete-file (expand-file-name ".yas-compiled-snippets.el" directory)))
-      (when (file-readable-p (expand-file-name ".yas-compiled-snippets.elc" directory))
-        (delete-file (expand-file-name ".yas-compiled-snippets.elc" directory))))))
-
-
-(defun yas/turn-on-compile-expire-in-snippet-mode ()
-  "Turns on compiled snippet expiring in `snippet-mode'."
-  (add-hook 'after-save-hook 'yas/expire-compile-on-edit nil t)
-  (add-hook 'write-contents-hook 'yas/expire-compile-on-edit nil t))
-
-(add-hook 'snippet-mode-hook 'yas/turn-on-compile-expire-in-snippet-mode)
-
 ;; Only two faces, and one of them shouldn't even be used...
 ;;
 (defface yas/field-highlight-face
@@ -1858,9 +1831,7 @@ This works by stubbing a few functions, then calling
                     (condition              (fourth  snippet))
                     (group                  (fifth   snippet))
                     (expand-env             (sixth   snippet))
-                    (file                   (if (and yas/save-snippet-location-on-compile (not force-no-file))
-                                                (seventh snippet)
-                                              nil)) 
+                    (file                   nil) ;; (seventh snippet)) ;; omit on purpose
                     (binding                (eighth  snippet))
                     (uuid                    (ninth   snippet)))
                 (push `(,key
@@ -2320,9 +2291,7 @@ visited file in `snippet-mode'."
                             (car templates)))))
     
     (if template
-        (if (file-readable-p template)
-            (yas/visit-snippet-file-1 template)
-          (message "Snippet not found and snippet root directory not found."))
+        (yas/visit-snippet-file-1 template)
       (message "No snippets tables active!"))))
 
 (defun yas/visit-snippet-file-1 (template)
