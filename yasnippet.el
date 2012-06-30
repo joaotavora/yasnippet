@@ -401,8 +401,8 @@ the trigger key itself."
   :type '(repeat function)
   :group 'yasnippet)
 
-(defcustom yas/compile-on-load-dir t
-  "Defines if the snippets should be compiled when loading (if they are not already compiled)."
+(defcustom yas/auto-compile-snippets t
+  "Decides if the snippets should be compiled when loading."
   :type 'boolean
   :group 'yasnippet)
 
@@ -1675,18 +1675,35 @@ Optional USE-JIT use jit-loading of snippets."
 
 (defun yas/load-directory-1 (directory mode-sym parents &optional no-compiled-snippets)
   "Recursively load snippet templates from DIRECTORY."
-  (unless (file-exists-p (concat directory "/" ".yas-skip"))
-    (when (and (not no-compiled-snippets) yas/compile-on-load-dir
-               (not (or
-                     (file-exists-p (expand-file-name ".yas-compiled-snippets.el" directory)) 
-                     (file-exists-p (expand-file-name ".yas-compiled-snippets.elc" directory)))))
-      (yas/message  3 "Compiling snippets for %s!" directory)
-      (yas/compile-directory directory))
-    
-    (if (and (not no-compiled-snippets)
-             (load (expand-file-name ".yas-compiled-snippets" directory) 'noerror (<= yas/verbosity 2)))
-        (yas/message 2 "Loading much faster .yas-compiled-snippets from %s" directory)
-      (yas/load-directory-2 directory mode-sym))))
+  (flet ((most-recent-file (directory)
+                           (reduce #'(lambda (f1 f2)
+                                       (if (time-less-p (nth 5 (file-attributes f1))
+                                                        (nth 5 (file-attributes f2)))
+                                           f2 f1))
+                                   (directory-files directory 'full  "^[^.]"))))
+    (unless (file-exists-p (concat directory "/" ".yas-skip"))
+      (if no-compiled-snippets
+          (yas/load-directory-2 directory mode-sym)
+        ;; handle the loading and auto-generation of a possible
+        ;; .yas-compiled-snippets
+        ;;
+        (let ((compiled (directory-files directory 'full ".yas-compiled-snippets")))
+          (when yas/auto-compile-snippets
+            ;; auto-compile just this directory if we can't find any
+            ;; previous .yas-compiled-snippets files or if they are
+            ;; out-of-date
+            ;;
+            (when (or (not compiled)
+                      (not (string= ".yas-compiled-snippets.el"
+                                    (file-name-nondirectory (most-recent-file directory)))))
+              (yas/with-compilation-flets
+               (yas/load-directory-2 directory mode-sym))))
+          ;; load the .yas-compiled-snippets.el if we can find it
+          ;; (might have just been generated from the previous step)
+          ;;
+          (if (load (expand-file-name ".yas-compiled-snippets" directory) 'noerror (<= yas/verbosity 2))
+              (yas/message 2 "Loading much faster .yas-compiled-snippets from %s" directory)
+            (yas/load-directory-2 directory mode-sym)))))))
 
 (defun yas/load-directory-2 (directory mode-sym)
   ;; Load .yas-setup.el files wherever we find them
@@ -1804,12 +1821,7 @@ foo\"bar\\! -> \"foo\\\"bar\\\\!\""
   "For backward compatibility, enable `yas/minor-mode' globally"
   (yas/global-mode 1))
 
-(defun yas/compile-directory (top-level-dir)
-  "Create .yas-compiled-snippets.el files under subdirs of TOP-LEVEL-DIR.
-
-This works by stubbing a few functions, then calling
-`yas/load-directory'."
-  (interactive "DTop level snippet directory?")
+(defun yas/call-with-compilation-flets (fn)
   (flet ((yas/load-yas-setup-file
           (file)
           (let ((elfile (concat file ".el")))
@@ -1847,12 +1859,28 @@ This works by stubbing a few functions, then calling
             (insert "\n\n")))
          (yas/load-directory-1
           (dir mode parents &rest ignore)
-          (let ((output-file (concat (file-name-as-directory dir) ".yas-compiled-snippets.el")))
-            (with-temp-file output-file
-              (insert (format ";;; Compiled snippets and support files for `%s'\n" mode))
-              (yas/load-directory-2 dir mode)
-              (insert (format ";;; Do not edit! File generated at %s\n" (current-time-string)))))))
-    (yas/load-directory top-level-dir nil)))
+          (yas/compile-directory-1 dir mode)))
+    (funcall fn)))
+
+(defmacro yas/with-compilation-flets (&rest body)
+  `(yas/call-with-compilation-flets #'(lambda () ,@body)))
+
+(defun yas/compile-directory (top-level-dir)
+  "Create .yas-compiled-snippets.el files under subdirs of TOP-LEVEL-DIR.
+
+This works by stubbing a few functions, then calling
+`yas/load-directory'."
+  (interactive "DTop level snippet directory?")
+  (yas/with-compilation-flets
+     (yas/load-directory top-level-dir)))
+
+(defun yas/compile-directory-1 (dir mode)
+  "Must be called from within `yas/with-compilation-flets'."
+  (let ((output-file (concat (file-name-as-directory dir) ".yas-compiled-snippets.el")))
+    (with-temp-file output-file
+      (insert (format ";;; Compiled snippets and support files for `%s'\n" mode))
+      (yas/load-directory-2 dir mode)
+      (insert (format ";;; Do not edit! File generated at %s\n" (current-time-string))))))
 
 (defun yas/recompile-all ()
   "Compile every dir in `yas/snippet-dirs'."
