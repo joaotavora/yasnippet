@@ -1461,7 +1461,7 @@ Here's a list of currently recognized directives:
                                                (directory-file-name extra-dir)))))
     group))
 
-(defun yas/subdirs (directory &optional filep)
+(defun yas/subdirs (directory &optional filep relative)
   "Return subdirs or files of DIRECTORY according to FILEP."
   (remove-if (lambda (file)
                (or (string-match "^\\."
@@ -1473,7 +1473,7 @@ Here's a list of currently recognized directives:
                    (if filep
                        (file-directory-p file)
                      (not (file-directory-p file)))))
-             (directory-files directory t)))
+             (directory-files directory (not relative))))
 
 (defun yas/make-menu-binding (template)
   (let ((mode (intern (yas/table-name (yas/template-table template)))))
@@ -1673,37 +1673,54 @@ Optional USE-JIT use jit-loading of snippets."
   (when (interactive-p)
     (yas/message 3 "Loaded snippets from %s." top-level-dir)))
 
+
+(defun yas/compile-snippet-files-and-mtimes (dir)
+  (let ((default-directory dir))
+    (mapcar #'(lambda (file)
+                (cons file (nth 5 (file-attributes file))))
+            (yas/subdirs dir 'files 'relative))))
+
+(defun yas/compile-calculate-md5 (files-and-mtimes)
+  (secure-hash 'md5 (mapconcat #'(lambda (c) (format "%s%f" (car c) (float-time (cdr c)))) files-and-mtimes " ")))
+
+(defun yas/recompile-directory-maybe (directory mode-sym)
+  (flet ((recompile () (yas/with-compilation-flets
+                        (yas/load-directory-2 directory mode-sym)))
+         (most-recent-mtime (mtimes) (reduce #'(lambda (t1 t2)
+                                                 (if (time-less-p t1 t2) t2 t1))
+                                             mtimes)))
+    (let* ((default-directory directory)
+           (compiled (and (file-readable-p ".yas-compiled-snippets.el") ".yas-compiled-snippets.el")))
+      ;; auto-compile just this directory if we can't find any
+      ;; previous .yas-compiled-snippets files or if they are
+      ;; out-of-date
+      ;;
+      (cond ((not yas/auto-compile-snippets)
+             nil)
+            ((null compiled)
+             (recompile))
+            ((let* ((files-and-mtimes (yas/compile-snippet-files-and-mtimes directory)))
+               (or (time-less-p (nth 5 (file-attributes compiled))
+                                (most-recent-mtime (mapcar #'cdr files-and-mtimes)))
+                   (not (string= (yas/compile-calculate-md5 files-and-mtimes)
+                                 (with-temp-buffer
+                                   (insert-file-contents compiled)
+                                   (when (search-forward-regexp "md5:[[:space:]]\\(.*\\)" nil 'noerror)
+                                     (match-string 1)))))))
+             (recompile))
+            (t ; do not recompile
+             ))
+      (when (and compiled
+                 (load (file-name-sans-extension compiled) 'noerror (<= yas/verbosity 2)))
+        (yas/message 2 "Loading much faster .yas-compiled-snippets from %s" directory)
+        t))))
+
 (defun yas/load-directory-1 (directory mode-sym parents &optional no-compiled-snippets)
   "Recursively load snippet templates from DIRECTORY."
-  (flet ((most-recent-file (directory)
-                           (reduce #'(lambda (f1 f2)
-                                       (if (time-less-p (nth 5 (file-attributes f1))
-                                                        (nth 5 (file-attributes f2)))
-                                           f2 f1))
-                                   (directory-files directory 'full  "^[^.]"))))
-    (unless (file-exists-p (concat directory "/" ".yas-skip"))
-      (if no-compiled-snippets
-          (yas/load-directory-2 directory mode-sym)
-        ;; handle the loading and auto-generation of a possible
-        ;; .yas-compiled-snippets
-        ;;
-        (let ((compiled (directory-files directory 'full ".yas-compiled-snippets")))
-          (when yas/auto-compile-snippets
-            ;; auto-compile just this directory if we can't find any
-            ;; previous .yas-compiled-snippets files or if they are
-            ;; out-of-date
-            ;;
-            (when (or (not compiled)
-                      (not (string= ".yas-compiled-snippets.el"
-                                    (file-name-nondirectory (most-recent-file directory)))))
-              (yas/with-compilation-flets
-               (yas/load-directory-2 directory mode-sym))))
-          ;; load the .yas-compiled-snippets.el if we can find it
-          ;; (might have just been generated from the previous step)
-          ;;
-          (if (load (expand-file-name ".yas-compiled-snippets" directory) 'noerror (<= yas/verbosity 2))
-              (yas/message 2 "Loading much faster .yas-compiled-snippets from %s" directory)
-            (yas/load-directory-2 directory mode-sym)))))))
+  (unless (file-exists-p (concat directory "/" ".yas-skip"))
+    (if (or no-compiled-snippets
+            (not (yas/recompile-directory-maybe directory mode-sym)))
+        (yas/load-directory-2 directory mode-sym))))
 
 (defun yas/load-directory-2 (directory mode-sym)
   ;; Load .yas-setup.el files wherever we find them
@@ -1878,9 +1895,11 @@ This works by stubbing a few functions, then calling
   "Must be called from within `yas/with-compilation-flets'."
   (let ((output-file (concat (file-name-as-directory dir) ".yas-compiled-snippets.el")))
     (with-temp-file output-file
-      (insert (format ";;; Compiled snippets and support files for `%s'\n" mode))
-      (yas/load-directory-2 dir mode)
-      (insert (format ";;; Do not edit! File generated at %s\n" (current-time-string))))))
+      (insert (format ";;; Compiled snippets and support files for `%s'. Do not edit! \n" mode))
+      (insert (format ";;; File generated at %s. Snippets md5: %s\n"
+                      (current-time-string)
+                      (yas/compile-calculate-md5 (yas/compile-snippet-files-and-mtimes dir))))
+      (yas/load-directory-2 dir mode))))
 
 (defun yas/recompile-all ()
   "Compile every dir in `yas/snippet-dirs'."
