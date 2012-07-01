@@ -28,8 +28,6 @@
 (require 'ert)
 (require 'ert-x)
 
-
-
 ;;; Snippet mechanics
 
 (ert-deftest field-navigation ()
@@ -112,9 +110,9 @@ TODO: correct this bug!"
 
 ;;; Loading
 ;;;
-(defmacro with-some-interesting-snippet-dirs (&rest body)
+(defmacro yas/with-some-interesting-snippet-dirs (&rest body)
   `(yas/saving-variables
-    (with-snippet-dirs
+    (yas/with-snippet-dirs
      '((".emacs.d/snippets"
         ("c-mode"
          (".yas-parents" . "cc-mode")
@@ -130,13 +128,13 @@ TODO: correct this bug!"
 
 (ert-deftest basic-jit-loading ()
   "Test basic loading and expansion of snippets"
-  (with-some-interesting-snippet-dirs
+  (yas/with-some-interesting-snippet-dirs
    (yas/reload-all)
    (yas/basic-jit-loading-1)))
 
 (ert-deftest basic-jit-loading-with-compiled-snippets ()
   "Test basic loading and expansion of snippets"
-  (with-some-interesting-snippet-dirs
+  (yas/with-some-interesting-snippet-dirs
    (yas/reload-all)
    (yas/recompile-all)
    (flet ((yas/load-directory-2
@@ -167,6 +165,53 @@ TODO: correct this bug!"
     (yas/should-expand '(("printf" . "printf();")
                          ("def" . "# define")))
     (yas/should-not-expand '("sc" "dolist" "ert-deftest"))))
+
+;;; Smart recompilation
+;;;
+(ert-deftest smart-recompilation ()
+  "Test if the mtime-based recompilation logic works"
+  (yas/with-snippet-dirs
+   '((".emacs.d/snippets"
+      ("c-mode"
+       ("printf" . "printf($1);")
+       ("fopen" . "fopen($1);")
+       ("stupidsnippet" . "stupidbla($1);"))))
+   (yas/recompile-all)
+   (let ((compiled ".emacs.d/snippets/c-mode/.yas-compiled-snippets.el"))
+     (should (file-readable-p compiled))
+     (let ((yas/auto-compile-snippets t)
+           (yas/verbosity 4)
+           (old-compiled-mtime (nth 5 (file-attributes compiled))))
+       (flet ((test-compiled-snippets-mtime ()
+                                            (sit-for 1)
+                                            (yas/reload-all t)
+                                            (should (file-readable-p compiled))
+                                            (let ((new-compiled-mtime (nth 5 (file-attributes compiled))))
+                                              (should (time-less-p old-compiled-mtime
+                                                                   new-compiled-mtime))
+                                              (setq old-compiled-mtime new-compiled-mtime))))
+         ;; modify a snippet file
+         ;;
+         (sit-for 1)
+         (with-current-buffer
+             (find-file-noselect ".emacs.d/snippets/c-mode/stupidsnippet")
+           (insert "something")
+           (save-buffer)
+           (kill-buffer))
+         (test-compiled-snippets-mtime)
+         ;; delete a snippet file
+         ;;
+         (delete-file ".emacs.d/snippets/c-mode/stupidsnippet")
+         (test-compiled-snippets-mtime)
+         ;; add a snippet file
+         ;;
+         (sit-for 1)
+         (with-current-buffer (find-file-noselect ".emacs.d/snippets/c-mode/anotherstupidsnippet")
+           (insert "blablabla")
+           (save-buffer)
+           (kill-buffer))
+         (test-compiled-snippets-mtime))))))
+
 
 ;;; Helpers
 ;;;
@@ -238,7 +283,7 @@ TODO: correct this bug!"
         (when (>= emacs-major-version 23)
           (delete-directory default-directory 'recursive))))))
 
-(defmacro with-snippet-dirs (dirs &rest body)
+(defmacro yas/with-snippet-dirs (dirs &rest body)
   `(yas/call-with-snippet-dirs ,dirs
                                #'(lambda ()
                                    ,@body)))
