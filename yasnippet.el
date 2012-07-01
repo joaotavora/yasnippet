@@ -1755,7 +1755,8 @@ Optional USE-JIT use jit-loading of snippets."
             ;;
             (when (yas/compiled-snippets-outdated-p directory)
               (yas/with-compilation-flets
-               (yas/load-directory-2 directory mode-sym))))
+               (yas/compile-directory-1 directory mode-sym))
+              (yas/write-snippet-checksum directory)))
           ;; load the .yas-compiled-snippets.el if we can find it
           ;; (might have just been generated from the previous step)
           ;;
