@@ -1753,9 +1753,7 @@ Optional USE-JIT use jit-loading of snippets."
             ;; previous .yas-compiled-snippets files or if they are
             ;; out-of-date
             ;;
-            (when (or (not compiled)
-                      (not (string= ".yas-compiled-snippets.el"
-                                    (file-name-nondirectory (most-recent-file directory)))))
+            (when (yas/compiled-snippets-outdated-p directory)
               (yas/with-compilation-flets
                (yas/load-directory-2 directory mode-sym))))
           ;; load the .yas-compiled-snippets.el if we can find it
