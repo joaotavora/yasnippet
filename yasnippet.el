@@ -1461,11 +1461,14 @@ Here's a list of currently recognized directives:
                                                (directory-file-name extra-dir)))))
     group))
 
-(defun yas/subdirs (directory &optional filep)
-  "Return subdirs or files of DIRECTORY according to FILEP."
+(defun yas/subdirs (directory &optional filep checksump)
+  "Return subdirs or files of DIRECTORY according to FILEP. Include the hidden files in a checksum calculation when CHECKSUMP is non-nil."
   (remove-if (lambda (file)
-               (or (string-match "^\\."
-                                 (file-name-nondirectory file))
+               (or (if checksump
+                       (string-match "^\\.\\(yas-compiled-snippets\\|yas-checksum\\|\\.+$\\)"
+                                     (file-name-nondirectory file))
+                     (string-match "^\\."
+                                   (file-name-nondirectory file)))
                    (string-match "^#.*#$"
                                  (file-name-nondirectory file))
                    (string-match "~$"
@@ -1674,13 +1677,67 @@ Optional USE-JIT use jit-loading of snippets."
   (when (interactive-p)
     (yas/message 3 "Loaded snippets from %s." top-level-dir)))
 
+(defun yas/compiled-snippets-outdated-p (directory)
+  "Are the .yas-compiled-snippets outdated?"
+  (cond
+   ((= 0 (length (directory-files directory t (regexp-opt
+                                               '(".yas-compiled-snippets.el"
+                                                 ".yas-compiled-snippets.el.gz"
+                                                 ".yas-compiled-snippets.elc"
+                                                 ".yas-compiled-snippets.elc.gz") 't))))
+    ;; Snippets have not been compiled.  It is outdated
+    t)
+   ((file-readable-p (concat directory "/" ".yas-checksum"))
+    ;; Checksum file in place.  See if snippet directory changed.
+    (let ((last-check (with-temp-buffer
+                        (insert-file-contents (concat directory "/" ".yas-checksum"))
+                        (buffer-substring (point-min) (point-max)))))
+      (not (string= last-check (yas/snippet-checksum directory)))))
+   ((= 0 (length (append (yas/subdirs directory) (yas/subdirs directory 'no-subdirs-just-files))))
+    ;; Compiled snippets exit but .yas-checksum does not exist AND no
+    ;; snippet files are available for recompile. Don't recompile over
+    ;; the current compilation and loose all snippets.
+    nil)
+   (t
+    ;; Compiled snippets exit, but .yas-checksum does not exit.
+    ;; Snippets are available for recompile.
+    t)))
+
+(defun yas/write-snippet-checksum (directory &optional type)
+  "Writes snippet checksum to specified DIRECTORY using the secure hash TYPE.  If unspecified, the TYPE='md5"
+  (with-temp-file (concat directory "/" ".yas-checksum")
+    (insert (yas/snippet-checksum directory type))))
+
+(defun yas/snippet-checksum (directory &optional type)
+  "Defines a checksum for a snippet directory"
+  (secure-hash (or type 'md5) (yas/snippet-checksum-1 directory)))
+
+(defun yas/snippet-checksum-1 (directory &optional prefix-dir)
+  ;; Recursively get a string that represents the modification times
+  ;; and files in a snippet directory.  This allows calculation of a
+  ;; checksum.
+  (let ((default-directory directory)
+        (prefix (or prefix-dir ""))
+        (ret ""))
+    (dolist (file (yas/subdirs directory 'no-subdirs-just-files 'checksum-files))
+      (setq ret (format "%s\n%s%s\t%s" ret
+                        prefix (file-name-nondirectory file)
+                        (nth 5 (file-attributes file)))))
+    ;; Now recurse to a lower level
+    (dolist (subdir (yas/subdirs directory))
+      (setq ret
+            (concat "%s\n%s" ret
+                    (yas/snippet-checksum-1
+                     subdir
+                     (concat
+                      (substring subdir (+ 1 (length directory))) "/")))))
+    (symbol-value 'ret)))
+
 (defun yas/load-directory-1 (directory mode-sym parents &optional no-compiled-snippets)
   "Recursively load snippet templates from DIRECTORY."
   (unless (file-exists-p (concat directory "/" ".yas-skip"))
     (when (and (not no-compiled-snippets) yas/compile-on-load-dir
-               (not (or
-                     (file-exists-p (expand-file-name ".yas-compiled-snippets.el" directory)) 
-                     (file-exists-p (expand-file-name ".yas-compiled-snippets.elc" directory)))))
+               (yas/compiled-snippets-outdated-p directory))
       (yas/message  3 "Compiling snippets for %s!" directory)
       (yas/compile-directory directory))
     
