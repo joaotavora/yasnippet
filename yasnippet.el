@@ -1684,8 +1684,10 @@ Optional USE-JIT use jit-loading of snippets."
   (secure-hash 'md5 (mapconcat #'(lambda (c) (format "%s%f" (car c) (float-time (cdr c)))) files-and-mtimes " ")))
 
 (defun yas/recompile-directory-maybe (directory mode-sym)
-  (flet ((recompile () (yas/with-compilation-flets
-                        (yas/load-directory-2 directory mode-sym)))
+  (flet ((recompile ()
+                    (yas/with-compilation-flets
+                     (yas/compile-directory-1 directory mode-sym))
+                    (yas/message 2 ".yas-compiled-snippet.el out of date. Recompiling %s" directory))
          (most-recent-mtime (mtimes) (reduce #'(lambda (t1 t2)
                                                  (if (time-less-p t1 t2) t2 t1))
                                              mtimes)))
@@ -1700,18 +1702,19 @@ Optional USE-JIT use jit-loading of snippets."
             ((null compiled)
              (recompile))
             ((let* ((files-and-mtimes (yas/compile-snippet-files-and-mtimes directory)))
-               (or (time-less-p (nth 5 (file-attributes compiled))
-                                (most-recent-mtime (mapcar #'cdr files-and-mtimes)))
-                   (not (string= (yas/compile-calculate-md5 files-and-mtimes)
-                                 (with-temp-buffer
-                                   (insert-file-contents compiled)
-                                   (when (search-forward-regexp "md5:[[:space:]]\\(.*\\)" nil 'noerror)
-                                     (match-string 1)))))))
+               (and files-and-mtimes
+                    (or (time-less-p (nth 5 (file-attributes compiled))
+                                     (most-recent-mtime (mapcar #'cdr files-and-mtimes)))
+                        (not (string= (yas/compile-calculate-md5 files-and-mtimes)
+                                      (with-temp-buffer
+                                        (insert-file-contents compiled)
+                                        (when (search-forward-regexp "md5:[[:space:]]\\(.*\\)" nil 'noerror)
+                                          (match-string 1))))))))
              (recompile))
             (t ; do not recompile
              ))
       (when (and compiled
-                 (load (file-name-sans-extension compiled) 'noerror (<= yas/verbosity 2)))
+                 (load (expand-file-name (file-name-sans-extension compiled)) 'noerror (<= yas/verbosity 2)))
         (yas/message 2 "Loading much faster .yas-compiled-snippets from %s" directory)
         t))))
 
