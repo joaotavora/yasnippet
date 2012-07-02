@@ -197,7 +197,7 @@ TODO: correct this bug!"
              (find-file-noselect ".emacs.d/snippets/c-mode/stupidsnippet")
            (insert "something")
            (save-buffer)
-           (kill-buffer))
+           (kill-buffer (current-buffer)))
          (test-compiled-snippets-mtime)
          ;; delete a snippet file
          ;;
@@ -209,7 +209,7 @@ TODO: correct this bug!"
          (with-current-buffer (find-file-noselect ".emacs.d/snippets/c-mode/anotherstupidsnippet")
            (insert "blablabla")
            (save-buffer)
-           (kill-buffer))
+           (kill-buffer (current-buffer)))
          (test-compiled-snippets-mtime))))))
 
 

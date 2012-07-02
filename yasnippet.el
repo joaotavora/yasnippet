@@ -1681,7 +1681,7 @@ Optional USE-JIT use jit-loading of snippets."
             (yas/subdirs dir 'files 'relative))))
 
 (defun yas/compile-calculate-md5 (files-and-mtimes)
-  (secure-hash 'md5 (mapconcat #'(lambda (c) (format "%s%f" (car c) (float-time (cdr c)))) files-and-mtimes " ")))
+  (md5  (mapconcat #'(lambda (c) (format "%s%f" (car c) (float-time (cdr c)))) files-and-mtimes " ")))
 
 (defun yas/recompile-directory-maybe (directory mode-sym)
   (flet ((recompile ()
