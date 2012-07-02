@@ -1681,13 +1681,13 @@ Optional USE-JIT use jit-loading of snippets."
             (yas/subdirs dir 'files 'relative))))
 
 (defun yas/compile-calculate-md5 (files-and-mtimes)
-  (md5  (mapconcat #'(lambda (c) (format "%s%f" (car c) (float-time (cdr c)))) files-and-mtimes " ")))
+  (md5 (mapconcat #'(lambda (c) (format "%s%f" (car c) (float-time (cdr c)))) files-and-mtimes " ")))
 
 (defun yas/recompile-directory-maybe (directory mode-sym)
-  (flet ((recompile ()
+  (flet ((recompile (reason)
                     (yas/with-compilation-flets
                      (yas/compile-directory-1 directory mode-sym))
-                    (yas/message 2 ".yas-compiled-snippet.el out of date. Recompiling %s" directory))
+                    (yas/message 2 "%s. Recompiling %s" reason directory))
          (most-recent-mtime (mtimes) (reduce #'(lambda (t1 t2)
                                                  (if (time-less-p t1 t2) t2 t1))
                                              mtimes)))
@@ -1700,7 +1700,8 @@ Optional USE-JIT use jit-loading of snippets."
       (cond ((not yas/auto-compile-snippets)
              nil)
             ((null compiled)
-             (recompile))
+             (recompile "No .yas-compiled-snippets.el found")
+             (setq compiled ".yas-compiled-snippets.el"))
             ((let* ((files-and-mtimes (yas/compile-snippet-files-and-mtimes directory)))
                (and files-and-mtimes
                     (or (time-less-p (nth 5 (file-attributes compiled))
@@ -1710,9 +1711,11 @@ Optional USE-JIT use jit-loading of snippets."
                                         (insert-file-contents compiled)
                                         (when (search-forward-regexp "md5:[[:space:]]\\(.*\\)" nil 'noerror)
                                           (match-string 1))))))))
-             (recompile))
-            (t ; do not recompile
+             (recompile ".yas-compiled-snippets.el out of date"))
+            (t ; file exists no recompilation needed
              ))
+      ;; maybe now we have a brand new compiled file
+      ;;
       (when (and compiled
                  (load (expand-file-name (file-name-sans-extension compiled)) 'noerror (<= yas/verbosity 2)))
         (yas/message 2 "Loading much faster .yas-compiled-snippets from %s" directory)
