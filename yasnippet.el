@@ -1,8 +1,6 @@
 ;;; yasnippet.el --- Yet another snippet extension for Emacs.
 
-;; Copyright 2008 pluskid
-;;           2009 pluskid, João Távora
-;;           2010,2011,2012 João Távora
+;; Copyright (C) 2008-2012 Free Software Foundation, Inc.
 ;; Authors: pluskid <pluskid@gmail.com>,  João Távora <joaotavora@gmail.com>
 ;; Version: 0.7.0
 ;; Package-version: 0.7.0
@@ -4291,3 +4289,6 @@ handle the end-of-buffer error fired in it by calling
 (provide 'yasnippet)
 
 ;;; yasnippet.el ends here
+;; Local Variables:
+;; coding: utf-8
+;; End:
