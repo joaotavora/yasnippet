@@ -34,11 +34,27 @@ Add the following in your `.emacs` file:
 
 Add your own snippets to `~/.emacs.d/snippets` by placing files there or invoking `yas/new-snippet`.
 
-## Install yasnippet with el-get
+## Install with el-get
 
-El-get is a nice way to get the most recent version, too
+El-get is a nice way to get the most recent version, too. See
+https://github.com/dimitri/el-get for instructions. Be sure to install the
+"master" branch since the 3.x series still use the old googlecode code, base.
+Consider using this "local" recipe.
 
-See https://github.com/dimitri/el-get for instructions
+    (push '(:name yasnippet
+                  :website "https://github.com/capitaomorte/yasnippet.git"
+                  :description "YASnippet is a template system for Emacs."
+                  :type github
+                  :pkgname "capitaomorte/yasnippet"
+                  :features "yasnippet"
+                  :compile "yasnippet.el"
+                  :submodule nil)
+          el-get-sources)
+
+## Install with MELPA
+
+If you're using the latest emacs, with `package.el`, a very recent yasnippet is
+also available on http://melpa.milkbox.net/.
 
 ## Use `yas/minor-mode` on a per-buffer basis
 
@@ -52,7 +68,7 @@ To use yasnippet as a non-global minor mode, replace `(yas/global-mode 1)` with
 
 # Contributing snippets
 
-Please do not ask me to add snippets to the default collection under
+Please **do not** ask me to add snippets to the default collection under
 `/snippets`. This is considered frozen and by customizing
 `yas/snippet-dirs` you can point yasnippet to good snippet collections
 out there.
@@ -95,7 +111,8 @@ Note thqt in the example above we abandon the default snippet collection on
 
 # Documentation, issues, etc
 
-Please refer to the comprehensive [documentation] [docs] for full customization
+Please refer to the comprehensive (albeit slightly outdated)
+[documentation][docs] for full customization
 and support.  If you find a bug, please report it on
 [the GitHub issue tracker][issues].  (please **do not** submit new issues to the old
 [googlecode tracker][googlecode tracker])
