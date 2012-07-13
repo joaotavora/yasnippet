@@ -34,6 +34,12 @@ Add the following in your `.emacs` file:
 
 Add your own snippets to `~/.emacs.d/snippets` by placing files there or invoking `yas/new-snippet`.
 
+
+## Install with `package-install`
+
+In a recent emacs `M-x list-packages` is the recommended way to list and install packages. 
+[MELPA][melpa] keeps a very recent snapshot of yasnippet, see http://melpa.milkbox.net/#installing.
+
 ## Install with el-get
 
 El-get is a nice way to get the most recent version, too. See
@@ -47,14 +53,8 @@ Consider using this "local" recipe.
                   :type github
                   :pkgname "capitaomorte/yasnippet"
                   :features "yasnippet"
-                  :compile "yasnippet.el"
-                  :submodule nil)
+                  :compile "yasnippet.el")
           el-get-sources)
-
-## Install with MELPA
-
-If you're using the latest emacs, with `package.el`, a very recent yasnippet is
-also available on http://melpa.milkbox.net/.
 
 ## Use `yas/minor-mode` on a per-buffer basis
 
@@ -124,3 +124,4 @@ to the [yasnippet google group][forum]. Thank you very much for using yasnippet!
 [issues]: https://github.com/capitaomorte/yasnippet/issues
 [googlecode tracker]: http://code.google.com/p/yasnippet/issues/list
 [forum]: http://groups.google.com/group/smart-snippet
+[melpa]: http://melpa.milkbox.net/
