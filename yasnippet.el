@@ -1630,8 +1630,10 @@ TEMPLATES is a list of `yas/template'."
                                'require-match
                                nil
                                nil)))
-    (when chosen
-      (nth (position chosen formatted-choices :test #'string=) filtered-choices))))
+    (let ((position (or (and chosen
+                             (position chosen formatted-choices :test #'string=))
+                        0)))
+      (nth position filtered-choices))))
 
 (defun yas/no-prompt (prompt choices &optional display-fn)
   (first choices))
