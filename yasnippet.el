@@ -1672,8 +1672,9 @@ Optional USE-JIT use jit-loading of snippets."
   "Recursively load snippet templates from DIRECTORY."
   (unless (file-exists-p (concat directory "/" ".yas-skip"))
     (if (and (not no-compiled-snippets)
-             (load (expand-file-name ".yas-compiled-snippets" directory) 'noerror (<= yas/verbosity 2)))
-        (yas/message 2 "Loading much faster .yas-compiled-snippets from %s" directory)
+             (progn (yas/message 2 "Loading compiled snippets from %s" directory) t)
+             (load (expand-file-name ".yas-compiled-snippets" directory) 'noerror (<= yas/verbosity 3)))
+      (yas/message 2 "Loading snippet files from %s" directory)
       (yas/load-directory-2 directory mode-sym))))
 
 (defun yas/load-directory-2 (directory mode-sym)
@@ -1707,14 +1708,20 @@ Optional USE-JIT use jit-loading of snippets."
         (dolist (directory (reverse (yas/snippet-dirs)))
           (cond ((file-directory-p directory)
                  (yas/load-directory directory (not nojit))
-                 (yas/message 3 "Loaded %s" directory))
+                 (if nojit
+                     (yas/message 3 "Loaded %s" directory)
+                   (yas/message 3 "Prepared just-in-time loading for %s" directory)))
                 (t
                  (push (yas/message 0 "Check your `yas/snippet-dirs': %s is not a directory" directory) errors))))
       (call-interactively 'yas/load-directory))
     errors))
 
 (defun yas/reload-all (&optional interactive)
-  "Reload all snippets and rebuild the YASnippet menu."
+  "Reload all snippets and rebuild the YASnippet menu.
+
+When called interactively force immediate reload of all known
+snippets under `yas/snippet-dirs', otherwise use just-in-time
+loading."
   (interactive "p")
   (catch 'abort
     (let ((errors)
@@ -1728,7 +1735,7 @@ Optional USE-JIT use jit-loading of snippets."
       (when snippet-editing-buffers
           (if interactive
               (if (y-or-n-p "Some buffers editing live snippets, close them and proceed with reload?")
-                  (mapcar #'kill-buffer snippet-editing-buffers)
+                  (mapc #'kill-buffer snippet-editing-buffers)
                 (yas/message 1 "Aborted reload...")
                 (throw 'abort nil))
             ;; in a non-interactive use, at least set
@@ -1762,14 +1769,16 @@ Optional USE-JIT use jit-loading of snippets."
       ;;
       (yas/trigger-key-reload)
 
-      (yas/message 3 "Reloaded everything...%s." (if errors " (some errors, check *Messages*)" "")))))
+      (yas/message 3 "Reloaded everything%s...%s."
+                   (if interactive "" " (snippets will load just-in-time)")
+                   (if errors " (some errors, check *Messages*)" "")))))
 
 (defun yas/load-pending-jits ()
   (when yas/minor-mode
     (dolist (mode (yas/modes-to-activate))
       (let ((forms (gethash mode yas/scheduled-jit-loads)))
         (dolist (form forms)
-          (yas/message  3 "Loading snippets for %s, just in time: %s!" mode form)
+          (yas/message  3 "Loading for `%s', just-in-time: %s!" mode form)
           (eval form))
         (remhash mode yas/scheduled-jit-loads)))))
 
