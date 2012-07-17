@@ -1588,7 +1588,9 @@ TEMPLATES is a list of `yas/template'."
         (keyboard-quit))))
 
 (defun yas/ido-prompt (prompt choices &optional display-fn)
-  (when (fboundp 'ido-completing-read)
+  (when (and (fboundp 'ido-completing-read)
+	     (or (>= emacs-major-version 24)
+		 ido-mode))
     (yas/completing-prompt prompt choices display-fn #'ido-completing-read)))
 
 (eval-when-compile (require 'dropdown-list nil t))
