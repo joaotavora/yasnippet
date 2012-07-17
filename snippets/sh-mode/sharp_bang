@@ -1,0 +1,54 @@
+# -*- mode: Shell-script -*-
+# name: SharpBang Bash
+# key: Bash
+# contributor: Terry Zheng<jfhgmv@gmail.com>
+# --
+#!/bin/bash
+#
+# SCRIPT: ${1:NAME_of_SCRIPT}
+# AUTHOR: ${2:AUTHORS_NAME}
+# E-MAIL: ${3:E-mail_Address}
+# DATE: ${4:`(current-time-string)`}
+# REV: ${5:1.0.A} (Valid are A, B, D, T and P)
+#            (for Alpha, Beta, Dev, Test and Production)
+#
+# PLATFORM: ${6:GNU/Linux} (SPECIFY: AIX, FreeBSD, GNU/Linux, HP-UX, Solaris
+#                      or Not platform dependent)
+#
+# PURPOSE: Give a clear, and if necessary, long, description of the purpose
+#          of the shell script. This is will also help you stay focused
+#          on the task at hand.
+#
+# REV LIST:
+#     DATE: DATE_of_REVSION
+#     BY: AUTHOR_of_MODIFICATION
+#     MODIFICATION: Describe what was modified, new features, etc--
+#
+#
+# set -n # Uncomment to check script syntax, without execution.
+#        # NOTE: Do not forget to put the comment back in or
+#        #       the shell script will not execute!
+#
+# set -x # Uncommet to debug this shell script.
+#
+################################################################
+#     DEFINE FILES AND VARIABLES HERE
+################################################################
+PID="/var/run/$1.pid"
+
+################################################################
+#     DEFINE FUNCTIONS HERE
+################################################################
+${8:function_name} ()
+{
+    #Descriptions of this function.
+    ${9:Codes of this function.}
+}
+
+################################################################
+#     BEGINNING OF MAIN
+################################################################
+$0
+
+exit 0
+##---------------------- End of script -----------------------##
