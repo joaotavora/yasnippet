@@ -66,12 +66,28 @@ To use yasnippet as a non-global minor mode, replace `(yas/global-mode 1)` with
               '(lambda ()
                  (yas/minor-mode)))
 
-# Contributing snippets
+# (NOT) Contributing snippets
 
-Please **do not** ask me to add snippets to the default collection under
-`/snippets`. This is considered frozen and by customizing
-`yas/snippet-dirs` you can point yasnippet to good snippet collections
-out there.
+Please **do not** open pull requests or ask me to add snippets to
+yasnippet.
+
+The bundled collection under `/snippets` is considered frozen: **I
+will not add more snippets to it**.
+
+You can point `yas/snippet-dirs` to good snippet collections out
+there. If you have created snippets for a mode, or multiple modes,
+consider creating a repository to host them, then tell users that it
+should be added like this to `yas/snippet-dirs`:
+
+    (setq yas/snippet-dirs
+          '("~/.emacs.d/snippets"            ;; personal snippets
+            "/path/to/some/collection/"      ;; just some foo-mode snippets
+            "/path/to/some/othercollection/" ;; some more foo-mode and a complete baz-mode
+            "/path/to/yasnippet/snippets"    ;; the default collection
+            ))
+
+    (yas/global-mode 1) ;; or M-x yas/reload-all if you've started yasnippet already.
+
 
 There is a tool `extras/textmate-import.rb` than can import many
 actual Textmate snippets and there are
