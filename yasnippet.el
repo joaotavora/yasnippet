@@ -2476,7 +2476,7 @@ With optional prefix argument KILL quit the window and buffer."
       (set (make-local-variable 'yas-editing-template)
            (yas-define-snippets-1 (yas-parse-template buffer-file-name)
                                   table)))))
-  ;; Now, offer to save this shit iff:
+  ;; Now, offer to save this iff:
   ;;
   ;; 1) `yas-snippet-dirs' is a list and its first element does not
   ;; match this template's file (i.e. this is a library snippet, not
