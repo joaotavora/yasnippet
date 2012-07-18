@@ -145,6 +145,7 @@
 
 (defvar yas-load-file-name load-file-name
   "Store the filename that yasnippet.el was originally loaded from.")
+
 (defcustom yas-snippet-dirs (remove nil
                                     (list "~/.emacs.d/snippets"
                                           (when yas-load-file-name
@@ -168,9 +169,11 @@ as the default for storing the user's new snippets."
              (unless (or (not (fboundp 'yas-reload-all))
                          (equal old new))
                (yas-reload-all)))))
+
 (defun yas-snippet-dirs ()
   "Returns `yas-snippet-dirs' (which see) as a list."
   (if (listp yas-snippet-dirs) yas-snippet-dirs (list yas-snippet-dirs)))
+
 (defvaralias 'yas/root-directory 'yas-snippet-dirs)
 
 (defcustom yas-prompt-functions '(yas-x-prompt
@@ -411,6 +414,7 @@ the trigger key itself."
 
 
 ;;; User can also customize the next defvars
+
 (defun yas-define-some-keys (keys keymap definition)
   "Bind KEYS to DEFINITION in KEYMAP, read with `read-kbd-macro'."
   (let ((keys (or (and (listp keys) keys)
@@ -765,7 +769,7 @@ and friends."
   "Toggle YASnippet mode.
 
 When YASnippet mode is enabled, the `yas-trigger-key' key expands
-snippets of code depending on the mode.
+snippets of code depending on the major mode.
 
 With no argument, this command toggles the mode.
 positive prefix argument turns on the mode.
@@ -806,7 +810,6 @@ Key bindings:
          ;;
          (remove-hook 'post-command-hook 'yas-post-command-handler t)
          (remove-hook 'emulation-mode-map-alists 'yas-direct-keymaps))))
-
 
 (defvar yas-dont-activate '(minibufferp)
   "If non-nil don't let `yas-minor-mode-on' active yas for this buffer.
@@ -1243,7 +1246,7 @@ the template of a snippet in the current snippet-table."
       acc)))
 
 
-;;; Internal functions
+;;; Internal functions:
 
 (defun yas-real-mode? (mode)
   "Try to find out if MODE is a real mode. The MODE bound to
@@ -2226,7 +2229,7 @@ Common gateway for `yas-expand-from-trigger-key' and
 
 
 
-;;; Snippet development
+;;; Utils for snippet development:
 
 (defun yas-all-templates (tables)
   "Return all snippet tables applicable for the current buffer.
@@ -3003,7 +3006,7 @@ Also create some protection overlays"
         (yas-snippets-at-point 'all-snippets)))
 
 
-;;; Some low level snippet-routines
+;;; Some low level snippet-routines:
 
 (defmacro yas-inhibit-overlay-hooks (&rest body)
   "Run BODY with `yas-inhibit-overlay-hooks' set to t."
@@ -3284,7 +3287,6 @@ progress."
 ;; blocks all other million modification hooks. This presented some
 ;; problems with stacked expansion.
 ;;
-
 (defun yas-make-move-field-protection-overlays (snippet field)
   "Place protection overlays surrounding SNIPPET's FIELD.
 
@@ -3338,9 +3340,12 @@ The error should be ignored in `debug-ignored-errors'"
 (add-to-list 'debug-ignored-errors "^Exit the snippet first!$")
 
 
-;;; Apropos stacked expansion:
+;; Snippet expansion and "stacked" expansion:
 ;;
-;; the parent snippet does not run its fields modification hooks
+;; Stacked expansion is when you try to expand a snippet when already
+;; inside a snippet expansion.
+;;
+;; The parent snippet does not run its fields modification hooks
 ;; (`yas-on-field-overlay-modification' and
 ;; `yas-on-protection-overlay-modification') while the child snippet
 ;; is active. This means, among other things, that the mirrors of the
@@ -3360,7 +3365,6 @@ The error should be ignored in `debug-ignored-errors'"
 ;; running, but if managed correctly (including overlay priorities)
 ;; they should account for all situations...
 ;;
-
 (defun yas-expand-snippet (content &optional start end expand-env)
   "Expand snippet CONTENT at current point.
 
@@ -3528,8 +3532,8 @@ Returns the newly created snippet."
 ;; recently expanded snippet, we might actually have many fields,
 ;; mirrors (and the snippet exit) in the very same position in the
 ;; buffer. Therefore we need to single-link the
-;; fields-or-mirrors-or-exit, which I have called "fom", according to
-;; their original positions in the buffer.
+;; fields-or-mirrors-or-exit (which I have abbreviated to "fom")
+;; according to their original positions in the buffer.
 ;;
 ;; Then we have operation `yas-advance-end-maybe' and
 ;; `yas-advance-start-maybe', which conditionally push the starts and
@@ -4068,28 +4072,10 @@ When multiple expressions are found, only the last one counts."
           t)))))
 
 
-;;; Post-command hooks:
-
-(defvar yas-post-command-runonce-actions nil
-  "List of actions to run once in `post-command-hook'.
-
-Each element of this list looks like (FN . ARGS) where FN is
-called with ARGS as its arguments after the currently executing
-snippet command.
-
-After all actions have been run, this list is emptied, and after
-that the rest of `yas-post-command-handler' runs.")
+;;; Post-command hook:
 
 (defun yas-post-command-handler ()
   "Handles various yasnippet conditions after each command."
-  (when yas-post-command-runonce-actions
-    (condition-case err
-        (mapc #'(lambda (fn-and-args)
-                  (apply (car fn-and-args)
-                         (cdr fn-and-args)))
-              yas-post-command-runonce-actions)
-      (error (yas-message 3 "Problem running `yas-post-command-runonce-actions'!")))
-    (setq yas-post-command-runonce-actions nil))
   (cond (yas-protection-violation
          (goto-char yas-protection-violation)
          (setq yas-protection-violation nil))
@@ -4113,7 +4099,10 @@ that the rest of `yas-post-command-handler' runs.")
          (yas-check-commit-snippet))))
 
 ;;; Fancy docs:
-
+;;
+;; The docstrings for some functions are generated dynamically
+;; depending on the context.
+;;
 (put 'yas-expand  'function-documentation
      '(yas-expand-from-trigger-key-doc))
 (defun yas-expand-from-trigger-key-doc ()
@@ -4197,10 +4186,10 @@ Remaining args as in `yas-expand-snippet'."
       (yas-expand-snippet (yas-template-content yas-current-template)))))
 
 ;;; Utils
-;;;
 
 (defvar yas-verbosity 4
   "Log level for `yas-message' 4 means trace most anything, 0 means nothing.")
+
 (defun yas-message (level message &rest args)
   (when (> yas-verbosity level)
     (message (apply #'yas-format message args))))
@@ -4210,11 +4199,13 @@ Remaining args as in `yas-expand-snippet'."
 
 
 ;;; Some hacks:
-;;;
+;;
+;; The functions
+;;
 ;; `locate-dominating-file'
 ;; `region-active-p'
 ;;
-;; added for compatibility in emacs < 23
+;; added for compatibility in emacsen < 23
 (unless (>= emacs-major-version 23)
   (unless (fboundp 'region-active-p)
     (defun region-active-p ()  (and transient-mark-mode mark-active)))
@@ -4297,8 +4288,8 @@ handle the end-of-buffer error fired in it by calling
                (define-key (symbol-value (make-local-variable 'yas-keymap))
                  k 'self-insert-command))))
 
-;;; Try to be backward compatible to yasnippet <= 0.7
-;;;
+;;; Backward compatibility to to yasnippet <= 0.7
+
 (dolist (sym '(;; obsolete `defcustom's
                ;;
                yas/snippet-dirs
@@ -4381,6 +4372,7 @@ handle the end-of-buffer error fired in it by calling
       (make-obsolete sym replacement "yasnippet 0.8")
       (defalias sym replacement))))
 
+
 (provide 'yasnippet)
 
 ;;; yasnippet.el ends here
