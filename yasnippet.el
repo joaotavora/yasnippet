@@ -4321,6 +4321,14 @@ handle the end-of-buffer error fired in it by calling
                yas/visit-from-menu
                yas/expand-only-for-last-commands
 
+               ;; these vars can be customized as well
+               ;;
+               yas/keymap
+               yas/key-syntaxes
+               yas/after-exit-snippet-hook
+               yas/before-expand-snippet-hook
+               yas/buffer-local-condition
+
                ;; obsolete interactive functions
                ;;
                yas/minor-mode
