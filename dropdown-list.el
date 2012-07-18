@@ -2,9 +2,10 @@
 ;;
 ;; Filename: dropdown-list.el
 ;; Description: Drop-down menu interface
+;; Copyright (C) 2008-2012 Free Software Foundation, Inc.
 ;; Author: Jaeyoun Chung [jay.chung@gmail.com]
 ;; Maintainer:
-;; Copyright (C) 2008 Jaeyoun Chung
+;; Authors: pluskid <pluskid@gmail.com>,  João Távora <joaotavora@gmail.com>
 ;; Created: Sun Mar 16 11:20:45 2008 (Pacific Daylight Time)
 ;; Version:
 ;; Last-Updated: Sun Mar 16 12:19:49 2008 (Pacific Daylight Time)
@@ -38,20 +39,18 @@
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;; This program is free software; you can redistribute it and/or
-;; modify it under the terms of the GNU General Public License as
-;; published by the Free Software Foundation; either version 3, or
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
 ;; (at your option) any later version.
 ;;
 ;; This program is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-;; General Public License for more details.
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
 ;;
 ;; You should have received a copy of the GNU General Public License
-;; along with this program; see the file COPYING.  If not, write to
-;; the Free Software Foundation, Inc., 51 Franklin Street, Fifth
-;; Floor, Boston, MA 02110-1301, USA.
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -249,3 +248,6 @@ Use multiple times to bind different COMMANDs to the same KEY."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; dropdown-list.el ends here
+;; Local Variables:
+;; coding: utf-8
+;; End:
