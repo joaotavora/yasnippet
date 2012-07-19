@@ -18,22 +18,22 @@ Why doesn't TAB expand a snippet?
 =================================
 
 First check the mode line to see if there's ``yas``. If not, then try
-``M-x yas/minor-mode`` to manually turn on the minor mode and try to
+``M-x yas-minor-mode`` to manually turn on the minor mode and try to
 expand the snippet again. If it works, then, you can add the following
 code to your ``.emacs`` *before* loading YASnippet:
 
 .. sourcecode:: lisp
 
-  (add-hook 'the-major-mode-hook 'yas/minor-mode-on)
+  (add-hook 'the-major-mode-hook 'yas-minor-mode-on)
 
-where ``the-major-mode`` is the major mode in which ``yas/minor-mode``
+where ``the-major-mode`` is the major mode in which ``yas-minor-mode``
 isn't enabled by default.
 
 From YASnippet 0.6 you can also use the command ``M-x
-yas/global-mode`` to turn on YASnippet automatically for *all* major
+yas-global-mode`` to turn on YASnippet automatically for *all* major
 modes.
 
-If ``yas/minor-mode`` is on but the snippet still not expanded. Then
+If ``yas-minor-mode`` is on but the snippet still not expanded. Then
 try to see what command is bound to the ``TAB`` key: press ``C-h k``
 and then press ``TAB``. Emacs will show you the result. 
 
@@ -41,7 +41,7 @@ You'll see a buffer prompted by Emacs saying that ``TAB runs the
 command ...``. Alternatively, you might see ``<tab> runs the command
 ...``, note the difference between ``TAB`` and ``<tab>`` where the
 latter has priority. If you see ``<tab>`` bound to a command other
-than ``yas/expand``, (e.g. in ``org-mode``) you can try the following
+than ``yas-expand``, (e.g. in ``org-mode``) you can try the following
 code to work around:
 
 .. sourcecode:: lisp
@@ -49,9 +49,9 @@ code to work around:
   (add-hook 'org-mode-hook
             (let ((original-command (lookup-key org-mode-map [tab])))
               `(lambda ()
-                 (setq yas/fallback-behavior
+                 (setq yas-fallback-behavior
                        '(apply ,original-command))
-                 (local-set-key [tab] 'yas/expand))))
+                 (local-set-key [tab] 'yas-expand))))
 
 replace ``org-mode-hook`` and ``org-mode-map`` with the major mode
 hook you are dealing with (Use ``C-h m`` to see what major mode you
@@ -61,23 +61,23 @@ As an alternative, you can also try
 
 .. sourcecode:: lisp
 
-  (defun yas/advise-indent-function (function-symbol)
-    (eval `(defadvice ,function-symbol (around yas/try-expand-first activate)
+  (defun yas-advise-indent-function (function-symbol)
+    (eval `(defadvice ,function-symbol (around yas-try-expand-first activate)
              ,(format
                "Try to expand a snippet before point, then call `%s' as usual"
                function-symbol)
-             (let ((yas/fallback-behavior nil))
+             (let ((yas-fallback-behavior nil))
                (unless (and (interactive-p)
-                            (yas/expand))
+                            (yas-expand))
                  ad-do-it)))))
 
-  (yas/advise-indent-function 'ruby-indent-line)
+  (yas-advise-indent-function 'ruby-indent-line)
 
 To *advise* the modes indentation function bound to TAB, (in this case
-``ruby-indent-line``) to first try to run ``yas/expand``.
+``ruby-indent-line``) to first try to run ``yas-expand``.
 
 If the output of ``C-h k RET <tab>`` tells you that ``<tab>`` is
-indeed bound to ``yas/expand`` but YASnippet still doesn't work, check
+indeed bound to ``yas-expand`` but YASnippet still doesn't work, check
 your configuration and you may also ask for help on the `discussion
 group <http://groups.google.com/group/smart-snippet>`_. See this
 particular `thread
@@ -96,8 +96,8 @@ A workaround is to inhibit flyspell overlays while the snippet is active:
   
   (add-hook 'flyspell-incorrect-hook
           #'(lambda (dummy1 dummy2 dymmy3)
-              (and yas/active-field-overlay
-                   (overlay-buffer yas/active-field-overlay))))
+              (and yas-active-field-overlay
+                   (overlay-buffer yas-active-field-overlay))))
 
 This is apparently related to overlay priorities. For some reason, the
 ``keymap`` property of flyspell's overlays always takes priority over
@@ -110,18 +110,18 @@ How do I turn off the minor mode where in some buffers
 ======================================================
 
 The best way, since version 0.6.1c, is to set the default value of the
-variable ``yas/dont-activate`` to a lambda function like so:
+variable ``yas-dont-activate`` to a lambda function like so:
 
 .. sourcecode:: lisp
   
-  (set-default 'yas/dont-activate
+  (set-default 'yas-dont-activate
              #'(lambda ()
-                 (and yas/root-directory
-                      (null (yas/get-snippet-tables)))))
+                 (and yas-root-directory
+                      (null (yas-get-snippet-tables)))))
 
 This is also the default value starting for that version. It skips the
 minor mode in buffers where it is not applicable (no snippet tables),
-but only once you have setup your yas/root-directory.
+but only once you have setup your yas-root-directory.
 
 
 How do I define an abbrev key containing characters not supported by the filesystem?

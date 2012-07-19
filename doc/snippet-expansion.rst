@@ -16,16 +16,16 @@ Triggering expansion
 You can use YASnippet to expand snippets in different ways:
 
 * By typing an abbrev, the snippet *trigger key*, and then pressing
-  the key defined in ``yas/trigger-key`` (which defaults to
+  the key defined in ``yas-trigger-key`` (which defaults to
   "TAB"). This works in buffers where the minor mode
-  ``yas/minor-mode`` is active;
+  ``yas-minor-mode`` is active;
 
-* By invoking the command ``yas/insert-snippet`` (either by typing
-  ``M-x yas/insert-snippet`` or its keybinding). This does *not*
-  require ``yas/minor-mode`` to be active.
+* By invoking the command ``yas-insert-snippet`` (either by typing
+  ``M-x yas-insert-snippet`` or its keybinding). This does *not*
+  require ``yas-minor-mode`` to be active.
 
 * By using the keybinding associated with an active snippet. This also
-  requires ``yas/minor-mode`` to be active;
+  requires ``yas-minor-mode`` to be active;
 
 * By expanding directly from the "YASnippet" menu in the menu-bar
 
@@ -36,10 +36,10 @@ You can use YASnippet to expand snippets in different ways:
 Trigger key
 -----------
 
-When ``yas/minor-mode`` is enabled, the keybinding taken from
-``yas/trigger-key`` will take effect.
+When ``yas-minor-mode`` is enabled, the keybinding taken from
+``yas-trigger-key`` will take effect.
 
-``yas/trigger-key`` invokes ``yas/expand``, which tries to expand a
+``yas-trigger-key`` invokes ``yas-expand``, which tries to expand a
 *snippet abbrev* (also known as *snippet key*) before point. 
 
 The default key is ``"TAB"``, however, you can freely set it to some
@@ -49,37 +49,37 @@ other key.
    :align: left
 
 To enable the YASnippet minor mode in all buffers globally use the
-command ``yas/global-mode``. 
+command ``yas-global-mode``. 
 
-When you use ``yas/global-mode`` you can also selectively disable
+When you use ``yas-global-mode`` you can also selectively disable
 YASnippet in some buffers by setting the buffer-local variable
-``yas/dont-active`` in the buffer's mode hook.
+``yas-dont-active`` in the buffer's mode hook.
 
-Trouble when using or understanding the ``yas/trigger-key`` is easily
+Trouble when using or understanding the ``yas-trigger-key`` is easily
 the most controversial issue in YASsnippet. See the `FAQ <faq.html>`_.
 
 Fallback bahaviour
 ~~~~~~~~~~~~~~~~~~
 
-``yas/fallback-behaviour`` is a customization variable bound to
-``'call-other-command`` by default. If ``yas/expand`` failed to find
+``yas-fallback-behaviour`` is a customization variable bound to
+``'call-other-command`` by default. If ``yas-expand`` failed to find
 any suitable snippet to expand, it will disable the minor mode
 temporarily and find if there's any other command bound the
-``yas/trigger-key``. 
+``yas-trigger-key``. 
 
 If found, the command will be called. Usually this works very well --
 when there's a snippet, expand it, otherwise, call whatever command
 originally bind to the trigger key.
 
 However, you can change this behavior by customizing the
-``yas/fallback-behavior`` variable. If you set this variable to
+``yas-fallback-behavior`` variable. If you set this variable to
 ``'return-nil``, it will return ``nil`` instead of trying to call the
 *original* command when no snippet is found.
 
 Insert at point
 ---------------
 
-The command ``M-x yas/insert-snippet`` lets you insert snippets at
+The command ``M-x yas-insert-snippet`` lets you insert snippets at
 point *for you current major mode*. It prompts you for the snippet
 key first, and then for a snippet template if more than one template
 exists for the same key.
@@ -90,7 +90,7 @@ applicable snippets for the major mode, prefix this command with
 ``C-u``.
 
 The prompting methods used are again controlled by
-``yas/prompt-functions``.
+``yas-prompt-functions``.
 
 Snippet keybinding
 ------------------
@@ -108,7 +108,7 @@ Expanding with ``hippie-expand``
 ----------------------------------
 
 To integrate with ``hippie-expand``, just put
-``yas/hippie-try-expand`` in
+``yas-hippie-try-expand`` in
 ``hippie-expand-try-functions-list``. This probably makes more sense
 when placed at the top of the list, but it can be put anywhere you
 prefer.
@@ -117,8 +117,8 @@ Expanding from emacs-lisp code
 ------------------------------
 
 Sometimes you might want to expand a snippet directly from you own
-elisp code. You should call ``yas/expand-snippet`` instead of
-``yas/expand`` in this case.
+elisp code. You should call ``yas-expand-snippet`` instead of
+``yas-expand`` in this case.
 
 As with expanding from the menubar, the condition system and multiple
 candidates doesn't affect expansion. In fact, expanding from the
@@ -126,9 +126,9 @@ YASnippet menu has the same effect of evaluating the follow code:
 
 .. sourcecode:: common-lisp
 
-  (yas/expand-snippet template)
+  (yas-expand-snippet template)
 
-See the internal documentation on ``yas/expand-snippet`` for more
+See the internal documentation on ``yas-expand-snippet`` for more
 information.
 
 Controlling expansion
@@ -161,7 +161,7 @@ In particular, the following things matter:
   are also considered. This works recursively, i.e. parents of parents
   of eligible tables are also considered.
 
-* Buffer-local ``yas/mode-symbol`` variable
+* Buffer-local ``yas-mode-symbol`` variable
 
   This can be used to consider snippet tables whose name does not
   correspond to a major mode. If you set this variable to a name ,
@@ -176,9 +176,9 @@ In particular, the following things matter:
   ;; snippet table "rails-mode"
   (add-hook 'rinari-minor-mode-hook
             #'(lambda ()
-                (setq yas/mode-symbol 'rails-mode)))
+                (setq yas-mode-symbol 'rails-mode)))
 
-* Buffer-local ``yas/buffer-local-condition`` variable
+* Buffer-local ``yas-buffer-local-condition`` variable
 
   This variable provides finer grained control over what snippets can
   be expanded in the current buffer. The default value won't let you
@@ -189,7 +189,7 @@ The condition system
 --------------------
 
 Consider this scenario: you are an old Emacs hacker. You like the
-abbrev-way and set ``yas/trigger-key`` to ``"SPC"``. However,
+abbrev-way and set ``yas-trigger-key`` to ``"SPC"``. However,
 you don't want ``if`` to be expanded as a snippet when you are typing
 in a comment block or a string (e.g. in ``python-mode``).
 
@@ -198,14 +198,14 @@ you could just specify the condition for ``if`` to be ``(not
 (python-in-string/comment))``. But how about ``while``, ``for``,
 etc. ? Writing the same condition for all the snippets is just
 boring. So has a buffer local variable
-``yas/buffer-local-condition``. You can set this variable to ``(not
+``yas-buffer-local-condition``. You can set this variable to ``(not
 (python-in-string/comment))`` in ``python-mode-hook``.
 
 Then, what if you really want some particular snippet to expand even
 inside a comment? This is also possible! But let's stop telling the
 story and look at the rules:
 
-* If ``yas/buffer-local-condition`` evaluate to nil, no snippets will
+* If ``yas-buffer-local-condition`` evaluate to nil, no snippets will
   be considered for expansion.
   
 * If it evaluates to the a *cons cell* where the ``car`` is the symbol
@@ -238,14 +238,14 @@ story and look at the rules:
     
   * Otherwise, it won't be considered.
 
-In the mentioned scenario, set ``yas/buffer-local-condition`` like
+In the mentioned scenario, set ``yas-buffer-local-condition`` like
 this
 
 .. sourcecode:: common-lisp
 
   (add-hook 'python-mode-hook
             '(lambda ()
-               (setq yas/buffer-local-condition
+               (setq yas-buffer-local-condition
                      '(if (python-in-string/comment)
                           '(require-snippet-condition . force-in-comment)
                         t))))
@@ -263,16 +263,16 @@ one snippet to be expanded at point.
 
 When there are multiple candidates, YASnippet will let you select
 one. The UI for selecting multiple candidate can be customized through
-``yas/prompt-functions`` , which defines your preferred methods of
+``yas-prompt-functions`` , which defines your preferred methods of
 being prompted for snippets.
 
 You can customize it with ``M-x customize-variable RET
-yas/prompt-functions RET``. Alternatively you can put in your
+yas-prompt-functions RET``. Alternatively you can put in your
 emacs-file:
 
 .. sourcecode:: common-lisp
    
-   (setq yas/prompt-functions '(yas/x-prompt yas/dropdown-prompt))
+   (setq yas-prompt-functions '(yas-x-prompt yas-dropdown-prompt))
 
 Currently there are some alternatives solution with YASnippet.
 
@@ -282,7 +282,7 @@ Currently there are some alternatives solution with YASnippet.
 Use the X window system
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The function ``yas/x-prompt`` can be used to show a popup menu for you
+The function ``yas-x-prompt`` can be used to show a popup menu for you
 to select. This menu will be part of you native window system widget,
 which means:
 
@@ -298,8 +298,8 @@ which means:
 Minibuffer prompting
 ~~~~~~~~~~~~~~~~~~~~
 
-You can use functions ``yas/completing-prompt`` for the classic emacs
-completion method or ``yas/ido-prompt`` for a much nicer looking
+You can use functions ``yas-completing-prompt`` for the classic emacs
+completion method or ``yas-ido-prompt`` for a much nicer looking
 method. The best way is to try it. This works in a terminal.
 
 .. image:: images/dropdown-menu.png
@@ -308,8 +308,8 @@ method. The best way is to try it. This works in a terminal.
 Use ``dropdown-menu.el``
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The function ``yas/dropdown-prompt`` can also be placed in the
-``yas/prompt-functions`` list.
+The function ``yas-dropdown-prompt`` can also be placed in the
+``yas-prompt-functions`` list.
 
 This works in both window system and terminal and is customizable, you
 can use ``C-n``, ``C-p`` to navigate, ``q`` to quit and even press
@@ -318,15 +318,15 @@ can use ``C-n``, ``C-p`` to navigate, ``q`` to quit and even press
 Roll your own
 ~~~~~~~~~~~~~
 
-See below for the documentation on variable ``yas/prompt-functions``
+See below for the documentation on variable ``yas-prompt-functions``
 
 Customizable Variables
 ======================
 
-``yas/prompt-functions``
+``yas-prompt-functions``
 ------------------------
 
-You can write a function and add it to the ``yas/prompt-functions``
+You can write a function and add it to the ``yas-prompt-functions``
 list. These functions are called with the following arguments:
 
 * PROMPT: A string to prompt the user;
@@ -346,13 +346,13 @@ that is passed).
 * To signal that the user quit the prompting process, you can signal
   ``quit`` with ``(signal 'quit "user quit!")``
 
-``yas/fallback-behavior``
+``yas-fallback-behavior``
 -------------------------
 
-How to act when ``yas/expand`` does *not* expand a snippet.
+How to act when ``yas-expand`` does *not* expand a snippet.
 
 ``call-other-command`` means try to temporarily disable YASnippet and
-    call the next command bound to ``yas/trigger-key``.
+    call the next command bound to ``yas-trigger-key``.
 
 ``return-nil`` means return nil. (i.e. do nothing)
 
@@ -360,16 +360,16 @@ An entry (apply COMMAND . ARGS) means interactively call COMMAND, if
 ARGS is non-nil, call COMMAND non-interactively with ARGS as
 arguments.
 
-``yas/choose-keys-first``
+``yas-choose-keys-first``
 -------------------------
 
 If non-nil, prompt for snippet key first, then for template.
 
 Otherwise prompts for all possible snippet names.
 
-This affects ``yas/insert-snippet`` and ``yas/visit-snippet-file``.
+This affects ``yas-insert-snippet`` and ``yas-visit-snippet-file``.
 
-``yas/choose-tables-first``
+``yas-choose-tables-first``
 ---------------------------  
 
 If non-nil, and multiple eligible snippet tables, prompts user for
@@ -378,9 +378,9 @@ tables first.
 Otherwise, user chooses between the merging together of all
 eligible tables.
 
-This affects ``yas/insert-snippet``, ``yas/visit-snippet-file``
+This affects ``yas-insert-snippet``, ``yas-visit-snippet-file``
 
-``yas/key-syntaxes``
+``yas-key-syntaxes``
 --------------------
 
 The default searching strategy is quite powerful. For example, in
@@ -391,7 +391,7 @@ then that snippet is expanded and replaces the ``bar``. Snippets
 pointed to by ``foo_bar`` and ``"#foobar`` won't be considered.
 
 However, this strategy can also be customized easily from the
-``yas/key-syntaxes`` variable. It is a list of syntax rules, the
+``yas-key-syntaxes`` variable. It is a list of syntax rules, the
 default value is ``("w" "w_" "w_." "^ ")``. Which means search the
 following thing until found one:
 

@@ -24,20 +24,20 @@ directory of snippets, which you can copy somewhere and use. You can
 also create or download more directories.
 
 Once these directories are in place reference them in the variable
-``yas/root-directory`` and load them with ``yas/load-directory``:
+``yas-root-directory`` and load them with ``yas-load-directory``:
 
 .. sourcecode:: common-lisp
 
   ;; Develop and keep personal snippets under ~/emacs.d/mysnippets
-  (setq yas/root-directory "~/emacs.d/mysnippets")
+  (setq yas-root-directory "~/emacs.d/mysnippets")
 
   ;; Load the snippets
-  (yas/load-directory yas/root-directory)
+  (yas-load-directory yas-root-directory)
 
-The point in using ``yas/root-directory`` (as opposed to calling
-``yas/load-directory`` directly) is considering "~/emacs.d/mysnippets"
+The point in using ``yas-root-directory`` (as opposed to calling
+``yas-load-directory`` directly) is considering "~/emacs.d/mysnippets"
 for snippet development, so you can use commands like
-``yas/new-snippet`` and others described in section `Writing
+``yas-new-snippet`` and others described in section `Writing
 Snippets`_.
 
 You can make this variable a list and store more items into it:
@@ -46,11 +46,11 @@ You can make this variable a list and store more items into it:
 
   ;; Develop in ~/emacs.d/mysnippets, but also
   ;; try out snippets in ~/Downloads/interesting-snippets
-  (setq yas/root-directory '("~/emacs.d/mysnippets"
+  (setq yas-root-directory '("~/emacs.d/mysnippets"
                              "~/Downloads/interesting-snippets"))
 
-  ;; Map `yas/load-directory' to every element
-  (mapc 'yas/load-directory yas/root-directory)
+  ;; Map `yas-load-directory' to every element
+  (mapc 'yas-load-directory yas-root-directory)
 
 In this last example, the all the directories are loaded and their
 snippets considered for expansion. However development still happens
@@ -59,7 +59,7 @@ in the first element, "~/emacs.d/mysnippets".
 Organizing snippets
 ===================
 
-Once you've setup ``yas/root-directory`` , you can store snippets
+Once you've setup ``yas-root-directory`` , you can store snippets
 inside sub-directories of these directories.
 
 Snippet definitions are put in plain text files. They are arranged
@@ -132,18 +132,18 @@ YASnippet bundle
 
 The most convenient way to define snippets for YASnippet is to put
 them in a directory arranged by the mode and use
-``yas/load-directory`` to load them.
+``yas-load-directory`` to load them.
 
 However, this might slow down the Emacs start-up speed if you have many
-snippets. You can use ``yas/define-snippets`` to define a bunch of
+snippets. You can use ``yas-define-snippets`` to define a bunch of
 snippets for a particular mode in an Emacs-lisp file.
 
 Since this is hard to maintain, there's a better way: define your
-snippets in directory and then call ``M-x yas/compile-bundle`` to
+snippets in directory and then call ``M-x yas-compile-bundle`` to
 compile it into a bundle file when you modified your snippets.
 
 The release bundle of YASnippet is produced by
-``yas/compile-bundle``. The bundle uses ``yas/define-snippets`` to
+``yas-compile-bundle``. The bundle uses ``yas-define-snippets`` to
 define snippets. This avoids the IO and parsing overhead when loading
 snippets.
 
@@ -153,13 +153,13 @@ generated this way.
 
 See the internal documentation for these functions
 
-* ``M-x describe-function RET yas/define-snippets RET`` 
-* ``M-x describe-function RET yas/compile-bundle RET``.
+* ``M-x describe-function RET yas-define-snippets RET`` 
+* ``M-x describe-function RET yas-compile-bundle RET``.
 
 Customizable variables
 ======================
 
-``yas/root-directory``
+``yas-root-directory``
 ----------------------
 
 Root directory that stores the snippets for each major mode.
@@ -168,9 +168,9 @@ If you set this from your .emacs, can also be a list of strings,
 for multiple root directories. If you make this a list, the first
 element is always the user-created snippets directory. Other
 directories are used for bulk reloading of all snippets using
-``yas/reload-all``
+``yas-reload-all``
 
-``yas/ignore-filenames-as-triggers``
+``yas-ignore-filenames-as-triggers``
 ------------------------------------
   
 If non-nil, don't derive tab triggers from filenames.

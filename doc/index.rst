@@ -78,8 +78,8 @@ the latest ``yasnippet-x.y.z.tar.bz2``. You'll get a directory named
      (add-to-list 'load-path
                    "~/.emacs.d/plugins/yasnippet-x.y.z")
      (require 'yasnippet) ;; not yasnippet-bundle
-     (yas/initialize)
-     (yas/load-directory "~/.emacs.d/plugins/yasnippet-x.y.z/snippets")
+     (yas-initialize)
+     (yas-load-directory "~/.emacs.d/plugins/yasnippet-x.y.z/snippets")
 
 Please refer to the documentation for full customization, or use the
 customization group.

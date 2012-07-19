@@ -30,7 +30,7 @@ ChangeLog
 
 * Much more powerful menu. See `The YASnippet menu`_.
 * New ways to organize snippets. See `Organizing snippets`_.
-* Added ``yas/also-auto-indent-first-line`` customization variable.
+* Added ``yas-also-auto-indent-first-line`` customization variable.
 * Renamed directive ``# env:`` to ``# expand-env:``
 * Rewrote much of the documentation.
 * Added TextMate import tool ``textmate-import.rb`` to to svn
@@ -53,7 +53,7 @@ ChangeLog
 * Fixed `Issue 68
   <http://code.google.com/p/yasnippet/issues/detail?id=68>`_ with
   mouse-clicking alternatives in ``ido-mode``.
-* Added ``yas/also-auto-indent-first-line`` customization variable.
+* Added ``yas-also-auto-indent-first-line`` customization variable.
 
 
 0.6.0b / 2009-07-25
@@ -67,17 +67,17 @@ ChangeLog
 
 * Transformation on a primary field with syntax ``${1:default$(transform)}``
 
-* Validations on field exit through the ``yas/verify-value``
+* Validations on field exit through the ``yas-verify-value``
   primary field transformation.
 
 * Wrapping the region in the exit marker ``$0`` of the snippet. Use
-  ``yas/wrap-around-region``.
+  ``yas-wrap-around-region``.
 
-* Auto-indentation. Use ``yas/indent-line`` set to ``'auto`` 
+* Auto-indentation. Use ``yas-indent-line`` set to ``'auto`` 
 
-* Easier definition of snippets. Use ``yas/find-snippets`` or
-  ``yas/visit-snippet-file``. In the new ``snippet-mode`` use
-  ``yas/load-snippet-buffer`` and ``yas/tryout-snippet``.
+* Easier definition of snippets. Use ``yas-find-snippets`` or
+  ``yas-visit-snippet-file``. In the new ``snippet-mode`` use
+  ``yas-load-snippet-buffer`` and ``yas-tryout-snippet``.
 
 * Customization group ``yasnippet``.
 
@@ -114,10 +114,10 @@ ChangeLog
   46 <http://code.google.com/p/yasnippet/issues/detail?id=46>`_).
 * Fixed `Issue 45
   <http://code.google.com/p/yasnippet/issues/detail?id=45>`_ by
-  providing a proper default value for ``yas/buffer-local-condition``.
-* Added helper function ``yas/substr`` for convenient mirror
+  providing a proper default value for ``yas-buffer-local-condition``.
+* Added helper function ``yas-substr`` for convenient mirror
   transformation.
-* Make variable ``yas/registered-snippet`` properly initialized.
+* Make variable ``yas-registered-snippet`` properly initialized.
 * Fixed the overlay error when overlay becomes empty (`Issue 49
   <http://code.google.com/p/yasnippet/issues/detail?id=49>`_ and
   `Issue 48
@@ -145,8 +145,8 @@ ChangeLog
 0.5.6 / 2008-08-07
 ==================
 
-* Added a buffer local variable ``yas/dont-activate`` to turn off
-  ``yas/minor-mode`` in some major modes. See `Issue 29
+* Added a buffer local variable ``yas-dont-activate`` to turn off
+  ``yas-minor-mode`` in some major modes. See `Issue 29
   <http://code.google.com/p/yasnippet/issues/detail?id=29>`_.
 * Make the environment of elisp evaluation more friendly to
   ``(current-column)``.
@@ -157,7 +157,7 @@ ChangeLog
 0.5.5 / 2008-05-29
 ==================
 
-* Tweak ``yas/extra-mode-hooks`` so that it can be more easily
+* Tweak ``yas-extra-mode-hooks`` so that it can be more easily
   customized.
 * Add an entry in FAQ about why ``TAB`` key doesn't work in some
   modes.
@@ -166,7 +166,7 @@ ChangeLog
 ==================
 
 * Added ``ox-mode-hook`` and ``python-mode-hook`` to
-  ``yas/extra-mode-hooks`` to fix the problem YASnippet is not enabled
+  ``yas-extra-mode-hooks`` to fix the problem YASnippet is not enabled
   in those modes.
 
 0.5.3 / 2008-05-07
@@ -192,9 +192,9 @@ ChangeLog
 0.5.0 / 2008-04-10
 ==================
 
-* Integrate with hippie-expand. Just add ``yas/hippie-try-expand`` to
+* Integrate with hippie-expand. Just add ``yas-hippie-try-expand`` to
   ``hippie-expand-try-functions-list``.
-* If you set ``yas/fall-back-behavior`` to ``'return-nil``, YASnippet
+* If you set ``yas-fall-back-behavior`` to ``'return-nil``, YASnippet
   will return nil when it can't find a snippet to expand.
 * Defect fix: the condition of a snippet was evaluated twice in
   earlier version.
@@ -220,7 +220,7 @@ ChangeLog
 0.4.3 / 2008-03-23
 ==================
 
-* Bug fix: failed to recognize user customized yas/trigger-key.
+* Bug fix: failed to recognize user customized yas-trigger-key.
 
 0.4.2 / 2008-03-22
 ==================
@@ -231,7 +231,7 @@ ChangeLog
 0.4.1 / 2008-03-21
 ==================
 
-* Make sure ``yas/minor-mode``'s key bindings always take priority to
+* Make sure ``yas-minor-mode``'s key bindings always take priority to
   other minor modes.
 
 0.4.0 / 2008-03-20
@@ -243,7 +243,7 @@ ChangeLog
 * Incorporate ``dropdown-list.el`` and make it default way for
   selecting multiple candidates. Thanks to `Jaeyoun Chung
   <http://groups.google.com/group/smart-snippet/browse_thread/thread/c869158b76addeb3/e7c6372ba457189e>`_.
-* yas/before-expand-snippet-hook
+* yas-before-expand-snippet-hook
 
 0.3.2 / 2008-03-19
 ==================
@@ -262,7 +262,7 @@ ChangeLog
 0.3.0 / 2008-03-16
 ==================
 
-* Add a ``yas/after-exit-snippet-hook`` so that you can do something like
+* Add a ``yas-after-exit-snippet-hook`` so that you can do something like
   ``indent-region`` or ``fill-region`` after finish the snippet.
 * Use minor-mode instead of ``global-set-key`` to bind the trigger
   key. Now the trigger key and fall-back behavior can be more

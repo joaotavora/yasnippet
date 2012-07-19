@@ -17,23 +17,23 @@ Quickly finding snippets
 
 There are some ways you can quickly find a snippet file:
 
-* ``M-x yas/new-snippet``
+* ``M-x yas-new-snippet``
 
   Prompts you for a snippet name, then tries to guess a suitable
   directory to store it, prompting you for creation if it does not
   exist. Finally, places you in a new buffer set to ``snippet-mode``
   so you can write your snippet.
 
-* ``M-x yas/find-snippets``
+* ``M-x yas-find-snippets``
 
   Lets you find the snippet file in the directory the snippet was
   loaded from (if it exists) like ``find-file-other-window``. The
-  directory searching logic is similar to ``M-x yas/new-snippet``.
+  directory searching logic is similar to ``M-x yas-new-snippet``.
 
-* ``M-x yas/visit-snippet-file``
+* ``M-x yas-visit-snippet-file``
 
   Prompts you for possible snippet expansions like
-  ``yas/insert-snippet``, but instead of expanding it, takes you
+  ``yas-insert-snippet``, but instead of expanding it, takes you
   directly to the snippet definition's file, if it exists.
 
 Once you find this file it will be set to ``snippet-mode`` (see ahead)
@@ -49,13 +49,13 @@ reasonably useful syntax highlighting.
 
 Two commands are defined in this mode:
 
-* ``M-x yas/load-snippet-buffer``
+* ``M-x yas-load-snippet-buffer``
 
     When editing a snippet, this loads the snippet into the correct
     mode and menu. Bound to ``C-c C-c`` by default while in
     ``snippet-mode``.
 
-* ``M-x yas/tryout-snippet``
+* ``M-x yas-tryout-snippet``
 
     When editing a snippet, this opens a new empty buffer, sets it to
     the appropriate major mode and inserts the snippet there, so you
@@ -92,7 +92,7 @@ Here's a list of currently supported directives:
 --------------------------
 
 This is the probably the most important directive, it's the abbreviation you
-type to expand a snippet just before hitting ``yas/trigger-key``. If you don't
+type to expand a snippet just before hitting ``yas-trigger-key``. If you don't
 specify this the snippet will not be expandable through the key mechanism.
 
 ``# name:`` snippet name
@@ -111,7 +111,7 @@ This is a piece of Emacs-lisp code. If a snippet has a condition, then it
 will only be expanded when the condition code evaluate to some non-nil
 value.
 
-See also ``yas/buffer-local-condition`` in `Expanding snippets`_
+See also ``yas-buffer-local-condition`` in `Expanding snippets`_
 
 
 ``# group:`` snippet menu grouping
@@ -141,18 +141,18 @@ This is another piece of Emacs-lisp code in the form of a ``let``
 can be used to override variable values while the snippet is being
 expanded.
 
-Interesting variables to override are ``yas/wrap-around-region`` and
-``yas/indent-line`` (see `Expanding Snippets`_).
+Interesting variables to override are ``yas-wrap-around-region`` and
+``yas-indent-line`` (see `Expanding Snippets`_).
 
-As an example, you might normally have ``yas/indent-line`` set to
-``'auto`` and ``yas/wrap-around-region`` set to ``t``, but for this
+As an example, you might normally have ``yas-indent-line`` set to
+``'auto`` and ``yas-wrap-around-region`` set to ``t``, but for this
 particularly brilliant piece of ASCII art these values would mess up
 your hard work. You can then use:
 
 .. sourcecode:: text
 
   # name: ASCII home
-  # expand-env: ((yas/indent-line 'fixed) (yas/wrap-around-region 'nil))
+  # expand-env: ((yas-indent-line 'fixed) (yas-wrap-around-region 'nil))
   # --
                   welcome to my
               X      humble
@@ -173,7 +173,7 @@ Emacs keybinding. The keybinding will be registered in the Emacs
 keymap named after the major mode the snippet is active
 for. 
 
-Additionally a variable ``yas/prefix`` is set to to the prefix
+Additionally a variable ``yas-prefix`` is set to to the prefix
 argument you normally use for a command. This allows for small
 variations on the same snippet, for example in this "html-mode"
 snippet.
@@ -183,7 +183,7 @@ snippet.
   # name: <p>...</p>
   # binding: C-c C-c C-m
   # --
-  <p>`(when yas/prefix "\n")`$0`(when yas/prefix "\n")`</p>
+  <p>`(when yas-prefix "\n")`$0`(when yas-prefix "\n")`</p>
 
 This binding will be recorded in the keymap
 ``html-mode-map``. To expand a paragraph tag newlines, just
@@ -231,18 +231,18 @@ dynamically:
   #endif /* $1 */
 
 From version 0.6, snippets expansions are run with some special
-Emacs-lisp variables bound. One of this is ``yas/selected-text``. You
+Emacs-lisp variables bound. One of this is ``yas-selected-text``. You
 can therefore define a snippet like:
 
 .. sourcecode:: text
 
    for ($1;$2;$3) {
-     `yas/selected-text`$0
+     `yas-selected-text`$0
    }
 
 to "wrap" the selected region inside your recently inserted
 snippet. Alternatively, you can also customize the variable
-``yas/wrap-around-region`` to ``t`` which will do this automatically.
+``yas-wrap-around-region`` to ``t`` which will do this automatically.
 
 Tab stop fields
 ---------------
@@ -308,7 +308,7 @@ If the value of an ``${n:``-construct starts with and contains ``$(``,
 then it is interpreted as a mirror for field ``n`` with a
 transformation. The mirror's text content is calculated according to
 this transformation, which is Emacs-lisp code that gets evaluated in
-an environment where the variable ``text`` (or ``yas/text``) is bound
+an environment where the variable ``text`` (or ``yas-text``) is bound
 to the text content (string) contained in the field ``n``.Here's an
 example for Objective-C:
 
@@ -375,7 +375,7 @@ distinguish between fields and mirrors. In the following example
 
 .. sourcecode:: text
 
-  #define "${1:mydefine$(upcase yas/text)}"
+  #define "${1:mydefine$(upcase yas-text)}"
 
 ``mydefine`` gets automatically upcased to ``MYDEFINE`` once you enter
 the field. As you type text, it gets filtered through the
@@ -388,7 +388,7 @@ two ``$``'s instead.
 
 .. sourcecode:: text
 
-  #define "${1:$$(upcase yas/text)}"
+  #define "${1:$$(upcase yas-text)}"
 
 Please note that as soon as a transformation takes place, it changes
 the value of the field and sets it its internal modification state to
@@ -400,34 +400,34 @@ Choosing fields value from a list and other tricks
 
 As mentioned, the field transformation is invoked just after you enter
 the field, and with some useful variables bound, notably
-``yas/modified-p`` and ``yas/moving-away-p``. Because of this
+``yas-modified-p`` and ``yas-moving-away-p``. Because of this
 feature you can place a transformation in the primary field that lets
 you select default values for it.
 
-The ``yas/choose-value`` does this work for you. For example:
+The ``yas-choose-value`` does this work for you. For example:
 
 .. sourcecode:: text
 
-  <div align="${2:$$(yas/choose-value '("right" "center" "left"))}">
+  <div align="${2:$$(yas-choose-value '("right" "center" "left"))}">
     $0
   </div>
 
-See the definition of ``yas/choose-value`` to see how it was written
+See the definition of ``yas-choose-value`` to see how it was written
 using the two variables.
 
 Here's another use, for LaTeX-mode, which calls reftex-label just as
-you enter snippet field 2. This one makes use of ``yas/modified-p``
+you enter snippet field 2. This one makes use of ``yas-modified-p``
 directly.
 
 .. sourcecode:: text 
 
   \section{${1:"Titel der Tour"}}%
   \index{$1}%
-  \label{{2:"waiting for reftex-label call..."$(unless yas/modified-p (reftex-label nil 'dont-
+  \label{{2:"waiting for reftex-label call..."$(unless yas-modified-p (reftex-label nil 'dont-
   insert))}}%  
 
-The function ``yas/verify-value`` has another neat trick, and makes
-use of ``yas/moving-away-p``. Try it and see! Also, check out this
+The function ``yas-verify-value`` has another neat trick, and makes
+use of ``yas-moving-away-p``. Try it and see! Also, check out this
 `thread
 <http://groups.google.com/group/smart-snippet/browse_thread/thread/282a90a118e1b662>`_
 
@@ -443,7 +443,7 @@ From version 0.6 on, you can also have nested placeholders of the type:
 This allows you to choose if you want to give this ``div`` an ``id``
 attribute. If you tab forward after expanding it will let you change
 "some_id" to whatever you like. Alternatively, you can just press
-``C-d`` (which executes ``yas/skip-and-clear-or-delete-char``) and go
+``C-d`` (which executes ``yas-skip-and-clear-or-delete-char``) and go
 straight to the exit marker.
 
 By the way, ``C-d`` will only clear the field if you cursor is at the
@@ -453,10 +453,10 @@ performs the normal Emacs ``delete-char`` command.
 Customizable variables
 ======================
 
-``yas/trigger-key``
+``yas-trigger-key``
 -------------------
 
-The key bound to ``yas/expand`` when function ``yas/minor-mode`` is
+The key bound to ``yas-expand`` when function ``yas-minor-mode`` is
 active.
 
 Value is a string that is converted to the internal Emacs key
@@ -464,7 +464,7 @@ representation using ``read-kbd-macro``.
 
 Default value is ``"TAB"``.
 
-``yas/next-field-key``
+``yas-next-field-key``
 ----------------------
 
 The key to navigate to next field when a snippet is active.
@@ -476,7 +476,7 @@ Can also be a list of keys.
 
 Default value is ``"TAB"``.
 
-``yas/prev-field-key``
+``yas-prev-field-key``
 ----------------------
   
 The key to navigate to previous field when a snippet is active.
@@ -488,7 +488,7 @@ Can also be a list of keys.
 
 Default value is ``("<backtab>" "<S-tab>)"``.
 
-``yas/skip-and-clear-key``
+``yas-skip-and-clear-key``
 --------------------------
 
 The key to clear the currently active field.
@@ -500,20 +500,20 @@ Can also be a list of keys.
 
 Default value is ``"C-d"``.
 
-``yas/good-grace``
+``yas-good-grace``
 ------------------
 
 If non-nil, don't raise errors in inline Emacs-lisp evaluation inside
 snippet definitions. An error string "[yas] error" is returned instead.
 
-``yas/indent-line``
+``yas-indent-line``
 -------------------
 
-The variable ``yas/indent-line`` controls the indenting. It is bound
+The variable ``yas-indent-line`` controls the indenting. It is bound
 to ``'auto`` by default, which causes your snippet to be indented
 according to the mode of the buffer it was inserted in.
 
-Another variable ``yas/also-auto-indent-first-line``, when non-nil
+Another variable ``yas-also-auto-indent-first-line``, when non-nil
 does exactly that :-).
 
 To use the hard-coded indentation in your snippet template, set this
@@ -525,7 +525,7 @@ To control indentation on a per-snippet basis, see also the directive
 For backward compatibility with earlier versions of YASnippet, you can
 also place a ``$>`` in your snippet, an ``(indent-according-to-mode)``
 will be executed there to indent the line. This only takes effect when
-``yas/indent-line`` is set to something other than ``'auto``.
+``yas-indent-line`` is set to something other than ``'auto``.
 
 .. sourcecode:: text
 
@@ -534,38 +534,38 @@ will be executed there to indent the line. This only takes effect when
   $0$>
   }$>
 
-``yas/wrap-around-region``
+``yas-wrap-around-region``
 --------------------------
 
 If non-nil, YASnippet will try to expand the snippet's exit marker
 around the currently selected region. When this variable is set to t,
-this has the same effect has using the ```yas/selected-text``` inline
+this has the same effect has using the ```yas-selected-text``` inline
 evaluation.
 
 Because on most systems starting to type deletes the currently
 selected region, this works mostly for snippets with direct
-keybindings or with the ``yas/insert-snippet`` command.
+keybindings or with the ``yas-insert-snippet`` command.
 
 However, when the value is of this variable is ``cua`` YASnippet will
 additionally look-up any recently selected that you deleted by starting
 typing. This allows you select a region, type a snippet key (deleting
-the region), then press ``yas/trigger-key`` to see the deleted region
+the region), then press ``yas-trigger-key`` to see the deleted region
 spring back to life inside your new snippet.
 
-``yas/triggers-in-field``
+``yas-triggers-in-field``
 --------------------------
 
-If non-nil, ``yas/next-field-key`` can trigger stacked expansions,
+If non-nil, ``yas-next-field-key`` can trigger stacked expansions,
 that is a snippet expansion inside another snippet
-expansion. Otherwise, ``yas/next-field-key`` just tries to move on to
+expansion. Otherwise, ``yas-next-field-key`` just tries to move on to
 the next field.
 
-``yas/snippet-revival``
+``yas-snippet-revival``
 -----------------------
 
 Non-nil means re-activate snippet fields after undo/redo.
 
-``yas/after-exit-snippet-hook`` and ``yas/before-expand-snippet-hook``
+``yas-after-exit-snippet-hook`` and ``yas-before-expand-snippet-hook``
 ----------------------------------------------------------------------
 
 These hooks are called, respectively, before the insertion of a
