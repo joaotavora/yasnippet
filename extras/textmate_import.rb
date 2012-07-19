@@ -1,9 +1,9 @@
 #!/usr/bin/env ruby
 # -*- coding: utf-8 -*-
 # textmate_import.rb --- import textmate snippets
-# 
+#
 # Copyright (C) 2009 Rob Christie, 2010 João Távora
-# 
+#
 # This is a quick script to generate YASnippets from TextMate Snippets.
 #
 # I based the script off of a python script of a similar nature by
@@ -39,13 +39,13 @@ Trollop::die :plist_file, "must exist" if opts.plist_file && File.directory?(opt
 
 
 # Represents and is capable of outputting the representation of a
-# TextMate menu in terms of `yas/define-menu'
+# TextMate menu in terms of `yas-define-menu'
 #
 class TmSubmenu
 
   @@excluded_items = [];
   def self.excluded_items; @@excluded_items; end
-  
+
   attr_reader :items, :name
   def initialize(name, hash)
     @items = hash["items"]
@@ -56,7 +56,7 @@ class TmSubmenu
               deleteditems,
               indent = 0,
               thingy = ["(", ")"])
-    
+
     first = true;
 
    string = ""
@@ -74,22 +74,22 @@ class TmSubmenu
       snippet = TmSnippet::snippets_by_uid[uuid]
       unimplemented = TmSnippet::unknown_substitutions["content"][uuid]
       if submenu
-        str = "(yas/submenu "
-        string += str + "\"" + submenu.name + "\"" 
+        str = "(yas-submenu "
+        string += str + "\"" + submenu.name + "\""
         string += submenu.to_lisp(allsubmenus, deleteditems,
                                   indent + str.length + thingy[0].length)
       elsif snippet and not unimplemented
         string += ";; " + snippet.name + "\n"
         string += " " * (indent + thingy[0].length)
-        string += "(yas/item \"" + uuid + "\")"
+        string += "(yas-item \"" + uuid + "\")"
         separator_useless = false;
-      elsif snippet and unimplemented  
+      elsif snippet and unimplemented
         string += ";; Ignoring " + snippet.name + "\n"
         string += " " * (indent + thingy[0].length)
-        string += "(yas/ignore-item \"" + uuid + "\")"
+        string += "(yas-ignore-item \"" + uuid + "\")"
         separator_useless = true;
       elsif (uuid =~ /---------------------/)
-        string += "(yas/separator)" unless separator_useless
+        string += "(yas-separator)" unless separator_useless
       end
       first = false;
     end
@@ -102,10 +102,10 @@ class TmSubmenu
   def self.main_menu_to_lisp (parsed_plist, modename)
     mainmenu = parsed_plist["mainMenu"]
     deleted  = parsed_plist["deleted"]
-    
+
     root = TmSubmenu.new("__main_menu__", mainmenu)
     all = {}
-    
+
     mainmenu["submenus"].each_pair do |k,v|
       all[k] = TmSubmenu.new(v["name"], v)
     end
@@ -113,10 +113,10 @@ class TmSubmenu
     excluded = (mainmenu["excludedItems"] || []) + TmSubmenu::excluded_items
     closing = "\n                    '("
     closing+= excluded.collect do |uuid|
-      "\"" + uuid + "\"" 
+      "\"" + uuid + "\""
     end.join(  "\n                       ") + "))"
 
-    str = "(yas/define-menu "
+    str = "(yas-define-menu "
     return str + "'#{modename}" + root.to_lisp(all,
                                                deleted,
                                                str.length,
@@ -128,13 +128,13 @@ end
 # Represents a textmate snippet
 #
 # - @file is the .tmsnippet/.plist file path relative to cwd
-# 
+#
 # - optional @info is a Plist.parsed info.plist found in the bundle dir
 #
 # - @@snippets_by_uid is where one can find all the snippets parsed so
 #   far.
-# 
-# 
+#
+#
 class SkipSnippet < RuntimeError; end
 class TmSnippet
   @@known_substitutions = {
@@ -144,19 +144,19 @@ class TmSnippet
       "${TM_RAILS_TEMPLATE_START_RUBY_INLINE}" => "<% ",
       "${TM_RAILS_TEMPLATE_END_RUBY_INLINE}"   => " -%>",
       "${TM_RAILS_TEMPLATE_END_RUBY_BLOCK}"    => "end" ,
-      "${0:$TM_SELECTED_TEXT}"                 => "${0:`yas/selected-text`}",
+      "${0:$TM_SELECTED_TEXT}"                 => "${0:`yas-selected-text`}",
       /\$\{(\d+)\}/                            => "$\\1",
-      "${1:$TM_SELECTED_TEXT}"                 => "${1:`yas/selected-text`}",
-      "${2:$TM_SELECTED_TEXT}"                 => "${2:`yas/selected-text`}",
-      '$TM_SELECTED_TEXT'                     => "`yas/selected-text`",
-      %r'\$\{TM_SELECTED_TEXT:([^\}]*)\}'       => "`(or (yas/selected-text) \"\\1\")`",
-      %r'`[^`]+\n[^`]`'                        => Proc.new {|uuid, match| "(yas/multi-line-unknown " + uuid + ")"}},
+      "${1:$TM_SELECTED_TEXT}"                 => "${1:`yas-selected-text`}",
+      "${2:$TM_SELECTED_TEXT}"                 => "${2:`yas-selected-text`}",
+      '$TM_SELECTED_TEXT'                     => "`yas-selected-text`",
+      %r'\$\{TM_SELECTED_TEXT:([^\}]*)\}'       => "`(or (yas-selected-text) \"\\1\")`",
+      %r'`[^`]+\n[^`]`'                        => Proc.new {|uuid, match| "(yas-multi-line-unknown " + uuid + ")"}},
     "condition" => {
       /^source\..*$/ => "" },
     "binding"   => {},
     "type"      => {}
   }
-  
+
   def self.extra_substitutions; @@extra_substitutions; end
   @@extra_substitutions = {
     "content"   => {},
@@ -164,7 +164,7 @@ class TmSnippet
     "binding"   => {},
     "type"      => {}
   }
-  
+
   def self.unknown_substitutions; @@unknown_substitutions; end
   @@unknown_substitutions = {
     "content"   => {},
@@ -234,12 +234,12 @@ class TmSnippet
           ct.gsub!(k,v)
         end
         # the remaining stuff is an unknown substitution
-        # 
+        #
         [ %r'\$\{ [^/\}\{:]* / [^/]* / [^/]* / [^\}]*\}'x ,
           %r'\$\{[^\d][^}]+\}',
           %r'`[^`]+`',
           %r'\$TM_[\w_]+',
-          %r'\(yas/multi-line-unknown [^\)]*\)'
+          %r'\(yas-multi-line-unknown [^\)]*\)'
         ].each do |reg|
           ct.scan(reg) do |match|
             @@unknown_substitutions["content"][match] = self
@@ -249,7 +249,7 @@ class TmSnippet
       else
         @@unknown_substitutions["content"][uuid] = self
         TmSubmenu::excluded_items.push(uuid)
-        return "(yas/unimplemented)"
+        return "(yas-unimplemented)"
       end
     end
   end
@@ -264,7 +264,7 @@ class TmSnippet
     doc << (self.binding || "")
     doc << (self.condition || "")
     doc << "# --\n"
-    doc << (self.content || "(yas/unimplemented)")
+    doc << (self.content || "(yas-unimplemented)")
     doc
   end
 
@@ -288,7 +288,7 @@ class TmSnippet
       raise ArgumentError.new "Probably in binary format and parse_xml is very quiet..."
     rescue StandardError => e
       if (system "plutil -convert xml1 #{xml_or_binary.shellescape} -o /tmp/textmate_import.tmpxml")
-        return Plist::parse_xml("/tmp/textmate_import.tmpxml") 
+        return Plist::parse_xml("/tmp/textmate_import.tmpxml")
       else
         raise RuntimeError.new "plutil failed miserably, check if you have it..."
       end
@@ -302,7 +302,7 @@ class TmSnippet
     #
     # Merge "known" hardcoded substitution with "extra" substitutions
     # provided in the .yas-setup.el file.
-    # 
+    #
     merged = @@known_substitutions[yas_directive].
       merge(@@extra_substitutions[yas_directive])
     #
@@ -348,7 +348,7 @@ if __FILE__ == $PROGRAM_NAME
   info_plist = TmSnippet::read_plist(info_plist_file) if info_plist_file and File.readable? info_plist_file;
 
   # Calculate the mode name
-  # 
+  #
   modename = File.basename opts.output_dir || "major-mode-name"
 
   # Read in .yas-setup.el looking for the separator between auto-generated
@@ -383,7 +383,7 @@ if __FILE__ == $PROGRAM_NAME
       lookfor.gsub!(/^[ ]*/, "")
       lookfor.gsub!(/[ ]*$/, "")
       # puts "found this wonderful substitution for #{directive} which is #{lookfor} => #{replacewith}"
-      unless !directive or replacewith =~ /yas\/unknown/ then 
+      unless !directive or replacewith =~ /yas-unknown/ then
         TmSnippet.extra_substitutions[directive][lookfor] = replacewith
       end
     end
@@ -396,9 +396,9 @@ if __FILE__ == $PROGRAM_NAME
   snippet_files = Dir.glob(snippet_files_glob)
 
   # Attempt to convert each snippet files in snippet_files
-  #  
+  #
   puts "Will try to convert #{snippet_files.length} snippets...\n" unless opts.quiet
-  
+
 
   # Iterate the globbed files
   #
@@ -431,7 +431,7 @@ if __FILE__ == $PROGRAM_NAME
   if opts.output_dir
     FileUtils.mkdir_p opts.output_dir
     FileUtils.touch File.join(original_dir, opts.output_dir, ".yas-make-groups") unless menustr
-    
+
     # Now, output head + a new tail in (possibly new) .yas-setup.el
     # file
     #
@@ -456,7 +456,7 @@ if __FILE__ == $PROGRAM_NAME
         unknown = TmSnippet::unknown_substitutions[type];
         unknown.keys.uniq.each do |k|
           file.puts ";; # as in " +  unknown[k].yas_file
-          file.puts ";; " + k + "" + (" " * [1, 90-k.length].max) + " =yyas> (yas/unknown)"
+          file.puts ";; " + k + "" + (" " * [1, 90-k.length].max) + " =yyas> (yas-unknown)"
           file.puts ";; "
         end
         file.puts ";; "
