@@ -114,7 +114,7 @@ TODO: correct this bug!"
 ;;;
 (defmacro with-some-interesting-snippet-dirs (&rest body)
   `(yas-saving-variables
-    (with-snippet-dirs
+    (yas-with-snippet-dirs
      '((".emacs.d/snippets"
         ("c-mode"
          (".yas-parents" . "cc-mode")
@@ -132,38 +132,38 @@ TODO: correct this bug!"
   "Test basic loading and expansion of snippets"
   (with-some-interesting-snippet-dirs
    (yas-reload-all)
-   (yas-basic-jit-loading-1)))
+   (yas--basic-jit-loading-1)))
 
 (ert-deftest basic-jit-loading-with-compiled-snippets ()
   "Test basic loading and expansion of snippets"
   (with-some-interesting-snippet-dirs
    (yas-reload-all)
    (yas-recompile-all)
-   (flet ((yas-load-directory-2
+   (flet ((yas--load-directory-2
            (&rest dummies)
-           (ert-fail "yas-load-directory-2 shouldn't be called when snippets have been compiled")))
+           (ert-fail "yas--load-directory-2 shouldn't be called when snippets have been compiled")))
      (yas-reload-all)
-     (yas-basic-jit-loading-1))))
+     (yas--basic-jit-loading-1))))
 
-(defun yas-basic-jit-loading-1 (&optional compile)
+(defun yas--basic-jit-loading-1 (&optional compile)
   (with-temp-buffer
-    (should (= 4 (hash-table-count yas-scheduled-jit-loads)))
-    (should (= 0 (hash-table-count yas-tables)))
+    (should (= 4 (hash-table-count yas--scheduled-jit-loads)))
+    (should (= 0 (hash-table-count yas--tables)))
     (lisp-interaction-mode)
     (yas-minor-mode 1)
-    (should (= 2 (hash-table-count yas-scheduled-jit-loads)))
-    (should (= 2 (hash-table-count yas-tables)))
-    (should (= 1 (hash-table-count (yas-table-uuidhash (gethash 'lisp-interaction-mode yas-tables)))))
-    (should (= 2 (hash-table-count (yas-table-uuidhash (gethash 'emacs-lisp-mode yas-tables)))))
+    (should (= 2 (hash-table-count yas--scheduled-jit-loads)))
+    (should (= 2 (hash-table-count yas--tables)))
+    (should (= 1 (hash-table-count (yas--table-uuidhash (gethash 'lisp-interaction-mode yas--tables)))))
+    (should (= 2 (hash-table-count (yas--table-uuidhash (gethash 'emacs-lisp-mode yas--tables)))))
     (yas-should-expand '(("sc" . "brother from another mother")
                          ("dolist" . "(dolist)")
                          ("ert-deftest" . "(ert-deftest name () )")))
     (c-mode)
     (yas-minor-mode 1)
-    (should (= 0 (hash-table-count yas-scheduled-jit-loads)))
-    (should (= 4 (hash-table-count yas-tables)))
-    (should (= 1 (hash-table-count (yas-table-uuidhash (gethash 'c-mode yas-tables)))))
-    (should (= 1 (hash-table-count (yas-table-uuidhash (gethash 'cc-mode yas-tables)))))
+    (should (= 0 (hash-table-count yas--scheduled-jit-loads)))
+    (should (= 4 (hash-table-count yas--tables)))
+    (should (= 1 (hash-table-count (yas--table-uuidhash (gethash 'c-mode yas--tables)))))
+    (should (= 1 (hash-table-count (yas--table-uuidhash (gethash 'cc-mode yas--tables)))))
     (yas-should-expand '(("printf" . "printf();")
                          ("def" . "# define")))
     (yas-should-not-expand '("sc" "dolist" "ert-deftest"))))
@@ -238,7 +238,7 @@ TODO: correct this bug!"
         (when (>= emacs-major-version 23)
           (delete-directory default-directory 'recursive))))))
 
-(defmacro with-snippet-dirs (dirs &rest body)
+(defmacro yas-with-snippet-dirs (dirs &rest body)
   `(yas-call-with-snippet-dirs ,dirs
                                #'(lambda ()
                                    ,@body)))
