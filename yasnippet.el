@@ -347,16 +347,18 @@ This affects `yas-insert-snippet', `yas-visit-snippet-file'"
 When non-nil, submenus for each snippet table will be listed
 under the menu \"Yasnippet\".
 
-- If set to `real-modes' only submenus whose name more or less
-corresponds to a major mode are listed.
-
 - If set to `abbreviate', only the current major-mode
 menu and the modes set in `yas-extra-modes' are listed.
 
+- If set to `full', every submenu is listed
+
+- It set to nil, don't display a menu at all (this requires a
+  `yas-reload-all' call if the menu is already visible).
+
 Any other non-nil value, every submenu is listed."
-  :type '(choice (const :tag "Full"  t)
-                 (const :tag "Real modes only" real-modes)
-                 (const :tag "Abbreviate" abbreviate))
+  :type '(choice (const :tag "Full"  full)
+                 (const :tag "Abbreviate" abbreviate)
+                 (const :tag "No menu" nil))
   :group 'yasnippet)
 
 (defcustom yas-trigger-symbol " =>"
@@ -579,7 +581,8 @@ snippet itself contains a condition that returns the symbol
 
 (defun yas--init-minor-keymap ()
   (let ((map (make-sparse-keymap)))
-    (easy-menu-define yas--minor-mode-menu
+    (when yas-use-menu
+      (easy-menu-define yas--minor-mode-menu
       map
       "Menu used when `yas-minor-mode' is active."
       '("YASnippet"
@@ -601,12 +604,9 @@ snippet itself contains a condition that returns the symbol
           :help "Expand snippets from the menu"
           :active t :style radio :selected (not yas-visit-from-menu)]
          "----"
-         ["Show \"Real\" modes only" (setq yas-use-menu 'real-modes)
-          :help "Show snippet submenus for modes that appear to be real major modes"
-          :active t :style radio   :selected (eq yas-use-menu 'real-modes)]
-         ["Show all modes" (setq yas-use-menu 't)
+         ["Show all known modes" (setq yas-use-menu 'full)
           :help "Show one snippet submenu for each loaded table"
-          :active t :style radio   :selected (eq yas-use-menu 't)]
+          :active t :style radio   :selected (eq yas-use-menu 'full)]
          ["Abbreviate according to current mode" (setq yas-use-menu 'abbreviate)
           :help "Show only snippet submenus for the current active modes"
           :active t :style radio   :selected (eq yas-use-menu 'abbreviate)])
@@ -685,7 +685,8 @@ snippet itself contains a condition that returns the symbol
         ["Reload everything" yas-reload-all
          :help "Cleanup stuff, reload snippets, rebuild menus"]
         ["About"            yas-about
-         :help "Display some information about YASsnippet"]))
+         :help "Display some information about YASsnippet"])))
+
     ;; Now for the stuff that has direct keybindings
     ;;
     (define-key map "\C-c&\C-s" 'yas-insert-snippet)
@@ -1986,9 +1987,7 @@ static in the menu."
                (mapcar #'(lambda (table)
                            (intern (yas--table-name table)))
                        (yas--get-snippet-tables))))
-        ((eq yas-use-menu 'real-modes)
-         (yas--real-mode? mode))
-        (t
+        ((eq yas-use-menu 'full)
          t)))
 
 (defun yas--delete-from-keymap (keymap uuid)
@@ -2033,21 +2032,24 @@ MENU is a list, its elements can be:
 
 OMIT-ITEMS is a list of snippet uuid's that will always be
 ommited from MODE's menu, even if they're manually loaded.
+
+This function does nothing if `yas-use-menu' is nil.
 "
-  (let* ((table (yas--table-get-create mode))
-         (hash (yas--table-uuidhash table)))
-    (yas--define-menu-1 table
-                       (yas--menu-keymap-get-create table)
-                       menu
-                       hash)
-    (dolist (uuid omit-items)
-      (let ((template (or (gethash uuid hash)
-                          (yas--populate-template (puthash uuid
-                                                          (yas--make-blank-template)
-                                                          hash)
-                                                 :table table
-                                                 :uuid uuid))))
-        (setf (yas--template-menu-binding-pair template) (cons nil :none))))))
+  (when yas-use-menu
+    (let* ((table (yas--table-get-create mode))
+           (hash (yas--table-uuidhash table)))
+      (yas--define-menu-1 table
+                          (yas--menu-keymap-get-create table)
+                          menu
+                          hash)
+      (dolist (uuid omit-items)
+        (let ((template (or (gethash uuid hash)
+                            (yas--populate-template (puthash uuid
+                                                             (yas--make-blank-template)
+                                                             hash)
+                                                    :table table
+                                                    :uuid uuid))))
+          (setf (yas--template-menu-binding-pair template) (cons nil :none)))))))
 
 (defun yas--define-menu-1 (table keymap menu uuidhash &optional group-list)
   (dolist (e (reverse menu))
@@ -2075,12 +2077,12 @@ ommited from MODE's menu, even if they're manually loaded.
              '(menu-item "----")))
           (t
            (yas--message 3 "Don't know anything about menu entry %s" (first e))))))
-
+
 (defun yas--define (mode key template &optional name condition group)
   "Define a snippet.  Expanding KEY into TEMPLATE.
 
 NAME is a description to this template.  Also update the menu if
-`yas-use-menu' is `t'.  CONDITION is the condition attached to
+`yas-use-menu' is t.  CONDITION is the condition attached to
 this snippet.  If you attach a condition to a snippet, then it
 will only be expanded when the condition evaluated to non-nil."
   (yas-define-snippets mode
