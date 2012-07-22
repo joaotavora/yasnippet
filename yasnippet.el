@@ -1098,7 +1098,10 @@ Also takes care of adding and updating to the associated menu."
   (yas--add-template table template)
   ;; Take care of the menu
   ;;
-  (let ((keymap (yas--menu-keymap-get-create table))
+  (let ((keymap
+         (yas--menu-keymap-get-create (yas--table-mode table)
+                                      (mapcar #'yas--table-mode
+                                              (yas--table-parents table))))
         (group (yas--template-group template)))
     (when (and yas-use-menu
                keymap
@@ -1247,6 +1250,9 @@ the template of a snippet in the current snippet-table."
                (yas--table-hash table))
       acc)))
 
+(defun yas--table-mode (table)
+  (intern (yas--table-name table)))
+
 
 ;;; Internal functions:
 
@@ -1344,15 +1350,13 @@ consider is returned by `yas--modes-to-activate'"
                       (gethash mode-name yas--tables))
                   (yas--modes-to-activate))))
 
-(defun yas--menu-keymap-get-create (table)
-  "Get or create the main menu keymap correspondong to MODE.
+(defun yas--menu-keymap-get-create (mode &optional parents)
+  "Get or create the menu keymap for MODE and its PARENTS.
 
 This may very well create a plethora of menu keymaps and arrange
-them in all `yas--menu-table'"
-  (let* ((mode (intern (yas--table-name table)))
-         (menu-keymap (or (gethash mode yas--menu-table)
-                          (puthash mode (make-sparse-keymap) yas--menu-table)))
-        (parents (yas--table-parents table)))
+them all in `yas--menu-table'"
+  (let* ((menu-keymap (or (gethash mode yas--menu-table)
+                          (puthash mode (make-sparse-keymap) yas--menu-table))))
     (mapc #'yas--menu-keymap-get-create parents)
     (define-key yas--minor-mode-menu (vector mode)
         `(menu-item ,(symbol-name mode) ,menu-keymap
@@ -1472,7 +1476,7 @@ Here's a list of currently recognized directives:
              (directory-files directory t)))
 
 (defun yas--make-menu-binding (template)
-  (let ((mode (intern (yas--table-name (yas--template-table template)))))
+  (let ((mode (yas--table-mode (yas--template-table template))))
     `(lambda () (interactive) (yas--expand-or-visit-from-menu ',mode ,(yas--template-uuid template)))))
 
 (defun yas--expand-or-visit-from-menu (mode uuid)
@@ -1663,7 +1667,19 @@ Optional USE-JIT use jit-loading of snippets."
                                     (concat dir "/dummy")))
            (mode-sym (car major-mode-and-parents))
            (parents (cdr major-mode-and-parents)))
+      ;; Attention: The parents and the menus are already defined
+      ;; here, even if the snippets are later jit-loaded.
+      ;;
+      ;; * We need to know the parents at this point since entering a
+      ;;   given mode should jit load for its parents
+      ;;   immediately. This could be reviewed, the parents could be
+      ;;   discovered just-in-time-as well
+      ;;
+      ;; * We need to create the menus here to support the `full'
+      ;;   option to `yas-use-menu' (all known snippet menus are shown to the user)
+      ;;
       (yas--define-parents mode-sym parents)
+      (yas--menu-keymap-get-create mode-sym)
       (let ((form `(yas--load-directory-1 ,dir
                                          ',mode-sym
                                          ',parents)))
@@ -1985,7 +2001,7 @@ static in the menu."
   (cond ((eq yas-use-menu 'abbreviate)
          (find mode
                (mapcar #'(lambda (table)
-                           (intern (yas--table-name table)))
+                           (yas--table-mode table))
                        (yas--get-snippet-tables))))
         ((eq yas-use-menu 'full)
          t)))
@@ -2039,7 +2055,7 @@ This function does nothing if `yas-use-menu' is nil.
     (let* ((table (yas--table-get-create mode))
            (hash (yas--table-uuidhash table)))
       (yas--define-menu-1 table
-                          (yas--menu-keymap-get-create table)
+                          (yas--menu-keymap-get-create mode)
                           menu
                           hash)
       (dolist (uuid omit-items)
@@ -2368,7 +2384,7 @@ where snippets of table might exist."
           (error (yas--format "%s is not writable." candidate)))
         (if (y-or-n-p (format "Guessed directory (%s) for%s%s table \"%s\" does not exist! Create? "
                               candidate
-                              (if (gethash (intern (yas--table-name (car table-and-dirs)))
+                              (if (gethash (yas--table-mode (car table-and-dirs))
                                            yas--tables)
                                   ""
                                 " brand new")
@@ -2394,7 +2410,7 @@ NO-TEMPLATE is non-nil."
     (snippet-mode)
     (yas-minor-mode 1)
     (set (make-local-variable 'yas--guessed-modes) (mapcar #'(lambda (d)
-                                                              (intern (yas--table-name (car d))))
+                                                              (yas--table-mode (car d)))
                                                           guessed-directories))
     (unless no-template (yas-expand-snippet "\
 # -*- mode: snippet -*-
