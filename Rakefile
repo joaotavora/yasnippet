@@ -37,7 +37,7 @@ END
   end
   sh "git clean -f snippets"
   FileUtils.cd 'pkg' do
-    sh "tar cf yasnippet-#{$version}.tar yasnippet-#{$version}"
+    sh "tar cfz yasnippet-#{$version}.tar.gz yasnippet-#{$version}"
   end
 end
 
