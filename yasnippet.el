@@ -361,7 +361,9 @@ Any other non-nil value, every submenu is listed."
                  (const :tag "No menu" nil))
   :group 'yasnippet)
 
-(defcustom yas-trigger-symbol " =>"
+(defcustom yas-trigger-symbol (if (eq window-system 'mac)
+                                  (char-to-string ?\x21E5) ;; little ->| sign
+                                  " =>")
   "The text that will be used in menu to represent the trigger."
   :type 'string
   :group 'yasnippet)
@@ -1065,7 +1067,7 @@ keybinding)."
   (let ((name (yas--template-name template))
         (key (yas--template-key template))
         (keybinding (yas--template-keybinding template))
-        (menu-binding-pair (yas--snippet-menu-binding-pair-get-create template)))
+        (menu-binding-pair (yas--template-menu-binding-pair-get-create template)))
     (dolist (k (remove nil (list key keybinding)))
       (puthash name
                template
@@ -1077,14 +1079,10 @@ keybinding)."
       (when (vectorp k)
         (define-key (yas--table-direct-keymap table) k 'yas-expand-from-keymap)))
 
-    ;; Update trigger & keybinding in the menu-binding pair
-    ;;
-    (unless (eq (cdr menu-binding-pair) :none)
-      (setf (getf (cdr (car menu-binding-pair)) :keys)
-            (or (and keybinding (key-description keybinding))
-                (and key (concat key yas-trigger-symbol)))))
-
-    (puthash (yas--template-uuid template) template (yas--table-uuidhash table))))
+    ;; Update TABLE's `yas--table-uuidhash'
+    (puthash (yas--template-uuid template)
+             template
+             (yas--table-uuidhash table))))
 
 (defun yas--update-template (table template)
   "Add or update TEMPLATE in TABLE.
@@ -1098,33 +1096,52 @@ Also takes care of adding and updating to the associated menu."
   (yas--add-template table template)
   ;; Take care of the menu
   ;;
-  (let ((keymap
-         (yas--menu-keymap-get-create (yas--table-mode table)
-                                      (mapcar #'yas--table-mode
-                                              (yas--table-parents table))))
-        (group (yas--template-group template)))
-    (when (and yas-use-menu
-               keymap
-               (not (cdr (yas--template-menu-binding-pair template))))
+  (when yas-use-menu
+    (yas--update-template-menu table template)))
+
+(defun yas--update-template-menu (table template)
+  "Update every menu-related for TEMPLATE"
+  (let ((menu-binding-pair (yas--template-menu-binding-pair-get-create template))
+        (key (yas--template-key template))
+        (keybinding (yas--template-keybinding template)))
+    ;; The snippet might have changed name or keys, so update
+    ;; user-visible strings
+    ;;
+    (unless (eq (cdr menu-binding-pair) :none)
+      ;; the menu item name
+      ;;
+      (setf (cadar menu-binding-pair) (yas--template-name template))
+      ;; the :keys information (also visible to the user)
+      (setf (getf (cdr (car menu-binding-pair)) :keys)
+            (or (and keybinding (key-description keybinding))
+                (and key (concat key yas-trigger-symbol))))))
+  (unless (yas--template-menu-managed-by-yas-define-menu template)
+    (let ((menu-keymap
+           (yas--menu-keymap-get-create (yas--table-mode table)
+                                        (mapcar #'yas--table-mode
+                                                (yas--table-parents table))))
+          (group (yas--template-group template)))
       ;; Remove from menu keymap
       ;;
-      (yas--delete-from-keymap keymap (yas--template-uuid template))
+      (assert menu-keymap)
+      (yas--delete-from-keymap menu-keymap (yas--template-uuid template))
 
       ;; Add necessary subgroups as necessary.
       ;;
       (dolist (subgroup group)
-        (let ((subgroup-keymap (lookup-key keymap (vector (make-symbol subgroup)))))
+        (let ((subgroup-keymap (lookup-key menu-keymap (vector (make-symbol subgroup)))))
           (unless (and subgroup-keymap
                        (keymapp subgroup-keymap))
             (setq subgroup-keymap (make-sparse-keymap))
-            (define-key keymap (vector (make-symbol subgroup))
+            (define-key menu-keymap (vector (make-symbol subgroup))
               `(menu-item ,subgroup ,subgroup-keymap)))
-            (setq keymap subgroup-keymap)))
+          (setq menu-keymap subgroup-keymap)))
 
       ;; Add this entry to the keymap
       ;;
-      (let ((menu-binding-pair (yas--snippet-menu-binding-pair-get-create template)))
-        (define-key keymap (vector (make-symbol (yas--template-uuid template))) (car menu-binding-pair))))))
+      (define-key menu-keymap
+        (vector (make-symbol (yas--template-uuid template)))
+        (car (yas--template-menu-binding-pair template))))))
 
 (defun yas--namehash-templates-alist (namehash)
   (let (alist)
@@ -1776,8 +1793,7 @@ loading."
       ;; Init the `yas-minor-mode-map', taking care not to break the
       ;; menu....
       ;;
-      (setf (cdr yas-minor-mode-map)
-            (cdr (yas--init-minor-keymap)))
+      (setcdr yas-minor-mode-map (cdr (yas--init-minor-keymap)))
 
       ;; Reload the directories listed in `yas-snippet-dirs' or prompt
       ;; the user to select one.
@@ -1903,9 +1919,9 @@ This works by stubbing a few functions, then calling
 
 (defun yas--define-parents (mode parents)
   "Add PARENTS to the list of MODE's parents"
-  (puthash mode-sym (remove-duplicates
-                     (append parents
-                             (gethash mode-sym yas--parents)))
+  (puthash mode (remove-duplicates
+                 (append parents
+                         (gethash mode yas--parents)))
            yas--parents))
 
 (defun yas-define-snippets (mode snippets)
@@ -1982,7 +1998,39 @@ the current buffers contents."
     ;;
     template))
 
-(defun yas--snippet-menu-binding-pair-get-create (template &optional type)
+
+;;; Apropos snippet menu:
+;;
+;; The snippet menu keymaps are store by mode in hash table called
+;; `yas--menu-table'. They are linked to the main menu in
+;; `yas--menu-keymap-get-create' and are initially created empty,
+;; reflecting the table hierarchy.
+;;
+;; They can be populated in two mutually exclusive ways: (1) by
+;; reading `yas--template-group', which in turn is populated by the "#
+;; group:" directives of the snippets or the ".yas-make-groups" file
+;; or (2) by using a separate `yas-define-menu' call, which declares a
+;; menu structure based on snippets uuids.
+;;
+;; Both situations are handled in `yas--update-template-menu', which
+;; uses the predicate `yas--template-menu-managed-by-yas-define-menu'
+;; that can tell between the two situations.
+;;
+;; Note:
+;;
+;; * if `yas-define-menu' is used it must run before
+;;   `yas-define-snippets' and the UUIDS must match, otherwise we get
+;;   duplicate entries. The `yas--template' objects are created in
+;;   `yas-define-menu', holding nothing but the menu entry,
+;;   represented by a pair of ((menu-item NAME :keys KEYS) TYPE) and
+;;   stored in `yas--template-menu-binding-pair'. The (menu-item ...)
+;;   part is then stored in the menu keymap itself which make the item
+;;   appear to the user. These limitations could probably be revised.
+;;
+;; * The `yas--template-perm-group' slot is only used in
+;;   `yas-describe-tables'.
+;;
+(defun yas--template-menu-binding-pair-get-create (template &optional type)
   "Get TEMPLATE's menu binding or assign it a new one.
 
 TYPE may be `:stay', signalling this menu binding should be
@@ -1996,6 +2044,10 @@ static in the menu."
                                 ,(yas--make-menu-binding template)
                                 :keys ,nil)
                     type)))))
+(defun yas--template-menu-managed-by-yas-define-menu (template)
+  "Non-nil if TEMPLATE's menu entry was included in a `yas-define-menu' call."
+  (cdr (yas--template-menu-binding-pair template)))
+
 
 (defun yas--show-menu-p (mode)
   (cond ((eq yas-use-menu 'abbreviate)
@@ -2004,6 +2056,8 @@ static in the menu."
                            (yas--table-mode table))
                        (yas--get-snippet-tables))))
         ((eq yas-use-menu 'full)
+         t)
+        ((eq yas-use-menu t)
          t)))
 
 (defun yas--delete-from-keymap (keymap uuid)
@@ -2031,7 +2085,7 @@ static in the menu."
                                          (null (cdr (third (cdr item)))))))
                             (rest keymap))))
 
-(defun yas-define-menu (mode menu omit-items)
+(defun yas-define-menu (mode menu &optional omit-items)
   "Define a snippet menu for MODE according to MENU, ommitting OMIT-ITEMS.
 
 MENU is a list, its elements can be:
@@ -2067,7 +2121,7 @@ This function does nothing if `yas-use-menu' is nil.
                                                     :uuid uuid))))
           (setf (yas--template-menu-binding-pair template) (cons nil :none)))))))
 
-(defun yas--define-menu-1 (table keymap menu uuidhash &optional group-list)
+(defun yas--define-menu-1 (table menu-keymap menu uuidhash &optional group-list)
   (dolist (e (reverse menu))
     (cond ((eq (first e) 'yas-item)
            (let ((template (or (gethash (second e) uuidhash)
@@ -2077,11 +2131,11 @@ This function does nothing if `yas-use-menu' is nil.
                                                       :table table
                                                       :perm-group group-list
                                                       :uuid (second e)))))
-             (define-key keymap (vector (gensym))
-               (car (yas--snippet-menu-binding-pair-get-create template :stay)))))
+             (define-key menu-keymap (vector (gensym))
+               (car (yas--template-menu-binding-pair-get-create template :stay)))))
           ((eq (first e) 'yas-submenu)
            (let ((subkeymap (make-sparse-keymap)))
-             (define-key keymap (vector (gensym))
+             (define-key menu-keymap (vector (gensym))
                `(menu-item ,(second e) ,subkeymap))
              (yas--define-menu-1 table
                                 subkeymap
@@ -2089,7 +2143,7 @@ This function does nothing if `yas-use-menu' is nil.
                                 uuidhash
                                 (append group-list (list (second e))))))
           ((eq (first e) 'yas-separator)
-           (define-key keymap (vector (gensym))
+           (define-key menu-keymap (vector (gensym))
              '(menu-item "----")))
           (t
            (yas--message 3 "Don't know anything about menu entry %s" (first e))))))

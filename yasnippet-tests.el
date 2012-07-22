@@ -28,8 +28,7 @@
 (require 'ert)
 (require 'ert-x)
 
-
-
+
 ;;; Snippet mechanics
 
 (ert-deftest field-navigation ()
@@ -94,7 +93,7 @@
 ;;     (should (string= (buffer-substring-no-properties (point-min) (point-max))
 ;;                      "brother from another mother!"))))
 
-
+
 ;;; Misc tests
 ;;;
 
@@ -109,10 +108,10 @@ TODO: correct this bug!"
     (should (string= (buffer-substring-no-properties (point-min) (point-max))
                      "brother from another mother") ;; no newline should be here!
             )))
-
+
 ;;; Loading
 ;;;
-(defmacro with-some-interesting-snippet-dirs (&rest body)
+(defmacro yas-with-some-interesting-snippet-dirs (&rest body)
   `(yas-saving-variables
     (yas-with-snippet-dirs
      '((".emacs.d/snippets"
@@ -130,13 +129,13 @@ TODO: correct this bug!"
 
 (ert-deftest basic-jit-loading ()
   "Test basic loading and expansion of snippets"
-  (with-some-interesting-snippet-dirs
+  (yas-with-some-interesting-snippet-dirs
    (yas-reload-all)
    (yas--basic-jit-loading-1)))
 
 (ert-deftest basic-jit-loading-with-compiled-snippets ()
   "Test basic loading and expansion of snippets"
-  (with-some-interesting-snippet-dirs
+  (yas-with-some-interesting-snippet-dirs
    (yas-reload-all)
    (yas-recompile-all)
    (flet ((yas--load-directory-2
@@ -168,6 +167,126 @@ TODO: correct this bug!"
                          ("def" . "# define")))
     (yas-should-not-expand '("sc" "dolist" "ert-deftest"))))
 
+
+;;; Menu
+;;;
+(defmacro yas-with-even-more-interesting-snippet-dirs (&rest body)
+  `(yas-saving-variables
+    (yas-with-snippet-dirs
+     `((".emacs.d/snippets"
+        ("c-mode"
+         (".yas-make-groups" . "")
+         ("printf" . "printf($1);")
+         ("foo-group-a"
+          ("fnprintf" . "fprintf($1);")
+          ("snprintf" . "snprintf($1);"))
+         ("foo-group-b"
+          ("strcmp" . "strecmp($1);")
+          ("strcasecmp" . "strcasecmp($1);")))
+        ("lisp-interaction-mode"
+         ("ert-deftest" . "# group: barbar\n# --\n(ert-deftest ${1:name} () $0)"))
+        ("fancy-mode"
+         ("a-guy" . "# uuid: 999\n# --\nyo!")
+         ("a-sir" . "# uuid: 12345\n# --\nindeed!")
+         ("a-lady" . "# uuid: 54321\n# --\noh-la-la!")
+         ("a-beggar" . "# uuid: 0101\n# --\narrrgh!")
+         ("an-outcast" . "# uuid: 666\n# --\narrrgh!")
+         (".yas-setup.el" . , (pp-to-string
+                               '(yas-define-menu 'fancy-mode
+                                                 '((yas-ignore-item "0101")
+                                                   (yas-item "999")
+                                                   (yas-submenu "sirs"
+                                                                ((yas-item "12345")))
+                                                   (yas-submenu "ladies"
+                                                                ((yas-item "54321"))))
+                                                 '("666")))))))
+     ,@body)))
+
+(ert-deftest test-yas-define-menu ()
+  (let ((yas-use-menu t))
+    (yas-with-even-more-interesting-snippet-dirs
+     (yas-reload-all 'no-jit)
+     (let ((menu (cdr (gethash 'fancy-mode yas--menu-table))))
+       (should (eql 4 (length menu)))
+       (dolist (item '("a-guy" "a-beggar"))
+         (should (find item menu :key #'third :test #'string=)))
+       (should-not (find "an-outcast" menu :key #'third :test #'string=))
+       (dolist (submenu '("sirs" "ladies"))
+         (should (keymapp
+                  (fourth
+                   (find submenu menu :key #'third :test #'string=)))))
+       ))))
+
+(ert-deftest test-group-menus ()
+  "Test group-based menus using .yas-make-groups and the group directive"
+  (let ((yas-use-menu t))
+    (yas-with-even-more-interesting-snippet-dirs
+     (yas-reload-all 'no-jit)
+     ;; first the subdir-based groups
+     ;;
+     (let ((menu (cdr (gethash 'c-mode yas--menu-table))))
+       (should (eql 3 (length menu)))
+       (dolist (item '("printf" "foo-group-a" "foo-group-b"))
+         (should (find item menu :key #'third :test #'string=)))
+       (dolist (submenu '("foo-group-a" "foo-group-b"))
+         (should (keymapp
+                  (fourth
+                   (find submenu menu :key #'third :test #'string=))))))
+     ;; now group directives
+     ;;
+     (let ((menu (cdr (gethash 'lisp-interaction-mode yas--menu-table))))
+       (should (eql 1 (length menu)))
+       (should (find "barbar" menu :key #'third :test #'string=))
+       (should (keymapp
+                (fourth
+                 (find "barbar" menu :key #'third :test #'string=))))))))
+
+(ert-deftest test-group-menus-twisted ()
+  "Same as similarly named test, but be mean.
+
+TODO: be meaner"
+  (let ((yas-use-menu t))
+    (yas-with-even-more-interesting-snippet-dirs
+     ;; add a group directive conflicting with the subdir and watch
+     ;; behaviour
+     (with-temp-buffer
+       (insert "# group: foo-group-c\n# --\nstrecmp($1)")
+       (write-region nil nil (concat (first (yas-snippet-dirs))
+                                     "/c-mode/foo-group-b/strcmp")))
+     (yas-reload-all 'no-jit)
+     (let ((menu (cdr (gethash 'c-mode yas--menu-table))))
+       (should (eql 4 (length menu)))
+       (dolist (item '("printf" "foo-group-a" "foo-group-b" "foo-group-c"))
+         (should (find item menu :key #'third :test #'string=)))
+       (dolist (submenu '("foo-group-a" "foo-group-b" "foo-group-c"))
+         (should (keymapp
+                  (fourth
+                   (find submenu menu :key #'third :test #'string=))))))
+     ;; delete the .yas-make-groups file and watch behaviour
+     ;;
+     (delete-file (concat (first (yas-snippet-dirs))
+                          "/c-mode/.yas-make-groups"))
+     (yas-reload-all 'no-jit)
+     (let ((menu (cdr (gethash 'c-mode yas--menu-table))))
+       (should (eql 5 (length menu))))
+     ;; Change a group directive and reload
+     ;;
+     (let ((menu (cdr (gethash 'lisp-interaction-mode yas--menu-table))))
+       (should (find "barbar" menu :key #'third :test #'string=)))
+
+     (with-temp-buffer
+       (insert "# group: foofoo\n# --\n(ert-deftest ${1:name} () $0)")
+       (write-region nil nil (concat (first (yas-snippet-dirs))
+                                     "/lisp-interaction-mode/ert-deftest")))
+     (yas-reload-all 'no-jit)
+     (let ((menu (cdr (gethash 'lisp-interaction-mode yas--menu-table))))
+       (should (eql 1 (length menu)))
+       (should (find "foofoo" menu :key #'third :test #'string=))
+       (should (keymapp
+                (fourth
+                 (find "foofoo" menu :key #'third :test #'string=))))))))
+
+
 ;;; Helpers
 ;;;
 
@@ -220,12 +339,18 @@ TODO: correct this bug!"
                       (push sym syms))))
     syms))
 
+(defun yas-call-with-saving-variables (fn)
+  (let* ((vars (yas-variables))
+         (saved-values (mapcar #'symbol-value vars)))
+    (unwind-protect
+        (funcall fn)
+      (loop for var in vars
+            for saved in saved-values
+            do (set var saved)))))
 
 (defmacro yas-saving-variables (&rest body)
-  `(let ,(mapcar #'(lambda (sym)
-                     `(,sym ,sym))
-                 (yas-variables))
-     ,@body))
+  `(yas-call-with-saving-variables #'(lambda () ,@body)))
+
 
 (defun yas-call-with-snippet-dirs (dirs fn)
   (let* ((default-directory (make-temp-file "yasnippet-fixture" t))
@@ -253,5 +378,9 @@ TODO: correct this bug!"
 ;;; curl -L -O https://github.com/mirrors/emacs/raw/master/lisp/emacs-lisp/ert-x.el
 ;;; /usr/bin/emacs -nw -Q -L . -l yasnippet-tests.el --batch -e ert
 
+
 (provide 'yasnippet-tests)
 ;;; yasnippet-tests.el ends here
+;; Local Variables:
+;; lexical-binding: t
+;; End:
