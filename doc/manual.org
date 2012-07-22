@@ -100,20 +100,35 @@
 
    Please refer to the comprehensive [[docs][documentation]] for full customization and
    support.  If you think you've found a bug, please report it on [[issues][the GitHub
-   issue tracker]].  (please **do not** submit new issues to the old [[googlecode-tracker][googlecode
-   tracker]])
+   issue tracker]].  (please **do not** submit new issues to the old
+   [[googlecode-tracker][googlecode tracker]])
 
    If you run into problems using YASnippet, or have snippets to contribute, post
    to the [[forum][yasnippet forum]]. Thank you very much for using YASnippet!
 
 * Organizing snippets
 
-** Setting up =yas/snippet-dirs=
+** Basic structure
 
-   Snippet collections are stored in specially organized file hierarchies. These
-   are loaded by YASnippet into *snippet tables* which the triggering mechanism
-   (see [[expand-snippets][Expanding snippets]]) looks up and (hopefully) cause the right snippet to
+   Snippet collections can be stored in plain text files. They are arranged by
+   sub-directories naming *snippet tables*. These mostly name Emacs major names.
+
+   #+begin_example
+   .
+   |-- c-mode
+   |   =-- printf
+   |-- java-mode
+   |   =-- println
+   =-- text-mode
+       |-- email
+       =-- time
+   #+end_example
+
+   The collections are loaded into *snippet tables* which the triggering mechanism
+   (see [[#expand-snippets][Expanding snippets]]) looks up and (hopefully) cause the right snippet to
    be expanded for you.
+
+** Setting up =yas/snippet-dirs=
 
    An emacs variable =yas/snippet-dirs= tells YASnippet which collections to
    consider. It's used when you activate =yas/global-mode= or call
@@ -121,10 +136,11 @@
 
    The default considers:
 
-    - a personal collection that YASnippet decides lives in =~/.emacs.d/snippets=
+    - a personal collection that lives in =~/.emacs.d/snippets=
     - the bundled collection, taken as a relative path to =yasnippet.el= localtion
 
-   Once you come across other snippet collections, do the following to try them out:
+   When you come across other snippet collections, do the following to try them
+   out:
 
    #+begin_src emacs-lisp :exports both
    ;; Develop in ~/emacs.d/mysnippets, but also
@@ -137,27 +153,9 @@
                                   '("~/Downloads/interesting-snippets")))
    #+end_src
 
-   Collections appearing earlier in the list shadow any conflicting snippets
-   from collections later in the list. =yas/new-snippet= always stores snippets
-   in the first collection.
-
-
-
-** Basic organization
-
-   Snippet definitions are stored in plain text files. They are arranged by
-   sub-directories naming snippet tables, which in turn name Emacs major names.
-
-   #+begin_example
-   .
-   |-- c-mode
-   |   =-- printf
-   |-- java-mode
-   |   =-- println
-   =-- text-mode
-       |-- email
-       =-- time
-   #+end_example
+   Collections appearing earlier in the list shadow snippets with same names
+   appearing in collections later in the list. =yas/new-snippet= always stores
+   snippets in the first collection.
 
 ** The =.yas.parents= file
 
@@ -182,163 +180,77 @@
        =-- time
    #+end_example
 
+** TODO The =.yas-make-groups= file
 
+   If you place an empty plain text file =.yas-make-groups= inside one of the
+   mode directories, the names of these sub-directories are considered groups of
+   snippets and [[snippet-menu][the menu]] is organized much more cleanly:
 
-# 2. =Expanding Snippets=_
+   (TODO image)
 
-#   Describes how YASnippet chooses snippets for expansion at point.
+   Another alternative way to achieve this is to place a ==# group:==
+   directive inside the snippet definition. See =Writing Snippets=_.
 
-#   Maybe, you'll want some snippets to be expanded in a particular
-#   mode, or only under certain conditions, or be prompted using
-#   ==ido==, etc...
+   #+begin_example
+   $ tree ruby-mode/
+   ruby-mode/
+   |-- .yas-make-groups
+   |-- collections
+   |   |-- each
+   |   =-- ...
+   |-- control structure
+   |   |-- forin
+   |   =-- ...
+   |-- definitions
+   |   =-- ...
+   =-- general
+      =-- ...
+   #+end_example
 
-# 3. =Writing Snippets=_
+   Yet another way to create a nice snippet menu is to write into
+   =.yas-make-groups= a
 
-#   Describes the YASnippet definition syntax, which is very close (but
-#   not equivalent) to Textmate's. Includes a section about converting
-#   TextMate snippets.
+** TODO The =.yas-setup.el= file
 
-# 4. =The YASnippet menu=_
+*** TODO
 
-#   Explains how to use the YASnippet menu to explore, learn and modify
-#   snippets.
+** TODO The =.yas-compiled-snippet.el= file
 
+*** TODO
 
+** The =.yas-skip= file
 
-# Loading snippets
-# ================
+* Expanding Snippets
 
+   :PROPERTIES:
+   :CUSTOM_ID: expand-snippets
+   :END:
 
+  This section describes how YASnippet chooses snippets for expansion at point.
 
-# Organizing snippets
-# ===================
+  Maybe, you'll want some snippets to be expanded in a particular
+  mode, or only under certain conditions, or be prompted using
 
-# Once you've setup ==yas/root-directory== , you can store snippets
-# inside sub-directories of these directories.
+** Triggering expansion
 
+You can use YASnippet to expand snippets in different ways:
 
+  * Typing an abbreviation, the snippet *trigger key*, and then pressing the key
+    defined in ==yas/trigger-key== (usually to "TAB"). This works in buffers
+    where the minor mode ==yas/minor-mode== is active;
 
+  * By invoking the command ==yas/insert-snippet== (either by typing ==M-x
+    yas/insert-snippet== or its keybinding). This does *not*
+    require ==yas/minor-mode== to be active.
 
+  * By using the keybinding associated with an active snippet. This also
+    requires ==yas/minor-mode== to be active;
 
-# The ==.yas-make-groups== file
-# -----------------------------
+  * By expanding directly from the "YASnippet" menu in the menu-bar
 
-# .. image:: images/menu-groups.png
-#    :align: right
+  * By using hippie-expand
 
-# If you place an empty plain text file ==.yas-make-groups== inside one
-# of the mode directories, the names of these sub-directories are
-# considered groups of snippets and =The YASnippet Menu=_ is organized
-# much more cleanly, as you can see in the image.
-
-# Another alternative way to achieve this is to place a ==# group:==
-# directive inside the snippet definition. See =Writing Snippets=_.
-
-# .. sourcecode:: text
-
-#   $ tree ruby-mode/
-#   ruby-mode/
-#   |-- .yas-make-groups
-#   |-- collections
-#   |   |-- each
-#   |   =-- ...
-#   |-- control structure
-#   |   |-- forin
-#   |   =-- ...
-#   |-- definitions
-#   |   =-- ...
-#   =-- general
-#       =-- ...
-
-
-# YASnippet bundle
-# ================
-
-# The most convenient way to define snippets for YASnippet is to put
-# them in a directory arranged by the mode and use
-# ==yas/load-directory== to load them.
-
-# However, this might slow down the Emacs start-up speed if you have many
-# snippets. You can use ==yas/define-snippets== to define a bunch of
-# snippets for a particular mode in an Emacs-lisp file.
-
-# Since this is hard to maintain, there's a better way: define your
-# snippets in directory and then call ==M-x yas/compile-bundle== to
-# compile it into a bundle file when you modified your snippets.
-
-# The release bundle of YASnippet is produced by
-# ==yas/compile-bundle==. The bundle uses ==yas/define-snippets== to
-# define snippets. This avoids the IO and parsing overhead when loading
-# snippets.
-
-# Further more, the generated bundle is a stand-alone file not depending
-# on ==yasnippet.el==. The released bundles of YASnippet are all
-# generated this way.
-
-# See the internal documentation for these functions
-
-# \* ==M-x describe-function RET yas/define-snippets RET==
-# \* ==M-x describe-function RET yas/compile-bundle RET==.
-
-# Customizable variables
-# ======================
-
-# ==yas/root-directory==
-# ----------------------
-
-# Root directory that stores the snippets for each major mode.
-
-# If you set this from your .emacs, can also be a list of strings,
-# for multiple root directories. If you make this a list, the first
-# element is always the user-created snippets directory. Other
-# directories are used for bulk reloading of all snippets using
-# ==yas/reload-all==
-
-# ==yas/ignore-filenames-as-triggers==
-# ------------------------------------
-
-# If non-nil, don't derive tab triggers from filenames.
-
-# This means a snippet without a ==# key:== directive wont have a tab
-# trigger.
-
-# ..  LocalWords:  html YASnippet filesystem yas sourcecode setq mapc printf perl
-# ..  LocalWords:  println cperl forin filenames filename ERb's yasnippet Avar el
-# ..  LocalWords:  rjs RET
-
-# * snippet-expansion.org
-# ==================
-# Expanding snippets
-# ==================
-
-# .. _Organizing Snippets: snippet-organization.html
-# .. _Expanding Snippets: snippet-expansion.html
-# .. _Writing Snippets: snippet-development.html
-# .. _The YASnippet Menu: snippet-menu.html
-
-# .. contents::
-
-
-# Triggering expansion
-# ====================
-
-# You can use YASnippet to expand snippets in different ways:
-
-# \* By typing an abbrev, the snippet *trigger key*, and then pressing
-#   the key defined in ==yas/trigger-key== (which defaults to
-#   "TAB"). This works in buffers where the minor mode
-#   ==yas/minor-mode== is active;
-
-# \* By invoking the command ==yas/insert-snippet== (either by typing
-#   ==M-x yas/insert-snippet== or its keybinding). This does *not*
-#   require ==yas/minor-mode== to be active.
-
-# \* By using the keybinding associated with an active snippet. This also
-#   requires ==yas/minor-mode== to be active;
-
-# \* By expanding directly from the "YASnippet" menu in the menu-bar
-
-# \* By using hippie-expand
+  * Use m2m's excellent auto-complete
 
 # \* Expanding from emacs-lisp code
 
