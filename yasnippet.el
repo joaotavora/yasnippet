@@ -2086,7 +2086,7 @@ will only be expanded when the condition evaluated to non-nil."
   (yas-define-snippets mode
                        (list (list key template name condition group))))
 
-(defun yas--hippie-try-expand (first-time?)
+(defun yas-hippie-try-expand (first-time?)
   "Integrate with hippie expand.  Just put this function in
 `hippie-expand-try-functions-list'."
   (when yas-minor-mode
@@ -4382,6 +4382,7 @@ handle the end-of-buffer error fired in it by calling
                              yas-inside-string
                              yas-unimplemented
                              yas-define-condition-cache
+                             yas-hippie-try-expand
 
                              ;; debug definitions
                              ;; yas-debug-snippet-vars
