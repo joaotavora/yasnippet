@@ -847,15 +847,10 @@ Do this unless `yas--dont-activate' is truish "
   :group 'yasnippet
   :require 'yasnippet)
 
-(defadvice yas-global-mode (before yas--reload-with-jit (arg) activate)
-  (cond ((and arg
-              (numberp arg)
-              (> arg 1))
-         ;; explicitly enabling
-         (yas-reload-all))
-        ((not yas-global-mode)
-         ;; toggling
-         (yas-reload-all))))
+(defun yas--global-mode-reload-with-jit-maybe ()
+  (when yas-global-mode (yas-reload-all)))
+
+(add-hook 'yas-global-mode-hook 'yas--global-mode-reload-with-jit-maybe)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Major mode stuff
