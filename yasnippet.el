@@ -2749,10 +2749,16 @@ If found, the content of subexp group SUBEXP (default 0) is
           (match-string-no-properties grp str)
         str))))
 
-(defun yas-choose-value (possibilities)
-  "Prompt for a string in the list POSSIBILITIES and return it."
+(defun yas-choose-avalue (&rest possibilities)
+  "Prompt for a string in POSSIBILITIES and return it.
+
+The last element of POSSIBILITIES may be a list of strings."
   (unless (or yas-moving-away-p
               yas-modified-p)
+    (setq possibilities (nreverse possibilities))
+    (setq possibilities (if (listp (car possibilities))
+                            (append (reverse (car possibilities)) (rest possibilities))
+                                   possibilities))
     (some #'(lambda (fn)
               (funcall fn "Choose: " possibilities))
           yas-prompt-functions)))
