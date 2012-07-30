@@ -429,20 +429,19 @@ the trigger key itself."
     map)
   "The keymap active while a snippet expansion is in progress.")
 
-(defvar yas/key-syntaxes (list "w" "w_" "w_." "w_.()" "^ ")
+(defvar yas/key-syntaxes (list "w_" "w" "w_." "w_.()" "^ ")
   "List of character syntaxes used to find a trigger key before point.
 The list is tried in the order while scanning characters
-backwards from point. For example, if the list is '(\"w\" \"w_\")
-first look for trigger keys which are composed exclusively of
-\"word\"-syntax characters, and then, if that fails, look for
-keys which are either of \"word\" or \"symbol\"
-syntax. Triggering after
+backwards from point. For example, if the list is '(\"w_\" \"w\")
+first look for trigger keys which are composed either of \"word\"
+or \"symbol\", if that fails,  look for exclusively of \"word\"-
+syntax characters, syntax. Triggering after
 
-foo-bar
+foo_bar
 
-will, according to the \"w\" element first try \"bar\". If that
-isn't a trigger key, \"foo-bar\" is tried, respecting a second
-\"w_\" element.")
+will, according to the \"w_\" element first try \"foo_bar\".
+If that isn't a trigger key, \"bar\" is tried, respecting
+a second \"w\" element.")
 
 (defvar yas/after-exit-snippet-hook
   '()
