@@ -31,11 +31,14 @@
 
 ;;; Snippet mechanics
 
+(defun yas--buffer-contents ()
+  (buffer-substring-no-properties (point-min) (point-max)))
+
 (ert-deftest field-navigation ()
   (with-temp-buffer
     (yas-minor-mode 1)
     (yas-expand-snippet "${1:brother} from another ${2:mother}")
-    (should (string= (buffer-substring-no-properties (point-min) (point-max))
+    (should (string= (yas--buffer-contents)
                      "brother from another mother"))
 
     (should (looking-at "brother"))
@@ -48,30 +51,30 @@
   (with-temp-buffer
     (yas-minor-mode 1)
     (yas-expand-snippet "${1:brother} from another $1")
-    (should (string= (buffer-substring-no-properties (point-min) (point-max))
+    (should (string= (yas--buffer-contents)
                      "brother from another brother"))
     (ert-simulate-command `(yas-mock-insert "bla"))
-    (should (string= (buffer-substring-no-properties (point-min) (point-max))
+    (should (string= (yas--buffer-contents)
                      "bla from another bla"))))
 
 (ert-deftest mirror-with-transformation ()
   (with-temp-buffer
     (yas-minor-mode 1)
     (yas-expand-snippet "${1:brother} from another ${1:$(upcase yas-text)}")
-    (should (string= (buffer-substring-no-properties (point-min) (point-max))
+    (should (string= (yas--buffer-contents)
                      "brother from another BROTHER"))
     (ert-simulate-command `(yas-mock-insert "bla"))
-    (should (string= (buffer-substring-no-properties (point-min) (point-max))
+    (should (string= (yas--buffer-contents)
                      "bla from another BLA"))))
 
 (ert-deftest nested-placeholders-kill-superfield ()
   (with-temp-buffer
     (yas-minor-mode 1)
     (yas-expand-snippet "brother from ${2:another ${3:mother}}!")
-    (should (string= (buffer-substring-no-properties (point-min) (point-max))
+    (should (string= (yas--buffer-contents)
                      "brother from another mother!"))
     (ert-simulate-command `(yas-mock-insert "bla"))
-    (should (string= (buffer-substring-no-properties (point-min) (point-max))
+    (should (string= (yas--buffer-contents)
                      "brother from bla!"))))
 
 (ert-deftest nested-placeholders-use-subfield ()
@@ -80,7 +83,7 @@
     (yas-expand-snippet "brother from ${2:another ${3:mother}}!")
     (ert-simulate-command '(yas-next-field-or-maybe-expand))
     (ert-simulate-command `(yas-mock-insert "bla"))
-    (should (string= (buffer-substring-no-properties (point-min) (point-max))
+    (should (string= (yas--buffer-contents)
                      "brother from another bla!"))))
 
 ;; (ert-deftest in-snippet-undo ()
@@ -90,8 +93,36 @@
 ;;     (ert-simulate-command '(yas-next-field-or-maybe-expand))
 ;;     (ert-simulate-command `(yas-mock-insert "bla"))
 ;;     (ert-simulate-command '(undo))
-;;     (should (string= (buffer-substring-no-properties (point-min) (point-max))
+;;     (should (string= (yas--buffer-contents)
 ;;                      "brother from another mother!"))))
+
+
+;;; Snippet expansion
+;;;
+(ert-deftest escape-dollar ()
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    (yas-expand-snippet "bla\\${1:bla}ble")
+    (should (string= (yas--buffer-contents) "bla${1:bla}ble"))))
+
+(ert-deftest escape-closing-brace ()
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    (yas-expand-snippet "bla${1:bla\\}}ble")
+    (should (string= (yas--buffer-contents) "blabla}ble"))
+    (should (string= (yas-field-value 1) "bla}"))))
+
+(ert-deftest escape-some-elisp-with-strings ()
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    ;; The rules here is: to output a literal `"' you need to escape
+    ;; it with one backslash. You don't need to escape them in
+    ;; embedded elisp.
+    (yas-expand-snippet "soon \\\"`(concat (upcase \"(my arms)\")\"\\\" were all around her\")`")
+    (should (string= (yas--buffer-contents) "soon \"MY ARMS\" were all around her"))))
+
+
+
 
 
 ;;; Misc tests
@@ -105,7 +136,7 @@ TODO: correct this bug!"
   (with-temp-buffer
     (yas-minor-mode 1)
     (yas-expand-snippet "${2:brother} from another ${1:mother}")
-    (should (string= (buffer-substring-no-properties (point-min) (point-max))
+    (should (string= (yas--buffer-contents)
                      "brother from another mother") ;; no newline should be here!
             )))
 
@@ -297,8 +328,7 @@ TODO: be meaner"
     (insert (car key-and-expansion))
     (let ((yas-fallback-behavior nil))
       (ert-simulate-command '(yas-expand)))
-    (should (string= (buffer-substring-no-properties (point-min) (point-max))
-                       (cdr key-and-expansion))))
+    (should (string= (yas--buffer-contents) (cdr key-and-expansion))))
   (yas-exit-all-snippets))
 
 (defun yas-should-not-expand (keys)
@@ -308,7 +338,7 @@ TODO: be meaner"
     (insert key)
     (let ((yas-fallback-behavior nil))
       (ert-simulate-command '(yas-expand)))
-    (should (string= (buffer-substring-no-properties (point-min) (point-max)) key))))
+    (should (string= (yas--buffer-contents) key))))
 
 (defun yas-mock-insert (string)
   (interactive)

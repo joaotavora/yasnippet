@@ -2799,11 +2799,11 @@ Use this in primary and mirror transformations to tget."
            (not (string= "" yas-text)))
       yas-text))
 
-;; (defun yas-selected-text ()
-;;   "Return `yas-selected-text' if that exists and is non-empty, else nil."
-;;   (if (and yas-selected-text
-;;            (not (string= "" yas-selected-text)))
-;;       yas-selected-text))
+(defun yas-selected-text ()
+  "Return `yas-selected-text' if that exists and is non-empty, else nil."
+  (if (and yas-selected-text
+           (not (string= "" yas-selected-text)))
+      yas-selected-text))
 
 (defun yas--get-field-once (number &optional transform-fn)
   (unless yas-modified-p
@@ -3447,22 +3447,24 @@ template. EXPAND-ENV is are let-style variable to value bindings
 considered when expanding the snippet."
   (run-hooks 'yas-before-expand-snippet-hook)
 
-  ;; If a region is active, set `yas-selected-text'
-  (setq yas-selected-text
-        (when (region-active-p)
-          (prog1 (buffer-substring-no-properties (region-beginning)
-                                                 (region-end))
-            (unless start (setq start (region-beginning))
-                    (unless end (setq end (region-end)))))))
-
-  (when start
-    (goto-char start))
-
   ;;
-  (let ((to-delete (and start end (buffer-substring-no-properties start end)))
-        (start (or start (point)))
-        (end (or end (point)))
+  (let ((yas-selected-text (or yas-selected-text
+                               (and (region-active-p)
+                                    (buffer-substring-no-properties (region-beginning)
+                                                                    (region-end)))))
+        (to-delete (and start
+                        end
+                        (buffer-substring-no-properties start end)))
+        (start (or start
+                   (and (region-active-p)
+                        (region-beginning))
+                   (point)))
+        (end (or end
+                 (and (region-active-p)
+                      (region-end))
+                 (point)))
         snippet)
+    (goto-char start)
     (setq yas--indent-original-column (current-column))
     ;; Delete the region to delete, this *does* get undo-recorded.
     ;;
