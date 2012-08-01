@@ -112,17 +112,78 @@
     (should (string= (yas--buffer-contents) "blabla}ble"))
     (should (string= (yas-field-value 1) "bla}"))))
 
+(ert-deftest escape-backslashes ()
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    (yas-expand-snippet "bla\\ble")
+    (should (string= (yas--buffer-contents) "bla\\ble"))))
+
 (ert-deftest escape-some-elisp-with-strings ()
+  "elisp with strings and unbalance parens inside it"
   (with-temp-buffer
     (yas-minor-mode 1)
     ;; The rules here is: to output a literal `"' you need to escape
     ;; it with one backslash. You don't need to escape them in
     ;; embedded elisp.
-    (yas-expand-snippet "soon \\\"`(concat (upcase \"(my arms)\")\"\\\" were all around her\")`")
-    (should (string= (yas--buffer-contents) "soon \"MY ARMS\" were all around her"))))
+    (yas-expand-snippet "soon \\\"`(concat (upcase \"(my arms\")\"\\\" were all around her\")`")
+    (should (string= (yas--buffer-contents) "soon \"(MY ARMS\" were all around her"))))
 
+(ert-deftest escape-some-elisp-with-backslashes ()
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    ;; And the rule here is: to output a literal `\' inside a string
+    ;; inside embedded elisp you need a total of six `\'
+    (yas-expand-snippet "bla`(upcase \"hey\\\\\\yo\")`ble")
+    (should (string= (yas--buffer-contents) "blaHEY\\YOble"))))
 
+(ert-deftest be-careful-when-escaping-in-yas-selected-text ()
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    (let ((yas/selected-text "He\\\\o world!"))
+      (yas-expand-snippet "Look ma! `(yas/selected-text)`")
+      (should (string= (yas--buffer-contents) "Look ma! He\\\\o world!")))
+    (yas-exit-all-snippets)
+    (erase-buffer)
+    (let ((yas/selected-text "He\"o world!"))
+      (yas-expand-snippet "Look ma! `(yas/selected-text)`")
+      (should (string= (yas--buffer-contents) "Look ma! He\"o world!")))
+    (yas-exit-all-snippets)
+    (erase-buffer)
+    (let ((yas/selected-text "He\"\)\\o world!"))
+      (yas-expand-snippet "Look ma! `(yas/selected-text)`")
+      (should (string= (yas--buffer-contents) "Look ma! He\"\)\\o world!")))
+    (yas-exit-all-snippets)
+    (erase-buffer))))
 
+(ert-deftest be-careful-when-escaping-in-yas-selected-text-2 ()
+  (with-temp-buffer
+    (let ((yas/selected-text "He)}o world!"))
+      (yas-expand-snippet "Look ma! ${1:`(yas/selected-text)`} OK?")
+      (should (string= (yas--buffer-contents) "Look ma! He)}o world! OK?")))))
+
+(ert-deftest mirror-transformation ()
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    (let ((snippet "${1:`(concat \"foo\" \"bar\")`} ${1:$(concat (upcase yas/text) \"baz\")}"))
+      (yas-expand-snippet snippet)
+      (should (string= (yas--buffer-contents) "foobar FOOBARbaz"))
+      (yas-exit-all-snippets)
+      (erase-buffer)
+      (yas-expand-snippet snippet)
+      (ert-simulate-command `(yas-mock-insert "bla"))
+      (should (string= (yas--buffer-contents) "bla BLAbaz")))))
+
+(ert-deftest primary-field-transformation ()
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    ;; The rules here is: to output a literal `"' you need to escape
+    ;; it with one backslash. You don't need to escape them in
+    ;; embedded elisp.
+    (let ((snippet "${1:$$(upcase yas/text)}${1:$(concat \"bar\" yas/text)}"))
+      (yas-expand-snippet snippet)
+      (should (string= (yas--buffer-contents) "bar"))
+      (ert-simulate-command `(yas-mock-insert "foo"))
+      (should (string= (yas--buffer-contents) "FOObarFOO")))))
 
 
 ;;; Misc tests

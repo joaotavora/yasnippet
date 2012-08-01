@@ -3745,6 +3745,11 @@ next FOM. Works its way up recursively for parents of parents."
   "When expanding the snippet the \"parse-create\" functions add
   cons cells to this var")
 
+(defvar yas--backquote-markers-and-strings nil
+  "List of (MARKER . STRING) marking where the the values
+  from backquoted lisp expressions should be inserted at the end of
+  expansion" )
+
 (defun yas--snippet-parse-create (snippet)
   "Parse a recently inserted snippet template, creating all
 necessary fields, mirrors and exit points.
@@ -3760,12 +3765,7 @@ Meant to be called in a narrowed buffer, does various passes"
     ;; replace all backquoted expressions
     ;;
     (goto-char parse-start)
-    (yas--replace-backquotes)
-    ;; protect escapes again since previous steps might have generated
-    ;; more characters needing escaping
-    ;;
-    (goto-char parse-start)
-    (yas--protect-escapes)
+    (yas--save-backquotes)
     ;; parse fields with {}
     ;;
     (goto-char parse-start)
@@ -3784,6 +3784,9 @@ Meant to be called in a narrowed buffer, does various passes"
     ;; Delete $-constructs
     ;;
     (yas--delete-regions yas--dollar-regions)
+    ;; restore backquoted expression values
+    ;;
+    (yas--restore-backquotes)
     ;; restore escapes
     ;;
     (goto-char parse-start)
@@ -3915,15 +3918,34 @@ With optional string TEXT do it in string instead of the buffer."
           (or escaped yas--escaped-characters))
     changed-text))
 
-(defun yas--replace-backquotes ()
-  "Replace all the \"`(lisp-expression)`\"-style expression
-	with their evaluated value"
+(defun yas--save-backquotes ()
+  "Save all the \"`(lisp-expression)`\"-style expression
+with their evaluated value into `yas--backquote-markers-and-strings'"
   (while (re-search-forward yas--backquote-lisp-expression-regexp nil t)
     (let ((current-string (match-string 1)) transformed)
       (delete-region (match-beginning 0) (match-end 0))
       (setq transformed (yas--eval-lisp (yas--read-lisp (yas--restore-escapes current-string))))
       (goto-char (match-beginning 0))
-      (when transformed (insert transformed)))))
+      (when transformed
+        (let ((marker (make-marker)))
+          (insert "Y") ;; quite horrendous, I love it :)
+          (set-marker marker (point))
+          (insert "Y")
+          (push (cons marker transformed) yas--backquote-markers-and-strings))))))
+
+(defun yas--restore-backquotes ()
+  "Replace all the markers in
+`yas--backquote-markers-and-strings' with their values"
+  (while yas--backquote-markers-and-strings
+    (let* ((marker-and-string (pop yas--backquote-markers-and-strings))
+           (marker (car marker-and-string))
+           (string (cdr marker-and-string)))
+      (save-excursion
+        (goto-char marker)
+        (delete-char -1)
+        (insert string)
+        (delete-char 1)
+        (set-marker marker nil)))))
 
 (defun yas--scan-sexps (from count)
   (condition-case err
