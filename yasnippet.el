@@ -426,9 +426,6 @@ the trigger key itself."
     (dolist (key keys)
       (define-key keymap (read-kbd-macro key) definition))))
 
-(defvar yas-keymap (yas--init-yas-in-snippet-keymap)
-  "The keymap active while a snippet expansion is in progress.")
-
 (defun yas--init-yas-in-snippet-keymap ()
   (setq yas-keymap
         (let ((map (make-sparse-keymap)))
@@ -439,6 +436,9 @@ the trigger key itself."
                   ("C-g"                   . yas-abort-snippet)
                   (,yas-skip-and-clear-key . yas-skip-and-clear-or-delete-char)))
           map)))
+
+(defvar yas-keymap (yas--init-yas-in-snippet-keymap)
+  "The keymap active while a snippet expansion is in progress.")
 
 (defvar yas-key-syntaxes (list "w" "w_" "w_." "w_.()" "^ ")
   "List of character syntaxes used to find a trigger key before point.
