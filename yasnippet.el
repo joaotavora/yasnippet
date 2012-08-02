@@ -426,16 +426,19 @@ the trigger key itself."
     (dolist (key keys)
       (define-key keymap (read-kbd-macro key) definition))))
 
-(defvar yas-keymap
-  (let ((map (make-sparse-keymap)))
-    (mapc #'(lambda (binding)
-              (yas--define-some-keys (car binding) map (cdr binding)))
-          `((,yas-next-field-key     . yas-next-field-or-maybe-expand)
-            (,yas-prev-field-key     . yas-prev-field)
-            ("C-g"                   . yas-abort-snippet)
-            (,yas-skip-and-clear-key . yas-skip-and-clear-or-delete-char)))
-    map)
+(defvar yas-keymap (yas--init-yas-in-snippet-keymap)
   "The keymap active while a snippet expansion is in progress.")
+
+(defun yas--init-yas-in-snippet-keymap ()
+  (setq yas-keymap
+        (let ((map (make-sparse-keymap)))
+          (mapc #'(lambda (binding)
+                    (yas--define-some-keys (car binding) map (cdr binding)))
+                `((,yas-next-field-key     . yas-next-field-or-maybe-expand)
+                  (,yas-prev-field-key     . yas-prev-field)
+                  ("C-g"                   . yas-abort-snippet)
+                  (,yas-skip-and-clear-key . yas-skip-and-clear-or-delete-char)))
+          map)))
 
 (defvar yas-key-syntaxes (list "w" "w_" "w_." "w_.()" "^ ")
   "List of character syntaxes used to find a trigger key before point.
