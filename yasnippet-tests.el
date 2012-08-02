@@ -153,7 +153,7 @@
       (yas-expand-snippet "Look ma! `(yas/selected-text)`")
       (should (string= (yas--buffer-contents) "Look ma! He\"\)\\o world!")))
     (yas-exit-all-snippets)
-    (erase-buffer))))
+    (erase-buffer)))
 
 (ert-deftest be-careful-when-escaping-in-yas-selected-text-2 ()
   (with-temp-buffer
@@ -176,14 +176,32 @@
 (ert-deftest primary-field-transformation ()
   (with-temp-buffer
     (yas-minor-mode 1)
-    ;; The rules here is: to output a literal `"' you need to escape
-    ;; it with one backslash. You don't need to escape them in
-    ;; embedded elisp.
     (let ((snippet "${1:$$(upcase yas/text)}${1:$(concat \"bar\" yas/text)}"))
       (yas-expand-snippet snippet)
       (should (string= (yas--buffer-contents) "bar"))
       (ert-simulate-command `(yas-mock-insert "foo"))
       (should (string= (yas--buffer-contents) "FOObarFOO")))))
+
+(ert-deftest example-for-issue-271 ()
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    (let ((yas-selected-text "aaa")
+          (snippet "if ${1:condition}\n`yas/selected-text`\nelse\n$3\nend"))
+      (yas-expand-snippet snippet)
+      (yas-next-field)
+      (ert-simulate-command `(yas-mock-insert "bbb"))
+      (should (string= (yas--buffer-contents) "if condition\naaa\nelse\nbbb\nend")))))
+
+(ert-deftest another-example-for-issue-271 ()
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    (let ((snippet "\\${${1:1}:`yas/selected-text`}"))
+      (insert "aaabbbccc")
+      (set-mark 4)
+      (goto-char 7)
+      (yas-expand-snippet snippet)
+      (ert-simulate-command `(yas-mock-insert "bbb"))
+      (should (string= (yas--buffer-contents) "if condition\naaa\nelse\nbbb\nend")))))
 
 
 ;;; Misc tests

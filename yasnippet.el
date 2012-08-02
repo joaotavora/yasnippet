@@ -3451,22 +3451,22 @@ considered when expanding the snippet."
   (run-hooks 'yas-before-expand-snippet-hook)
 
   ;;
-  (let ((yas-selected-text (or yas-selected-text
-                               (and (region-active-p)
-                                    (buffer-substring-no-properties (region-beginning)
-                                                                    (region-end)))))
-        (to-delete (and start
-                        end
-                        (buffer-substring-no-properties start end)))
-        (start (or start
-                   (and (region-active-p)
-                        (region-beginning))
-                   (point)))
-        (end (or end
-                 (and (region-active-p)
-                      (region-end))
-                 (point)))
-        snippet)
+  (let* ((yas-selected-text (or yas-selected-text
+                                (and (region-active-p)
+                                     (buffer-substring-no-properties (region-beginning)
+                                                                     (region-end)))))
+         (start (or start
+                    (and (region-active-p)
+                         (region-beginning))
+                    (point)))
+         (end (or end
+                  (and (region-active-p)
+                       (region-end))
+                  (point)))
+         (to-delete (and start
+                         end
+                         (buffer-substring-no-properties start end)))
+         snippet)
     (goto-char start)
     (setq yas--indent-original-column (current-column))
     ;; Delete the region to delete, this *does* get undo-recorded.
@@ -3762,9 +3762,9 @@ Meant to be called in a narrowed buffer, does various passes"
     ;; Reset the yas--dollar-regions
     ;;
     (setq yas--dollar-regions nil)
-    ;; protect escaped quote, backquotes and backslashes
+    ;; protect escaped characters
     ;;
-    (yas--protect-escapes nil `(?\\ ?` ?'))
+    (yas--protect-escapes)
     ;; replace all backquoted expressions
     ;;
     (goto-char parse-start)
@@ -3927,7 +3927,7 @@ with their evaluated value into `yas--backquote-markers-and-strings'"
   (while (re-search-forward yas--backquote-lisp-expression-regexp nil t)
     (let ((current-string (match-string 1)) transformed)
       (delete-region (match-beginning 0) (match-end 0))
-      (setq transformed (yas--eval-lisp (yas--read-lisp (yas--restore-escapes current-string))))
+      (setq transformed (yas--eval-lisp (yas--read-lisp current-string)))
       (goto-char (match-beginning 0))
       (when transformed
         (let ((marker (make-marker)))
