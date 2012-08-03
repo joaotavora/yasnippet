@@ -119,6 +119,12 @@
     (yas-expand-snippet "bla\\ble")
     (should (string= (yas--buffer-contents) "bla\\ble"))))
 
+(ert-deftest escape-backquotes ()
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    (yas-expand-snippet "bla`(upcase \"foo\\`bar\")`ble")
+    (should (string= (yas--buffer-contents) "blaFOO`BARble"))))
+
 (ert-deftest escape-some-elisp-with-strings ()
   "elisp with strings and unbalance parens inside it"
   (with-temp-buffer
@@ -208,7 +214,9 @@
     (yas-minor-mode 1)
     ;; the rule here is: To use regexps in embedded `(elisp)` expressions, write
     ;; it like you would normal elisp, i.e. no need to escape the backslashes.
-    (let ((snippet "`(if (string-match \"foo\\\\(ba+r\\\\)foo\" \"foobaaaaaaaaaarfoo\") \"ok\" \"fail\")`"))
+    (let ((snippet "`(if (string-match \"foo\\\\(ba+r\\\\)foo\" \"foobaaaaaaaaaarfoo\")
+                         \"ok\"
+                         \"fail\")`"))
       (yas-expand-snippet snippet))
       (should (string= (yas--buffer-contents) "ok"))))
 
@@ -216,8 +224,10 @@
   (with-temp-buffer
     (yas-minor-mode 1)
     ;; the rule here is: To use regexps in embedded `(elisp)` expressions,
-    ;; escape backslashes once. i.e. to use \\( \\) constructs, write \\\\( \\\\).
-    (let ((snippet "$1${1:$(if (string-match \"foo\\\\\\\\(ba+r\\\\\\\\)baz\" yas/text) \"ok\" \"fail\")}"))
+    ;; escape backslashes once, i.e. to use \\( \\) constructs, write \\\\( \\\\).
+    (let ((snippet "$1${1:$(if (string-match \"foo\\\\\\\\(ba+r\\\\\\\\)baz\" yas/text)
+                                \"ok\"
+                                \"fail\")}"))
       (yas-expand-snippet snippet)
       (should (string= (yas--buffer-contents) "fail"))
       (ert-simulate-command `(yas-mock-insert "foobaaar"))

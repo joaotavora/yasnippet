@@ -3762,6 +3762,9 @@ Meant to be called in a narrowed buffer, does various passes"
     ;; Reset the yas--dollar-regions
     ;;
     (setq yas--dollar-regions nil)
+    ;; protect just the backquotes
+    ;;
+    (yas--protect-escapes nil '(?`))
     ;; replace all backquoted expressions
     ;;
     (goto-char parse-start)
@@ -3927,7 +3930,7 @@ with their evaluated value into `yas--backquote-markers-and-strings'"
   (while (re-search-forward yas--backquote-lisp-expression-regexp nil t)
     (let ((current-string (match-string-no-properties 1)) transformed)
       (delete-region (match-beginning 0) (match-end 0))
-      (setq transformed (yas--eval-lisp (yas--read-lisp current-string)))
+      (setq transformed (yas--eval-lisp (yas--read-lisp (yas--restore-escapes current-string '(?`)))))
       (goto-char (match-beginning 0))
       (when transformed
         (let ((marker (make-marker)))
