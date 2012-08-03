@@ -97,7 +97,8 @@
 ;;                      "brother from another mother!"))))
 
 
-;;; Snippet expansion
+;;; Snippet expansion and character escaping
+;;; Thanks to @zw963 (Billy) for the testing
 ;;;
 (ert-deftest escape-dollar ()
   (with-temp-buffer
@@ -200,15 +201,36 @@
       (set-mark 4)
       (goto-char 7)
       (yas-expand-snippet snippet)
-      (ert-simulate-command `(yas-mock-insert "bbb"))
-      (should (string= (yas--buffer-contents) "if condition\naaa\nelse\nbbb\nend")))))
+      (should (string= (yas--buffer-contents) "aaa${1:bbb}ccc")))))
+
+(ert-deftest string-match-with-subregexp-in-embedded-elisp ()
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    ;; the rule here is: To use regexps in embedded `(elisp)` expressions, write
+    ;; it like you would normal elisp, i.e. no need to escape the backslashes.
+    (let ((snippet "`(if (string-match \"foo\\\\(ba+r\\\\)foo\" \"foobaaaaaaaaaarfoo\") \"ok\" \"fail\")`"))
+      (yas-expand-snippet snippet))
+      (should (string= (yas--buffer-contents) "ok"))))
+
+(ert-deftest string-match-with-subregexp-in-mirror-transformations ()
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    ;; the rule here is: To use regexps in embedded `(elisp)` expressions,
+    ;; escape backslashes once. i.e. to use \\( \\) constructs, write \\\\( \\\\).
+    (let ((snippet "$1${1:$(if (string-match \"foo\\\\\\\\(ba+r\\\\\\\\)baz\" yas/text) \"ok\" \"fail\")}"))
+      (yas-expand-snippet snippet)
+      (should (string= (yas--buffer-contents) "fail"))
+      (ert-simulate-command `(yas-mock-insert "foobaaar"))
+      (should (string= (yas--buffer-contents) "foobaaarfail"))
+      (ert-simulate-command `(yas-mock-insert "baz"))
+      (should (string= (yas--buffer-contents) "foobaaarbazok")))))
 
 
 ;;; Misc tests
 ;;;
-
 (ert-deftest protection-overlay-no-cheating ()
-  "Protection overlays at the very end of the buffer, are dealt by cheatingly inserting a newline!
+  "Protection overlays at the very end of the buffer are dealt
+  with by cheatingly inserting a newline!
 
 TODO: correct this bug!"
   :expected-result :failed
