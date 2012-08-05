@@ -67,6 +67,15 @@
     (should (string= (yas--buffer-contents)
                      "bla from another BLA"))))
 
+(ert-deftest primary-field-transformation ()
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    (let ((snippet "${1:$$(upcase yas/text)}${1:$(concat \"bar\" yas/text)}"))
+      (yas-expand-snippet snippet)
+      (should (string= (yas--buffer-contents) "bar"))
+      (ert-simulate-command `(yas-mock-insert "foo"))
+      (should (string= (yas--buffer-contents) "FOObarFOO")))))
+
 (ert-deftest nested-placeholders-kill-superfield ()
   (with-temp-buffer
     (yas-minor-mode 1)
@@ -167,27 +176,6 @@
     (let ((yas/selected-text "He)}o world!"))
       (yas-expand-snippet "Look ma! ${1:`(yas/selected-text)`} OK?")
       (should (string= (yas--buffer-contents) "Look ma! He)}o world! OK?")))))
-
-(ert-deftest mirror-transformation ()
-  (with-temp-buffer
-    (yas-minor-mode 1)
-    (let ((snippet "${1:`(concat \"foo\" \"bar\")`} ${1:$(concat (upcase yas/text) \"baz\")}"))
-      (yas-expand-snippet snippet)
-      (should (string= (yas--buffer-contents) "foobar FOOBARbaz"))
-      (yas-exit-all-snippets)
-      (erase-buffer)
-      (yas-expand-snippet snippet)
-      (ert-simulate-command `(yas-mock-insert "bla"))
-      (should (string= (yas--buffer-contents) "bla BLAbaz")))))
-
-(ert-deftest primary-field-transformation ()
-  (with-temp-buffer
-    (yas-minor-mode 1)
-    (let ((snippet "${1:$$(upcase yas/text)}${1:$(concat \"bar\" yas/text)}"))
-      (yas-expand-snippet snippet)
-      (should (string= (yas--buffer-contents) "bar"))
-      (ert-simulate-command `(yas-mock-insert "foo"))
-      (should (string= (yas--buffer-contents) "FOObarFOO")))))
 
 (ert-deftest example-for-issue-271 ()
   (with-temp-buffer
