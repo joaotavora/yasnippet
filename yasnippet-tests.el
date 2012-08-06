@@ -417,6 +417,30 @@ TODO: be meaner"
                  (find "foofoo" menu :key #'third :test #'string=))))))))
 
 
+;;; The infamous and problematic tab keybinding
+;;;
+(ert-deftest test-yas-tab-binding ()
+  (with-temp-buffer
+    (yas-minor-mode -1)
+    (should (not (eq (key-binding (yas--read-keybinding yas-trigger-key)) 'yas-expand)))
+    (yas-minor-mode 1)
+    (should (eq (key-binding (yas--read-keybinding yas-trigger-key)) 'yas-expand))
+    (yas-expand-snippet "$1 $2 $3")
+    (dolist (k (if (listp yas-next-field-key)
+                   yas-next-field-key
+                 (list yas-next-field-key)))
+      (should (eq (key-binding (yas--read-keybinding k)) 'yas-next-field-or-maybe-expand)))
+    (dolist (k (if (listp yas-prev-field-key)
+                   yas-prev-field-key
+                 (list yas-prev-field-key)))
+      (should (eq (key-binding (yas--read-keybinding k)) 'yas-prev-field)))))
+
+(ert-deftest test-yas-in-org ()
+  (with-temp-buffer
+    (org-mode)
+    (yas-minor-mode 1)
+    (should (eq (key-binding (yas--read-keybinding yas-trigger-key)) 'yas-expand))))
+
 ;;; Helpers
 ;;;
 
