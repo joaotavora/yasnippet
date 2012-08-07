@@ -513,7 +513,7 @@ TODO: be meaner"
           (progn
             (mapc #'yas-make-file-or-dirs dirs)
             (funcall fn))
-        (when (>= emacs-major-version 23)
+        (when (>= emacs-major-version 24)
           (delete-directory default-directory 'recursive))))))
 
 (defmacro yas-with-snippet-dirs (dirs &rest body)
