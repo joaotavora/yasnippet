@@ -2256,6 +2256,18 @@ expand immediately. Common gateway for
                           end
                           (yas--template-expand-env yas--current-template)))))
 
+(defun yas--trigger-key-for-fallback ()
+  ;; When `yas-trigger-key' is <tab> it correctly overrides
+  ;; org-mode's <tab>, for example and searching for fallbacks
+  ;; correctly returns `org-cycle'. However, most other modes bind
+  ;; "TAB" (which is translated from <tab>), and calling
+  ;; (key-binding "TAB") does not place return that command into
+  ;; our command-2 local. So we cheat.
+  ;;
+  (if (string= yas-trigger-key "<tab>")
+      "TAB"
+    yas-trigger-key))
+
 (defun yas--fallback (&optional from-trigger-key-p)
   "Fallback after expansion has failed.
 
@@ -2267,6 +2279,7 @@ Common gateway for `yas-expand-from-trigger-key' and
         ((eq yas-fallback-behavior 'call-other-command)
          (let* ((yas-minor-mode nil)
                 (yas--direct-keymaps nil)
+                (yas-trigger-key (yas--trigger-key-for-fallback))
                 (keys-1 (this-command-keys-vector))
                 (keys-2 (and yas-trigger-key
                              from-trigger-key-p
@@ -4221,7 +4234,7 @@ When multiple expressions are found, only the last one counts."
   (let ((fallback-description
          (cond ((eq yas-fallback-behavior 'call-other-command)
                 (let* ((yas-minor-mode nil)
-                       (fallback (key-binding (read-kbd-macro yas-trigger-key))))
+                       (fallback (key-binding (read-kbd-macro (yas--trigger-key-for-fallback)))))
                   (or (and fallback
                            (format " call command `%s'." (pp-to-string fallback)))
                       " do nothing.")))
