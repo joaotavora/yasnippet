@@ -236,8 +236,8 @@ Naturally this is only valid when `yas-indent-line' is `auto'"
   :type 'boolean
   :group 'yasnippet)
 
-(defcustom yas-trigger-key "TAB"
-  "The key bound to `yas-expand' when function `yas-minor-mode' is active.
+(defcustom yas-trigger-key "<tab>"
+  "The key bound to `yas-expand' when `yas-minor-mode' is active.
 
 Value is a string that is converted to the internal Emacs key
 representation using `read-kbd-macro'."
