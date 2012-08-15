@@ -1,8 +1,8 @@
 ;;; yasnippet-debug.el --- debug functions for yasnippet
 
-;; Copyright (C) 2010  Jo√£o T√°vora
+;; Copyright (C) 2010  Jo„o T·vora
 
-;; Author: Jo√£o T√°vora(defun yas/debug-snippet-vars () <joaotavora@gmail.com>
+;; Author: Jo„o T·vora
 ;; Keywords: emulations, convenience
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -26,7 +26,7 @@
 
 (require 'yasnippet)
 
-(defun yas/debug-snippet-vars ()
+(defun yas-debug-snippet-vars ()
   "Debug snippets, fields, mirrors and the `buffer-undo-list'."
   (interactive)
   (with-output-to-temp-buffer "*YASnippet trace*"
@@ -35,39 +35,39 @@
     (princ (format "\nPost command hook: %s\n" post-command-hook))
     (princ (format "\nPre  command hook: %s\n" pre-command-hook))
 
-    (princ (format "%s live snippets in total\n" (length (yas/snippets-at-point (quote all-snippets)))))
+    (princ (format "%s live snippets in total\n" (length (yas--snippets-at-point (quote all-snippets)))))
     (princ (format "%s overlays in buffer:\n\n" (length (overlays-in (point-min) (point-max)))))
-    (princ (format "%s live snippets at point:\n\n" (length (yas/snippets-at-point))))
+    (princ (format "%s live snippets at point:\n\n" (length (yas--snippets-at-point))))
 
 
-    (dolist (snippet (yas/snippets-at-point))
+    (dolist (snippet (yas--snippets-at-point))
       (princ (format "\tsid: %d control overlay from %d to %d\n"
-                     (yas/snippet-id snippet)
-                     (overlay-start (yas/snippet-control-overlay snippet))
-                     (overlay-end (yas/snippet-control-overlay snippet))))
+                     (yas--snippet-id snippet)
+                     (overlay-start (yas--snippet-control-overlay snippet))
+                     (overlay-end (yas--snippet-control-overlay snippet))))
       (princ (format "\tactive field: %d from %s to %s covering \"%s\"\n"
-                     (yas/field-number (yas/snippet-active-field snippet))
-                     (marker-position (yas/field-start (yas/snippet-active-field snippet)))
-                     (marker-position (yas/field-end (yas/snippet-active-field snippet)))
-                     (buffer-substring-no-properties (yas/field-start (yas/snippet-active-field snippet)) (yas/field-end (yas/snippet-active-field snippet)))))
-      (when (yas/snippet-exit snippet)
+                     (yas--field-number (yas--snippet-active-field snippet))
+                     (marker-position (yas--field-start (yas--snippet-active-field snippet)))
+                     (marker-position (yas--field-end (yas--snippet-active-field snippet)))
+                     (buffer-substring-no-properties (yas--field-start (yas--snippet-active-field snippet)) (yas--field-end (yas--snippet-active-field snippet)))))
+      (when (yas--snippet-exit snippet)
         (princ (format "\tsnippet-exit: at %s next: %s\n"
-                       (yas/exit-marker (yas/snippet-exit snippet))
-                       (yas/exit-next (yas/snippet-exit snippet)))))
-      (dolist (field (yas/snippet-fields snippet))
+                       (yas--exit-marker (yas--snippet-exit snippet))
+                       (yas--exit-next (yas--snippet-exit snippet)))))
+      (dolist (field (yas--snippet-fields snippet))
         (princ (format "\tfield: %d from %s to %s covering \"%s\" next: %s%s\n"
-                       (yas/field-number field)
-                       (marker-position (yas/field-start field))
-                       (marker-position (yas/field-end field))
-                       (buffer-substring-no-properties (yas/field-start field) (yas/field-end field))
-                       (yas/debug-format-fom-concise (yas/field-next field))
-                       (if (yas/field-parent-field field) "(has a parent)" "")))
-        (dolist (mirror (yas/field-mirrors field))
+                       (yas--field-number field)
+                       (marker-position (yas--field-start field))
+                       (marker-position (yas--field-end field))
+                       (buffer-substring-no-properties (yas--field-start field) (yas--field-end field))
+                       (yas--debug-format-fom-concise (yas--field-next field))
+                       (if (yas--field-parent-field field) "(has a parent)" "")))
+        (dolist (mirror (yas--field-mirrors field))
           (princ (format "\t\tmirror: from %s to %s covering \"%s\" next: %s\n"
-                         (marker-position (yas/mirror-start mirror))
-                         (marker-position (yas/mirror-end mirror))
-                         (buffer-substring-no-properties (yas/mirror-start mirror) (yas/mirror-end mirror))
-                         (yas/debug-format-fom-concise (yas/mirror-next mirror)))))))
+                         (marker-position (yas--mirror-start mirror))
+                         (marker-position (yas--mirror-end mirror))
+                         (buffer-substring-no-properties (yas--mirror-start mirror) (yas--mirror-end mirror))
+                         (yas--debug-format-fom-concise (yas--mirror-next mirror)))))))
 
     (princ (format "\nUndo is %s and point-max is %s.\n"
                    (if (eq buffer-undo-list t)
@@ -80,49 +80,48 @@
         (dolist (undo-elem first-ten)
           (princ (format "%2s:  %s\n" (position undo-elem first-ten) (truncate-string-to-width (format "%s" undo-elem) 70))))))))
 
-(defun yas/debug-format-fom-concise (fom)
+(defun yas--debug-format-fom-concise (fom)
   (when fom
-    (cond ((yas/field-p fom)
+    (cond ((yas--field-p fom)
            (format "field %d from %d to %d"
-                   (yas/field-number fom)
-                   (marker-position (yas/field-start fom))
-                   (marker-position (yas/field-end fom))))
-          ((yas/mirror-p fom)
+                   (yas--field-number fom)
+                   (marker-position (yas--field-start fom))
+                   (marker-position (yas--field-end fom))))
+          ((yas--mirror-p fom)
            (format "mirror from %d to %d"
-                   (marker-position (yas/mirror-start fom))
-                   (marker-position (yas/mirror-end fom))))
+                   (marker-position (yas--mirror-start fom))
+                   (marker-position (yas--mirror-end fom))))
           (t
            (format "snippet exit at %d"
-                   (marker-position (yas/fom-start fom)))))))
+                   (marker-position (yas--fom-start fom)))))))
 
 
-(defun yas/exterminate-package ()
+(defun yas-exterminate-package ()
   (interactive)
-  (yas/global-mode -1)
-  (yas/minor-mode -1)
+  (yas-global-mode -1)
+  (yas-minor-mode -1)
   (mapatoms #'(lambda (atom)
-                (when (string-match "yas/" (symbol-name atom))
-                  (unintern atom)))))
+                (when (string-match "yas[-/]" (symbol-name atom))
+                  (unintern atom obarray)))))
 
-(defun yas/debug-test (&optional quiet)
+(defun yas-debug-test (&optional quiet)
   (interactive "P")
-  (yas/load-directory (or (and (listp yas/snippet-dirs)
-                               (first yas/snippet-dirs))
-                          yas/snippet-dirs
+  (yas-load-directory (or (and (listp yas-snippet-dirs)
+                               (first yas-snippet-dirs))
+                          yas-snippet-dirs
                           "~/Source/yasnippet/snippets/"))
   (set-buffer (switch-to-buffer "*YAS TEST*"))
-  (mapc #'yas/commit-snippet (yas/snippets-at-point 'all-snippets))
+  (mapc #'yas--commit-snippet (yas--snippets-at-point 'all-snippets))
   (erase-buffer)
   (setq buffer-undo-list nil)
   (setq undo-in-progress nil)
   (snippet-mode)
-  (yas/minor-mode 1)
+  (yas-minor-mode 1)
   (let ((abbrev))
     (setq abbrev "$f")
     (insert abbrev))
   (unless quiet
-    (add-hook 'post-command-hook 'yas/debug-snippet-vars 't 'local)))
+    (add-hook 'post-command-hook 'yas-debug-snippet-vars 't 'local)))
 
 (provide 'yasnippet-debug)
 ;;; yasnippet-debug.el ends here
-
