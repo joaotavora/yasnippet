@@ -424,9 +424,9 @@ TODO: be meaner"
 (ert-deftest test-yas-tab-binding ()
   (with-temp-buffer
     (yas-minor-mode -1)
-    (should (not (eq (key-binding (yas--read-keybinding yas-trigger-key)) 'yas-expand)))
+    (should (not (eq (key-binding (yas--read-keybinding "<tab>")) 'yas-expand)))
     (yas-minor-mode 1)
-    (should (eq (key-binding (yas--read-keybinding yas-trigger-key)) 'yas-expand))
+    (should (eq (key-binding (yas--read-keybinding "<tab>")) 'yas-expand))
     (yas-expand-snippet "$1 $2 $3")
     (dolist (k (if (listp yas-next-field-key)
                    yas-next-field-key
@@ -441,7 +441,7 @@ TODO: be meaner"
   (with-temp-buffer
     (org-mode)
     (yas-minor-mode 1)
-    (should (eq (key-binding (yas--read-keybinding yas-trigger-key)) 'yas-expand))))
+    (should (eq (key-binding (yas--read-keybinding "<tab>")) 'yas-expand))))
 
 ;;; Helpers
 ;;;
@@ -515,7 +515,7 @@ TODO: be meaner"
           (progn
             (mapc #'yas-make-file-or-dirs dirs)
             (funcall fn))
-        (when (>= emacs-major-version 23)
+        (when (>= emacs-major-version 24)
           (delete-directory default-directory 'recursive))))))
 
 (defmacro yas-with-snippet-dirs (dirs &rest body)

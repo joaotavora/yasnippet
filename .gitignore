@@ -6,3 +6,5 @@ extras/imported/**
 !extras/imported/*/.yas-setup.el
 .yas-compiled-snippets.el
 *.elc
+ert-x.*
+ert.*

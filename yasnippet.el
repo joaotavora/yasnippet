@@ -236,8 +236,8 @@ Naturally this is only valid when `yas-indent-line' is `auto'"
   :type 'boolean
   :group 'yasnippet)
 
-(defcustom yas-trigger-key "TAB"
-  "The key bound to `yas-expand' when function `yas-minor-mode' is active.
+(defcustom yas-trigger-key "<tab>"
+  "The key bound to `yas-expand' when `yas-minor-mode' is active.
 
 Value is a string that is converted to the internal Emacs key
 representation using `read-kbd-macro'."
@@ -2257,6 +2257,18 @@ expand immediately. Common gateway for
                           end
                           (yas--template-expand-env yas--current-template)))))
 
+(defun yas--trigger-key-for-fallback ()
+  ;; When `yas-trigger-key' is <tab> it correctly overrides
+  ;; org-mode's <tab>, for example and searching for fallbacks
+  ;; correctly returns `org-cycle'. However, most other modes bind
+  ;; "TAB" (which is translated from <tab>), and calling
+  ;; (key-binding "TAB") does not place return that command into
+  ;; our command-2 local. So we cheat.
+  ;;
+  (if (string= yas-trigger-key "<tab>")
+      "TAB"
+    yas-trigger-key))
+
 (defun yas--fallback (&optional from-trigger-key-p)
   "Fallback after expansion has failed.
 
@@ -2268,6 +2280,7 @@ Common gateway for `yas-expand-from-trigger-key' and
         ((eq yas-fallback-behavior 'call-other-command)
          (let* ((yas-minor-mode nil)
                 (yas--direct-keymaps nil)
+                (yas-trigger-key (yas--trigger-key-for-fallback))
                 (keys-1 (this-command-keys-vector))
                 (keys-2 (and yas-trigger-key
                              from-trigger-key-p
@@ -2513,15 +2526,38 @@ neither do the elements of PARENTS."
 (defvar yas--guessed-modes nil
   "List of guessed modes supporting `yas-load-snippet-buffer'.")
 
-(defun yas-load-snippet-buffer (&optional kill)
-  "Parse and load current buffer's snippet definition.
+(defun yas--read-table ()
+  "Ask user for a snippet table, help with some guessing."
+  (let ((prompt (if (and (featurep 'ido)
+                         ido-mode)
+                    'ido-completing-read 'completing-read)))
+    (unless yas--guessed-modes
+      (set (make-local-variable 'yas--guessed-modes)
+           (or (yas--compute-major-mode-and-parents buffer-file-name))))
+    (intern
+     (funcall prompt (format "Choose or enter a table (yas guesses %s): "
+                             (if yas--guessed-modes
+                                 (first yas--guessed-modes)
+                               "nothing"))
+              (mapcar #'symbol-name yas--guessed-modes)
+              nil
+              nil
+              nil
+              nil
+              (if (first yas--guessed-modes)
+                  (symbol-name (first yas--guessed-modes)))))))
 
-With optional prefix argument KILL quit the window and buffer."
-  (interactive "P")
+(defun yas-load-snippet-buffer (table &optional interactive)
+  "Parse and load current buffer's snippet definition into TABLE.
+
+TABLE is a symbol naming a passed to `yas--table-get-create'.
+
+When called interactively, prompt for the table name and
+whether (and where) to save the snippet, then quit the window."
+  (interactive (list (yas--read-table) t))
   (cond
-   ;;  We have `yas--editing-template', this buffer's
-   ;;  content comes from a template which is already loaded and
-   ;;  neatly positioned,...
+   ;;  We have `yas--editing-template', this buffer's content comes from a
+   ;;  template which is already loaded and neatly positioned,...
    ;;
    (yas--editing-template
     (yas-define-snippets-1 (yas--parse-template (yas--template-file yas--editing-template))
@@ -2532,57 +2568,40 @@ With optional prefix argument KILL quit the window and buffer."
    (t
     (unless yas--guessed-modes
       (set (make-local-variable 'yas--guessed-modes) (or (yas--compute-major-mode-and-parents buffer-file-name))))
-    (let* ((prompt (if (and (featurep 'ido)
-                            ido-mode)
-                       'ido-completing-read 'completing-read))
-           (table (yas--table-get-create
-                   (intern
-                    (funcall prompt (format "Choose or enter a table (yas guesses %s): "
-                                            (if yas--guessed-modes
-                                                (first yas--guessed-modes)
-                                              "nothing"))
-                             (mapcar #'symbol-name yas--guessed-modes)
-                             nil
-                             nil
-                             nil
-                             nil
-                             (if (first yas--guessed-modes)
-                                 (symbol-name (first yas--guessed-modes))))))))
+    (let* ((table (yas--table-get-create table)))
       (set (make-local-variable 'yas--editing-template)
            (yas-define-snippets-1 (yas--parse-template buffer-file-name)
                                   table)))))
-  ;; Now, offer to save this iff:
-  ;;
-  ;; 1) `yas-snippet-dirs' is a list and its first element does not
-  ;; match this template's file (i.e. this is a library snippet, not
-  ;; a user snippet) OR
-  ;;
-  ;; 2) yas--editing-template comes from a file that we cannot write to...
-  ;;
-  (when (or (not (yas--template-file yas--editing-template))
-            (not (file-writable-p (yas--template-file yas--editing-template)))
-            (and (listp yas-snippet-dirs)
-                 (second yas-snippet-dirs)
-                 (not (string-match (expand-file-name (first yas-snippet-dirs))
-                                    (yas--template-file yas--editing-template)))))
 
-    (when (y-or-n-p (yas--format "Looks like a library or new snippet. Save to new file? "))
-      (let* ((option (first (yas--guess-snippet-directories (yas--template-table yas--editing-template))))
-             (chosen (and option
-                          (yas--make-directory-maybe option))))
-        (when chosen
-          (let ((default-file-name (or (and (yas--template-file yas--editing-template)
-                                            (file-name-nondirectory (yas--template-file yas--editing-template)))
-                                       (yas--template-name yas--editing-template))))
-            (write-file (concat chosen "/"
-                                (read-from-minibuffer (format "File name to create in %s? " chosen)
-                                                      default-file-name)))
-            (setf (yas--template-file yas--editing-template) buffer-file-name))))))
-  (when kill
-    (quit-window kill))
-  (yas--message 3 "Snippet \"%s\" loaded for %s."
-           (yas--template-name yas--editing-template)
-           (yas--table-name (yas--template-table yas--editing-template))))
+  (when (and interactive
+             (or
+              ;; Only offer to save this if it looks like a library or new
+              ;; snippet (loaded from elisp, from a dir in `yas-snippet-dirs'
+              ;; which is not the first, or from an unwritable file)
+              ;;
+              (not (yas--template-file yas--editing-template))
+              (not (file-writable-p (yas--template-file yas--editing-template)))
+              (and (listp yas-snippet-dirs)
+                   (second yas-snippet-dirs)
+                   (not (string-match (expand-file-name (first yas-snippet-dirs))
+                                      (yas--template-file yas--editing-template)))))
+             (y-or-n-p (yas--format "Looks like a library or new snippet. Save to new file? ")))
+    (let* ((option (first (yas--guess-snippet-directories (yas--template-table yas--editing-template))))
+           (chosen (and option
+                        (yas--make-directory-maybe option))))
+      (when chosen
+        (let ((default-file-name (or (and (yas--template-file yas--editing-template)
+                                          (file-name-nondirectory (yas--template-file yas--editing-template)))
+                                     (yas--template-name yas--editing-template))))
+          (write-file (concat chosen "/"
+                              (read-from-minibuffer (format "File name to create in %s? " chosen)
+                                                    default-file-name)))
+          (setf (yas--template-file yas--editing-template) buffer-file-name)))))
+  (when interactive
+    (quit-window interactive)
+    (yas--message 3 "Snippet \"%s\" loaded for %s."
+                  (yas--template-name yas--editing-template)
+                  (yas--table-name (yas--template-table yas--editing-template)))))
 
 
 (defun yas-tryout-snippet (&optional debug)
@@ -4216,7 +4235,7 @@ When multiple expressions are found, only the last one counts."
   (let ((fallback-description
          (cond ((eq yas-fallback-behavior 'call-other-command)
                 (let* ((yas-minor-mode nil)
-                       (fallback (key-binding (read-kbd-macro yas-trigger-key))))
+                       (fallback (key-binding (read-kbd-macro (yas--trigger-key-for-fallback)))))
                   (or (and fallback
                            (format " call command `%s'." (pp-to-string fallback)))
                       " do nothing.")))
