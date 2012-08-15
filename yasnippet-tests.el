@@ -247,11 +247,13 @@ TODO: correct this bug!"
      '((".emacs.d/snippets"
         ("c-mode"
          (".yas-parents" . "cc-mode")
-         ("printf" . "printf($1);"))
+         ("printf" . "printf($1);"))  ;; notice the overriding for issue #281
         ("emacs-lisp-mode" ("ert-deftest" . "(ert-deftest ${1:name} () $0)"))
         ("lisp-interaction-mode" (".yas-parents" . "emacs-lisp-mode")))
        ("library/snippets"
-        ("c-mode" (".yas-parents" . "c++-mode"))
+        ("c-mode"
+         (".yas-parents" . "c++-mode")
+         ("printf" . "printf"))
         ("cc-mode" ("def" . "# define"))
         ("emacs-lisp-mode" ("dolist" . "(dolist)"))
         ("lisp-interaction-mode" ("sc" . "brother from another mother"))))
