@@ -1811,7 +1811,7 @@ loading."
 (defun yas--load-pending-jits ()
   (when yas-minor-mode
     (dolist (mode (yas--modes-to-activate))
-      (let ((forms (gethash mode yas--scheduled-jit-loads)))
+      (let ((forms (reverse (gethash mode yas--scheduled-jit-loads))))
         ;; must reverse to maintain coherence with `yas-snippet-dirs'
         (dolist (form forms)
           (yas--message  3 "Loading for `%s', just-in-time: %s!" mode form)
