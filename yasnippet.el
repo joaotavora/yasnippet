@@ -2773,7 +2773,7 @@ If found, the content of subexp group SUBEXP (default 0) is
           (match-string-no-properties grp str)
         str))))
 
-(defun yas-choose-avalue (&rest possibilities)
+(defun yas-choose-value (&rest possibilities)
   "Prompt for a string in POSSIBILITIES and return it.
 
 The last element of POSSIBILITIES may be a list of strings."
