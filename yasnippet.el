@@ -1257,13 +1257,13 @@ the template of a snippet in the current snippet-table."
 
 
 (defun yas--table-all-keys (table)
-  (when table
-    (let ((acc))
-      (maphash #'(lambda (key namehash)
-                   (when (yas--filter-templates-by-condition (yas--namehash-templates-alist namehash))
-                     (push key acc)))
-               (yas--table-hash table))
-      acc)))
+  "Get trigger keys of all active snippets in TABLE"
+  (let ((acc))
+    (maphash #'(lambda (key namehash)
+                 (when (yas--filter-templates-by-condition (yas--namehash-templates-alist namehash))
+                   (push key acc)))
+             (yas--table-hash table))
+    acc))
 
 (defun yas--table-mode (table)
   (intern (yas--table-name table)))
@@ -2317,7 +2317,7 @@ Common gateway for `yas-expand-from-trigger-key' and
 ;;; Utils for snippet development:
 
 (defun yas--all-templates (tables)
-  "Return all snippet tables applicable for the current buffer.
+  "Get `yas--template' objects in TABLES, applicable for buffer and point.
 
 Honours `yas-choose-tables-first', `yas-choose-keys-first' and
 `yas-buffer-local-condition'"
@@ -2640,6 +2640,11 @@ whether (and where) to save the snippet, then quit the window."
                (add-hook 'post-command-hook 'yas-debug-snippet-vars nil t))))
           (t
            (yas--message 3 "Cannot test snippet for unknown major mode")))))
+
+(defun yas-active-keys ()
+  "Return all active trigger keys for current buffer and point"
+  (remove-duplicates (mapcan #'yas--table-all-keys (yas--get-snippet-tables))
+                     :test #'string=))
 
 (defun yas--template-fine-group (template)
   (car (last (or (yas--template-group template)
@@ -4507,6 +4512,7 @@ handle the end-of-buffer error fired in it by calling
                              yas-unimplemented
                              yas-define-condition-cache
                              yas-hippie-try-expand
+                             yas-active-keys
 
                              ;; debug definitions
                              ;; yas-debug-snippet-vars
@@ -4522,9 +4528,17 @@ handle the end-of-buffer error fired in it by calling
                              ;; yas-saving-variables
                              ;; yas-call-with-snippet-dirs
                              ;; yas-with-snippet-dirs
-))
+)
+  "Exported yassnippet symbols.
 
-(dolist (sym yas--exported-syms)
+i.e. ones that I will try to keep in future yasnippet versions
+and ones that other elisp libraries can more or less safely rely
+upon.")
+
+(defvar yas--dont-backport '(yas-active-keys)
+  "Exported symbols that don't map back to \"yas/*\" variants")
+
+(dolist (sym (set-difference yas--exported-syms yas--dont-backport))
   (let ((backported (intern (replace-regexp-in-string "^yas-" "yas/" (symbol-name sym)))))
     (when (boundp sym)
       (make-obsolete-variable backported sym "yasnippet 0.8")
