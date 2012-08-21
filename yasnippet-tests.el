@@ -95,6 +95,16 @@
     (should (string= (yas--buffer-contents)
                      "brother from another bla!"))))
 
+(ert-deftest mirrors-adjacent-to-fields-with-nested-mirrors ()
+  (with-temp-buffer)
+  (yas-minor-mode 1)
+  (yas-expand-snippet "<%= f.submit \"${1:Submit}\"${2:$(and (yas-text) \", :disable_with => '\")}${2:$1ing...}${2:$(and (yas-text) \"'\")} %>")
+  (should (string= (yas--buffer-contents)
+                   "<%= f.submit \"Submit\", :disable_with => 'Submiting...' %>"))
+  (ert-simulate-command `(yas-mock-insert "Send"))
+  (should (string= (yas--buffer-contents)
+                   "<%= f.submit \"Send\", :disable_with => 'Sending...' %>")))
+
 ;; (ert-deftest in-snippet-undo ()
 ;;   (with-temp-buffer
 ;;     (yas-minor-mode 1)
