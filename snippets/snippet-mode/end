@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: add a trailing newline when region is multi-line string.
+# key: end
+# contributor: Billy.Zheng/zw963 (zw963@163.com)
+# --
+\`(end)\`

@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: earse a string when region is a one-line string.
+# binding: C-c e
+# contributor: Billy.Zheng/zw963 (zw963@163.com)
+# --
+\`(erase1 "`(replace-regexp-in-string "\"" "\\\\\"" yas-selected-text t nil)`")\`

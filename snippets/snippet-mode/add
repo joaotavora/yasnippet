@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: add a string when field content is empty.
+# binding: M-c a
+# contributor: Billy.Zheng/zw963 (zw963@163.com)
+# --
+\${${1:1}:$(add "$2")}

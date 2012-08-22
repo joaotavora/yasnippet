@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: erase a string when field content is empty.
+# binding: C-c e
+# contributor: Billy.Zheng/zw963 (zw963@163.com)
+# --
+\${${1:1}:$(erase "`(replace-regexp-in-string "\"" "\\\\\\\\\\\\\"" yas-selected-text t nil)`")}

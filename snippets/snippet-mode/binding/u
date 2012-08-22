@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: upcase a field
+# binding: C-c u
+# contributor: Billy.Zheng/zw963 (zw963@163.com)
+# --
+\${${1:1}:$(upcase `(replace-regexp-in-string ".*" "yas-text" yas-selected-text t nil)`)}

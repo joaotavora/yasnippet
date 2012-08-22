@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: insert a field candidate menu skeleton.
+# binding: C-c m
+# contributor: Billy.Zheng/zw963 (zw963@163.com)
+# --
+\${${1:1}:${2:$}$(yas-choose-value '("`yas-selected-text`" "${3:item}"$4))}

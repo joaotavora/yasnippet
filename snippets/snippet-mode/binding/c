@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: capitalize field
+# binding: C-c c
+# contributor: Billy.Zheng/zw963 (zw963@163.com)
+# --
+\${${1:1}:$(yas-capitalize `(replace-regexp-in-string ".*" "yas-text" yas-selected-text t nil)`)}

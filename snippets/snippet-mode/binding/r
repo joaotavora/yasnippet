@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: insert a field query-replace transformation skeleton.
+# binding: C-c r
+# contributor: Billy.Zheng/zw963 (zw963@163.com)
+# --
+\${${1:1}:$(replace-regexp-in-string "${2:[a-zA-Z_]+}" "${3:}" `(replace-regexp-in-string ".*" "yas-text" yas-selected-text t nil)` t nil)}
