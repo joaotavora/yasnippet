@@ -2257,18 +2257,15 @@ expand immediately. Common gateway for
                           end
                           (yas--template-expand-env yas--current-template)))))
 
-(defun yas--trigger-key-for-fallback ()
-  ;; When `yas-trigger-key' is <tab> it correctly overrides
-  ;; org-mode's <tab>, for example and searching for fallbacks
-  ;; correctly returns `org-cycle'. However, most other modes bind
-  ;; "TAB" (which is translated from <tab>), and calling
-  ;; (key-binding "TAB") does not place return that command into
-  ;; our command-2 local. So we cheat.
-  ;;
-  (if (string= yas-trigger-key "<tab>")
-      "TAB"
-    yas-trigger-key))
-
+;; Apropos the trigger key and the fallback binding:
+;;
+;; When `yas-trigger-key' is <tab> it correctly overrides
+;; org-mode's <tab>, for example and searching for fallbacks
+;; correctly returns `org-cycle'. However, most other modes bind
+;; "TAB" (which is translated from <tab>), and calling
+;; (key-binding "TAB") does not place return that command into
+;; our command-2 local. So we cheat.
+;;
 (defun yas--fallback (&optional from-trigger-key-p)
   "Fallback after expansion has failed.
 
@@ -2280,25 +2277,13 @@ Common gateway for `yas-expand-from-trigger-key' and
         ((eq yas-fallback-behavior 'call-other-command)
          (let* ((yas-minor-mode nil)
                 (yas--direct-keymaps nil)
-                (yas-trigger-key (yas--trigger-key-for-fallback))
-                (keys-1 (this-command-keys-vector))
-                (keys-2 (and yas-trigger-key
-                             from-trigger-key-p
-                             (stringp yas-trigger-key)
-                             (read-kbd-macro yas-trigger-key)))
-                (command-1 (and keys-1 (key-binding keys-1)))
-                (command-2 (and keys-2 (key-binding keys-2)))
-                ;; An (ugly) safety: prevents infinite recursion of
-                ;; yas-expand* calls.
-                (command (or (and (symbolp command-1)
-                                  (not (string-match "yas-expand" (symbol-name command-1)))
-                                  command-1)
-                             (and (symbolp command-2)
-                                  command-2))))
-           (when (and (commandp command)
-                      (not (string-match "yas-expand" (symbol-name command))))
-             (setq this-command command)
-             (call-interactively command))))
+                (keys (this-single-command-keys))
+                (beyond-yasnippet (or (key-binding keys t)
+                                      (key-binding (yas--fallback-translate-input keys) t))))
+           (yas--message 4 "Falling back to %s"  beyond-yasnippet)
+           (when (commandp beyond-yasnippet)
+             (setq this-original-command beyond-yasnippet)
+             (call-interactively beyond-yasnippet))))
         ((and (listp yas-fallback-behavior)
               (cdr yas-fallback-behavior)
               (eq 'apply (car yas-fallback-behavior)))
@@ -2312,6 +2297,29 @@ Common gateway for `yas-expand-from-trigger-key' and
          ;; also return nil if all the other fallbacks have failed
          nil)))
 
+(defun yas--fallback-translate-input (keys)
+  "Emulate `read-key-sequence', at least what I think it does.
+
+Keys should be an untranslated key vector. Returns a translated
+vector of keys. XXX not working yet"
+  (let ((retval [])
+        (i 0))
+    (while (< i (length keys))
+      (let ((j i)
+            (translated local-function-key-map))
+        (while (and (< j (length keys))
+                    translated
+                    (keymapp translated))
+          (setq translated (aget (remove 'keymap translated) (aref keys j))
+                j (1+ j)))
+        (setq retval (vconcat retval (cond ((symbolp translated)
+                                            `[,translated])
+                                           ((vectorp translated)
+                                            translated)
+                                           (t
+                                            (substring keys i j)))))
+        (setq i j)))
+    retval))
 
 
 ;;; Utils for snippet development:
