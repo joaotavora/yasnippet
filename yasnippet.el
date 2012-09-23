@@ -2598,11 +2598,10 @@ whether (and where) to save the snippet, then quit the window."
                                                     default-file-name)))
           (setf (yas--template-file yas--editing-template) buffer-file-name)))))
   (when interactive
-    (quit-window interactive)
     (yas--message 3 "Snippet \"%s\" loaded for %s."
                   (yas--template-name yas--editing-template)
-                  (yas--table-name (yas--template-table yas--editing-template)))))
-
+                  (yas--table-name (yas--template-table yas--editing-template)))
+    (quit-window interactive)))
 
 (defun yas-tryout-snippet (&optional debug)
   "Test current buffers's snippet template in other buffer."
