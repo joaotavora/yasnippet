@@ -2468,8 +2468,11 @@ where snippets of table might exist."
 Expands a snippet-writing snippet, unless the optional prefix arg
 NO-TEMPLATE is non-nil."
   (interactive "P")
-  (let ((guessed-directories (yas--guess-snippet-directories)))
-
+  (let ((guessed-directories (yas--guess-snippet-directories))
+       (yas-selected-text (or yas-selected-text
+                                (and (region-active-p)
+                                     (buffer-substring-no-properties (region-beginning)
+                                                                     (region-end))))))
     (switch-to-buffer "*new snippet*")
     (erase-buffer)
     (kill-all-local-variables)
@@ -2486,7 +2489,7 @@ NO-TEMPLATE is non-nil."
 # expand-env: ((${6:some-var} ${7:some-value}))}${8:
 # type: command}
 # --
-$0"))))
+$0`yas-selected-text`"))))
 
 (defun yas--compute-major-mode-and-parents (file)
   "Given FILE, find the nearest snippet directory for a given
