@@ -2262,6 +2262,7 @@ expand immediately. Common gateway for
   ;; org-mode's <tab>, for example and searching for fallbacks
   ;; correctly returns `org-cycle'. However, most other modes bind
   ;; "TAB" (which is translated from <tab>), and calling
+  ;; (key-binding "TAB") does not place return that command into
   ;; our command-2 local. So we cheat.
   ;;
   (if (save-match-data
