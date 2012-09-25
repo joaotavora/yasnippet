@@ -2468,9 +2468,11 @@ where snippets of table might exist."
 Expands a snippet-writing snippet, unless the optional prefix arg
 NO-TEMPLATE is non-nil."
   (interactive "P")
-  (let ((guessed-directories (yas--guess-snippet-directories)))
-    (setq select-text-for-new-snippet (buffer-substring-no-properties (region-beginning)
-                                                        (region-end)))
+  (let ((guessed-directories (yas--guess-snippet-directories))
+       (yas-selected-text (or yas-selected-text
+                                (and (region-active-p)
+                                     (buffer-substring-no-properties (region-beginning)
+                                                                     (region-end))))))
     (switch-to-buffer "*new snippet*")
     (erase-buffer)
     (kill-all-local-variables)
@@ -2479,7 +2481,7 @@ NO-TEMPLATE is non-nil."
     (set (make-local-variable 'yas--guessed-modes) (mapcar #'(lambda (d)
                                                               (yas--table-mode (car d)))
                                                           guessed-directories))
-    (unless no-template (yas-expand-snippet (concat "\
+    (unless no-template (yas-expand-snippet "\
 # -*- mode: snippet -*-
 # name: $1
 # key: ${2:${1:$(replace-regexp-in-string \"\\\\\\\\(\\\\\\\\w+\\\\\\\\).*\" \"\\\\\\\\1\" yas-text)}}${3:
@@ -2487,7 +2489,7 @@ NO-TEMPLATE is non-nil."
 # expand-env: ((${6:some-var} ${7:some-value}))}${8:
 # type: command}
 # --
-$0" select-text-for-new-snippet)))))
+$0`yas-selected-text`"))))
 
 (defun yas--compute-major-mode-and-parents (file)
   "Given FILE, find the nearest snippet directory for a given
