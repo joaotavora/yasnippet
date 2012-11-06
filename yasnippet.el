@@ -2288,9 +2288,11 @@ expand immediately.  Common gateway for
   ;; (key-binding "TAB") does not place return that command into
   ;; our command-2 local. So we cheat.
   ;;
-  (if (string= yas-trigger-key "<tab>")
+  (if (save-match-data
+        (string-match "\\(?:<\\|\\[\\)tab\\(?:\\]\\|>\\)" (format "%s" yas-trigger-key)))
       "TAB"
     yas-trigger-key))
+
 
 (defun yas--fallback (&optional from-trigger-key-p)
   "Fallback after expansion has failed.
