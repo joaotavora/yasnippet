@@ -63,7 +63,8 @@
 ;;       M-x yas-expand
 ;;
 ;;           Try to expand snippets before point.  In `yas-minor-mode',
-;;           this is bound to `yas-trigger-key' which you can customize.
+;;           this is normally bound to TAB, but you can customize it in
+;;           `yas-minor-mode-map'.
 ;;
 ;;       M-x yas-load-directory
 ;;
@@ -236,81 +237,20 @@ Naturally this is only valid when `yas-indent-line' is `auto'"
   :type 'boolean
   :group 'yasnippet)
 
-(defcustom yas-trigger-key "<tab>"
-  "The key bound to `yas-expand' when `yas-minor-mode' is active.
-
-Value is a string that is converted to the internal Emacs key
-representation using `read-kbd-macro'."
-  :type 'string
-  :group 'yasnippet
-  :set #'(lambda (symbol key)
-           (let ((old (and (boundp symbol)
-                           (symbol-value symbol))))
-             (set-default symbol key)
-             ;; On very first loading of this defcustom,
-             ;; `yas-trigger-key' is *not* loaded.
-             (if (fboundp 'yas--trigger-key-reload)
-                 (yas--trigger-key-reload old)))))
-
-(defcustom yas-next-field-key '("TAB" "<tab>")
-  "The key to navigate to next field when a snippet is active.
-
-Value is a string that is converted to the internal Emacs key
-representation using `read-kbd-macro'.
-
-Can also be a list of strings."
-  :type '(choice (string :tag "String")
-                 (repeat :args (string) :tag "List of strings"))
-  :group 'yasnippet
-  :set #'(lambda (symbol val)
-           (set-default symbol val)
-           (if (fboundp 'yas--init-yas-in-snippet-keymap)
-               (yas--init-yas-in-snippet-keymap))))
-
-
-(defcustom yas-prev-field-key '("<backtab>" "<S-tab>")
-  "The key to navigate to previous field when a snippet is active.
-
-Value is a string that is converted to the internal Emacs key
-representation using `read-kbd-macro'.
-
-Can also be a list of strings."
-  :type '(choice (string :tag "String")
-                 (repeat :args (string) :tag "List of strings"))
-  :group 'yasnippet
-  :set #'(lambda (symbol val)
-           (set-default symbol val)
-           (if (fboundp 'yas--init-yas-in-snippet-keymap)
-               (yas--init-yas-in-snippet-keymap))))
-
-(defcustom yas-skip-and-clear-key '("C-d" "<delete>" "<deletechar>")
-  "The key to clear the currently active field.
-
-Value is a string that is converted to the internal Emacs key
-representation using `read-kbd-macro'.
-
-Can also be a list of strings."
-  :type '(choice (string :tag "String")
-                 (repeat :args (string) :tag "List of strings"))
-  :group 'yasnippet
-  :set #'(lambda (symbol val)
-           (set-default symbol val)
-           (if (fboundp 'yas--init-yas-in-snippet-keymap)
-               (yas--init-yas-in-snippet-keymap))))
-
 (defcustom yas-triggers-in-field nil
-  "If non-nil, `yas-next-field-key' can trigger stacked expansions.
+  "If non-nil, allow stacked expansions (snippets inside snippets).
 
-Otherwise, `yas-next-field-key' just tries to move on to the next
-field"
+Otherwise `yas-next-field-or-maybe-expand' just moves on to the
+next field"
   :type 'boolean
   :group 'yasnippet)
 
 (defcustom yas-fallback-behavior 'call-other-command
-  "How to act when `yas-trigger-key' does *not* expand a snippet.
+  "How to act when `yas-expand' does *not* expand a snippet.
 
 - `call-other-command' means try to temporarily disable YASnippet
-    and call the next command bound to `yas-trigger-key'.
+    and call the next command bound to whatever key was used to
+    invoke `yas-expand'.
 
 - nil or the symbol `return-nil' mean do nothing. (and
   `yas-expand' returns nil)
@@ -417,28 +357,15 @@ the trigger key itself."
   :group 'yasnippet)
 
 
-;;; User can also customize the next defvars
-
-(defun yas--define-some-keys (keys keymap definition)
-  "Bind KEYS to DEFINITION in KEYMAP, read with `read-kbd-macro'."
-  (let ((keys (or (and (listp keys) keys)
-                  (list keys))))
-    (dolist (key keys)
-      (define-key keymap (read-kbd-macro key) definition))))
-
-(defun yas--init-yas-in-snippet-keymap ()
-  (setq yas-keymap
-        (let ((map (make-sparse-keymap)))
-          (mapc #'(lambda (binding)
-                    (yas--define-some-keys (car binding) map (cdr binding)))
-                `((,yas-next-field-key     . yas-next-field-or-maybe-expand)
-                  (,yas-prev-field-key     . yas-prev-field)
-                  ("C-g"                   . yas-abort-snippet)
-                  (,yas-skip-and-clear-key . yas-skip-and-clear-or-delete-char)))
-          map)))
-
-(defvar yas-keymap (yas--init-yas-in-snippet-keymap)
-  "The keymap active while a snippet expansion is in progress.")
+(defvar yas-keymap  (let ((map (make-sparse-keymap)))
+                      (define-key map [(tab)]       'yas-next-field-or-maybe-expand)
+                      (define-key map (kbd "TAB")   'yas-next-field-or-maybe-expand)
+                      (define-key map [(shift tab)] 'yas-prev-field)
+                      (define-key map [backtab]     'yas-prev-field)
+                      (define-key map (kbd "C-g")   'yas-abort-snippet)
+                      (define-key map (kbd "C-d")   'yas-skip-and-clear-or-delete-char)
+                      map)
+  "The active keymap while a snippet expansion is in progress.")
 
 (defvar yas-key-syntaxes (list "w" "w_" "w_." "w_.()" "^ ")
   "List of character syntaxes used to find a trigger key before point.
@@ -694,6 +621,8 @@ snippet itself contains a condition that returns the symbol
 
     ;; Now for the stuff that has direct keybindings
     ;;
+    (define-key map [(tab)]     'yas-expand)
+    (define-key map (kbd "TAB") 'yas-expand)
     (define-key map "\C-c&\C-s" 'yas-insert-snippet)
     (define-key map "\C-c&\C-n" 'yas-new-snippet)
     (define-key map "\C-c&\C-v" 'yas-visit-snippet-file)
@@ -701,20 +630,6 @@ snippet itself contains a condition that returns the symbol
 
 (defvar yas-minor-mode-map (yas--init-minor-keymap)
   "The keymap used when `yas-minor-mode' is active.")
-
-(defun yas--trigger-key-reload (&optional unbind-key)
-  "Rebind `yas-expand' to the new value of `yas-trigger-key'.
-
-With optional UNBIND-KEY, try to unbind that key from
-`yas-minor-mode-map'."
-  (when (and unbind-key
-             (stringp unbind-key)
-             (not (string= unbind-key "")))
-    (define-key yas-minor-mode-map (read-kbd-macro unbind-key) nil))
-  (when  (and yas-trigger-key
-              (stringp yas-trigger-key)
-              (not (string= yas-trigger-key "")))
-    (define-key yas-minor-mode-map (read-kbd-macro yas-trigger-key) 'yas-expand)))
 
 (defvar yas--tables (make-hash-table)
   "A hash table of mode symbols to `yas--table' objects.")
@@ -774,14 +689,13 @@ and friends."
 (define-minor-mode yas-minor-mode
   "Toggle YASnippet mode.
 
-When YASnippet mode is enabled, the `yas-trigger-key' key expands
-snippets of code depending on the major mode.
+When YASnippet mode is enabled, `yas-expand', normally bound to
+the TAB key, expands snippets of code depending on the major
+mode.
 
 With no argument, this command toggles the mode.
 positive prefix argument turns on the mode.
 Negative prefix argument turns off the mode.
-
-You can customize the key through `yas-trigger-key'.
 
 Key bindings:
 \\{yas-minor-mode-map}"
@@ -790,9 +704,6 @@ Key bindings:
   " yas"
   :group 'yasnippet
   (cond (yas-minor-mode
-         ;; Reload the trigger key
-         ;;
-         (yas--trigger-key-reload)
          ;; Install the direct keymaps in `emulation-mode-map-alists'
          ;; (we use `add-hook' even though it's not technically a hook,
          ;; but it works). Then define variables named after modes to
@@ -1800,9 +1711,6 @@ loading."
       ;; Reload the direct keybindings
       ;;
       (yas-direct-keymaps-reload)
-      ;; Reload the trigger-key (shoudn't be needed, but see issue #237)
-      ;;
-      (yas--trigger-key-reload)
 
       (yas--message 3 "Reloaded everything%s...%s."
                    (if interactive "" " (snippets will load just-in-time)")
@@ -2259,12 +2167,10 @@ expand immediately. Common gateway for
 
 ;; Apropos the trigger key and the fallback binding:
 ;;
-;; When `yas-trigger-key' is <tab> it correctly overrides
-;; org-mode's <tab>, for example and searching for fallbacks
-;; correctly returns `org-cycle'. However, most other modes bind
-;; "TAB" (which is translated from <tab>), and calling
-;; (key-binding "TAB") does not place return that command into
-;; our command-2 local. So we cheat.
+;; When `yas-minor-mode-map' binds <tab>, that correctly overrides
+;; org-mode's <tab>, for example and searching for fallbacks correctly
+;; returns `org-cycle'. However, most other modes bind "TAB". TODO,
+;; improve this explanation.
 ;;
 (defun yas--fallback (&optional from-trigger-key-p)
   "Fallback after expansion has failed.
@@ -2275,15 +2181,11 @@ Common gateway for `yas-expand-from-trigger-key' and
          ;; return nil
          nil)
         ((eq yas-fallback-behavior 'call-other-command)
-         (let* ((yas-minor-mode nil)
-                (yas--direct-keymaps nil)
-                (keys (this-single-command-keys))
-                (beyond-yasnippet (or (key-binding keys t)
-                                      (key-binding (yas--fallback-translate-input keys) t))))
+         (let* ((beyond-yasnippet (yas--keybinding-beyond-yasnippet)))
            (yas--message 4 "Falling back to %s"  beyond-yasnippet)
-           (when (commandp beyond-yasnippet)
-             (setq this-original-command beyond-yasnippet)
-             (call-interactively beyond-yasnippet))))
+           (assert (or (null beyond-yasnippet) (commandp beyond-yasnippet)))
+           (setq this-original-command beyond-yasnippet)
+           (call-interactively beyond-yasnippet)))
         ((and (listp yas-fallback-behavior)
               (cdr yas-fallback-behavior)
               (eq 'apply (car yas-fallback-behavior)))
@@ -2297,11 +2199,19 @@ Common gateway for `yas-expand-from-trigger-key' and
          ;; also return nil if all the other fallbacks have failed
          nil)))
 
+(defun yas--keybinding-beyond-yasnippet ()
+  "Returns the "
+  (let* ((yas-minor-mode nil)
+         (yas--direct-keymaps nil)
+         (keys (this-single-command-keys)))
+    (or (key-binding keys t)
+        (key-binding (yas--fallback-translate-input keys) t))))
+
 (defun yas--fallback-translate-input (keys)
   "Emulate `read-key-sequence', at least what I think it does.
 
 Keys should be an untranslated key vector. Returns a translated
-vector of keys. XXX not working yet"
+vector of keys. FIXME not thoroughly tested"
   (let ((retval [])
         (i 0))
     (while (< i (length keys))
@@ -4259,15 +4169,14 @@ When multiple expressions are found, only the last one counts."
   "A doc synthethizer for `yas--expand-from-trigger-key-doc'."
   (let ((fallback-description
          (cond ((eq yas-fallback-behavior 'call-other-command)
-                (let* ((yas-minor-mode nil)
-                       (fallback (key-binding (read-kbd-macro (yas--trigger-key-for-fallback)))))
+                (let* ((fallback (yas--keybinding-beyond-yasnippet)))
                   (or (and fallback
                            (format " call command `%s'." (pp-to-string fallback)))
-                      " do nothing.")))
+                      " do nothing (`yas-expand' doesn't shadow\nanything)")))
                ((eq yas-fallback-behavior 'return-nil)
                 ", do nothing.")
                (t
-                ", defer to `yas--fallback-behaviour' :-)"))))
+                ", defer to `yas-fallback-behaviour' (which see)"))))
     (concat "Expand a snippet before point. If no snippet
 expansion is possible,"
             fallback-description
@@ -4446,10 +4355,6 @@ handle the end-of-buffer error fired in it by calling
                              yas-indent-line
                              yas-also-auto-indent-first-line
                              yas-snippet-revival
-                             yas-trigger-key
-                             yas-next-field-key
-                             yas-prev-field-key
-                             yas-skip-and-clear-key
                              yas-triggers-in-field
                              yas-fallback-behavior
                              yas-choose-keys-first
