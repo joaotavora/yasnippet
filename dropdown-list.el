@@ -250,4 +250,5 @@ Use multiple times to bind different COMMANDs to the same KEY."
 ;;; dropdown-list.el ends here
 ;; Local Variables:
 ;; coding: utf-8
+;; byte-compile-warnings: (not cl-functions)
 ;; End:

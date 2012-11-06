@@ -136,6 +136,15 @@
 (require 'easymenu)
 (require 'help-mode)
 
+(eval-when-compile
+  (defvar yas--editing-template)
+  (defvar yas--guessed-modes)
+  (defvar yas--indent-original-column)
+  (defvar yas--scheduled-jit-loads)
+  (defvar yas-keymap)
+  (defvar yas-selected-text)
+  (defvar yas-verbosity))
+
 
 ;;; User customizable variables
 
@@ -1862,7 +1871,7 @@ This works by stubbing a few functions, then calling
             (when (file-exists-p elfile)
               (insert ";;; .yas-setup.el support file if any:\n;;;\n")
               (insert-file-contents elfile)
-              (end-of-buffer)
+              (goto-char (point-max))
               )))
          (yas-define-snippets
           (mode snippets)
@@ -4584,4 +4593,5 @@ upon.")
 ;;; yasnippet.el ends here
 ;; Local Variables:
 ;; coding: utf-8
+;; byte-compile-warnings: (not cl-functions)
 ;; End:
