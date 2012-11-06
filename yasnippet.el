@@ -738,8 +738,8 @@ Key bindings:
          (remove-hook 'post-command-hook 'yas--post-command-handler t)
          (remove-hook 'emulation-mode-map-alists 'yas--direct-keymaps))))
 
-(defvar yas--dont-activate '(minibufferp)
-  "If non-nil don't let `yas-minor-mode-on' active yas for this buffer.
+(defvar yas-dont-activate '(minibufferp)
+  "If non-nil don't let `yas-minor-mode-on' activate for this buffer.
 
 If a function, then its result is used.
 
@@ -749,21 +749,19 @@ activate yas for this buffer.
 `yas-minor-mode-on' is usually called by `yas-global-mode' so
 this effectively lets you define exceptions to the \"global\"
 behaviour. Can also be a function of zero arguments.")
-(make-variable-buffer-local 'yas--dont-activate)
+(make-variable-buffer-local 'yas-dont-activate)
 
 (defun yas-minor-mode-on ()
   "Turn on YASnippet minor mode.
 
-Do this unless `yas--dont-activate' is truish."
+Honour `yas-dont-activate', which see."
   (interactive)
-  (unless (cond ((functionp yas--dont-activate)
-                 (funcall yas--dont-activate))
-                ((consp yas--dont-activate)
-                 (some #'funcall yas--dont-activate))
-                (yas--dont-activate))
-    ;; Load all snippets definitions unless we still don't have a
-    ;; root-directory or some snippets have already been loaded.
-    ;;
+  ;; Check `yas-dont-activate'
+  (unless (cond ((functionp yas-dont-activate)
+                 (funcall yas-dont-activate))
+                ((consp yas-dont-activate)
+                 (some #'funcall yas-dont-activate))
+                (yas-dont-activate))
     (yas-minor-mode 1)))
 
 ;;;###autoload
@@ -4403,6 +4401,7 @@ handle the end-of-buffer error fired in it by calling
                              yas-after-exit-snippet-hook
                              yas-before-expand-snippet-hook
                              yas-buffer-local-condition
+                             yas-dont-activate
 
                              ;; prompting functions
                              ;;
