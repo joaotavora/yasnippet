@@ -136,6 +136,7 @@
 (require 'cl)
 (require 'easymenu)
 (require 'help-mode)
+(require 'assoc)
 
 (eval-when-compile
   (defvar yas--editing-template)
