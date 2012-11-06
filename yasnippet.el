@@ -1629,7 +1629,13 @@ Optional USE-JIT use jit-loading of snippets."
       (let ((form `(yas--load-directory-1 ,dir
                                          ',mode-sym
                                          ',parents)))
-        (if use-jit
+        (if (and use-jit
+                 (not (some #'(lambda (buffer)
+                                (with-current-buffer buffer
+                                  (when (eq major-mode mode-sym)
+                                    (yas--message 3 "Discovered there was already %s in %s" buffer mode-sym)
+                                    t)))
+                            (buffer-list))))
             (yas--schedule-jit mode-sym form)
             (eval form)))))
   (when (interactive-p)
@@ -1737,14 +1743,13 @@ loading."
                    (if errors " (some errors, check *Messages*)" "")))))
 
 (defun yas--load-pending-jits ()
-  (when yas-minor-mode
-    (dolist (mode (yas--modes-to-activate))
-      (let ((forms (reverse (gethash mode yas--scheduled-jit-loads))))
-        ;; must reverse to maintain coherence with `yas-snippet-dirs'
-        (dolist (form forms)
-          (yas--message  3 "Loading for `%s', just-in-time: %s!" mode form)
-          (eval form))
-        (remhash mode yas--scheduled-jit-loads)))))
+  (dolist (mode (yas--modes-to-activate))
+    (let ((forms (reverse (gethash mode yas--scheduled-jit-loads))))
+      ;; must reverse to maintain coherence with `yas-snippet-dirs'
+      (dolist (form forms)
+        (yas--message  3 "Loading for `%s', just-in-time: %s!" mode form)
+        (eval form))
+      (remhash mode yas--scheduled-jit-loads))))
 
 ;; (when (<= emacs-major-version 22)
 ;;   (add-hook 'after-change-major-mode-hook 'yas--load-pending-jits))

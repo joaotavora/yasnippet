@@ -257,23 +257,34 @@ TODO: correct this bug!"
 
 ;;; Loading
 ;;;
+(defmacro yas-with-overriden-buffer-list (&rest body)
+  (let ((saved-sym (gensym)))
+    `(let ((,saved-sym (symbol-function 'buffer-list)))
+       (flet ((buffer-list ()
+                           (remove-if #'(lambda (buf)
+                                          (with-current-buffer buf
+                                            (eq major-mode 'lisp-interaction-mode)))
+                                      (funcall ,saved-sym))))
+         ,@body))))
+
 (defmacro yas-with-some-interesting-snippet-dirs (&rest body)
   `(yas-saving-variables
-    (yas-with-snippet-dirs
-     '((".emacs.d/snippets"
-        ("c-mode"
-         (".yas-parents" . "cc-mode")
-         ("printf" . "printf($1);"))  ;; notice the overriding for issue #281
-        ("emacs-lisp-mode" ("ert-deftest" . "(ert-deftest ${1:name} () $0)"))
-        ("lisp-interaction-mode" (".yas-parents" . "emacs-lisp-mode")))
-       ("library/snippets"
-        ("c-mode"
-         (".yas-parents" . "c++-mode")
-         ("printf" . "printf"))
-        ("cc-mode" ("def" . "# define"))
-        ("emacs-lisp-mode" ("dolist" . "(dolist)"))
-        ("lisp-interaction-mode" ("sc" . "brother from another mother"))))
-     ,@body)))
+    (yas-with-overriden-buffer-list
+     (yas-with-snippet-dirs
+      '((".emacs.d/snippets"
+         ("c-mode"
+          (".yas-parents" . "cc-mode")
+          ("printf" . "printf($1);"))  ;; notice the overriding for issue #281
+         ("emacs-lisp-mode" ("ert-deftest" . "(ert-deftest ${1:name} () $0)"))
+         ("lisp-interaction-mode" (".yas-parents" . "emacs-lisp-mode")))
+        ("library/snippets"
+         ("c-mode"
+          (".yas-parents" . "c++-mode")
+          ("printf" . "printf"))
+         ("cc-mode" ("def" . "# define"))
+         ("emacs-lisp-mode" ("dolist" . "(dolist)"))
+         ("lisp-interaction-mode" ("sc" . "brother from another mother"))))
+      ,@body))))
 
 (ert-deftest basic-jit-loading ()
   "Test basic loading and expansion of snippets"
