@@ -136,6 +136,8 @@
 (require 'easymenu)
 (require 'help-mode)
 
+;; Future-proof against obsoleting flet, per discussion at
+;; http://github.com/capitaomorte/yasnippet/issues/324
 (eval-and-compile
   (unless (fboundp 'cl-flet)
     (defalias 'cl-flet 'flet)
