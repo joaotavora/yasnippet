@@ -147,6 +147,14 @@
   (defvar yas-selected-text)
   (defvar yas-verbosity))
 
+;; Future-proof against obsoleting flet, see github #324
+;;
+(eval-and-compile
+  (unless (fboundp 'cl-flet)
+    (defalias 'cl-flet 'flet)
+    (put 'cl-flet 'lisp-indent-function 1)
+    (put 'cl-flet 'edebug-form-spec '((&rest (defun*)) cl-declarations body))))
+
 
 ;;; User customizable variables
 
@@ -1776,7 +1784,7 @@ foo\"bar\\! -> \"foo\\\"bar\\\\!\""
 This works by stubbing a few functions, then calling
 `yas-load-directory'."
   (interactive "DTop level snippet directory?")
-  (flet ((yas--load-yas-setup-file
+  (cl-flet ((yas--load-yas-setup-file
           (file)
           (let ((elfile (concat file ".el")))
             (when (file-exists-p elfile)
@@ -3638,19 +3646,19 @@ Returns the newly created snippet."
 
 This is according to their relative positions in the buffer, and
 has to be called before the $-constructs are deleted."
-  (flet ((yas--fom-set-next-fom (fom nextfom)
-                               (cond ((yas--field-p fom)
-                                      (setf (yas--field-next fom) nextfom))
-                                     ((yas--mirror-p fom)
-                                      (setf (yas--mirror-next fom) nextfom))
-                                     (t
-                                      (setf (yas--exit-next fom) nextfom))))
-         (yas--compare-fom-begs (fom1 fom2)
-                               (if (= (yas--fom-start fom2) (yas--fom-start fom1))
-                                   (yas--mirror-p fom2)
-                                 (>= (yas--fom-start fom2) (yas--fom-start fom1))))
-         (yas--link-foms (fom1 fom2)
-                        (yas--fom-set-next-fom fom1 fom2)))
+  (cl-flet ((yas--fom-set-next-fom (fom nextfom)
+                                  (cond ((yas--field-p fom)
+                                         (setf (yas--field-next fom) nextfom))
+                                        ((yas--mirror-p fom)
+                                         (setf (yas--mirror-next fom) nextfom))
+                                        (t
+                                         (setf (yas--exit-next fom) nextfom))))
+            (yas--compare-fom-begs (fom1 fom2)
+                                  (if (= (yas--fom-start fom2) (yas--fom-start fom1))
+                                      (yas--mirror-p fom2)
+                                    (>= (yas--fom-start fom2) (yas--fom-start fom1))))
+            (yas--link-foms (fom1 fom2)
+                           (yas--fom-set-next-fom fom1 fom2)))
     ;; make some yas--field, yas--mirror and yas--exit soup
     (let ((soup))
       (when (yas--snippet-exit snippet)
