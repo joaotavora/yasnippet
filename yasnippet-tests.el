@@ -455,6 +455,15 @@ TODO: be meaner"
 
 ;;; Helpers
 ;;;
+(defun yas/ert ()
+  (interactive)
+  (with-temp-buffer
+    (flet ((message (&rest args)
+                    (declare (ignore args))
+                    nil))
+      (ert t (buffer-name (current-buffer)))
+      (princ (buffer-string)))))
+
 
 (defun yas-should-expand (keys-and-expansions)
   (dolist (key-and-expansion keys-and-expansions)

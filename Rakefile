@@ -9,6 +9,11 @@ end
 find_version
 FileUtils.mkdir_p('pkg')
 
+desc "run tests in batch mode"
+task :tests do
+  $EMACS=ENV["EMACS"] || "emacs"
+  sh "#{$EMACS} -Q -L . -l yasnippet-tests.el -nw --batch -e yas/ert"
+end
 
 desc "convert some textmate bundles to yasnippets"
 task :convert_bundles do
