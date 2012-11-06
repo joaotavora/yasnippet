@@ -198,6 +198,12 @@
       (should (string= (yas--buffer-contents) "if condition\naaa\nelse\nbbb\nend")))))
 
 (ert-deftest another-example-for-issue-271 ()
+  ;; expect this to fail in batch mode since `region-active-p' doesn't
+  ;; used by `yas-expand-snippet' doesn't make sense in that context.
+  ;;
+  :expected-result (if noninteractive
+                       :failed
+                     :passed)
   (with-temp-buffer
     (yas-minor-mode 1)
     (let ((snippet "\\${${1:1}:`yas/selected-text`}"))
