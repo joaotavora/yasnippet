@@ -1618,7 +1618,7 @@ Optional PROMPT sets the prompt to use."
 ;; correct tables.
 ;;
 
-(defun yas-define-snippets-1 (snippet snippet-table)
+(defun yas--define-snippets-1 (snippet snippet-table)
   "Helper for `yas-define-snippets'."
   ;; X) Calculate some more defaults on the values returned by
   ;; `yas--parse-template'.
@@ -1688,7 +1688,7 @@ the current buffers contents."
   (let ((snippet-table (yas--table-get-create mode))
         (template nil))
     (dolist (snippet snippets)
-      (setq template (yas-define-snippets-1 snippet
+      (setq template (yas--define-snippets-1 snippet
                                             snippet-table)))
     template))
 
@@ -2530,7 +2530,7 @@ whether (and where) to save the snippet, then quit the window."
    ;;  template which is already loaded and neatly positioned,...
    ;;
    (yas--editing-template
-    (yas-define-snippets-1 (yas--parse-template (yas--template-file yas--editing-template))
+    (yas--define-snippets-1 (yas--parse-template (yas--template-file yas--editing-template))
                            (yas--template-table yas--editing-template)))
    ;; Try to use `yas--guessed-modes'. If we don't have that use the
    ;; value from `yas--compute-major-mode-and-parents'
@@ -2540,7 +2540,7 @@ whether (and where) to save the snippet, then quit the window."
       (set (make-local-variable 'yas--guessed-modes) (or (yas--compute-major-mode-and-parents buffer-file-name))))
     (let* ((table (yas--table-get-create table)))
       (set (make-local-variable 'yas--editing-template)
-           (yas-define-snippets-1 (yas--parse-template buffer-file-name)
+           (yas--define-snippets-1 (yas--parse-template buffer-file-name)
                                   table)))))
 
   (when (and interactive
