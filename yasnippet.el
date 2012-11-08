@@ -1611,6 +1611,90 @@ Optional PROMPT sets the prompt to use."
   (first choices))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Defining snippets
+;;
+(defun yas--define-parents (mode parents)
+  "Add PARENTS to the list of MODE's parents."
+  (puthash mode (remove-duplicates
+                 (append parents
+                         (gethash mode yas--parents)))
+           yas--parents))
+
+(defun yas-define-snippets-1 (snippet snippet-table)
+  "Helper for `yas-define-snippets'."
+  ;; X) Calculate some more defaults on the values returned by
+  ;; `yas--parse-template'.
+  ;;
+  (let* ((file (seventh snippet))
+         (key (car snippet))
+         (name (or (third snippet)
+                   (and file
+                        (file-name-directory file))))
+         (condition (fourth snippet))
+         (group (fifth snippet))
+         (keybinding (yas--read-keybinding (eighth snippet)))
+         (uuid (or (ninth snippet)
+                  name))
+         (template (or (gethash uuid (yas--table-uuidhash snippet-table))
+                       (yas--make-blank-template))))
+    ;; X) populate the template object
+    ;;
+    (yas--populate-template template
+                           :table       snippet-table
+                           :key         key
+                           :content     (second snippet)
+                           :name        (or name key)
+                           :group       group
+                           :condition   condition
+                           :expand-env  (sixth snippet)
+                           :file        (seventh snippet)
+                           :keybinding  keybinding
+                           :uuid         uuid)
+    ;; X) Update this template in the appropriate table. This step
+    ;;    also will take care of adding the key indicators in the
+    ;;    templates menu entry, if any
+    ;;
+    (yas--update-template snippet-table template)
+    ;; X) Return the template
+    ;;
+    ;;
+    template))
+
+(defun yas-define-snippets (mode snippets)
+  "Define SNIPPETS for MODE.
+
+SNIPPETS is a list of snippet definitions, each taking the
+following form
+
+ (KEY TEMPLATE NAME CONDITION GROUP EXPAND-ENV FILE KEYBINDING UUID)
+
+Within these, only KEY and TEMPLATE are actually mandatory.
+
+TEMPLATE might be a lisp form or a string, depending on whether
+this is a snippet or a snippet-command.
+
+CONDITION, EXPAND-ENV and KEYBINDING are lisp forms, they have
+been `yas--read-lisp'-ed and will eventually be
+`yas--eval-lisp'-ed.
+
+The remaining elements are strings.
+
+FILE is probably of very little use if you're programatically
+defining snippets.
+
+UUID is the snippets \"unique-id\". Loading a second snippet file
+with the same uuid replaced the previous snippet.
+
+You can use `yas--parse-template' to return such lists based on
+the current buffers contents."
+  (let ((snippet-table (yas--table-get-create mode))
+        (template nil))
+    (dolist (snippet snippets)
+      (setq template (yas-define-snippets-1 snippet
+                                            snippet-table)))
+    template))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Loading snippets from files
 ;;
 (defun yas--load-yas-setup-file (file)
@@ -1865,87 +1949,6 @@ This works by stubbing a few functions, then calling
   (message (concat "yasnippet (version "
                    yas--version
                    ") -- pluskid <pluskid@gmail.com>/joaotavora <joaotavora@gmail.com>")))
-
-(defun yas--define-parents (mode parents)
-  "Add PARENTS to the list of MODE's parents."
-  (puthash mode (remove-duplicates
-                 (append parents
-                         (gethash mode yas--parents)))
-           yas--parents))
-
-(defun yas-define-snippets (mode snippets)
-  "Define SNIPPETS for MODE.
-
-SNIPPETS is a list of snippet definitions, each taking the
-following form
-
- (KEY TEMPLATE NAME CONDITION GROUP EXPAND-ENV FILE KEYBINDING UUID)
-
-Within these, only KEY and TEMPLATE are actually mandatory.
-
-TEMPLATE might be a lisp form or a string, depending on whether
-this is a snippet or a snippet-command.
-
-CONDITION, EXPAND-ENV and KEYBINDING are lisp forms, they have
-been `yas--read-lisp'-ed and will eventually be
-`yas--eval-lisp'-ed.
-
-The remaining elements are strings.
-
-FILE is probably of very little use if you're programatically
-defining snippets.
-
-UUID is the snippets \"unique-id\". Loading a second snippet file
-with the same uuid replaced the previous snippet.
-
-You can use `yas--parse-template' to return such lists based on
-the current buffers contents."
-  (let ((snippet-table (yas--table-get-create mode))
-        (template nil))
-    (dolist (snippet snippets)
-      (setq template (yas-define-snippets-1 snippet
-                                            snippet-table)))
-    template))
-
-(defun yas-define-snippets-1 (snippet snippet-table)
-  "Helper for `yas-define-snippets'."
-  ;; X) Calculate some more defaults on the values returned by
-  ;; `yas--parse-template'.
-  ;;
-  (let* ((file (seventh snippet))
-         (key (car snippet))
-         (name (or (third snippet)
-                   (and file
-                        (file-name-directory file))))
-         (condition (fourth snippet))
-         (group (fifth snippet))
-         (keybinding (yas--read-keybinding (eighth snippet)))
-         (uuid (or (ninth snippet)
-                  name))
-         (template (or (gethash uuid (yas--table-uuidhash snippet-table))
-                       (yas--make-blank-template))))
-    ;; X) populate the template object
-    ;;
-    (yas--populate-template template
-                           :table       snippet-table
-                           :key         key
-                           :content     (second snippet)
-                           :name        (or name key)
-                           :group       group
-                           :condition   condition
-                           :expand-env  (sixth snippet)
-                           :file        (seventh snippet)
-                           :keybinding  keybinding
-                           :uuid         uuid)
-    ;; X) Update this template in the appropriate table. This step
-    ;;    also will take care of adding the key indicators in the
-    ;;    templates menu entry, if any
-    ;;
-    (yas--update-template snippet-table template)
-    ;; X) Return the template
-    ;;
-    ;;
-    template))
 
 
 ;;; Apropos snippet menu:
