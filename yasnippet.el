@@ -375,6 +375,8 @@ the trigger key itself."
   :group 'yasnippet)
 
 
+;;; User-visible variables
+
 (defvar yas-keymap  (let ((map (make-sparse-keymap)))
                       (define-key map [(tab)]       'yas-next-field-or-maybe-expand)
                       (define-key map (kbd "TAB")   'yas-next-field-or-maybe-expand)
@@ -784,9 +786,9 @@ Honour `yas-dont-activate', which see."
 
 (add-hook 'yas-global-mode-hook 'yas--global-mode-reload-with-jit-maybe)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Major mode stuff
-;;
+
+;;; Major mode stuff
+
 (defvar yas--font-lock-keywords
   (append '(("^#.*$" . font-lock-comment-face))
           lisp-font-lock-keywords
@@ -1319,7 +1321,7 @@ in GNU Emacs 24.1 or higher."
       '(called-interactively-p)
     `(called-interactively-p ,kind)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;;; Template-related and snippet loading functions
 
 (defun yas--parse-template (&optional file)
@@ -1450,9 +1452,9 @@ Here's a list of currently recognized directives:
                               (cdr where)
                               (yas--template-expand-env yas--current-template)))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Popping up for keys and templates
-;;
+
+;;; Popping up for keys and templates
+
 (defvar yas--x-pretty-prompt-templates nil
   "If non-nil, attempt to prompt for templates like TextMate.")
 
@@ -1610,9 +1612,9 @@ Optional PROMPT sets the prompt to use."
 (defun yas-no-prompt (prompt choices &optional display-fn)
   (first choices))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Loading snippets from files
-;;
+
+;;; Loading snippets from files
+
 (defun yas--load-yas-setup-file (file)
   (load file 'noerror))
 
@@ -1780,7 +1782,7 @@ foo\"bar\\! -> \"foo\\\"bar\\\\!\""
                                     string
                                     t)
           "\""))
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;;; Snippet compilation function
 
 (defun yas--initialize ()
@@ -1856,9 +1858,8 @@ This works by stubbing a few functions, then calling
            yas--scheduled-jit-loads))
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;;; Some user level functions
-;;;
 
 (defun yas-about ()
   (interactive)
@@ -3414,7 +3415,7 @@ The error should be ignored in `debug-ignored-errors'"
 (add-to-list 'debug-ignored-errors "^Exit the snippet first!$")
 
 
-;; Snippet expansion and "stacked" expansion:
+;;; Snippet expansion and "stacked" expansion:
 ;;
 ;; Stacked expansion is when you try to expand a snippet when already
 ;; inside a snippet expansion.
@@ -4180,7 +4181,7 @@ When multiple expressions are found, only the last one counts."
 
 
 ;;; Post-command hook:
-
+;;
 (defun yas--post-command-handler ()
   "Handles various yasnippet conditions after each command."
   (cond (yas--protection-violation
@@ -4396,6 +4397,7 @@ handle the end-of-buffer error fired in it by calling
                  k 'self-insert-command))))
 
 ;;; Backward compatibility to yasnippet <= 0.7
+
 (defvar yas--exported-syms '(;; `defcustom's
                              ;;
                              yas-snippet-dirs
