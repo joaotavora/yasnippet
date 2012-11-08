@@ -1200,7 +1200,7 @@ the template of a snippet in the current snippet-table."
   (intern (yas--table-name table)))
 
 
-;;; Internal functions:
+;;; Internal functions and macros:
 
 (defun yas--real-mode? (mode)
   "Try to find out if MODE is a real mode.
@@ -1309,6 +1309,15 @@ them all in `yas--menu-table'"
         `(menu-item ,(symbol-name mode) ,menu-keymap
                     :visible (yas--show-menu-p ',mode)))
     menu-keymap))
+
+(defmacro yas--called-interactively-p (&optional kind)
+  "A backward-compatible version of `called-interactively-p'.
+
+Optional KIND is as documented at `called-interactively-p'
+in GNU Emacs 24.1 or higher."
+  (if (eq 0 (cdr (subr-arity (symbol-function 'called-interactively-p))))
+      '(called-interactively-p)
+    `(called-interactively-p ,kind)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Template-related and snippet loading functions
@@ -1646,7 +1655,7 @@ Optional USE-JIT use jit-loading of snippets."
                             (buffer-list))))
             (yas--schedule-jit mode-sym form)
             (eval form)))))
-  (when (interactive-p)
+  (when (yas--called-interactively-p 'interactive)
     (yas--message 3 "Loaded snippets from %s." top-level-dir)))
 
 (defun yas--load-directory-1 (directory mode-sym parents &optional no-compiled-snippets)
