@@ -3662,7 +3662,7 @@ Returns the newly created snippet."
 
 This is according to their relative positions in the buffer, and
 has to be called before the $-constructs are deleted."
-  (cl-flet ((yas--fom-set-next-fom (fom nextfom)
+  (cl-flet* ((yas--fom-set-next-fom (fom nextfom)
                                   (cond ((yas--field-p fom)
                                          (setf (yas--field-next fom) nextfom))
                                         ((yas--mirror-p fom)
