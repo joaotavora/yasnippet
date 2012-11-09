@@ -133,18 +133,22 @@ and support.  If you find a bug, please report it on
 
 ## Important note regarding bug reporting
 If you think have found a bug, please report it clearly.  Yasnippet
-does have (lots of) bugs and your reporting is very valuable. But I
-have little time to analyse bugs and the following helps a lot.
+does have (lots of) bugs and your reports are very valuable. Here's 
+a  [great example](https://github.com/capitaomorte/yasnippet/issues/318) 
+of a bug report. It has everything needed for a sucessfull analysis and 
+speedy resolution:
 
-So, *before* reporting try to reproduce the bug **without** your usual
+*Before* reporting try to reproduce the bug **without** your usual
 `.emacs` (or whatever startup file you use). Do so either by starting
 emacs from the command line with the `-Q` switch, or by temporarily
 moving away your `.emacs` and creating a new smaller one just for
-reproducing the bug.
+reproducing the bug. Paste that file in your bug report. Paste any sequence 
+of relevant shell commands before you launch Emacs.
 
-Then paste that file, and describe steps taken to reproduce, from an
-end-user perspective. Try to be as unambiguous as possible. Also,
-don't forget to state the Emacs version (use `M-x emacs-version`) and
+*Then*, describe steps taken to reproduce from an
+end-user perspective. Try to be as unambiguous as possible. 
+
+Also, don't forget to state the Emacs version (use `M-x emacs-version`) and
 the yasnippet version you are using (if using the latest from github,
 do `git log -1` in the dir).
 
@@ -152,9 +156,6 @@ Any more info is welcome, but don't just paste a backtrace or an error
 message string you got. I'm not saying your analysis might not be
 useful but following the instructions above immediately gives me a
 clear picture of what is happening.
-
-There's an example of a great bug report from
-[issue #189](https://github.com/capitaomorte/yasnippet/issues/189)
 
 There is also a [YASnippet google group][forum]. I will keep the group
 open for reference and for discussion among users, unfortunately I
