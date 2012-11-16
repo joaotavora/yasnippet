@@ -2,6 +2,8 @@
 
 require 'fileutils'
 
+$EMACS=ENV["EMACS"] || "emacs"
+
 def find_version
   File.read("yasnippet.el", :encoding => "UTF-8") =~ /;; Package-version: *([0-9.]+?) *$/
   $version = $1
@@ -11,7 +13,6 @@ FileUtils.mkdir_p('pkg')
 
 desc "run tests in batch mode"
 task :tests do
-  $EMACS=ENV["EMACS"] || "emacs"
   sh "#{$EMACS} -Q -L . -l yasnippet-tests.el -nw --batch -e yas/ert"
 end
 
@@ -87,7 +88,7 @@ end
 desc "Compile yasnippet.el into yasnippet.elc"
 
 rule '.elc' => '.el' do |t|
-  sh "emacs --batch -L . --eval \"(byte-compile-file \\\"#{t.source}\\\")\""
+  sh "#{$EMACS} --batch -L . --eval \"(byte-compile-file \\\"#{t.source}\\\")\""
 end
 task :compile => FileList["yasnippet.el", "dropdown-list.el"].ext('elc')
 
