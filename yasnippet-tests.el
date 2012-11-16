@@ -297,9 +297,10 @@ TODO: correct this bug!"
   (yas-with-some-interesting-snippet-dirs
    (yas-reload-all)
    (yas-recompile-all)
-   (flet ((yas--load-directory-2
-           (&rest dummies)
-           (ert-fail "yas--load-directory-2 shouldn't be called when snippets have been compiled")))
+   (yas--with-temporary-redefinitions ((yas--load-directory-2
+                                        (&rest dummies)
+                                        (declare (ignore dummies))
+                                        (ert-fail "yas--load-directory-2 shouldn't be called when snippets have been compiled")))
      (yas-reload-all)
      (yas--basic-jit-loading-1))))
 
