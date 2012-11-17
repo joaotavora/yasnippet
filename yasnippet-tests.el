@@ -222,7 +222,7 @@
                          \"ok\"
                          \"fail\")`"))
       (yas-expand-snippet snippet))
-      (should (string= (yas--buffer-contents) "ok"))))
+    (should (string= (yas--buffer-contents) "ok"))))
 
 (ert-deftest string-match-with-subregexp-in-mirror-transformations ()
   (with-temp-buffer
@@ -260,11 +260,11 @@ TODO: correct this bug!"
 (defmacro yas-with-overriden-buffer-list (&rest body)
   (let ((saved-sym (gensym)))
     `(let ((,saved-sym (symbol-function 'buffer-list)))
-       (flet ((buffer-list ()
-                           (remove-if #'(lambda (buf)
-                                          (with-current-buffer buf
-                                            (eq major-mode 'lisp-interaction-mode)))
-                                      (funcall ,saved-sym))))
+       (cl-flet ((buffer-list ()
+                              (remove-if #'(lambda (buf)
+                                             (with-current-buffer buf
+                                               (eq major-mode 'lisp-interaction-mode)))
+                                         (funcall ,saved-sym))))
          ,@body))))
 
 (defmacro yas-with-some-interesting-snippet-dirs (&rest body)
@@ -474,9 +474,9 @@ TODO: be meaner"
 (defun yas/ert ()
   (interactive)
   (with-temp-buffer
-    (flet ((message (&rest args)
-                    (declare (ignore args))
-                    nil))
+    (cl-flet ((message (&rest args)        ;
+                       (declare (ignore args))
+                       nil))
       (ert t (buffer-name (current-buffer)))
       (princ (buffer-string)))))
 
