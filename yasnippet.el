@@ -1311,9 +1311,13 @@ them all in `yas--menu-table'"
 
 Optional KIND is as documented at `called-interactively-p'
 in GNU Emacs 24.1 or higher."
-  (if (eq 0 (cdr (subr-arity (symbol-function 'called-interactively-p))))
-      '(called-interactively-p)
-    `(called-interactively-p ,kind)))
+  (if (condition-case nil
+	  (progn
+	    (called-interactively-p 'any)
+	    t)
+	(error nil))
+      `(called-interactively-p ,kind)
+    '(called-interactively-p)))
 
 
 (defun yas--call-with-temporary-redefinitions (function
