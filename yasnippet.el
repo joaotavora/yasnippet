@@ -136,7 +136,6 @@
 (require 'cl)
 (require 'easymenu)
 (require 'help-mode)
-(require 'assoc)
 
 (eval-when-compile
   (defvar yas--editing-template)
@@ -2303,7 +2302,7 @@ vector of keys. FIXME not thoroughly tested"
         (while (and (< j (length keys))
                     translated
                     (keymapp translated))
-          (setq translated (aget (remove 'keymap translated) (aref keys j))
+          (setq translated (cdr (assoc (aref keys j) (remove 'keymap translated)))
                 j (1+ j)))
         (setq retval (vconcat retval (cond ((symbolp translated)
                                             `[,translated])
