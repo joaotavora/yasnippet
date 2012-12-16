@@ -753,7 +753,6 @@ activate yas for this buffer.
 `yas-minor-mode-on' is usually called by `yas-global-mode' so
 this effectively lets you define exceptions to the \"global\"
 behaviour. Can also be a function of zero arguments.")
-(make-variable-buffer-local 'yas-dont-activate)
 
 (defun yas-minor-mode-on ()
   "Turn on YASnippet minor mode.
