@@ -415,7 +415,8 @@ Attention: These hooks are not run when exiting nested/stacked snippet expansion
 (defvar yas-buffer-local-condition
   '(if (and (or (fourth (syntax-ppss))
                 (fifth (syntax-ppss)))
-            (eq (symbol-function this-command) 'yas-expand-from-trigger-key))
+	    this-command
+            (eq this-command 'yas-expand-from-trigger-key))
        '(require-snippet-condition . force-in-comment)
      t)
   "Snippet expanding condition.
