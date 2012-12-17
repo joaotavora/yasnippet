@@ -743,17 +743,26 @@ Key bindings:
          (remove-hook 'emulation-mode-map-alists 'yas--direct-keymaps))))
 
 (defvar yas-dont-activate '(minibufferp)
-  "If non-nil don't let `yas-minor-mode-on' activate for this buffer.
+  "If non-nil don't let `yas-global-mode' affect some buffers.
 
-If a function, then its result is used.
+If a function of zero arguments, then its result is used.
 
 If a list of functions, then all functions must return nil to
 activate yas for this buffer.
 
-`yas-minor-mode-on' is usually called by `yas-global-mode' so
-this effectively lets you define exceptions to the \"global\"
-behaviour. Can also be a function of zero arguments.")
-(make-variable-buffer-local 'yas-dont-activate)
+In Emacsen <= 23, this variable is buffer-local. Because
+`yas-minor-mode-on' is called by `yas-global-mode' after
+executing the buffer's major mode hook, setting this variable
+there is an effective way to define exceptions to the \"global\"
+activation behaviour.
+
+In Emacsen > 23, only the global value is used. To define
+per-mode exceptions to the \"global\" activation behaviour, call
+`yas-minor-mode' with a negative argument directily in the major
+mode's hook.")
+(unless (> emacs-major-version 23)
+  (make-variable-buffer-local 'yas-dont-activate))
+
 
 (defun yas-minor-mode-on ()
   "Turn on YASnippet minor mode.
