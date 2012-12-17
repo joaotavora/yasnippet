@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: add a space when region is multi-line string.
+# key: space
+# contributor: Billy.Zheng/zw963 (zw963@163.com)
+# --
+\`(space)\`

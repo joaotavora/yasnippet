@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: insert a self input transformation skeleton.
+# binding: C-c s
+# contributor: Billy.Zheng/zw963 (zw963@163.com)
+# --
+\${${1:1}:`yas-selected-text`$(${3:reflection-fn} `(replace-regexp-in-string ".*" "yas-text" yas-selected-text t nil)`)}

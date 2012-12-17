@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: add a string when field content contain comma.
+# key: comma
+# --
+\${${1:1}:$(add-if-comma "$2")}

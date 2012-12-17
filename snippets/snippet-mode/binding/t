@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: insert a transformation skeleton.
+# binding: C-c t
+# contributor: Billy.Zheng/zw963 (zw963@163.com)
+# --
+\${${1:1}:$(${2:reflection-fn} `(replace-regexp-in-string ".*" "yas-text" yas-selected-text t nil)`)}

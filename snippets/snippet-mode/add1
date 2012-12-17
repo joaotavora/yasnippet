@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: add a string when snippet is a one-line string.
+# key: add
+# contributor: Billy.Zheng/zw963 (zw963@163.com)
+# --
+\`(add1 "$2")\`

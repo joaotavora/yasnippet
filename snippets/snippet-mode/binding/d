@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: downcase field.
+# binding: C-c d
+# contributor: Billy.Zheng/zw963 (zw963@163.com)
+# --
+\${${1:1}:$(yas-downcase `(replace-regexp-in-string ".*" "yas-text" yas-selected-text t nil)`)}
