@@ -1320,7 +1320,7 @@ them all in `yas--menu-table'"
 
 Optional KIND is as documented at `called-interactively-p'
 in GNU Emacs 24.1 or higher."
-  (if (string< "24.1" emacs-version)
+  (if (string< emacs-version "24.1")
       '(called-interactively-p)
     `(called-interactively-p ,kind)))
 
