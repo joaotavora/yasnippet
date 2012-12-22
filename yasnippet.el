@@ -311,8 +311,9 @@ Any other non-nil value, every submenu is listed."
                  (const :tag "No menu" nil))
   :group 'yasnippet)
 
-(defcustom yas-trigger-symbol (if (eq window-system 'mac)
-                                  (char-to-string ?\x21E5) ;; little ->| sign
+(defcustom yas-trigger-symbol (or (and (eq window-system 'mac)
+                                       (ignore-errors
+                                         (char-to-string ?\x21E5))) ;; little ->| sign
                                   " =>")
   "The text that will be used in menu to represent the trigger."
   :type 'string
