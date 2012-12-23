@@ -1862,20 +1862,24 @@ loading."
             ;; `yas--editing-template' to nil, make it guess it next time around
             (mapc #'(lambda (buffer) (setq yas--editing-template nil)) (buffer-list))))
 
-      ;; Empty all snippet tables, parenting info and all menu tables
+      ;; Empty all snippet tables and parenting info
       ;;
       (setq yas--tables (make-hash-table))
       (setq yas--parents (make-hash-table))
+
+      ;; Before killing `yas--menu-table' use its keys to cleanup the
+      ;; mode menu parts of `yas--minor-mode-menu' (thus also cleaning
+      ;; up `yas-minor-mode-map', which points to it)
+      ;;
+      (maphash #'(lambda (menu-symbol keymap)
+                   (define-key yas--minor-mode-menu (vector menu-symbol) nil))
+               yas--menu-table)
+      ;; Now empty `yas--menu-table' as well
       (setq yas--menu-table (make-hash-table))
 
       ;; Cancel all pending 'yas--scheduled-jit-loads'
       ;;
       (setq yas--scheduled-jit-loads (make-hash-table))
-
-      ;; Init the `yas-minor-mode-map', taking care not to break the
-      ;; menu....
-      ;;
-      (setcdr yas-minor-mode-map (cdr (yas--init-minor-keymap)))
 
       ;; Reload the directories listed in `yas-snippet-dirs' or prompt
       ;; the user to select one.
