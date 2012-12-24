@@ -2658,8 +2658,9 @@ whether (and where) to save the snippet, then quit the window."
 
 (defun yas-active-keys ()
   "Return all active trigger keys for current buffer and point."
-  (remove-duplicates (mapcan #'yas--table-all-keys (yas--get-snippet-tables))
-                     :test #'string=))
+  (remove-duplicates
+   (remove-if-not #'stringp (mapcan #'yas--table-all-keys (yas--get-snippet-tables)))
+   :test #'string=))
 
 (defun yas--template-fine-group (template)
   (car (last (or (yas--template-group template)
