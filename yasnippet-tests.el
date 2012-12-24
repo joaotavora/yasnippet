@@ -462,6 +462,21 @@ TODO: be meaner"
     (should (eq (key-binding [(shift tab)]) 'yas-prev-field))
     (should (eq (key-binding [backtab]) 'yas-prev-field))))
 
+(ert-deftest test-rebindings ()
+  (unwind-protect
+      (progn
+        (define-key yas-minor-mode-map [tab] nil)
+        (define-key yas-minor-mode-map (kbd "TAB") nil)
+        (define-key yas-minor-mode-map (kbd "SPC") 'yas-expand)
+        (with-temp-buffer
+          (yas-minor-mode 1)
+          (should (not (eq (key-binding (yas--read-keybinding "TAB")) 'yas-expand)))
+          (should (eq (key-binding (yas--read-keybinding "SPC")) 'yas-expand))
+          (yas-reload-all)
+          (should (not (eq (key-binding (yas--read-keybinding "TAB")) 'yas-expand)))
+          (should (eq (key-binding (yas--read-keybinding "SPC")) 'yas-expand))))
+    (setcdr yas-minor-mode-map (cdr (yas--init-minor-keymap)))))
+
 (ert-deftest test-yas-in-org ()
   (with-temp-buffer
     (org-mode)
