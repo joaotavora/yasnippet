@@ -2909,7 +2909,16 @@ Use this in primary and mirror transformations to tget."
   force-exit)
 
 (defstruct (yas--field (:constructor yas--make-field (number start end parent-field)))
-  "A field."
+  "A field.
+
+NUMBER is the field number.
+START and END are mostly buffer markers, but see \"apropos markers-to-points\".
+PARENT-FIELD is a `yas--field' this field is nested under, or nil.
+MIRRORS is a list of `yas--mirror's
+TRANSFORM is a lisp form.
+MODIFIED-P is a boolean set to true once user inputs text.
+NEXT is another `yas--field' or `yas--mirror' or `yas--exit'.
+"
   number
   start end
   parent-field
@@ -2918,8 +2927,15 @@ Use this in primary and mirror transformations to tget."
   (modified-p nil)
   next)
 
+
 (defstruct (yas--mirror (:constructor yas--make-mirror (start end transform)))
-  "A mirror."
+  "A mirror.
+
+START and END are mostly buffer markers, but see \"apropos markers-to-points\".
+TRANSFORM is a lisp form.
+PARENT-FIELD is a `yas--field' this mirror is nested under, or nil.
+NEXT is another `yas--field' or `yas--mirror' or `yas--exit'
+DEPTH is a count of how many nested mirrors can affect this mirror"
   start end
   (transform nil)
   parent-field
