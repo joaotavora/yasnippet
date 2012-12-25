@@ -2923,7 +2923,8 @@ Use this in primary and mirror transformations to tget."
   start end
   (transform nil)
   parent-field
-  next)
+  next
+  depth)
 
 (defstruct (yas--exit (:constructor yas--make-exit (marker)))
   marker
@@ -4155,6 +4156,26 @@ When multiple expressions are found, only the last one counts."
               #'(lambda (r1 r2)
                   (>= (car r1) (car r2))))))
 
+(defun yas--calculate-mirror-depth (mirror &optional traversed)
+  (let* ((parent (yas--mirror-parent-field mirror))
+         (parents-mirrors (and parent
+                               (yas--field-mirrors parent))))
+    (or (yas--mirror-depth mirror)
+        (setf (yas--mirror-depth mirror)
+              (cond ((memq mirror traversed)
+                     0)
+                    ((and parent parents-mirrors)
+                     (1+ (reduce #'max
+                                 (mapcar #'(lambda (m)
+                                             (yas--calculate-mirror-depth m
+                                                                          (cons mirror
+                                                                                traversed)))
+                                         parents-mirrors))))
+                    (parent
+                     1)
+                    (t
+                     0))))))
+
 (defun yas--update-mirrors (snippet)
   "Updates all the mirrors of SNIPPET."
   (save-excursion
@@ -4173,7 +4194,8 @@ When multiple expressions are found, only the last one counts."
                                ;; another mirror to need reupdating
                                ;;
                                #'(lambda (field-and-mirror1 field-and-mirror2)
-                                   (yas--mirror-parent-field (cdr field-and-mirror1)))))
+                                   (> (yas--calculate-mirror-depth (cdr field-and-mirror1))
+                                      (yas--calculate-mirror-depth (cdr field-and-mirror2))))))
       (let* ((field (car field-and-mirror))
              (mirror (cdr field-and-mirror))
              (parent-field (yas--mirror-parent-field mirror)))

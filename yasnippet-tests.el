@@ -105,6 +105,13 @@
   (should (string= (yas--buffer-contents)
                    "<%= f.submit \"Send\", :disable_with => 'Sending...' %>")))
 
+(ert-deftest deep-nested-mirroring-issue-351 ()
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    (yas-expand-snippet "${1:FOOOOOOO}${2:$1}${3:$2}${4:$3}")
+    (ert-simulate-command `(yas-mock-insert "abc"))
+    (should (string= (yas--buffer-contents) "abcabcabcabc"))))
+
 ;; (ert-deftest in-snippet-undo ()
 ;;   (with-temp-buffer
 ;;     (yas-minor-mode 1)
