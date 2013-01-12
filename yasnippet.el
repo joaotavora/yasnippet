@@ -4391,7 +4391,7 @@ Remaining args as in `yas-expand-snippet'."
 (defun yas--message (level message &rest args)
   "When LEVEL is above `yas-verbosity-level', log MESSAGE and ARGS."
   (when (> yas-verbosity level)
-    (message (apply #'yas--format message args))))
+    (message "%s" (apply #'yas--format message args))))
 
 (defun yas--format (format-control &rest format-args)
   (apply #'format (concat "[yas] " format-control) format-args))
