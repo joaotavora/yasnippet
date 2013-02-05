@@ -1,0 +1,5 @@
+# contributor: Josef Assad <josef@josefassad.com>
+# name: \enumerate{...}
+# key: enum
+# --
+\\underline{$1}$0

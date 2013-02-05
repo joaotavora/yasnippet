@@ -1,0 +1,5 @@
+# contributor: Josef Assad <josef@josefassad.com>
+# name: \part{...}
+# key: part
+# --
+\\part{$1}$0

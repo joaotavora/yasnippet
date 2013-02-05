@@ -1,0 +1,5 @@
+# contributor: Josef Assad <josef@josefassad.com>
+# name: \underline{...}
+# key: ul
+# --
+\\underline{$1}$0

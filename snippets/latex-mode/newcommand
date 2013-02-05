@@ -1,0 +1,5 @@
+# contributor: Josef Assad <josef@josefassad.com>
+# name: \newcommand{...}[...]{...}
+# key: newco
+# --
+\\newcommand{$1}[$2]{$3}$0

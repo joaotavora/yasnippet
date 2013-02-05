@@ -1,0 +1,5 @@
+# contributor: Josef Assad <josef@josefassad.com>
+# name: LaTeX \emph{...}
+# key: emph
+# --
+\\emph{$1}$0
