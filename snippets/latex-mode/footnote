@@ -1,0 +1,5 @@
+# contributor: Josef Assad <josef@josefassad.com>
+# name: \footnote{...}
+# key: foot
+# --
+\\footnote{$1}$0

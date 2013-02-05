@@ -1,0 +1,5 @@
+# contributor: Josef Assad <josef@josefassad.com>
+# name: \paragraph{...}
+# key: para
+# --
+\\paragraph{$1}$0

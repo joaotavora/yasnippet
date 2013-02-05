@@ -1,0 +1,5 @@
+# contributor: Josef Assad <josef@josefassad.com>
+# name: \chapter{...}
+# key: chapter
+# --
+\\chapter$1{$2}$0

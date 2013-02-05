@@ -1,0 +1,5 @@
+# contributor: Josef Assad <josef@josefassad.com>
+# name: LaTeX documentclass
+# key: doc
+# --
+\\documentclass[$1]{$2}$0

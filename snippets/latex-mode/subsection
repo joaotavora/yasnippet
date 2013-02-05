@@ -1,0 +1,5 @@
+# contributor: Josef Assad <josef@josefassad.com>
+# name: \subsection{...}
+# key: subsec
+# --
+\\subsection$1{$2}$0
