@@ -1,0 +1,19 @@
+# -*- mode: snippet -*-
+# name: prop
+# key: prop
+# --
+
+var $1 = (function(){
+
+  var value = undefined;
+
+  return function $1(newValue){
+
+    if( $1.arguments.length > 0 ){
+      value = newValue;
+    }
+
+    return value;
+  };
+
+})();
