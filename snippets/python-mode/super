@@ -1,0 +1,6 @@
+# name: super
+# contributor: Jorgen Schaefer <forcer@forcix.cx>
+# key: super
+# expand-env: ((class (lambda () (let ((info (python-info-current-defun))) (if info (car (split-string info "\\.")) "class")))) (method (lambda () (let ((info (python-info-current-defun))) (if info (cadr (split-string info "\\.")) "method")))) (object (lambda () (if (and (python-nav-beginning-of-defun) (re-search-forward "(\\([^),=]*\\)" nil t)) (match-string-no-properties 1) "self"))))
+# --
+super(`(funcall class)`, `(funcall object)`).`(funcall method)`($0)
