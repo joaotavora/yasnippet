@@ -475,7 +475,7 @@ snippet itself contains a condition that returns the symbol
 
 ;;; Internal variables
 
-(defvar yas--version "0.8.0 (beta)")
+(defvar yas--version "0.8.0beta")
 
 (defvar yas--menu-table (make-hash-table)
   "A hash table of MAJOR-MODE symbols to menu keymaps.")
