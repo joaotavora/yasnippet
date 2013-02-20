@@ -8,7 +8,7 @@
   "Html-mode snippets behave as close to TextMate as possible.")
 
 (defun yas-html-activate ()
-  (add-to-list (make-local-variable 'yas-mode-symbol) 'html-mode))
+  (add-to-list (make-local-variable 'yas-extra-modes) 'html-mode))
 
 (add-hook 'nxml-mode-hook 'yas-html-activate)
 (add-hook 'rhtml-mode-hook 'yas-html-activate)
@@ -227,67 +227,67 @@
 ;; 991E7EBD-F3F5-469A-BA01-DC30E04AD472                                                       =yyas> (yas-html-wrap-each-line-in-openclose-tag)
 
 ;; Substitutions for: binding
-;; 
+;;
 ;; # as in Snippets/Strong.yasnippet
 ;; @b                                                                                         =yyas> s-b
-;; 
+;;
 ;; # as in Snippets/Emphasize.yasnippet
-;; ^@i                                                                                        =yyas>   
+;; ^@i                                                                                        =yyas>
 ;; @i                                                                                         =yyas> s-i
-;; 
+;;
 ;; # as in Snippets/Wrap Selection In Tag.yasnippet
 ;; ^W                                                                                         =yyas> C-c M-w
-;; 
+;;
 ;; # as in Commands/Insert Tag Pair.yasnippet
 ;; ^<                                                                                         =yyas> C-<
 ;;
 ;; # as in Commands/Documentation for Tag.yasnippet
 ;; ^h                                                                                         =yyas> C-c M-h
-;; 
+;;
 ;; # as in Commands/Wrap Each Selected Line in OpenClose Tag.yasnippet
 ;; ^@W                                                                                        =yyas> C-c M-W
-;; 
+;;
 ;; # as in Snippets/XHTML &nbsp NonBreakingSpace.yasnippet
 ;; ~                                                                                          =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Insert Entity.yasnippet
 ;; @&                                                                                         =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Refresh All Active Browsers.yasnippet
 ;; @r                                                                                         =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Persistent Include.yasnippet
 ;; ^@i                                                                                        =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/CodeCompletion HTML Tags.yasnippet
 ;; ~                                                                                         =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Update Includes.yasnippet
 ;; ^@u                                                                                        =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Macros/Delete whitespace between tags.yasnippet
 ;; ^~                                                                                      =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Tidy.yasnippet
 ;; ^H                                                                                         =yyas> (yas-unknown)
-;; 
+;;
 ;;
 ;; --**--
 ;; Automatically generated code, do not edit this part
-;; 
+;;
 ;; Translated menu
-;; 
+;;
 (yas-define-menu 'html-mode
                  '(;; Documentation for Tag
                    (yas-item "637CEA2B-578C-429C-BB74-30E8D42BFA22")
                    ;; Ignoring Validate Syntax (W3C)
                    (yas-ignore-item "3F26240E-6E4A-11D9-B411-000D93589AF6")
-                   
+
                    ;; Open Document in Running Browser(s)
                    (yas-item "970EE6B4-A091-11D9-A5A2-000D93C8BE28")
                    ;; Ignoring Refresh Running Browser(s)
                    (yas-ignore-item "B8651C6E-A05E-11D9-86AC-000D93C8BE28")
-                   
+
                    (yas-submenu "Entities"
                                 (;; Ignoring Convert Character / Selection to Entities
                                  (yas-ignore-item "3DD8406C-A116-11D9-A5A2-000D93C8BE28")
@@ -295,7 +295,7 @@
                                  (yas-ignore-item "43C9E8AE-3E53-4B82-A1AF-56697BB3EF09")
                                  ;; Ignoring Decode Entities in Line / Selection
                                  (yas-ignore-item "C183920D-A126-11D9-A5A2-000D93C8BE28")
-                                 
+
                                  ;; Non-Breaking Space
                                  (yas-item "73B40BAE-A295-11D9-87F7-000D93C8BE28")
                                  ;; →
@@ -340,7 +340,7 @@
                                  (yas-ignore-item "2C4C9673-B166-432A-8938-75A5CA622481")))
                    ;; Ignoring Encrypt Line / Selection (ROT 13)
                    (yas-ignore-item "9B13543F-8356-443C-B6E7-D9259B604927")
-                   
+
                    ;; Ignoring CodeCompletion HTML Attributes
                    (yas-ignore-item "CBD82CF3-74E9-4E7A-B3F6-9348754EB5AA")
                    ;; Insert Open/Close Tag (With Current Word)
@@ -364,7 +364,7 @@
                    (yas-submenu "Insert Tag"
                                 (;; Ignoring CodeCompletion HTML Tags
                                  (yas-ignore-item "3463E85F-F500-49A0-8631-D78ED85F9D60")
-                                 
+
                                  ;; Base
                                  (yas-item "4462A6B8-A08A-11D9-A5A2-000D93C8BE28")
                                  ;; Body
@@ -409,7 +409,7 @@
                                  (yas-item "AAC9D7B8-A12C-11D9-A5A2-000D93C8BE28")
                                  ;; Title
                                  (yas-item "B62ECABE-A086-11D9-A5A2-000D93C8BE28")))
-                   
+
                    (yas-submenu "Includes"
                                 (;; Ignoring Add Persistent Include
                                  (yas-ignore-item "0D814247-7A00-46EE-A2A4-45FBBF4B1181")
@@ -439,7 +439,7 @@
                                  (yas-item "CBC24AF4-88E0-498B-BE50-934B9CF29EC7")
                                  ;; IE Conditional Comment: NOT Internet Explorer
                                  (yas-item "F00170EE-4A82-413F-A88B-85293E69A88B")))
-                   
+
                    ;; Wrap Selection in Open/Close Tag
                    (yas-item "BC8B8AE2-5F16-11D9-B9C3-000D93589AF6")
                    ;; Wrap Each Selected Line in Open/Close Tag
@@ -482,209 +482,209 @@
                        "CDE8EFD6-9DE2-4E8C-BB6A-52E8CCD2E977"))
 
 ;; Unknown substitutions
-;; 
+;;
 ;; Substitutions for: content
-;; 
+;;
 ;; # as in Snippets/Emphasize.yasnippet
 ;; `(yas-html-toggle-wrap yas-selected-text "em")`                                            =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Snippets/XHTML h1.yasnippet
 ;; `yas-selected-text`                                                                        =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Snippets/IE Conditional Comment Internet Explorer 5_0 only.yasnippet
 ;; `(or (yas-selected-text) "   IE Conditional Comment: Internet Explorer 5.0 only ")`        =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Snippets/IE Conditional Comment Internet Explorer 5_5 only.yasnippet
 ;; `(or (yas-selected-text) "   IE Conditional Comment: Internet Explorer 5.5 only ")`        =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Snippets/IE Conditional Comment Internet Explorer 5_x.yasnippet
 ;; `(or (yas-selected-text) "  IE Conditional Comment: Internet Explorer 5.x      ")`         =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Snippets/IE Conditional Comment Internet Explorer 6 and below.yasnippet
 ;; `(or (yas-selected-text) " IE Conditional Comment: Internet Explorer 6 and below ")`       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Snippets/IE Conditional Comment Internet Explorer 6 only.yasnippet
 ;; `(or (yas-selected-text) "     IE Conditional Comment: Internet Explorer 6 only   ")`      =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Snippets/IE Conditional Comment Internet Explorer 7+.yasnippet
 ;; `(or (yas-selected-text) " IE Conditional Comment: Internet Explorer 7 and above ")`       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Snippets/IE Conditional Comment Internet Explorer.yasnippet
 ;; `(or (yas-selected-text) "       IE Conditional Comment: Internet Explorer          ")`    =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Snippets/IE Conditional Comment NOT Internet Explorer.yasnippet
 ;; `(or (yas-selected-text) "  IE Conditional Comment: NOT Internet Explorer      ")`         =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Snippets/XHTML meta.yasnippet
 ;; `yas-html-xhtml-attr`                                                                      =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Snippets/Strong.yasnippet
 ;; `(yas-html-toggle-wrap yas-selected-text "strong")`                                        =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/About Persistent Includes.yasnippet
 ;; 9AFDEB2C-D9F0-423E-8211-EBB089F51F0C                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/CodeCompletion HTML Attributes.yasnippet
 ;; CBD82CF3-74E9-4E7A-B3F6-9348754EB5AA                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/CodeCompletion HTML Tags.yasnippet
 ;; 3463E85F-F500-49A0-8631-D78ED85F9D60                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Encrypt Line Selection (ROT 13).yasnippet
 ;; 9B13543F-8356-443C-B6E7-D9259B604927                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Persistent Include.yasnippet
 ;; 0D814247-7A00-46EE-A2A4-45FBBF4B1181                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Update Includes.yasnippet
 ;; 4400BCE9-20E3-426E-B1D7-2C0BCA53BCF8                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Convert Line Selection to URL Escapes.yasnippet
 ;; 6B024865-6095-4CE3-8EDD-DC6F2230C2FF                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Convert to HTML Entities.yasnippet
 ;; 3DD8406C-A116-11D9-A5A2-000D93C8BE28                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Convert to named entities excl tags.yasnippet
 ;; 43C9E8AE-3E53-4B82-A1AF-56697BB3EF09                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Decode HTML Entities.yasnippet
 ;; C183920D-A126-11D9-A5A2-000D93C8BE28                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Decode Numeric URL Escapes in Line Selection.yasnippet
 ;; 2C4C9673-B166-432A-8938-75A5CA622481                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Insert Close Tag.yasnippet
 ;; 0658019F-3635-462E-AAC2-74E4FE508A9B                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Insert Entity.yasnippet
 ;; 89E5CC0A-3EFF-4DEF-A299-2E9651DE6529                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Refresh All Active Browsers.yasnippet
 ;; B8651C6E-A05E-11D9-86AC-000D93C8BE28                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Strip HTML tags.yasnippet
 ;; 20D760B5-A127-11D9-A5A2-000D93C8BE28                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Tidy.yasnippet
 ;; 45F92B81-6F0E-11D9-A1E4-000D9332809C                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/W3C validation.yasnippet
 ;; 3F26240E-6E4A-11D9-B411-000D93589AF6                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in DragCommands/Anchor Tag.yasnippet
 ;; B23D6E15-6B33-11D9-86C1-000D93589AF6                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in DragCommands/CSS Link.yasnippet
 ;; C8B717C2-6B33-11D9-BB47-000D93589AF6                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in DragCommands/Image Tag.yasnippet
 ;; CD6D2CC6-6B33-11D9-BDFD-000D93589AF6                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Macros/Delete whitespace between tags.yasnippet
 ;; 7B7E945E-A112-11D9-A5A2-000D93C8BE28                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Snippets/XHTML body.yasnippet
 ;; ${TM_FILENAME/(.*)\..*/\L$1/}                                                              =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Snippets/XHTML form.yasnippet
 ;; ${TM_FILENAME/(.*?)\..*/$1_submit/}                                                        =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Snippets/XHTML title.yasnippet
 ;; ${TM_FILENAME/((.+)\..*)?/(?2:$2:Page Title)/}                                             =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Templates/HTML 4.0 Strict/info.yasnippet
 ;; 04332FA8-8157-46C4-9854-8C190FFD96C6                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Templates/HTML 4.0 Transitional/info.yasnippet
 ;; E6F19171-F664-4B4F-92DA-3E15E6CAD35C                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Templates/XHTML 1.0 Frameset/info.yasnippet
 ;; 26068A55-4C84-409D-BA00-162B55AF6961                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Templates/XHTML 1.0 Strict/info.yasnippet
 ;; EBEE6B51-29C7-4362-818F-A190CACD5296                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Templates/XHTML 1.0 Transitional/info.yasnippet
 ;; 65D38039-6B0A-48E9-9E49-43832ECC4107                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Templates/XHTML 1.1/info.yasnippet
 ;; CDE8EFD6-9DE2-4E8C-BB6A-52E8CCD2E977                                                       =yyas> (yas-unknown)
-;; 
-;; 
+;;
+;;
 
 ;; Substitutions for: condition
-;; 
+;;
 ;; # as in Templates/XHTML 1.1/info.yasnippet
 ;; text.html                                                                                  =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/CodeCompletion HTML Attributes.yasnippet
 ;; text.html punctuation.definition.tag -source, text.html meta.tag -entity.other.attribute-name -source  =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/CodeCompletion HTML Tags.yasnippet
 ;; text.html -entity.other.attribute-name -string.quoted, invalid.illegal.incomplete.html     =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Documentation for Tag.yasnippet
 ;; text.html, text.html entity.name.tag                                                       =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Refresh All Active Browsers.yasnippet
 ;; text.html, source.css                                                                      =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Snippets/Smart returnindent for tag pairs.yasnippet
 ;; meta.scope.between-tag-pair                                                                =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Snippets/Wrap Selection In Tag.yasnippet
 ;; text.html,                                                                                 =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Snippets/Wrap in =.yasnippet
 ;; text.html string                                                                           =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Snippets/XHTML head.yasnippet
 ;; text.html - text.html source                                                               =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Snippets/XHTML title.yasnippet
 ;; text.html - text.blog                                                                      =yyas> (yas-unknown)
-;; 
-;; 
+;;
+;;
 
 ;; Substitutions for: binding
-;; 
+;;
 ;; # as in Commands/CodeCompletion HTML Tags.yasnippet
 ;; ~                                                                                         =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Insert Entity.yasnippet
 ;; @&                                                                                         =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Persistent Include.yasnippet
 ;;                                                                                            =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Update Includes.yasnippet
 ;; ^@u                                                                                        =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Insert Close Tag.yasnippet
 ;; ~@.                                                                                        =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Refresh All Active Browsers.yasnippet
 ;; @r                                                                                         =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/Tidy.yasnippet
 ;; ^H                                                                                         =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Commands/W3C validation.yasnippet
 ;; ^V                                                                                         =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Macros/Delete whitespace between tags.yasnippet
 ;; ^~                                                                                        =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Snippets/Smart returnindent for tag pairs.yasnippet
 ;;                                                                                           =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Snippets/XHTML &nbsp NonBreakingSpace.yasnippet
 ;; ~                                                                                          =yyas> (yas-unknown)
-;; 
+;;
 ;; # as in Snippets/XHTML br.yasnippet
 ;; ^                                                                                         =yyas> (yas-unknown)
-;; 
-;; 
+;;
+;;
 
 ;; .yas-setup.el for html-mode ends here
