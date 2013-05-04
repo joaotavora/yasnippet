@@ -110,9 +110,9 @@
 ;;           are to be displayed, or all the tables for all major
 ;;           modes.
 ;;
-;;   The `dropdown-list.el' extension is bundled with YASnippet, you
-;;   can optionally use it the preferred "prompting method", putting in
-;;   your .emacs file, for example:
+;;   If you have `dropdown-list' installed, you can optionally use it
+;;   as the preferred "prompting method", putting in your .emacs file,
+;;   for example:
 ;;
 ;;       (require 'dropdown-list)
 ;;       (setq yas-prompt-functions '(yas-dropdown-prompt
@@ -1606,7 +1606,7 @@ Optional PROMPT sets the prompt to use."
 		 ido-mode))
     (yas-completing-prompt prompt choices display-fn #'ido-completing-read)))
 
-(eval-when-compile (require 'dropdown-list nil t))
+(declare-function dropdown-list "dropdown-list")
 (defun yas-dropdown-prompt (prompt choices &optional display-fn)
   (when (featurep 'dropdown-list)
     (let (formatted-choices
