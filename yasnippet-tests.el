@@ -312,6 +312,22 @@ TODO: correct this bug!"
      (yas-reload-all)
      (yas--basic-jit-loading-1))))
 
+(ert-deftest loading-with-cyclic-parenthood ()
+  "Test loading when cyclic parenthood is setup."
+  (yas-saving-variables
+   (yas-with-snippet-dirs '((".emacs.d/snippets"
+                             ("c-mode"
+                              (".yas-parents" . "cc-mode"))
+                             ("cc-mode"
+                              (".yas-parents" . "yet-another-c-mode"))
+                             ("yet-another-c-mode"
+                              (".yas-parents" . "c-mode"))))
+     (yas-reload-all)
+     (condition-case nil
+         (yas--all-parents 'c-mode)
+       (error
+        (ert-fail "cyclic parenthood test failed"))))))
+
 (defun yas--basic-jit-loading-1 (&optional compile)
   (with-temp-buffer
     (should (= 4 (hash-table-count yas--scheduled-jit-loads)))
