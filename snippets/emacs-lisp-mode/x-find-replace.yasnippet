@@ -6,7 +6,7 @@
   "Replace “<” to “&lt;” and other chars in HTML.
 This works on the current region."
   (interactive "r")
-  (save-restriction 
+  (save-restriction
     (narrow-to-region start end)
     (goto-char (point-min))
     (while (search-forward "&" nil t) (replace-match "&amp;" nil t))

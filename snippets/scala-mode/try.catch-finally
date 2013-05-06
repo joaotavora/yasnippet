@@ -5,7 +5,7 @@
 try {
   $0
 } catch {
-  case ${1:e}: ${2:Exception} => 
+  case ${1:e}: ${2:Exception} =>
     ${1:println(\"ERROR: \" + e) // TODO: handle exception}\n}
 } finally {
 

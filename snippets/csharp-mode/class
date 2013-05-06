@@ -14,7 +14,7 @@ ${5:public} class ${1:Name}
 
     /// <summary>
     /// ${4:Default Destructor}
-    /// </summary>    
+    /// </summary>
     public ~$1()
     {
     }
