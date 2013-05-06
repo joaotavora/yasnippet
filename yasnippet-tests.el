@@ -279,20 +279,20 @@ TODO: correct this bug!"
   `(yas-saving-variables
     (yas-with-overriden-buffer-list
      (yas-with-snippet-dirs
-      '((".emacs.d/snippets"
-         ("c-mode"
-          (".yas-parents" . "cc-mode")
-          ("printf" . "printf($1);"))  ;; notice the overriding for issue #281
-         ("emacs-lisp-mode" ("ert-deftest" . "(ert-deftest ${1:name} () $0)"))
-         ("lisp-interaction-mode" (".yas-parents" . "emacs-lisp-mode")))
-        ("library/snippets"
-         ("c-mode"
-          (".yas-parents" . "c++-mode")
-          ("printf" . "printf"))
-         ("cc-mode" ("def" . "# define"))
-         ("emacs-lisp-mode" ("dolist" . "(dolist)"))
-         ("lisp-interaction-mode" ("sc" . "brother from another mother"))))
-      ,@body))))
+       '((".emacs.d/snippets"
+          ("c-mode"
+           (".yas-parents" . "cc-mode")
+           ("printf" . "printf($1);"))  ;; notice the overriding for issue #281
+          ("emacs-lisp-mode" ("ert-deftest" . "(ert-deftest ${1:name} () $0)"))
+          ("lisp-interaction-mode" (".yas-parents" . "emacs-lisp-mode")))
+         ("library/snippets"
+          ("c-mode"
+           (".yas-parents" . "c++-mode")
+           ("printf" . "printf"))
+          ("cc-mode" ("def" . "# define"))
+          ("emacs-lisp-mode" ("dolist" . "(dolist)"))
+          ("lisp-interaction-mode" ("sc" . "brother from another mother"))))
+       ,@body))))
 
 (ert-deftest basic-jit-loading ()
   "Test basic loading and expansion of snippets"
@@ -357,34 +357,34 @@ TODO: correct this bug!"
 (defmacro yas-with-even-more-interesting-snippet-dirs (&rest body)
   `(yas-saving-variables
     (yas-with-snippet-dirs
-     `((".emacs.d/snippets"
-        ("c-mode"
-         (".yas-make-groups" . "")
-         ("printf" . "printf($1);")
-         ("foo-group-a"
-          ("fnprintf" . "fprintf($1);")
-          ("snprintf" . "snprintf($1);"))
-         ("foo-group-b"
-          ("strcmp" . "strecmp($1);")
-          ("strcasecmp" . "strcasecmp($1);")))
-        ("lisp-interaction-mode"
-         ("ert-deftest" . "# group: barbar\n# --\n(ert-deftest ${1:name} () $0)"))
-        ("fancy-mode"
-         ("a-guy" . "# uuid: 999\n# --\nyo!")
-         ("a-sir" . "# uuid: 12345\n# --\nindeed!")
-         ("a-lady" . "# uuid: 54321\n# --\noh-la-la!")
-         ("a-beggar" . "# uuid: 0101\n# --\narrrgh!")
-         ("an-outcast" . "# uuid: 666\n# --\narrrgh!")
-         (".yas-setup.el" . , (pp-to-string
-                               '(yas-define-menu 'fancy-mode
-                                                 '((yas-ignore-item "0101")
-                                                   (yas-item "999")
-                                                   (yas-submenu "sirs"
-                                                                ((yas-item "12345")))
-                                                   (yas-submenu "ladies"
-                                                                ((yas-item "54321"))))
-                                                 '("666")))))))
-     ,@body)))
+      `((".emacs.d/snippets"
+         ("c-mode"
+          (".yas-make-groups" . "")
+          ("printf" . "printf($1);")
+          ("foo-group-a"
+           ("fnprintf" . "fprintf($1);")
+           ("snprintf" . "snprintf($1);"))
+          ("foo-group-b"
+           ("strcmp" . "strecmp($1);")
+           ("strcasecmp" . "strcasecmp($1);")))
+         ("lisp-interaction-mode"
+          ("ert-deftest" . "# group: barbar\n# --\n(ert-deftest ${1:name} () $0)"))
+         ("fancy-mode"
+          ("a-guy" . "# uuid: 999\n# --\nyo!")
+          ("a-sir" . "# uuid: 12345\n# --\nindeed!")
+          ("a-lady" . "# uuid: 54321\n# --\noh-la-la!")
+          ("a-beggar" . "# uuid: 0101\n# --\narrrgh!")
+          ("an-outcast" . "# uuid: 666\n# --\narrrgh!")
+          (".yas-setup.el" . , (pp-to-string
+                                '(yas-define-menu 'fancy-mode
+                                                  '((yas-ignore-item "0101")
+                                                    (yas-item "999")
+                                                    (yas-submenu "sirs"
+                                                                 ((yas-item "12345")))
+                                                    (yas-submenu "ladies"
+                                                                 ((yas-item "54321"))))
+                                                  '("666")))))))
+      ,@body)))
 
 (ert-deftest test-yas-define-menu ()
   (let ((yas-use-menu t))
@@ -594,6 +594,7 @@ TODO: be meaner"
           (delete-directory default-directory 'recursive))))))
 
 (defmacro yas-with-snippet-dirs (dirs &rest body)
+  (declare (indent defun))
   `(yas-call-with-snippet-dirs ,dirs
                                #'(lambda ()
                                    ,@body)))
