@@ -1,0 +1,257 @@
+Quick start
+===========
+
+*YASnippet* is a template system for Emacs. It allows you to type an
+abbreviation and automatically expand it into function templates. Bundled
+language templates includes: C, C++, C#, Perl, Python, Ruby, SQL, LaTeX, HTML,
+CSS and more. The snippet syntax is inspired from TextMate's syntax, you can
+even [import most TextMate snippets](#import-textmate)
+
+YASnippet is an original creation of [pluskid][pluskid] who also wrote its predecessor
+[smart-snippet][smart-snippet].
+
+Watch a demo
+------------
+
+Do so on [youtube][youtube]
+
+Installation
+------------
+
+Clone this repository somewhere
+
+    $ cd ~/.emacs.d/plugins
+    $ git clone https://github.com/capitaomorte/yasnippet
+
+Add the following in your =.emacs= file:
+
+    (add-to-list 'load-path
+                  "~/.emacs.d/plugins/yasnippet")
+    (require 'yasnippet)
+    (yas/global-mode 1)
+
+Add your own snippets to `~/.emacs.d/snippets` by placing files there or
+invoking `yas-new-snippet`.
+
+Import textmate snippets (rails example)
+----------------------------------------
+
+YASnippet lets you use TextMate bundles directly:
+
+    $ cd ~/.emacs.d/plugins
+    $ git clone https://github.com/capitaomorte/yasnippet
+    $ cd yasnippet
+    $ git submodule init
+    $ git submodule update
+    $ gem install plist trollop
+    $ rake convert_bundles             # will convert ruby, rails and html bundles from drnic
+
+Then, in your `.emacs` file
+
+
+    (add-to-list 'load-path
+                  "~/.emacs.d/plugins/yasnippet")
+    (require 'yasnippet)
+    (setq yas/snippet-dirs '("~/.emacs.d/snippets" "~/.emacs.d/extras/imported"))
+    (yas/global-mode 1)
+
+Open some rails file (model, app, etc) and start using the textmate
+snippets. Consider that this is a work-in-progress and many snippets/commands
+might not work. Patches welcome!
+
+Contributing snippets
+---------------------
+
+Please *do not ask me* to add snippets to the default collection under
+`/snippets`. This collection is considered frozen. By customizing
+`yas-snippet-dirs` you can point yasnippet to good snippet collections out
+there.
+
+The `extras/textmate-import.rb` tool can import many actual Textmate snippets.
+I'm focusing on developing it and the accompanying `yas-setup.el` files that
+guide it with more difficult importations. The idea is to deprecate `/snippets=
+and replace it with =extras/imported`.
+
+Documentation, issues, etc
+--------------------------
+
+Please refer to the comprehensive [documentation](docs) for full
+customization and support.  If you think you've found a bug, please report it
+on [the GitHub issue tracker](issues).  (please **do not** submit new
+issues to the old [googlecode tracker](googlecode-tracker))
+
+If you run into problems using YASnippet, or have snippets to contribute,
+post to the [yasnippet forum](forum). Thank you very much for using
+YASnippet!
+
+Organizing snippets
+===================
+
+Basic structure
+---------------
+
+Snippet collections can be stored in plain text files. They are arranged by
+sub-directories naming *snippet tables*. These mostly name Emacs major names.
+
+    .
+    |-- c-mode
+    |   `-- printf
+    |-- java-mode
+    |   `-- println
+    `-- text-mode
+        |-- email
+        `-- time
+
+The collections are loaded into *snippet tables* which the triggering
+mechanism (see [Expanding snippets](#expand-snippets)) looks up and
+(hopefully) cause the right snippet to be expanded for you.
+
+Setting up `yas-snippet-dirs`
+-----------------------------
+
+The emacs variable `yas-snippet-dirs` tells YASnippet
+which collections to consider. It's used when you activate
+`yas-global-mode` or call
+`yas-reload-all` interactively.
+
+The default considers:
+
+ - a personal collection that lives in `~/.emacs.d/snippets`
+ - the bundled collection, taken as a relative path to `yasnippet.el` localtion
+
+When you come across other snippet collections, do the following to try them
+out:
+
+;; Develop in ~/emacs.d/mysnippets, but also
+;; try out snippets in ~/Downloads/interesting-snippets
+(setq yas/snippet-dirs '("~/emacs.d/mysnippets"
+                           "~/Downloads/interesting-snippets"))
+
+;; OR, keeping yasnippet's defaults try out ~/Downloads/interesting-snippets
+(setq yas/snippet-dirs (append yas/snippet-dirs
+                               '("~/Downloads/interesting-snippets")))
+
+Collections appearing earlier in the list shadow snippets with same names
+appearing in collections later in the list. `yas-new-snippet` always stores
+snippets in the first collection.
+
+The `.yas.parents` file
+-----------------------
+
+It's very useful to have certain modes share snippets between themselves. To do
+this, choose a mode subdirectory and place a `.yas-parents` containing a
+whitespace-separated list of other mode names. When you reload those modes
+become parents of the original mode.
+
+    .
+    |-- c-mode
+    |   |-- .yas-parents    # contains "cc-mode text-mode"
+    |   `-- printf
+    |-- cc-mode
+    |   |-- for
+    |   `-- while
+    |-- java-mode
+    |   |-- .yas-parents    # contains "cc-mode text-mode"
+    |   `-- println
+    `-- text-mode
+        |-- email
+        `-- time
+
+The `.yas-make-groups` file
+---------------------------
+
+If you place an empty plain text file `.yas-make-groups` inside one of the mode
+directories, the names of these sub-directories are considered groups of
+snippets and [the menu](snippet-menu) is organized much more cleanly:
+
+(TODO image)
+
+Another alternative way to achieve this is to place a `# group:` directive
+inside the snippet definition. See [Writing Snippets](#writing-snippets)
+
+
+    $ tree ruby-mode/
+    ruby-mode/
+    |-- .yas-make-groups
+    |-- collections
+    |   |-- each
+    |   `-- ...
+    |-- control structure
+    |   |-- forin
+    |   `-- ...
+    |-- definitions
+    |   `-- ...
+    `-- general
+       `-- ...
+
+
+Yet another way to create a nice snippet menu is to write into
+`.yas-make-groups` a menu definition. TODO
+
+TODO The `.yas-setup.el` file
+-----------------------------
+
+*** TODO
+
+TODO The `.yas-compiled-snippet.el` file
+----------------------------------------
+
+*** TODO
+
+The `.yas-skip` file
+--------------------
+
+Expanding Snippets
+==================
+
+This section describes how YASnippet chooses snippets for expansion at point.
+
+Maybe, you'll want some snippets to be expanded in a particular
+mode, or only under certain conditions, or be prompted using
+
+Triggering expansion
+--------------------
+
+To make a snippet expand after the cursor:
+
+* Type an the snippet's *trigger key* then press the key defined in
+  `yas-trigger-key`.
+
+* Use the snippet's *keybinding*.
+
+* Call [`yas-insert-snippet=](#yas-insert-snippet) (use `M-x
+  yas-insert-snippet`= or its keybinding =C-c & C-s`).
+
+* By expanding directly from the "YASnippet" menu in the menu-bar
+
+* Using hippie-expand
+
+* Use m2m's excellent [auto-complete](http://github.com/m2m/autocomplete)
+
+Reference
+=========
+
+    (yas--document-symbols 2 `("Interactive functions" . ,#'interactive-form)
+                             `("Customization variables" . ,#'(lambda (sym)
+                                                                (and (boundp sym)
+                                                                     (get sym 'standard-value))))
+                             `("Useful functions" . ,#'fboundp)
+                             `("Useful variables" . ,#'boundp))
+
+[smart-snippet]:      http://code.google.com/p/smart-snippet
+[pluskid]:            http://pluskid.lifegoo.org
+[screencast]:         http://www.youtube.com/watch?v=ZCGmZK4V7Sg
+[docs]:               http://capitaomorte.github.com/yasnippet
+[issues]:             https://github.com/capitaomorte/yasnippet/issues
+[googlecode-tracker]: http://code.google.com/p/yasnippet/issues/list
+[forum]:              http://groups.google.com/group/smart-snippet
+
+
+
+<!--
+ !-- Local Variables:
+ !-- mode: markdown
+ !-- fill-column: 80
+ !-- coding: utf-8
+ !-- End:
+ !-- -->
