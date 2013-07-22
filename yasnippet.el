@@ -1623,7 +1623,10 @@ Optional PROMPT sets the prompt to use."
 		 ido-mode))
     (yas-completing-prompt prompt choices display-fn #'ido-completing-read)))
 
-(declare-function dropdown-list "dropdown-list")
+(eval-when-compile
+  (if (fboundp 'declare-function)
+      (declare-function dropdown-list "dropdown-list")))
+
 (defun yas-dropdown-prompt (prompt choices &optional display-fn)
   (when (featurep 'dropdown-list)
     (let (formatted-choices
