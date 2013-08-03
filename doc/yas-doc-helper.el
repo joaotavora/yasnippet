@@ -25,7 +25,7 @@
 ;;; Code:
 
 (defun yas--document-symbol (symbol level)
-  (flet ((concat-lines (&rest lines)
+  (cl-flet ((concat-lines (&rest lines)
                        (mapconcat #'identity lines "\n")))
     (let* ((stars (make-string level ?*))
            (heading (cond ((fboundp symbol)

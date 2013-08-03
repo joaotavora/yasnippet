@@ -1158,7 +1158,7 @@ conditions to filter out potential expansions."
   "Returns a list of all parent modes of MODE."
   (or (gethash mode yas--ancestors)
       (let ((seen '()))
-        (labels ((yas--all-parents-1
+        (cl-labels ((yas--all-parents-1
                   (m)
                   (cond ((memq m seen)
                          (yas--message 1
@@ -1354,7 +1354,7 @@ in GNU Emacs 24.1 or higher."
     ;; saving all definitions before overriding anything ensures FDEFINITION
     ;; errors don't cause accidental permanent redefinitions.
     ;;
-    (labels ((set-fdefinitions (names functions)
+    (cl-labels ((set-fdefinitions (names functions)
                                (loop for name in names
                                      for fn in functions
                                      do (fset name fn))))
@@ -3747,7 +3747,7 @@ Returns the newly created snippet."
 
 This is according to their relative positions in the buffer, and
 has to be called before the $-constructs are deleted."
-  (labels ((yas--fom-set-next-fom (fom nextfom)
+  (cl-labels ((yas--fom-set-next-fom (fom nextfom)
                                   (cond ((yas--field-p fom)
                                          (setf (yas--field-next fom) nextfom))
                                         ((yas--mirror-p fom)
