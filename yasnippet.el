@@ -196,7 +196,8 @@ as the default for storing the user's new snippets."
 # type: command}
 # --
 $0"
-  "Default snippet to use when creating a new snippet."
+  "Default snippet to use when creating a new snippet. If nil,
+don't use any snippet."
   :type 'string
   :group 'yasnippet)
 
@@ -2531,7 +2532,8 @@ NO-TEMPLATE is non-nil."
     (set (make-local-variable 'yas--guessed-modes) (mapcar #'(lambda (d)
                                                               (yas--table-mode (car d)))
                                                           guessed-directories))
-    (unless no-template (yas-expand-snippet yas-new-snippet-default))))
+    (if (and (not no-template) yas-new-snippet-default)
+        (yas-expand-snippet yas-new-snippet-default))))
 
 (defun yas--compute-major-mode-and-parents (file)
   "Given FILE, find the nearest snippet directory for a given mode.
