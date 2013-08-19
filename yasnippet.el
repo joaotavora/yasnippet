@@ -190,7 +190,7 @@ as the default for storing the user's new snippets."
 (defcustom yas-new-snippet-default "\
 # -*- mode: snippet -*-
 # name: $1
-# key: ${2:${1:$(replace-regexp-in-string \"\\\\\\\\(\\\\\\\\w+\\\\\\\\).*\" \"\\\\\\\\1\" yas-text)}}${3:
+# key: ${2:${1:$(yas--key-from-desc yas-text)}}${3:
 # binding: ${4:direct-keybinding}}${5:
 # expand-env: ((${6:some-var} ${7:some-value}))}${8:
 # type: command}
@@ -1522,6 +1522,10 @@ Here's a list of currently recognized directives:
                               (car where)
                               (cdr where)
                               (yas--template-expand-env yas--current-template)))))))
+
+(defun yas--key-from-desc (text)
+  "Return a yasnippet key from a description string TEXT."
+  (replace-regexp-in-string "\\(\\w+\\).*" "\\1" text))
 
 
 ;;; Popping up for keys and templates
