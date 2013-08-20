@@ -187,6 +187,20 @@ as the default for storing the user's new snippets."
 
 (defvaralias 'yas/root-directory 'yas-snippet-dirs)
 
+(defcustom yas-new-snippet-default "\
+# -*- mode: snippet -*-
+# name: $1
+# key: ${2:${1:$(yas--key-from-desc yas-text)}}${3:
+# binding: ${4:direct-keybinding}}${5:
+# expand-env: ((${6:some-var} ${7:some-value}))}${8:
+# type: command}
+# --
+$0"
+  "Default snippet to use when creating a new snippet. If nil,
+don't use any snippet."
+  :type 'string
+  :group 'yasnippet)
+
 (defcustom yas-prompt-functions '(yas-x-prompt
                                   yas-dropdown-prompt
                                   yas-completing-prompt
@@ -1510,6 +1524,10 @@ Here's a list of currently recognized directives:
                               (cdr where)
                               (yas--template-expand-env yas--current-template)))))))
 
+(defun yas--key-from-desc (text)
+  "Return a yasnippet key from a description string TEXT."
+  (replace-regexp-in-string "\\(\\w+\\).*" "\\1" text))
+
 
 ;;; Popping up for keys and templates
 
@@ -2514,15 +2532,8 @@ NO-TEMPLATE is non-nil."
     (set (make-local-variable 'yas--guessed-modes) (mapcar #'(lambda (d)
                                                               (yas--table-mode (car d)))
                                                           guessed-directories))
-    (unless no-template (yas-expand-snippet "\
-# -*- mode: snippet -*-
-# name: $1
-# key: ${2:${1:$(replace-regexp-in-string \"\\\\\\\\(\\\\\\\\w+\\\\\\\\).*\" \"\\\\\\\\1\" yas-text)}}${3:
-# binding: ${4:direct-keybinding}}${5:
-# expand-env: ((${6:some-var} ${7:some-value}))}${8:
-# type: command}
-# --
-$0"))))
+    (if (and (not no-template) yas-new-snippet-default)
+        (yas-expand-snippet yas-new-snippet-default))))
 
 (defun yas--compute-major-mode-and-parents (file)
   "Given FILE, find the nearest snippet directory for a given mode.
