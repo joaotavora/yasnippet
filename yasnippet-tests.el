@@ -264,8 +264,44 @@ TODO: correct this bug!"
 
 ;;; Loading
 ;;;
+(defun yas--call-with-temporary-redefinitions (function
+                                               &rest function-names-and-overriding-functions)
+  (let* ((overrides (remove-if-not #'(lambda (fdef)
+                                       (fboundp (first fdef)))
+                                   function-names-and-overriding-functions))
+         (definition-names (mapcar #'first overrides))
+         (overriding-functions (mapcar #'second overrides))
+         (saved-functions (mapcar #'symbol-function definition-names)))
+    ;; saving all definitions before overriding anything ensures FDEFINITION
+    ;; errors don't cause accidental permanent redefinitions.
+    ;;
+    (labels ((set-fdefinitions (names functions)
+                               (loop for name in names
+                                     for fn in functions
+                                     do (fset name fn))))
+      (set-fdefinitions definition-names overriding-functions)
+      (unwind-protect (funcall function)
+	(set-fdefinitions definition-names saved-functions)))))
+
+(defmacro yas--with-temporary-redefinitions (fdefinitions &rest body)
+  ;; "Temporarily (but globally) redefine each function in FDEFINITIONS.
+  ;; E.g.: (yas--with-temporary-redefinitions ((foo (x) ...)
+  ;;                                           (bar (x) ...))
+  ;;         ;; code that eventually calls foo, bar of (setf foo)
+  ;;         ...)"
+  ;; FIXME: This is hideous!  Better use defadvice (or at least letf).
+  `(yas--call-with-temporary-redefinitions
+    (lambda () ,@body)
+    ,@(mapcar #'(lambda (thingy)
+                  `(list ',(first thingy)
+                         (lambda ,@(rest thingy))))
+              fdefinitions)))
+
+(put 'yas--with-temporary-redefinitions 'lisp-indent-function 1)
+(put 'yas--with-temporary-redefinitions 'edebug-form-spec '((&rest (defun*)) cl-declarations body))
+
 (defmacro yas-with-overriden-buffer-list (&rest body)
-  (let ((saved-sym (gensym)))
+  (let ((saved-sym (make-symbol "yas--buffer-list")))
     `(let ((,saved-sym (symbol-function 'buffer-list)))
        (yas--with-temporary-redefinitions
            ((buffer-list ()
@@ -306,8 +342,7 @@ TODO: correct this bug!"
    (yas-reload-all)
    (yas-recompile-all)
    (yas--with-temporary-redefinitions ((yas--load-directory-2
-                                        (&rest dummies)
-                                        (declare (ignore dummies))
+                                        (&rest _dummies)
                                         (ert-fail "yas--load-directory-2 shouldn't be called when snippets have been compiled")))
      (yas-reload-all)
      (yas--basic-jit-loading-1))))
@@ -328,7 +363,7 @@ TODO: correct this bug!"
        (error
         (ert-fail "cyclic parenthood test failed"))))))
 
-(defun yas--basic-jit-loading-1 (&optional compile)
+(defun yas--basic-jit-loading-1 ()
   (with-temp-buffer
     (should (= 4 (hash-table-count yas--scheduled-jit-loads)))
     (should (= 0 (hash-table-count yas--tables)))
@@ -514,9 +549,7 @@ TODO: be meaner"
   (interactive)
   (with-temp-buffer
     (yas--with-temporary-redefinitions
-        ((message (&rest args)        ;
-                  (declare (ignore args))
-                  nil))
+        ((message (&rest _args) nil))
       (ert t (buffer-name (current-buffer)))
       (princ (buffer-string)))))
 
@@ -602,7 +635,8 @@ TODO: be meaner"
 ;;; Older emacsen
 ;;;
 (unless (fboundp 'special-mode)
-  (define-minor-mode special-mode "Just a placeholder for something isn't in emacs 22"))
+  ;; FIXME: Why provide this default definition here?!?
+  (defalias 'special-mode 'fundamental))
 
 ;;; btw to test this in emacs22 mac osx:
 ;;; curl -L -O https://github.com/mirrors/emacs/raw/master/lisp/emacs-lisp/ert.el
