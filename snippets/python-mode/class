@@ -27,7 +27,7 @@ class ${1:ClassName}(${2:object}):
                         (replace-regexp-in-string "[[:blank:]]*$" ""
                          (replace-regexp-in-string "^[[:blank:]]*" "" x))) x))
                   (mapcar '(lambda (x) (split-string x "="))
-                          (split-string text ",")))
+                          (split-string yas-text ",")))
                  indent)))
           (if (string= args "")
               (make-string 3 34)
@@ -49,7 +49,7 @@ class ${1:ClassName}(${2:object}):
                   (replace-regexp-in-string "^[[:blank:]]*" "" x)))
               x))
           (mapcar '(lambda (x) (split-string x "="))
-                  (split-string text ",")))
+                  (split-string yas-text ",")))
          (concat "\n" (make-string (current-column) 32)))
         }
         $0

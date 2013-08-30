@@ -24,7 +24,7 @@ def ${1:name}($2):
                       (replace-regexp-in-string "^[[:blank:]]*" "" x)))
                   x))
               (mapcar '(lambda (x) (split-string x "="))
-                      (split-string text ",")))
+                      (split-string yas-text ",")))
              indent)))
       (if (string= args "")
           (make-string 3 34)

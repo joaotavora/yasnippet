@@ -5,7 +5,7 @@
 /// <summary>
 /// $3
 /// </summary>
-private $1 ${2:$(if (> (length text) 0) (format "_%s%s" (downcase (substring text 0 1)) (substring text 1 (length text))) "")};
+private $1 ${2:$(if (> (length yas-text) 0) (format "_%s%s" (downcase (substring yas-text 0 1)) (substring yas-text 1 (length yas-text))) "")};
 
 /// <summary>
 /// ${3:Description}
@@ -14,9 +14,9 @@ private $1 ${2:$(if (> (length text) 0) (format "_%s%s" (downcase (substring tex
 public ${1:Type} ${2:Name}
 {
     get {
-        return this.${2:$(if (> (length text) 0) (format "_%s%s" (downcase (substring text 0 1)) (substring text 1 (length text))) "")};
+        return this.${2:$(if (> (length yas-text) 0) (format "_%s%s" (downcase (substring yas-text 0 1)) (substring yas-text 1 (length yas-text))) "")};
     }
     set {
-        this.${2:$(if (> (length text) 0) (format "_%s%s" (downcase (substring text 0 1)) (substring text 1 (length text))) "")} = value;
+        this.${2:$(if (> (length yas-text) 0) (format "_%s%s" (downcase (substring yas-text 0 1)) (substring yas-text 1 (length yas-text))) "")} = value;
     }
 }

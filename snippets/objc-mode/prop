@@ -6,7 +6,7 @@
     return $2;
 }
 
-- (void)set${2:$(capitalize text)}:($1)aValue
+- (void)set${2:$(capitalize yas-text)}:($1)aValue
 {
     [$2 autorelease];
     $2 = [aValue retain];
