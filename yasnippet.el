@@ -56,9 +56,6 @@
 ;;           `yas-snippet-dirs' and is used for deciding which
 ;;           snippets to consider for the active buffer.
 ;;
-;;           Deprecated `yas/mode-symbol' aliases this variable for
-;;           backward-compatibility.
-;;
 ;;   Major commands are:
 ;;
 ;;       M-x yas-expand
@@ -674,11 +671,6 @@ There might be additional parenting information stored in the
 `derived-mode-parent' property of some mode symbols, but that is
 not recorded here.")
 
-(defvar yas--ancestors (make-hash-table)
-  "A hash table of mode symbols do lists of all parent mode symbols.
-
-A cache managed by `yas--all-parents'")
-
 (defvar yas--direct-keymaps (list)
   "Keymap alist supporting direct snippet keybindings.
 
@@ -704,17 +696,19 @@ defined direct keybindings to the command
 (defun yas--modes-to-activate ()
   "Compute list of mode symbols that are active for `yas-expand'
 and friends."
-  (let ((modes-to-activate (list major-mode))
-        (mode major-mode))
-    (while (setq mode (get mode 'derived-mode-parent))
-      (push mode modes-to-activate))
-    (dolist (mode (yas-extra-modes))
-      (push mode modes-to-activate))
-    (remove-duplicates
-     (append modes-to-activate
-             (mapcan #'(lambda (mode)
-                         (yas--all-parents mode))
-                     modes-to-activate)))))
+  (cl-labels
+      ((dfs (mode &optional explored)
+            (push mode explored)
+            (cons mode
+                  (loop for neighbour
+                        in (remove nil (cons (get mode
+                                                  'derived-mode-parent)
+                                             (gethash mode yas--parents)))
+
+                        unless (memq neighbour explored)
+                        append (dfs neighbour explored)))))
+    (remove-duplicates (append yas-extra-modes
+                               (dfs major-mode)))))
 
 (defvar yas-minor-mode-hook nil
   "Hook run when `yas-minor-mode' is turned on.")
@@ -1162,24 +1156,6 @@ conditions to filter out potential expansions."
           (t
            (eq requirement result)))))
 
-(defun yas--all-parents (mode)
-  "Return a list of all parent modes of MODE."
-  (or (gethash mode yas--ancestors)
-      (let ((seen '()))
-        (labels ((yas--all-parents-1
-                  (m)
-                  (cond ((memq m seen)
-                         (yas--message 1
-                                       "Cyclic parenthood: mode %s has already seen as a parent of mode %s"
-                                       m mode)
-                         nil)
-                        (t
-                         (let* ((parents (gethash m yas--parents)))
-                           (setq seen (append seen parents))
-                           (append parents (mapcan #'yas--all-parents-1 parents)))))))
-          (puthash mode (yas--all-parents-1 mode)
-                   yas--ancestors)))))
-
 (defun yas--table-templates (table)
   (when table
     (let ((acc (list)))
@@ -1301,9 +1277,6 @@ Can be a symbol or a list of symbols.
 
 This variable probably makes more sense as buffer-local, so
 ensure your use `make-local-variable' when you set it.")
-(defun yas-extra-modes ()
-  (if (listp yas-extra-modes) yas-extra-modes (list yas-extra-modes)))
-(defvaralias 'yas/mode-symbol 'yas-extra-modes)
 
 (defun yas--table-get-create (mode)
   "Get or create the snippet table corresponding to MODE."

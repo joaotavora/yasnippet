@@ -308,6 +308,7 @@ TODO: correct this bug!"
                                     (funcall ,saved-sym))))
          ,@body))))
 
+
 (defmacro yas-with-some-interesting-snippet-dirs (&rest body)
   `(yas-saving-variables
     (yas-with-overriden-buffer-list
@@ -326,6 +327,7 @@ TODO: correct this bug!"
           ("emacs-lisp-mode" ("dolist" . "(dolist)"))
           ("lisp-interaction-mode" ("sc" . "brother from another mother"))))
        ,@body))))
+
 
 (ert-deftest basic-jit-loading ()
   "Test basic loading and expansion of snippets"
@@ -351,14 +353,24 @@ TODO: correct this bug!"
                              ("c-mode"
                               (".yas-parents" . "cc-mode"))
                              ("cc-mode"
-                              (".yas-parents" . "yet-another-c-mode"))
+                              (".yas-parents" . "yet-another-c-mode and-that-one"))
                              ("yet-another-c-mode"
-                              (".yas-parents" . "c-mode"))))
+                              (".yas-parents" . "c-mode and-also-this-one lisp-interaction-mode"))))
      (yas-reload-all)
-     (condition-case nil
-         (yas--all-parents 'c-mode)
-       (error
-        (ert-fail "cyclic parenthood test failed"))))))
+     (with-temp-buffer
+       (let* ((major-mode 'c-mode)
+              (expected '(c-mode
+                          cc-mode
+                          yet-another-c-mode
+                          and-also-this-one
+                          and-that-one
+                          prog-mode
+                          emacs-lisp-mode
+                          lisp-interaction-mode))
+              (observed (yas--modes-to-activate)))
+         (should (null (cl-set-exclusive-or expected observed)))
+         (should (= (length expected)
+                    (length observed))))))))
 
 (defun yas--basic-jit-loading-1 ()
   (with-temp-buffer
