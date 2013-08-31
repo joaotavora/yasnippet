@@ -70,7 +70,7 @@
 (ert-deftest primary-field-transformation ()
   (with-temp-buffer
     (yas-minor-mode 1)
-    (let ((snippet "${1:$$(upcase yas/text)}${1:$(concat \"bar\" yas/text)}"))
+    (let ((snippet "${1:$$(upcase yas-text)}${1:$(concat \"bar\" yas-text)}"))
       (yas-expand-snippet snippet)
       (should (string= (yas--buffer-contents) "bar"))
       (ert-simulate-command `(yas-mock-insert "foo"))
@@ -172,33 +172,33 @@
 (ert-deftest be-careful-when-escaping-in-yas-selected-text ()
   (with-temp-buffer
     (yas-minor-mode 1)
-    (let ((yas/selected-text "He\\\\o world!"))
-      (yas-expand-snippet "Look ma! `(yas/selected-text)`")
+    (let ((yas-selected-text "He\\\\o world!"))
+      (yas-expand-snippet "Look ma! `(yas-selected-text)`")
       (should (string= (yas--buffer-contents) "Look ma! He\\\\o world!")))
     (yas-exit-all-snippets)
     (erase-buffer)
-    (let ((yas/selected-text "He\"o world!"))
-      (yas-expand-snippet "Look ma! `(yas/selected-text)`")
+    (let ((yas-selected-text "He\"o world!"))
+      (yas-expand-snippet "Look ma! `(yas-selected-text)`")
       (should (string= (yas--buffer-contents) "Look ma! He\"o world!")))
     (yas-exit-all-snippets)
     (erase-buffer)
-    (let ((yas/selected-text "He\"\)\\o world!"))
-      (yas-expand-snippet "Look ma! `(yas/selected-text)`")
+    (let ((yas-selected-text "He\"\)\\o world!"))
+      (yas-expand-snippet "Look ma! `(yas-selected-text)`")
       (should (string= (yas--buffer-contents) "Look ma! He\"\)\\o world!")))
     (yas-exit-all-snippets)
     (erase-buffer)))
 
 (ert-deftest be-careful-when-escaping-in-yas-selected-text-2 ()
   (with-temp-buffer
-    (let ((yas/selected-text "He)}o world!"))
-      (yas-expand-snippet "Look ma! ${1:`(yas/selected-text)`} OK?")
+    (let ((yas-selected-text "He)}o world!"))
+      (yas-expand-snippet "Look ma! ${1:`(yas-selected-text)`} OK?")
       (should (string= (yas--buffer-contents) "Look ma! He)}o world! OK?")))))
 
 (ert-deftest example-for-issue-271 ()
   (with-temp-buffer
     (yas-minor-mode 1)
     (let ((yas-selected-text "aaa")
-          (snippet "if ${1:condition}\n`yas/selected-text`\nelse\n$3\nend"))
+          (snippet "if ${1:condition}\n`yas-selected-text`\nelse\n$3\nend"))
       (yas-expand-snippet snippet)
       (yas-next-field)
       (ert-simulate-command `(yas-mock-insert "bbb"))
@@ -213,7 +213,7 @@
                      :passed)
   (with-temp-buffer
     (yas-minor-mode 1)
-    (let ((snippet "\\${${1:1}:`yas/selected-text`}"))
+    (let ((snippet "\\${${1:1}:`yas-selected-text`}"))
       (insert "aaabbbccc")
       (set-mark 4)
       (goto-char 7)
@@ -236,7 +236,7 @@
     (yas-minor-mode 1)
     ;; the rule here is: To use regexps in embedded `(elisp)` expressions,
     ;; escape backslashes once, i.e. to use \\( \\) constructs, write \\\\( \\\\).
-    (let ((snippet "$1${1:$(if (string-match \"foo\\\\\\\\(ba+r\\\\\\\\)baz\" yas/text)
+    (let ((snippet "$1${1:$(if (string-match \"foo\\\\\\\\(ba+r\\\\\\\\)baz\" yas-text)
                                 \"ok\"
                                 \"fail\")}"))
       (yas-expand-snippet snippet)
@@ -275,10 +275,10 @@ TODO: correct this bug!"
     ;; saving all definitions before overriding anything ensures FDEFINITION
     ;; errors don't cause accidental permanent redefinitions.
     ;;
-    (labels ((set-fdefinitions (names functions)
-                               (loop for name in names
-                                     for fn in functions
-                                     do (fset name fn))))
+    (cl-flet ((set-fdefinitions (names functions)
+                                (loop for name in names
+                                      for fn in functions
+                                      do (fset name fn))))
       (set-fdefinitions definition-names overriding-functions)
       (unwind-protect (funcall function)
 	(set-fdefinitions definition-names saved-functions)))))
@@ -296,9 +296,6 @@ TODO: correct this bug!"
                   `(list ',(first thingy)
                          (lambda ,@(rest thingy))))
               fdefinitions)))
-
-(put 'yas--with-temporary-redefinitions 'lisp-indent-function 1)
-(put 'yas--with-temporary-redefinitions 'edebug-form-spec '((&rest (defun*)) cl-declarations body))
 
 (defmacro yas-with-overriden-buffer-list (&rest body)
   (let ((saved-sym (make-symbol "yas--buffer-list")))
@@ -545,7 +542,7 @@ TODO: be meaner"
 
 ;;; Helpers
 ;;;
-(defun yas/ert ()
+(defun yas-batch-run-tests ()
   (interactive)
   (with-temp-buffer
     (yas--with-temporary-redefinitions
@@ -644,8 +641,21 @@ TODO: be meaner"
 ;;; /usr/bin/emacs -nw -Q -L . -l yasnippet-tests.el --batch -e ert
 
 
+(put 'yas-saving-variables                   'edebug-form-spec t)
+(put 'yas-with-snippet-dirs                  'edebug-form-spec t)
+(put 'yas-with-overriden-buffer-list         'edebug-form-spec t)
+(put 'yas-with-some-interesting-snippet-dirs 'edebug-form-spec t)
+
+
+(put 'yas--with-temporary-redefinitions 'lisp-indent-function 1)
+(put 'yas--with-temporary-redefinitions 'edebug-form-spec '((&rest (defun*)) cl-declarations body))
+
+
+
+
 (provide 'yasnippet-tests)
 ;;; yasnippet-tests.el ends here
 ;; Local Variables:
 ;; lexical-binding: t
+;; byte-compile-warnings: (not cl-functions)
 ;; End:
