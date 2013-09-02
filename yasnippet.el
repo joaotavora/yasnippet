@@ -696,19 +696,18 @@ defined direct keybindings to the command
 (defun yas--modes-to-activate ()
   "Compute list of mode symbols that are active for `yas-expand'
 and friends."
-  (cl-labels
-      ((dfs (mode &optional explored)
-            (push mode explored)
-            (cons mode
-                  (loop for neighbour
-                        in (remove nil (cons (get mode
-                                                  'derived-mode-parent)
-                                             (gethash mode yas--parents)))
+  (let ((dfs (lambda (mode &optional explored)
+               (push mode explored)
+               (cons mode
+                     (loop for neighbour
+                           in (remove nil (cons (get mode
+                                                     'derived-mode-parent)
+                                                (gethash mode yas--parents)))
 
-                        unless (memq neighbour explored)
-                        append (dfs neighbour explored)))))
+                           unless (memq neighbour explored)
+                           append (funcall dfs neighbour explored))))))
     (remove-duplicates (append yas-extra-modes
-                               (dfs major-mode)))))
+                               (funcall dfs major-mode)))))
 
 (defvar yas-minor-mode-hook nil
   "Hook run when `yas-minor-mode' is turned on.")
