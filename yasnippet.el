@@ -657,6 +657,14 @@ snippet itself contains a condition that returns the symbol
 (defvar yas-minor-mode-map (yas--init-minor-keymap)
   "The keymap used when `yas-minor-mode' is active.")
 
+(defvar yas-extra-modes nil
+  "If non-nil, also lookup snippets for this/these modes.
+
+Can be a symbol or a list of symbols.
+
+This variable probably makes more sense as buffer-local, so
+ensure your use `make-local-variable' when you set it.")
+
 (defvar yas--tables (make-hash-table)
   "A hash table of mode symbols to `yas--table' objects.")
 
@@ -696,16 +704,17 @@ defined direct keybindings to the command
 (defun yas--modes-to-activate ()
   "Compute list of mode symbols that are active for `yas-expand'
 and friends."
-  (letrec ((dfs (lambda (mode &optional explored)
-                  (push mode explored)
-                  (cons mode
-                        (loop for neighbour
-                              in (remove nil (cons (get mode
-                                                        'derived-mode-parent)
-                                                   (gethash mode yas--parents)))
+  (let (dfs)
+    (setq dfs (lambda (mode &optional explored)
+                (push mode explored)
+                (cons mode
+                      (loop for neighbour
+                            in (remove nil (cons (get mode
+                                                      'derived-mode-parent)
+                                                 (gethash mode yas--parents)))
 
-                              unless (memq neighbour explored)
-                              append (funcall dfs neighbour explored))))))
+                            unless (memq neighbour explored)
+                            append (funcall dfs neighbour explored)))))
     (remove-duplicates (append yas-extra-modes
                                (funcall dfs major-mode)))))
 
@@ -1268,14 +1277,6 @@ return an expression that when evaluated will issue an error."
        (yas--message 3 "warning: keybinding \"%s\" invalid since %s."
                 keybinding (error-message-string err))
        nil))))
-
-(defvar yas-extra-modes nil
-  "If non-nil, also lookup snippets for this/these modes.
-
-Can be a symbol or a list of symbols.
-
-This variable probably makes more sense as buffer-local, so
-ensure your use `make-local-variable' when you set it.")
 
 (defun yas--table-get-create (mode)
   "Get or create the snippet table corresponding to MODE."
@@ -1879,7 +1880,6 @@ loading."
       ;;
       (setq yas--tables (make-hash-table))
       (setq yas--parents (make-hash-table))
-      (setq yas--ancestors (make-hash-table))
 
       ;; Before killing `yas--menu-table' use its keys to cleanup the
       ;; mode menu parts of `yas--minor-mode-menu' (thus also cleaning
