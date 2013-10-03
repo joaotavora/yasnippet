@@ -135,7 +135,7 @@ Collections appearing earlier in the list shadow snippets with same names
 appearing in collections later in the list. `yas-new-snippet` always stores
 snippets in the first collection.
 
-The `.yas.parents` file
+The `.yas-parents` file
 -----------------------
 
 It's very useful to have certain modes share snippets between themselves. To do
