@@ -51,8 +51,8 @@
 ;;       `yas-extra-modes'
 ;;
 ;;           A local variable that you can set in a hook to override
-;;           snippet-lookup based on major mode.  It is a symbol (or
-;;           list of symbols) that correspond to subdirectories of
+;;           snippet-lookup based on major mode.  It is a list of
+;;           symbols that correspond to subdirectories of
 ;;           `yas-snippet-dirs' and is used for deciding which
 ;;           snippets to consider for the active buffer.
 ;;
@@ -658,9 +658,7 @@ snippet itself contains a condition that returns the symbol
   "The keymap used when `yas-minor-mode' is active.")
 
 (defvar yas-extra-modes nil
-  "If non-nil, also lookup snippets for this/these modes.
-
-Can be a symbol or a list of symbols.
+  "A list of modes for which to also lookup snippets.
 
 This variable probably makes more sense as buffer-local, so
 ensure your use `make-local-variable' when you set it.")
