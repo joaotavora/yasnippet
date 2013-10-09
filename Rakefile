@@ -32,7 +32,7 @@ desc "create a release package"
 task :package do
   release_dir = "pkg/yasnippet-#{$version}"
   FileUtils.mkdir_p(release_dir)
-  files = ['snippets', 'yasnippet.el', 'dropdown-list.el']
+  files = ['snippets', 'yasnippet.el']
   FileUtils.cp_r files, release_dir
   File.open(File.join(release_dir,'yasnippet-pkg.el'), 'w') do |file|
     file.puts <<END
@@ -90,6 +90,6 @@ desc "Compile yasnippet.el into yasnippet.elc"
 rule '.elc' => '.el' do |t|
   sh "#{$EMACS} --batch -L . --eval \"(byte-compile-file \\\"#{t.source}\\\")\""
 end
-task :compile => FileList["yasnippet.el", "dropdown-list.el"].ext('elc')
+task :compile => FileList["yasnippet.el"].ext('elc')
 
 task :default => :doc
