@@ -24,8 +24,10 @@
 
 ;;; Code:
 
+(eval-when-compile (require 'cl))
 
-(cl-defstruct (snippet--field (:constructor snippet--make-field (name mirrors parent-field)))
+
+(cl-defstruct (snippet--field (:constructor snippet--make-field (name mirrors parent-field start end)))
   name
   start end
   parent-field
@@ -34,8 +36,7 @@
   (modified-p nil)
   next)
 
-
-(cl-defstruct (snippet--mirror (:constructor snippet--make-mirror (source transform parent-field)))
+(cl-defstruct (snippet--mirror (:constructor snippet--make-mirror (source transform parent-field start end)))
   source
   start end
   (transform nil)
@@ -43,15 +44,48 @@
   next
   depth)
 
+(defun snippet--make-marker ()
+  (let ((marker (make-marker)))
+    (set-marker-insertion-type marker t)
+    (set-marker marker (point))))
+
+(defmacro snippet--with-current-object (object &rest body)
+  (declare (indent defun))
+  `(snippet--call-with-current-object ,object #'(lambda () ,@body)))
+
+(defun snippet--object-start-marker (o)
+  (cond ((snippet--field-p o)
+         (snippet--field-start o))
+        ((snippet--mirror-p o)
+         (snippet--mirror-start o))))
+
+(defun snippet--object-end-marker (o)
+  (cond ((snippet--field-p o)
+         (snippet--field-end o))
+        ((snippet--mirror-p o)
+         (snippet--mirror-end o))))
+
+(defun snippet--call-with-current-object (object fn)
+  (let* ((start (snippet--object-start-marker object))
+         (end (snippet--object-end-marker object))
+         (start-itype (marker-insertion-type start))
+         (end-itype (marker-insertion-type end)))
+    (unwind-protect
+        (progn
+          (set-marker-insertion-type start nil)
+          (set-marker-insertion-type end t)
+          (funcall fn))
+      (set-marker-insertion-type start start-itype)
+      (set-marker-insertion-type end end-itype))))
+
 (defun snippet--insert-field (field text)
-  (setf (snippet--field-start field) (point))
-  (when text (insert text))
-  (setf (snippet--field-end field) (point)))
+  (when text
+    (snippet--with-current-object field
+      (insert text))))
 
 (defun snippet--insert-mirror (mirror)
-  (setf (snippet--mirror-start mirror) (point))
-  (insert (funcall (snippet--mirror-transform mirror)))
-  (setf (snippet--mirror-end mirror) (point)))
+  (snippet--with-current-object mirror
+    (insert (funcall (snippet--mirror-transform mirror)))))
 
 (defun snippet--field-text (field)
   (buffer-substring-no-properties (snippet--field-start field)
@@ -77,37 +111,102 @@
                        (if parent-field-sym
                            (format "-son-of-%s" parent-field-sym)
                          ""))))
-(defun snippet--form-make-field-form (field-name parent-field-sym mirrors)
-  `(snippet--make-field ,field-name ,parent-field-sym ,mirrors))
-(defun snippet--form-make-mirror-form (source-field-sym transform)
-  `(snippet--make-mirror ,source-field-sym ,transform))
+(defun snippet--start-marker-name (sym)
+  (make-symbol (format "%s-beg" sym)))
+
+(defun snippet--end-marker-name (sym)
+  (make-symbol (format "%s-end" sym)))
+
+
+
 
 
 (defvar snippet--form-mirror-sym-idx nil)
+
 (defun snippet--form-sym-tuples (forms &optional parent-field-sym)
+  "Produce information for composing the snippet expansion function.
+
+A tuple of 6 elements is created for each form in FORMS.
+
+\(SYM FORM PARENT-FIELD-SYM ADJACENT-PREV-SYM PREV-FORM NEXT-FORM)
+
+Forms representing fields with nested elements are recursively
+iterated depth-first, resulting in a flattened list."
   (loop with snippet--form-mirror-sym-idx = (or snippet--form-mirror-sym-idx
                                                 0)
+        with adjacent-prev-sym
+
+        for prev-form in (cons nil forms)
         for form in forms
-        append (cond ((snippet--form-field-p form)
-                      ;;
-                      ;;
-                      (let ((field-sym (snippet--form-make-field-sym (second form) parent-field-sym)))
-                        `((,field-sym ,form ,parent-field-sym)
-                          ,@(when (listp (third form))
-                              (snippet--form-sym-tuples (third form) field-sym)))))
+        for next-form in (append (rest forms) (list nil))
 
-                     ((snippet--form-mirror-p form)
-                      ;;
-                      ;;
-                      (incf snippet--form-mirror-sym-idx)
-                      (let ((mirror-sym (snippet--form-make-mirror-sym snippet--form-mirror-sym-idx
-                                                                       (second form)
-                                                                       parent-field-sym)))
-                        `((,mirror-sym ,form ,parent-field-sym))))
+        for (sym childrenp) = (cond ((snippet--form-field-p form)
+                                     (list (snippet--form-make-field-sym (second form)
+                                                                         parent-field-sym)
+                                           (listp (third form))))
+                                    ((snippet--form-mirror-p form)
+                                     (incf snippet--form-mirror-sym-idx)
+                                     (list (snippet--form-make-mirror-sym snippet--form-mirror-sym-idx
+                                                                          (second form)
+                                                                          parent-field-sym))))
+        append (cond (sym
+                      `((,sym
+                         ,form
+                         ,parent-field-sym
+                         ,adjacent-prev-sym
+                         ,prev-form
+                         ,next-form)
+                        ,@(when childrenp
+                            (snippet--form-sym-tuples (third form) sym))))
 
-                     (t
-                      ;; it's a literal string, append a dummy tuple
-                      `((string ,form))))))
+                     ((or (stringp form)
+                          (symbolp form)
+                          (eq (car form) 'lambda))
+                      `((ignore ,form ,parent-field-sym))))
+        do (setq adjacent-prev-sym sym)))
+
+(defun snippet--make-marker-init-forms (tuples)
+  "Make marker init forms for the snippet objects in TUPLES.
+
+Imagine this snippet:
+
+ ff1 sss mm1 ff2         mm5
+              |
+              ff3 sss mm4
+
+I would need these somewhere in the let* form
+
+ ((ff1-beg (make-marker))
+  (ff1-end (make-marker))
+  (mm1-beg (make-marker))
+  (mm1-end (make-marker))
+  (ff2-beg mm1-end)
+  (ff2-end (make-marker))
+  (ff3-beg ff2-end)
+  (ff3-end (make-marker))
+  (mm4-beg (make-marker))
+  (mm4-end ff2-end)
+  (mm5-beg ff2-end)
+  (mm5-end (make-marker)))
+"
+  (loop for (sym nil parent-sym adjacent-prev-sym prev next) in tuples
+        unless (eq sym 'ignore)
+        append `((,(snippet--start-marker-name sym)
+                  ,(or (and adjacent-prev-sym
+                            (snippet--end-marker-name adjacent-prev-sym))
+                       (and parent-sym
+                            (not prev)
+                            (snippet--start-marker-name parent-sym))
+                       `(snippet--make-marker)))
+                 (,(snippet--end-marker-name sym)
+                  ,(or (and parent-sym
+                            (not next)
+                            (snippet--end-marker-name parent-sym))
+                       `(snippet--make-marker))))))
+
+
+
+
 
 (defun snippet--make-object-sym-tuples (tuples)
   (let* ((field-mirrors (make-hash-table))
@@ -129,15 +228,23 @@
                           (unless source-sym
                             (error "mirror definition %s mentions unknown field" form))
                           `(,sym (snippet--make-mirror ,source-sym
-                                                            ,(snippet--transform-lambda (third form) source-sym)
-                                                            ,parent-sym)))))
+                                                       ,(snippet--transform-lambda (third form) source-sym)
+                                                       ,parent-sym
+                                                       ,(snippet--start-marker-name sym)
+                                                       ,(snippet--end-marker-name sym))
+
+                                 ))))
          ;; so that we can now create `snippet--make-field' forms with
          ;; complete lists of mirror symbols.
          ;;
          (make-field-forms
           (loop for (sym form parent-sym) in tuples
                 when (snippet--form-field-p form)
-                collect `(,sym (snippet--make-field ,(second form) (list ,@(gethash sym field-mirrors)) ,parent-sym)))))
+                collect `(,sym (snippet--make-field ,(second form)
+                                                    (list ,@(gethash sym field-mirrors))
+                                                    ,parent-sym
+                                                    ,(snippet--start-marker-name sym)
+                                                    ,(snippet--end-marker-name sym))))))
 
     (append make-field-forms
             make-mirror-forms)))
@@ -151,49 +258,98 @@
       (snippet--field-text ,source-sym))))
 
 
-(defmacro* define-snippet (name (&key obarray) &rest body)
+(defmacro define-snippet (name args &rest body)
+  "Define NAME as a snippet.
+
+NAME's function definition is set to a function with no arguments
+that inserts the fields components at point.
+
+Each form in BODY can be:
+
+* A cons (field FIELD-NAME FIELD-VALUE FIELD-TRANSFORM)
+  definining a snippet field. A snippet field can be navigated to
+  using `snippet-next-field' and
+  `snippet-prev-field'. FIELD-TRANSFORM is currently
+  unimplemented.
+
+* A cons (mirror FIELD-NAME MIRROR-TRANSFORM) defining a mirror
+  of the field named FIELD-NAME. Each time the text under the
+  field changes, the form MIRROR-TRANSFORM is invoked with the
+  variable `field-text' set to the text under the field. The
+  string produced become the text under the mirror.
+
+* A string literal which is inserted as a literal part of the
+  snippet and remains unchanged while the snippet is navigated.
+
+* A symbol designating a function which is called when the
+  snippet is inserted. The string produced is treated as a
+  literal string.
+
+* A lambda form taking no arguments, called when the snippet is
+  inserted. Again, the string produced is treated as a literal
+  snippet string.
+
+ARGS is an even-numbered property list of (KEY VAL) pairs. KEY
+can be:
+
+* the symbol `:obarray', in which case the symbol NAME in
+  interned in the obarray VAL instead of the global obarray. This
+  options is currently unimplemented."
   (let* ((sym-tuples (snippet--form-sym-tuples body))
-         (make-object-forms (snippet--make-object-forms sym-tuples)))
-    `(defun ,name ()
-       (let* (,@(remove 'string (mapcar #'car sym-tuples))
-              (start (point))
-              overlay)
-         ,@make-object-forms
+         (marker-init-forms (snippet--make-marker-init-forms sym-tuples))
+         (make-object-forms (snippet--make-object-sym-tuples sym-tuples)))
+    `(let ((insert-snippet-fn
+            #'(lambda ()
+                (let* (,@(mapcar #'list (remove 'ignore (mapcar #'car sym-tuples)))
+                       ,@marker-init-forms
+                       (start (point))
+                       overlay)
 
+                  ,(if make-object-forms
+                       `(setq ,@(loop for (sym form) in make-object-forms
+                                      append (list sym form))))
 
-         ,@(loop for (sym form) in sym-tuples
-                 collect (cond ((snippet--form-field-p form)
-                                `(snippet--insert-field ,sym ,(third form)))
-                               ((snippet--form-mirror-p form)
-                                `(snippet--insert-mirror ,sym))
-                               (t
-                                `(insert ,form))))
+                  ,@(loop
+                     for (sym form)           in sym-tuples
+                     collect (cond ((snippet--form-field-p form)
+                                    `(snippet--insert-field ,sym ,(if (stringp (third form))
+                                                                      (third form))))
+                                   ((snippet--form-mirror-p form)
+                                    `(snippet--insert-mirror ,sym))
+                                   ((stringp form)
+                                    `(insert ,form))
+                                   ((functionp form)
+                                    `(insert (funcall ,form)))))
 
-         (setq overlay (make-overlay start (point)))))))
+                  (setq overlay (make-overlay start (point)))
+                  overlay
+                  ))))
+       (defun ,name ()
+         (funcall insert-snippet-fn)))))
+
+(define-snippet test ()
+  "some string" buffer-file-name)
+
 
 (define-snippet printf ()
   "printf (\""
   (field 1 "%s")
-  (mirror 1 (if (string-match "%" field-text) "," "\);"))
+  (mirror 1 (if (string-match "%" field-text) "\"," "\);"))
   (field 2)
   (mirror 1 (if (string-match "%" field-text) "\);" "")))
 
-(printf)
 
-(ert-deftest snippet--test-form-sym-tuples ()
-  (let* ((test-tuples (snippet--form-sym-tuples '((field 1 "bla")
-                                                  "ble"
-                                                  (mirror 1)
-                                                  (field 2
-                                                         ((field 3 "fonix")
-                                                          "fotrix"
-                                                          (mirror 1 "qqcoisa")))
-                                                  "end")))
-         (symbols-declared (mapcar #'(lambda (sym) (intern (symbol-name sym)))
-                                   (remove 'string (mapcar #'car test-tuples)))))
-    (should
-     (equal '(field-1 mirror-1-of-1 field-2 field-3-son-of-field-2 mirror-2-of-1-son-of-field-2)
-            symbols-declared))))
+(define-snippet foo ()
+  (field 1 "bla")
+  "ble"
+  (mirror 1)
+  (field 2
+         ((field 3 "fonix")
+          "fotrix"
+          (mirror 1 "qqcoisa")))
+  "end")
+
+
 
 
 (provide 'snippet)
