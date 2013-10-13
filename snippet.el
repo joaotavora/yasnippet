@@ -111,15 +111,14 @@
                        (if parent-field-sym
                            (format "-son-of-%s" parent-field-sym)
                          ""))))
+
+(defvar snippet--marker-sym-obarray (make-vector 100 nil))
+
 (defun snippet--start-marker-name (sym)
-  (make-symbol (format "%s-beg" sym)))
+  (intern (format "%s-beg" sym) snippet--marker-sym-obarray))
 
 (defun snippet--end-marker-name (sym)
-  (make-symbol (format "%s-end" sym)))
-
-
-
-
+  (intern (format "%s-end" sym) snippet--marker-sym-obarray))
 
 (defvar snippet--form-mirror-sym-idx nil)
 
@@ -258,7 +257,7 @@ I would need these somewhere in the let* form
       (snippet--field-text ,source-sym))))
 
 
-(defmacro define-snippet (name args &rest body)
+(defmacro define-snippet (name _args &rest body)
   "Define NAME as a snippet.
 
 NAME's function definition is set to a function with no arguments
@@ -337,7 +336,6 @@ can be:
   (mirror 1 (if (string-match "%" field-text) "\"," "\);"))
   (field 2)
   (mirror 1 (if (string-match "%" field-text) "\);" "")))
-
 
 (define-snippet foo ()
   (field 1 "bla")
