@@ -27,22 +27,56 @@
 (eval-when-compile (require 'cl))
 
 
-(cl-defstruct (snippet--field (:constructor snippet--make-field (name mirrors parent-field start end)))
+(cl-defstruct (snippet--field (:constructor snippet--make-field (name mirrors parent-field start end next-field prev-field)))
   name
   start end
   parent-field
   (mirrors '())
   (transform nil)
   (modified-p nil)
-  next)
+  next-field
+  prev-field)
 
 (cl-defstruct (snippet--mirror (:constructor snippet--make-mirror (source transform parent-field start end)))
   source
   start end
   (transform nil)
-  parent-field
-  next
-  depth)
+  parent-field)
+
+(defgroup snippet nil
+  "Customize snippet features"
+  :group 'convenience)
+
+(defface snippet-field-face
+  '((t (:inherit 'region)))
+  "Face used to highlight the currently active field of a snippet"
+  :group 'snippet)
+
+(defvar snippet-field-keymap
+  (let ((map (make-sparse-keymap)))
+    (define-key map [(tab)]       'snippet-next-field)
+    (define-key map [backtab]     'snippet-prev-field)
+    map)
+  "The active keymap while a snippet expansion is in progress.")
+
+(defvar snippet--field-overlay nil)
+
+(defun snippet-next-field (&optional prev)
+  (interactive)
+  (let ((field (overlay-get snippet--field-overlay 'field)))
+    (cond (prev
+           (if (snippet--field-prev-field field)
+               (snippet--move-to-field (snippet--field-prev-field field))
+             (goto-char (snippet--field-start field))
+             (snippet-exit-snippet)))
+          (t
+            (if (snippet--field-next-field field)
+                (snippet--move-to-field (snippet--field-next-field field))
+              (goto-char (snippet--field-end field))
+              (snippet-exit-snippet))))))
+
+(defun snippet-exit-snippet ()
+  (delete-overlay snippet--field-overlay))
 
 (defun snippet--make-marker ()
   (let ((marker (make-marker)))
@@ -53,17 +87,17 @@
   (declare (indent defun))
   `(snippet--call-with-current-object ,object #'(lambda () ,@body)))
 
-(defun snippet--object-start-marker (o)
-  (cond ((snippet--field-p o)
-         (snippet--field-start o))
-        ((snippet--mirror-p o)
-         (snippet--mirror-start o))))
+(defun snippet--object-start-marker (field-or-mirror)
+  (cond ((snippet--field-p field-or-mirror)
+         (snippet--field-start field-or-mirror))
+        ((snippet--mirror-p field-or-mirror)
+         (snippet--mirror-start field-or-mirror))))
 
-(defun snippet--object-end-marker (o)
-  (cond ((snippet--field-p o)
-         (snippet--field-end o))
-        ((snippet--mirror-p o)
-         (snippet--mirror-end o))))
+(defun snippet--object-end-marker (field-or-mirror)
+  (cond ((snippet--field-p field-or-mirror)
+         (snippet--field-end field-or-mirror))
+        ((snippet--mirror-p field-or-mirror)
+         (snippet--mirror-end field-or-mirror))))
 
 (defun snippet--call-with-current-object (object fn)
   (let* ((start (snippet--object-start-marker object))
@@ -84,8 +118,25 @@
       (insert text))))
 
 (defun snippet--insert-mirror (mirror)
+  (snippet--update-mirror mirror))
+
+(defun snippet--update-mirror (mirror)
   (snippet--with-current-object mirror
+    (delete-region (snippet--object-start-marker mirror)
+                   (snippet--object-end-marker mirror))
     (insert (funcall (snippet--mirror-transform mirror)))))
+
+(defun snippet--move-to-field (field)
+  (goto-char (snippet--object-start-marker field))
+  (move-overlay snippet--field-overlay
+                (point)
+                (snippet--object-end-marker field))
+  (overlay-put snippet--field-overlay 'snippet--field field))
+
+(defun snippet--field-overlay-changed (overlay after? _beg _end &optional _length)
+  (when after?
+    (let ((field (overlay-get overlay 'snippet--field)))
+      (mapc #'snippet--update-mirror (snippet--field-mirrors field)))))
 
 (defun snippet--field-text (field)
   (buffer-substring-no-properties (snippet--field-start field)
@@ -204,7 +255,8 @@ I would need these somewhere in the let* form
                        `(snippet--make-marker))))))
 
 
-
+(defun snippet--first-field-sym (tuples)
+  (first (cl-find-if #'snippet--form-field-p tuples :key #'second)))
 
 
 (defun snippet--make-object-sym-tuples (tuples)
@@ -237,13 +289,17 @@ I would need these somewhere in the let* form
          ;; complete lists of mirror symbols.
          ;;
          (make-field-forms
-          (loop for (sym form parent-sym) in tuples
-                when (snippet--form-field-p form)
+          (loop with field-tuples = (cl-remove-if-not #'snippet--form-field-p tuples :key #'second)
+                for (prev-sym) in (cons nil field-tuples)
+                for (sym form parent-sym) in field-tuples
+                for (next-sym) in (append field-tuples (list nil))
                 collect `(,sym (snippet--make-field ,(second form)
                                                     (list ,@(gethash sym field-mirrors))
                                                     ,parent-sym
                                                     ,(snippet--start-marker-name sym)
-                                                    ,(snippet--end-marker-name sym))))))
+                                                    ,(snippet--end-marker-name sym)
+                                                    ,prev-sym
+                                                    ,next-sym)))))
 
     (append make-field-forms
             make-mirror-forms)))
@@ -296,13 +352,12 @@ can be:
   options is currently unimplemented."
   (let* ((sym-tuples (snippet--form-sym-tuples body))
          (marker-init-forms (snippet--make-marker-init-forms sym-tuples))
-         (make-object-forms (snippet--make-object-sym-tuples sym-tuples)))
+         (make-object-forms (snippet--make-object-sym-tuples sym-tuples))
+         (first-field-sym (snippet--first-field-sym sym-tuples)))
     `(let ((insert-snippet-fn
             #'(lambda ()
                 (let* (,@(mapcar #'list (remove 'ignore (mapcar #'car sym-tuples)))
-                       ,@marker-init-forms
-                       (start (point))
-                       overlay)
+                       ,@marker-init-forms)
 
                   ,(if make-object-forms
                        `(setq ,@(loop for (sym form) in make-object-forms
@@ -320,8 +375,19 @@ can be:
                                    ((functionp form)
                                     `(insert (funcall ,form)))))
 
-                  (setq overlay (make-overlay start (point)))
-                  overlay
+                  (setq snippet--field-overlay
+                        (make-overlay (point) (point) nil nil t))
+                  (overlay-put snippet--field-overlay
+                               'face
+                               'snippet-field-face)
+                  (overlay-put snippet--field-overlay
+                               'modification-hooks
+                               '(snippet--field-overlay-changed))
+                  (overlay-put snippet--field-overlay
+                               'keymap
+                               snippet-field-keymap)
+                  ,(if first-field-sym
+                       `(snippet--move-to-field ,first-field-sym))
                   ))))
        (defun ,name ()
          (funcall insert-snippet-fn)))))
