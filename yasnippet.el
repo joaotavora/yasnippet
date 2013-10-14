@@ -3523,9 +3523,11 @@ considered when expanding the snippet."
                  (setq snippet
                        (if expand-env
                            (eval `(let* ,expand-env
-                                    (insert content)
+                                    (let ((inhibit-modification-hooks t))
+                                      (insert content))
                                     (yas--snippet-create (point-min))))
-                         (insert content)
+                         (let ((inhibit-modification-hooks t))
+                           (insert content))
                          (yas--snippet-create (point-min)))))))
 
            ;; stacked-expansion: This checks for stacked expansion, save the
