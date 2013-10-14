@@ -105,10 +105,6 @@
     (set-marker-insertion-type marker t)
     (set-marker marker (point))))
 
-(defmacro snippet--with-current-object (object &rest body)
-  (declare (indent defun) (debug t))
-  `(snippet--call-with-current-object ,object #'(lambda () ,@body)))
-
 (defun snippet--object-start-marker (field-or-mirror)
   (cond ((snippet--field-p field-or-mirror)
          (snippet--field-start field-or-mirror))
@@ -121,16 +117,27 @@
         ((snippet--mirror-p field-or-mirror)
          (snippet--mirror-end field-or-mirror))))
 
+(defun snippet--open-markers (start end)
+  (set-marker-insertion-type start nil)
+  (set-marker-insertion-type end t))
+
+(defun snippet--close-markers (start end)
+  (set-marker-insertion-type start t)
+  (set-marker-insertion-type end nil))
+
 (defun snippet--call-with-current-object (object fn)
   (let* ((start (snippet--object-start-marker object))
          (end (snippet--object-end-marker object)))
     (unwind-protect
         (progn
-          (set-marker-insertion-type start nil)
-          (set-marker-insertion-type end t)
+          (snippet--open-markers start end)
           (funcall fn))
-      (set-marker-insertion-type start t)
-      (set-marker-insertion-type end nil))))
+      (snippet--close-markers start end))))
+
+(defmacro snippet--with-current-object (object &rest body)
+  (declare (indent defun) (debug t))
+  `(snippet--call-with-current-object ,object #'(lambda () ,@body)))
+
 
 (defun snippet--insert-field (field text)
   (when text
@@ -159,12 +166,11 @@
   (let* ((field (overlay-get overlay 'snippet--field))
          (inhibit-modification-hooks t))
     (cond (after?
-           (set-marker-insertion-type (snippet--field-start field) t)
-           (set-marker-insertion-type (snippet--field-end field) nil)
-           (mapc #'snippet--update-mirror (snippet--field-mirrors field)))
+           (snippet--close-markers (snippet--field-start field) (snippet--field-end field))
+           (mapc #'snippet--update-mirror (snippet--field-mirrors field))
+           (move-overlay overlay (snippet--field-start field) (snippet--field-end field)))
           (t
-           (set-marker-insertion-type (snippet--field-start field) nil)
-           (set-marker-insertion-type (snippet--field-end field) t)))))
+           (snippet--open-markers (snippet--field-start field) (snippet--field-end field))))))
 
 (defun snippet--field-text (field)
   (buffer-substring-no-properties (snippet--field-start field)
@@ -381,7 +387,7 @@ I would need these somewhere in the let* form
                                                ,(snippet--start-marker-name sym)
                                                ,(snippet--end-marker-name sym)
                                                ,parent-sym
-                                               (list ,@(gethash sym field-mirrors))
+                                               (list ,@(reverse (gethash sym field-mirrors)))
                                                ,next-sym
                                                ,prev-sym)))))
 
@@ -458,7 +464,7 @@ can be:
                                     `(insert (funcall ,form)))))
 
                   (setq snippet--field-overlay
-                        (make-overlay (point) (point) nil nil nil))
+                        (make-overlay (point) (point) nil nil t))
                   (overlay-put snippet--field-overlay
                                'face
                                'snippet-field-face)
@@ -486,11 +492,6 @@ can be:
 
 
 ;;; some basic test snippets
-
-(define-snippet test ()
-  "some string" buffer-file-name)
-
-
 (define-snippet printf ()
   "printf (\""
   (field 1 "%s")
@@ -508,11 +509,17 @@ can be:
           (mirror 1 (concat field-text "qqcoisa"))))
   "end")
 
+(define-snippet easy ()
+  "A "
+  (field 1 "field")
+  " and its mirror: "
+  (mirror 1 (format "(mirror of %s)" field-text)))
+
 (defun test ()
   (interactive)
   (with-current-buffer (switch-to-buffer (get-buffer-create "*test*"))
     (erase-buffer)
-    (printf)))
+    (easy)))
 
 
 (provide 'snippet)
