@@ -122,8 +122,12 @@
   (set-marker-insertion-type end t))
 
 (defun snippet--close-markers (start end)
-  (set-marker-insertion-type start t)
-  (set-marker-insertion-type end nil))
+  (cond ((= start end)
+         (set-marker-insertion-type start t)
+         (set-marker-insertion-type end t))
+        (t
+         (set-marker-insertion-type start t)
+         (set-marker-insertion-type end nil))))
 
 (defun snippet--call-with-current-object (object fn)
   (let* ((start (snippet--object-start-marker object))
@@ -517,9 +521,15 @@ can be:
 
 (defun test ()
   (interactive)
-  (with-current-buffer (switch-to-buffer (get-buffer-create "*test*"))
+  (with-current-buffer (switch-to-buffer (get-buffer-create "*test easy snippet*"))
     (erase-buffer)
     (easy)))
+
+(defun test2 ()
+  (interactive)
+  (with-current-buffer (switch-to-buffer (get-buffer-create "*test printf snippet*"))
+    (erase-buffer)
+    (printf)))
 
 
 (provide 'snippet)
