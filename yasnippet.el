@@ -3511,22 +3511,20 @@ considered when expanding the snippet."
            ;;    plain text will get recorded at the end.
            ;;
            ;;    stacked expansion: also shoosh the overlay modification hooks
-           (save-restriction
-             (narrow-to-region start start)
-             (let ((buffer-undo-list t))
-               ;; snippet creation might evaluate users elisp, which
-               ;; might generate errors, so we have to be ready to catch
-               ;; them mostly to make the undo information
-               ;;
-               (setq yas--start-column (save-restriction (widen) (current-column)))
-               (yas--inhibit-overlay-hooks
-                 (setq snippet
-                       (if expand-env
-                           (eval `(let* ,expand-env
-                                    (insert content)
-                                    (yas--snippet-create (point-min))))
-                         (insert content)
-                         (yas--snippet-create (point-min)))))))
+           (let ((buffer-undo-list t))
+             ;; snippet creation might evaluate users elisp, which
+             ;; might generate errors, so we have to be ready to catch
+             ;; them mostly to make the undo information
+             ;;
+             (setq yas--start-column (current-column))
+             (yas--inhibit-overlay-hooks
+               (setq snippet
+                     (if expand-env
+                         (eval `(let* ,expand-env
+                                  (insert content)
+                                  (yas--snippet-create start (point))))
+                       (insert content)
+                       (yas--snippet-create start (point))))))
 
            ;; stacked-expansion: This checks for stacked expansion, save the
            ;; `yas--previous-active-field' and advance its boundary.
@@ -3604,25 +3602,27 @@ After revival, push the `yas--take-care-of-redo' in the
       (push `(apply yas--take-care-of-redo ,beg ,end ,snippet)
             buffer-undo-list))))
 
-(defun yas--snippet-create (begin)
-  "Create a snippet from a template inserted at BEGIN.
+(defun yas--snippet-create (begin end)
+  "Create a snippet from a template inserted at BEGIN to END.
 
 Returns the newly created snippet."
-  (let ((snippet (yas--make-snippet)))
-    (goto-char begin)
-    (yas--snippet-parse-create snippet)
+  (save-restriction
+    (narrow-to-region begin end)
+    (let ((snippet (yas--make-snippet)))
+      (goto-char begin)
+      (yas--snippet-parse-create snippet)
 
-    ;; Sort and link each field
-    (yas--snippet-sort-fields snippet)
+      ;; Sort and link each field
+      (yas--snippet-sort-fields snippet)
 
-    ;; Create keymap overlay for snippet
-    (setf (yas--snippet-control-overlay snippet)
-          (yas--make-control-overlay snippet (point-min) (point-max)))
+      ;; Create keymap overlay for snippet
+      (setf (yas--snippet-control-overlay snippet)
+            (yas--make-control-overlay snippet (point-min) (point-max)))
 
-    ;; Move to end
-    (goto-char (point-max))
+      ;; Move to end
+      (goto-char (point-max))
 
-    snippet))
+      snippet)))
 
 
 ;;; Apropos adjacencies and "fom's":
