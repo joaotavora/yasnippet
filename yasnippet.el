@@ -2203,7 +2203,7 @@ If expansion fails, execute the previous binding for this key"
   (interactive)
   (setq yas--condition-cache-timestamp (current-time))
   (let* ((vec (subseq (this-command-keys-vector) (if current-prefix-arg
-                                                     universal-argument-num-events
+                                                     (length (this-command-keys))
                                                    0)))
          (templates (mapcan #'(lambda (table)
                                 (yas--fetch table vec))
