@@ -212,13 +212,10 @@ I would need these somewhere in the let* form
     (append make-field-forms
             make-mirror-forms)))
 
-(defun snippet--transform-lambda (transform-form source-sym)
-  `(lambda ()
-     (funcall
-      #'(lambda (field-text)
-          ,(or transform-form
-               'field-text))
-      (snippet--field-text ,source-sym))))
+(defun snippet--transform-lambda (transform-form)
+  `(lambda (field-text)
+     ,(or transform-form
+          'field-text)))
 
 
 (defmacro define-snippet (name _args &rest body)
@@ -440,7 +437,8 @@ can be:
                    (snippet--object-end-marker mirror))
     (save-excursion
       (goto-char (snippet--object-start-marker mirror))
-      (insert (funcall (snippet--mirror-transform mirror))))))
+      (insert (funcall (snippet--mirror-transform mirror)
+                       (snippet--field-text (snippet--mirror-source mirror)))))))
 
 (defun snippet--move-to-field (field)
   (goto-char (snippet--object-start-marker field))
