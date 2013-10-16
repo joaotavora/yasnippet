@@ -1,4 +1,4 @@
-;;; snippet.el --- yasnippet's snippet engine distilled  -*- lexical-binding: t; -*-
+;;; snippet.el --- yasnippet's engine distilled  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2013  João Távora
 
@@ -40,7 +40,8 @@
                        (if parent-field-sym
                            (format "-son-of-%s" parent-field-sym)
                          ""))))
-(defun snippet--form-make-mirror-sym (mirror-name source-field-name &optional parent-field-sym)
+(defun snippet--form-make-mirror-sym (mirror-name source-field-name
+                                                  &optional parent-field-sym)
   (make-symbol (format "mirror-%s-of-%s%s" mirror-name source-field-name
                        (if parent-field-sym
                            (format "-son-of-%s" parent-field-sym)
@@ -74,14 +75,17 @@ iterated depth-first, resulting in a flattened list."
         for next-form in (append (rest forms) (list nil))
 
         for (sym childrenp) = (cond ((snippet--form-field-p form)
-                                     (list (snippet--form-make-field-sym (second form)
-                                                                         parent-field-sym)
+                                     (list (snippet--form-make-field-sym
+                                            (second form)
+                                            parent-field-sym)
                                            (listp (third form))))
                                     ((snippet--form-mirror-p form)
                                      (incf snippet--form-mirror-sym-idx)
-                                     (list (snippet--form-make-mirror-sym snippet--form-mirror-sym-idx
-                                                                          (second form)
-                                                                          parent-field-sym))))
+                                     (list (snippet--form-make-mirror-sym
+                                            snippet--form-mirror-sym-idx
+                                            (second form)
+                                            parent-field-sym))))
+
         append (cond (sym
                       `((,sym
                          ,form
@@ -158,33 +162,43 @@ I would need these somewhere in the let* form
                                           (second form-b)))
                                 do
                                 (setq source-sym sym-b)
-                                (puthash source-sym (cons sym (gethash source-sym field-mirrors)) field-mirrors))
+                                (puthash source-sym
+                                         (cons sym (gethash source-sym
+                                                            field-mirrors))
+                                         field-mirrors))
                           (unless source-sym
-                            (error "mirror definition %s mentions unknown field" form))
+                            (error "mirror  %s mentions unknown field"
+                                   form))
                           `((,sym (snippet--make-mirror))
-                            (snippet--init-mirror ,sym
-                                                  ,source-sym
-                                                  ,(snippet--start-marker-name sym)
-                                                  ,(snippet--end-marker-name sym)
-                                                  ,(snippet--transform-lambda (third form) source-sym)
-                                                  ,parent-sym)))))
+                            (snippet--init-mirror
+                             ,sym
+                             ,source-sym
+                             ,(snippet--start-marker-name sym)
+                             ,(snippet--end-marker-name sym)
+                             ,(snippet--transform-lambda (third form))
+                             ,parent-sym)))))
          ;; so that we can now create `snippet--make-field' forms with
          ;; complete lists of mirror symbols.
          ;;
          (make-field-forms
-          (loop with field-tuples = (cl-remove-if-not #'snippet--form-field-p tuples :key #'second)
+          (loop with field-tuples = (cl-remove-if-not #'snippet--form-field-p
+                                                      tuples
+                                                      :key #'second)
                 for (prev-sym) in (cons nil field-tuples)
                 for (sym form parent-sym) in field-tuples
                 for (next-sym) in (append (rest field-tuples) (list nil))
                 collect `((,sym (snippet--make-field))
-                          (snippet--init-field ,sym
-                                               ,(second form)
-                                               ,(snippet--start-marker-name sym)
-                                               ,(snippet--end-marker-name sym)
-                                               ,parent-sym
-                                               (list ,@(reverse (gethash sym field-mirrors)))
-                                               ,next-sym
-                                               ,prev-sym)))))
+                          (snippet--init-field
+                           ,sym
+                           ,(second form)
+                           ,(snippet--start-marker-name sym)
+                           ,(snippet--end-marker-name sym)
+                           ,parent-sym
+                           (list
+                            ,@(reverse
+                               (gethash sym field-mirrors)))
+                           ,next-sym
+                           ,prev-sym)))))
 
     (append make-field-forms
             make-mirror-forms)))
