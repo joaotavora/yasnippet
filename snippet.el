@@ -255,6 +255,14 @@ can be:
 * the symbol `:obarray', in which case the symbol NAME in
   interned in the obarray VAL instead of the global obarray. This
   options is currently unimplemented."
+  (declare (debug (&define name sexp &rest &or
+                           ("lambda" sexp def-form) ; curiously, function-form
+                                                    ; doesn't work here
+
+                           functionp
+                           sexp
+                           ("mirror" sexp def-form)
+                           ("field" sexp form))))
   (let* ((sym-tuples (snippet--form-sym-tuples body))
          (marker-init-forms (snippet--make-marker-init-forms sym-tuples))
          (init-object-forms (snippet--init-field-and-mirror-forms sym-tuples))
