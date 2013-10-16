@@ -57,6 +57,13 @@
 
 (defvar snippet--form-mirror-sym-idx nil)
 
+(defun snippet--function-p (form)
+  (or (functionp form)
+      (and (eq 'function (first form))
+           (fboundp (second form)))
+      (and (eq 'quote (first form))
+           (fboundp (second form)))))
+
 (defun snippet--form-sym-tuples (forms &optional parent-field-sym)
   "Produce information for composing the snippet expansion function.
 
@@ -95,11 +102,11 @@ iterated depth-first, resulting in a flattened list."
                         ,@(when childrenp
                             (snippet--form-sym-tuples (third form) sym))))
                      ((null form) nil)
-
                      ((or (stringp form)
-                          (symbolp form)
-                          (eq (car form) 'lambda))
-                      `((ignore ,form ,parent-field-sym))))
+                          (snippet--function-p form))
+                      `((string-or-function ,form ,parent-field-sym)))
+                     (t
+                       (error "unknown type of snippet form %s" form)))
         do (setq adjacent-prev-sym sym)))
 
 (defun snippet--make-marker-init-forms (tuples)
@@ -215,7 +222,7 @@ I would need these somewhere in the let* form
 
 
 (defmacro define-snippet (name _args &rest body)
-  "Define NAME as a snippet.
+  "Define NAME as a snippet-inserting function.
 
 NAME's function definition is set to a function with no arguments
 that inserts the fields components at point.
@@ -255,51 +262,50 @@ can be:
          (marker-init-forms (snippet--make-marker-init-forms sym-tuples))
          (init-object-forms (snippet--init-field-and-mirror-forms sym-tuples))
          (first-field-sym (snippet--first-field-sym sym-tuples)))
-    `(let ((insert-snippet-fn
-            #'(lambda ()
-                (let* (,@(mapcar #'first init-object-forms)
-                       ,@marker-init-forms)
+    `(defun ,name ()
+       (let* (,@(mapcar #'first init-object-forms)
+              ,@marker-init-forms)
 
-                  ,@(mapcar #'second init-object-forms)
+         ,@(mapcar #'second init-object-forms)
 
-                  ,@(loop
-                     for (sym form)           in sym-tuples
-                     collect (cond ((snippet--form-field-p form)
-                                    `(snippet--insert-field ,sym ,(if (stringp (third form))
-                                                                      (third form))))
-                                   ((snippet--form-mirror-p form)
-                                    `(snippet--insert-mirror ,sym))
-                                   ((stringp form)
-                                    `(insert ,form))
-                                   ((functionp form)
-                                    `(insert (funcall ,form)))))
+         ,@(loop
+            for (sym form) in sym-tuples
+            collect (cond ((snippet--form-field-p form)
+                           `(snippet--insert-field ,sym ,(if (stringp
+                                                              (third form))
+                                                             (third form))))
+                          ((snippet--form-mirror-p form)
+                           `(snippet--insert-mirror ,sym))
+                          ((stringp form)
+                           `(insert ,form))
+                          ((snippet--function-p form)
+                           `(insert (funcall ,form)))))
 
-                  (setq snippet--field-overlay
-                        (make-overlay (point) (point) nil nil t))
-                  (overlay-put snippet--field-overlay
-                               'face
-                               'snippet-field-face)
-                  (overlay-put snippet--field-overlay
-                               'modification-hooks
-                               '(snippet--field-overlay-changed))
-                  (overlay-put snippet--field-overlay
-                               'insert-in-front-hooks
-                               '(snippet--field-overlay-changed))
-                  (overlay-put snippet--field-overlay
-                               'insert-behind-hooks
-                               '(snippet--field-overlay-changed))
-                  (overlay-put snippet--field-overlay
-                               'keymap
-                               snippet-field-keymap)
-                  (overlay-put snippet--field-overlay
-                               'snippet--objects
-                               (list ,@(remove 'ignore (mapcar #'first sym-tuples))))
-                  ,(if first-field-sym
-                       `(snippet--move-to-field ,first-field-sym))
-                  (add-hook 'post-command-hook 'snippet--post-command-hook t t)
-                  (snippet--post-command-hook)))))
-       (defun ,name ()
-         (funcall insert-snippet-fn)))))
+         (setq snippet--field-overlay
+               (make-overlay (point) (point) nil nil t))
+         (overlay-put snippet--field-overlay
+                      'face
+                      'snippet-field-face)
+         (overlay-put snippet--field-overlay
+                      'modification-hooks
+                      '(snippet--field-overlay-changed))
+         (overlay-put snippet--field-overlay
+                      'insert-in-front-hooks
+                      '(snippet--field-overlay-changed))
+         (overlay-put snippet--field-overlay
+                      'insert-behind-hooks
+                      '(snippet--field-overlay-changed))
+         (overlay-put snippet--field-overlay
+                      'keymap
+                      snippet-field-keymap)
+         (overlay-put snippet--field-overlay
+                      'snippet--objects
+                      (list ,@(remove 'string-or-function
+                                      (mapcar #'first
+                                              sym-tuples))))
+         ,(if first-field-sym
+              `(snippet--move-to-field ,first-field-sym))
+         (add-hook 'post-command-hook 'snippet--post-command-hook t t)))))
 
 
 ;;; Snippet mechanics
