@@ -511,7 +511,6 @@ can be:
 
 (provide 'snippet)
 
-;;; Local Variables:
-;;; lexical-binding: t
-;;; End:
-;;; snippet.el ends here
+;; Local Variables:
+;; End:
+;; snippet.el ends here
