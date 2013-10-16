@@ -66,13 +66,12 @@ A tuple of 6 elements is created for each form in FORMS.
 
 Forms representing fields with nested elements are recursively
 iterated depth-first, resulting in a flattened list."
-  (loop with snippet--form-mirror-sym-idx = (or snippet--form-mirror-sym-idx
+  (loop unless forms return nil
+        with snippet--form-mirror-sym-idx = (or snippet--form-mirror-sym-idx
                                                 0)
         with adjacent-prev-sym
 
-        for prev-form in (cons nil forms)
-        for form in forms
-        for next-form in (append (rest forms) (list nil))
+        for (prev-form form next-form) on `(nil ,@forms)
 
         for (sym childrenp) = (cond ((snippet--form-field-p form)
                                      (list (snippet--form-make-field-sym
@@ -95,6 +94,7 @@ iterated depth-first, resulting in a flattened list."
                          ,next-form)
                         ,@(when childrenp
                             (snippet--form-sym-tuples (third form) sym))))
+                     ((null form) nil)
 
                      ((or (stringp form)
                           (symbolp form)
@@ -127,7 +127,7 @@ I would need these somewhere in the let* form
   (mm5-end (make-marker)))
 "
   (loop for (sym nil parent-sym adjacent-prev-sym prev next) in tuples
-        unless (eq sym 'ignore)
+        unless (eq sym 'string-or-function)
         append `((,(snippet--start-marker-name sym)
                   ,(or (and adjacent-prev-sym
                             (snippet--end-marker-name adjacent-prev-sym))
@@ -184,9 +184,11 @@ I would need these somewhere in the let* form
           (loop with field-tuples = (cl-remove-if-not #'snippet--form-field-p
                                                       tuples
                                                       :key #'second)
-                for (prev-sym) in (cons nil field-tuples)
-                for (sym form parent-sym) in field-tuples
-                for (next-sym) in (append (rest field-tuples) (list nil))
+                for ((prev-sym)
+                     (sym form parent-sym)
+                     (next-sym)) on `(nil ,@field-tuples)
+                     when sym
+
                 collect `((,sym (snippet--make-field))
                           (snippet--init-field
                            ,sym
