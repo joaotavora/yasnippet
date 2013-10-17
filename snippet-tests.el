@@ -1,9 +1,9 @@
-;;; snippet-tests.el --- some basic tests for snippet.el  -*- lexical-binding: t; -*-
+;;; snippet-tests.el --- some basic tests for snippet.el
 
-;; Copyright (C) 2013  
+;; Copyright (C) 2013
 
 ;; Author: ;;; some basic test snippets <joaot@BELMONTE>
-;; Keywords: 
+;; Keywords:
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -20,50 +20,42 @@
 
 ;;; Commentary:
 
-;; 
+;;
 
 ;;; Code:
 
 (require 'snippet)
 
-(define-snippet printf ()
-  "printf (\""
-  (field 1 "%s")
-  (mirror 1 (if (string-match "%" field-text) "\"," "\);"))
-  (field 2)
-  (mirror 1 (if (string-match "%" field-text) "\);" "")))
+(setq snippet--printf-snippet-forms
+      '("printf (\""
+        (field 1 "%s")
+        (mirror 1 (if (string-match "%" field-text) "\"," "\")"))
+        (field 2)
+        (mirror 1 (if (string-match "%" field-text) "\)" ""))))
 
-(define-snippet foo ()
-  (field 1 "bla")
-  "ble"
-  (mirror 1)
-  (field 2
-         ((field 3 "fonix")
-          "fotrix"
-          (mirror 1 (concat field-text "qqcoisa"))))
-  "end")
+(ert-deftest printf-expansion ()
+  ""
+  (with-temp-buffer
+    (funcall (eval `(make-snippet ,@snippet--printf-snippet-forms)))
+    (should (equal (buffer-string) "printf (\"%s\",)"))))
 
-(define-snippet easy ()
-  "A "
-  (field 1 "field")
-  " and its mirror: "
-  (mirror 1 (format "(mirror of %s)" field-text)))
+(ert-deftest printf-mirrors ()
+  ""
+  (with-temp-buffer
+    (funcall (eval `(make-snippet ,@snippet--printf-snippet-forms)))
+    (ert-simulate-command '(delete-forward-char 1))
+    (should (equal (buffer-string) "printf (\"s\")"))
+    (ert-simulate-command '((lambda () (interactive) (insert "%"))))
+    (should (equal (buffer-string) "printf (\"%s\",)"))))
 
-(defun test ()
-  (interactive)
-  (with-current-buffer (switch-to-buffer (get-buffer-create "*test easy snippet*"))
-    (erase-buffer)
-    (easy)))
-
-(defun test2 ()
-  (interactive)
-  (with-current-buffer (switch-to-buffer (get-buffer-create "*test printf snippent*"))
-    (erase-buffer)
-    (printf)))
-
-(provide 'snippet-tests)
-
-;;; Local Variables:
-;;; lexical-binding: t
-;;; End:
-;;; snippet-tests.el ends here
+(ert-deftest printf-mirrors-and-navigation ()
+  ""
+  (with-temp-buffer
+    (funcall (eval `(make-snippet ,@snippet--printf-snippet-forms)))
+    (ert-simulate-command '(delete-forward-char 1))
+    (should (equal (buffer-string) "printf (\"s\")"))
+    (ert-simulate-command '((lambda () (interactive) (insert "%"))))
+    (should (equal (buffer-string) "printf (\"%s\",)"))
+    (ert-simulate-command '(snippet-next-field))
+    (ert-simulate-command '((lambda () (interactive) (insert "somevar"))))
+    (should (equal (buffer-string) "printf (\"%s\",somevar)"))))
