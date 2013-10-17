@@ -308,10 +308,10 @@ can be:
   (declare (debug (&define name sexp &rest &or
                            ;; curiously, function-form doesn't work here
                            ;;
-                           ("lambda" sexp def-form)
-                           sexp
                            ("mirror" sexp def-form)
-                           ("field" sexp))))
+                           ("lambda" sexp def-form)
+                           ("field" sexp &rest sexp)
+                           sexp)))
   `(defun ,name ()
      ,(define--snippet-body body)))
 
@@ -534,5 +534,6 @@ can be:
 (provide 'snippet)
 
 ;; Local Variables:
+;; coding: utf-8
 ;; End:
 ;; snippet.el ends here
