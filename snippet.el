@@ -217,8 +217,58 @@ I would need these somewhere in the let* form
      ,(or transform-form
           'field-text)))
 
+(defun define--snippet-body (body)
+  "Does the actual work for `define-snippet'"
+  (let* ((sym-tuples (snippet--form-sym-tuples body))
+         (marker-init-forms (snippet--make-marker-init-forms sym-tuples))
+         (init-object-forms (snippet--init-field-and-mirror-forms sym-tuples))
+         (first-field-sym (snippet--first-field-sym sym-tuples)))
+    `(let* (,@(mapcar #'first init-object-forms)
+            ,@marker-init-forms)
 
-(defmacro define-snippet (name _args &rest body)
+       ,@(mapcar #'second init-object-forms)
+
+       ,@(loop
+          for (sym form) in sym-tuples
+          collect (cond ((snippet--form-field-p form)
+                         `(snippet--insert-field ,sym ,(if (stringp
+                                                            (third form))
+                                                           (third form))))
+                        ((snippet--form-mirror-p form)
+                         `(snippet--insert-mirror ,sym))
+                        ((stringp form)
+                         `(insert ,form))
+                        ((snippet--function-p form)
+                         `(insert (funcall ,form)))))
+
+       (setq snippet--field-overlay
+             (make-overlay (point) (point) nil nil t))
+       (overlay-put snippet--field-overlay
+                    'face
+                    'snippet-field-face)
+       (overlay-put snippet--field-overlay
+                    'modification-hooks
+                    '(snippet--field-overlay-changed))
+       (overlay-put snippet--field-overlay
+                    'insert-in-front-hooks
+                    '(snippet--field-overlay-changed))
+       (overlay-put snippet--field-overlay
+                    'insert-behind-hooks
+                    '(snippet--field-overlay-changed))
+       (overlay-put snippet--field-overlay
+                    'keymap
+                    snippet-field-keymap)
+       (overlay-put snippet--field-overlay
+                    'snippet--objects
+                    (list ,@(remove 'string-or-function
+                                    (mapcar #'first
+                                            sym-tuples))))
+       ,(if first-field-sym
+            `(snippet--move-to-field ,first-field-sym))
+       (add-hook 'post-command-hook 'snippet--post-command-hook t t))))
+
+
+(cl-defmacro define-snippet (name () &rest body)
   "Define NAME as a snippet-inserting function.
 
 NAME's function definition is set to a function with no arguments
@@ -256,61 +306,18 @@ can be:
   interned in the obarray VAL instead of the global obarray. This
   options is currently unimplemented."
   (declare (debug (&define name sexp &rest &or
-                           ("lambda" sexp def-form) ; curiously, function-form
-                                                    ; doesn't work here
-
-                           functionp
+                           ;; curiously, function-form doesn't work here
+                           ;;
+                           ("lambda" sexp def-form)
                            sexp
                            ("mirror" sexp def-form)
-                           ("field" sexp form))))
-  (let* ((sym-tuples (snippet--form-sym-tuples body))
-         (marker-init-forms (snippet--make-marker-init-forms sym-tuples))
-         (init-object-forms (snippet--init-field-and-mirror-forms sym-tuples))
-         (first-field-sym (snippet--first-field-sym sym-tuples)))
-    `(defun ,name ()
-       (let* (,@(mapcar #'first init-object-forms)
-              ,@marker-init-forms)
+                           ("field" sexp))))
+  `(defun ,name ()
+     ,(define--snippet-body body)))
 
-         ,@(mapcar #'second init-object-forms)
-
-         ,@(loop
-            for (sym form) in sym-tuples
-            collect (cond ((snippet--form-field-p form)
-                           `(snippet--insert-field ,sym ,(if (stringp
-                                                              (third form))
-                                                             (third form))))
-                          ((snippet--form-mirror-p form)
-                           `(snippet--insert-mirror ,sym))
-                          ((stringp form)
-                           `(insert ,form))
-                          ((snippet--function-p form)
-                           `(insert (funcall ,form)))))
-
-         (setq snippet--field-overlay
-               (make-overlay (point) (point) nil nil t))
-         (overlay-put snippet--field-overlay
-                      'face
-                      'snippet-field-face)
-         (overlay-put snippet--field-overlay
-                      'modification-hooks
-                      '(snippet--field-overlay-changed))
-         (overlay-put snippet--field-overlay
-                      'insert-in-front-hooks
-                      '(snippet--field-overlay-changed))
-         (overlay-put snippet--field-overlay
-                      'insert-behind-hooks
-                      '(snippet--field-overlay-changed))
-         (overlay-put snippet--field-overlay
-                      'keymap
-                      snippet-field-keymap)
-         (overlay-put snippet--field-overlay
-                      'snippet--objects
-                      (list ,@(remove 'string-or-function
-                                      (mapcar #'first
-                                              sym-tuples))))
-         ,(if first-field-sym
-              `(snippet--move-to-field ,first-field-sym))
-         (add-hook 'post-command-hook 'snippet--post-command-hook t t)))))
+(cl-defmacro make-snippet (&rest body)
+  "Same as `define-snippet', but return an anonymous function."
+  `(lambda () ,(define--snippet-body body)))
 
 
 ;;; Snippet mechanics
@@ -323,7 +330,8 @@ can be:
   next-field
   prev-field)
 
-(defun snippet--init-field (object name start end parent-field mirrors next-field prev-field)
+(defun snippet--init-field (object name start end parent-field mirrors
+                                   next-field prev-field)
   (setf (snippet--field-name object) name
         (snippet--field-start object) start
         (snippet--field-end object) end
