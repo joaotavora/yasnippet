@@ -319,36 +319,59 @@ can be:
 
 ;;; Snippet mechanics
 ;;;
-(cl-defstruct (snippet--field (:constructor snippet--make-field ()))
+
+(cl-defstruct snippet--object
+  start end parent-field next prev (buffer (current-buffer)))
+
+(cl-defstruct (snippet--field (:constructor snippet--make-field ())
+                              (:include snippet--object)
+                              (:print-function snippet--describe-field))
   name
-  start end
-  parent-field
   (mirrors '())
   next-field
   prev-field)
 
+(defun snippet--describe-field (field)
+  (with-current-buffer (snippet--object-buffer field)
+    (format "field %s from %s to %s covering \"%s\""
+            (snippet--field-name field)
+            (marker-position (snippet--object-start field))
+            (marker-position (snippet--object-end field))
+            (buffer-substring-no-properties
+             (snippet--object-start field)
+             (snippet--object-end field)))))
+
 (defun snippet--init-field (object name start end parent-field mirrors
                                    next-field prev-field)
   (setf (snippet--field-name object) name
-        (snippet--field-start object) start
-        (snippet--field-end object) end
-        (snippet--field-parent-field object) parent-field
+        (snippet--object-start object) start
+        (snippet--object-end object) end
+        (snippet--object-parent-field object) parent-field
         (snippet--field-mirrors object) mirrors
         (snippet--field-next-field object) next-field
         (snippet--field-prev-field object) prev-field))
 
-(cl-defstruct (snippet--mirror (:constructor snippet--make-mirror ()))
+(cl-defstruct (snippet--mirror (:constructor snippet--make-mirror ())
+                               (:include snippet--object)
+                               (:print-function snippet--describe-mirror))
   source
-  start end
-  (transform nil)
-  parent-field)
+  (transform nil))
 
 (defun snippet--init-mirror (object source start end transform parent-field)
   (setf (snippet--mirror-source object) source
-        (snippet--mirror-start object) start
-        (snippet--mirror-end object) end
+        (snippet--object-start object) start
+        (snippet--object-end object) end
         (snippet--mirror-transform object) transform
-        (snippet--mirror-parent-field object) parent-field))
+        (snippet--object-parent-field object) parent-field))
+
+(defun snippet--describe-mirror (mirror)
+  (with-current-buffer (snippet--object-buffer mirror)
+    (format "mirror from %s to %s covering \"%s\""
+            (marker-position (snippet--object-start mirror))
+            (marker-position (snippet--object-end mirror))
+            (buffer-substring-no-properties
+             (snippet--object-start mirror)
+             (snippet--object-end mirror)))))
 
 (defgroup snippet nil
   "Customize snippet features"
@@ -356,8 +379,7 @@ can be:
 
 (defface snippet-field-face
   '((t (:inherit 'region)))
-  "Face used to highlight the currently active field of a snippet"
-  :group 'snippet)
+  "Face used to highlight the currently active field of a snippet")
 
 (defvar snippet-field-keymap
   (let ((map (make-sparse-keymap)))
@@ -374,12 +396,12 @@ can be:
     (cond (prev
            (if (snippet--field-prev-field field)
                (snippet--move-to-field (snippet--field-prev-field field))
-             (goto-char (snippet--field-start field))
+             (goto-char (snippet--object-start field))
              (snippet-exit-snippet)))
           (t
            (if (snippet--field-next-field field)
                (snippet--move-to-field (snippet--field-next-field field))
-             (goto-char (snippet--field-end field))
+             (goto-char (snippet--object-end field))
              (snippet-exit-snippet))))))
 
 (defun snippet-prev-field ()
@@ -398,18 +420,6 @@ can be:
     (set-marker-insertion-type marker t)
     (set-marker marker (point))))
 
-(defun snippet--object-start-marker (field-or-mirror)
-  (cond ((snippet--field-p field-or-mirror)
-         (snippet--field-start field-or-mirror))
-        ((snippet--mirror-p field-or-mirror)
-         (snippet--mirror-start field-or-mirror))))
-
-(defun snippet--object-end-marker (field-or-mirror)
-  (cond ((snippet--field-p field-or-mirror)
-         (snippet--field-end field-or-mirror))
-        ((snippet--mirror-p field-or-mirror)
-         (snippet--mirror-end field-or-mirror))))
-
 (defun snippet--open-markers (start end)
   (set-marker-insertion-type start nil)
   (set-marker-insertion-type end t))
@@ -423,8 +433,8 @@ can be:
          (set-marker-insertion-type end nil))))
 
 (defun snippet--call-with-current-object (object fn)
-  (let* ((start (snippet--object-start-marker object))
-         (end (snippet--object-end-marker object)))
+  (let* ((start (snippet--object-start object))
+         (end (snippet--object-end object)))
     (unwind-protect
         (progn
           (snippet--open-markers start end)
@@ -446,37 +456,37 @@ can be:
 
 (defun snippet--update-mirror (mirror)
   (snippet--with-current-object mirror
-    (delete-region (snippet--object-start-marker mirror)
-                   (snippet--object-end-marker mirror))
+    (delete-region (snippet--object-start mirror)
+                   (snippet--object-end mirror))
     (save-excursion
-      (goto-char (snippet--object-start-marker mirror))
+      (goto-char (snippet--object-start mirror))
       (insert (funcall (snippet--mirror-transform mirror)
                        (snippet--field-text (snippet--mirror-source mirror)))))))
 
 (defun snippet--move-to-field (field)
-  (goto-char (snippet--object-start-marker field))
+  (goto-char (snippet--object-start field))
   (move-overlay snippet--field-overlay
                 (point)
-                (snippet--object-end-marker field))
+                (snippet--object-end field))
   (overlay-put snippet--field-overlay 'snippet--field field))
 
 (defun snippet--field-overlay-changed (overlay after? _beg _end &optional _length)
   (let* ((field (overlay-get overlay 'snippet--field))
          (inhibit-modification-hooks t))
     (cond (after?
-           (snippet--close-markers (snippet--field-start field)
-                                   (snippet--field-end field))
+           (snippet--close-markers (snippet--object-start field)
+                                   (snippet--object-end field))
            (mapc #'snippet--update-mirror (snippet--field-mirrors field))
            (move-overlay overlay
-                         (snippet--field-start field)
-                         (snippet--field-end field)))
+                         (snippet--object-start field)
+                         (snippet--object-end field)))
           (t
-           (snippet--open-markers (snippet--field-start field)
-                                  (snippet--field-end field))))))
+           (snippet--open-markers (snippet--object-start field)
+                                  (snippet--object-end field))))))
 
 (defun snippet--field-text (field)
-  (buffer-substring-no-properties (snippet--field-start field)
-                                  (snippet--field-end field)))
+  (buffer-substring-no-properties (snippet--object-start field)
+                                  (snippet--object-end field)))
 
 (defvar snippet--debug nil)
 ;; (setq snippet--debug t)
@@ -498,40 +508,20 @@ can be:
          (remove-hook 'post-command-hook 'snippet--post-command-hook t))))
 
 (defun snippet--debug-snippet (field-overlay)
-  (let ((buffer (current-buffer)))
-    (cl-flet ((describe-field
-               (field)
-               (with-current-buffer buffer
-                 (format "field %s [%s,%s] covering \"%s\""
-                         (snippet--field-name field)
-                         (marker-position (snippet--field-start field))
-                         (marker-position (snippet--field-end field))
-                         (buffer-substring-no-properties
-                          (snippet--field-start field)
-                          (snippet--field-end field)))))
-              (describe-mirror
-               (mirror)
-               (with-current-buffer buffer
-                 (format "  mirror from %s to %s covering \"%s\""
-                         (marker-position (snippet--mirror-start mirror))
-                         (marker-position (snippet--mirror-end mirror))
-                         (buffer-substring-no-properties
-                          (snippet--mirror-start mirror)
-                          (snippet--mirror-end mirror))))))
-      (with-current-buffer (get-buffer-create "*snippet-debug*")
-        (let ((inhibit-read-only t))
-          (erase-buffer)
-          (let ((active-field (overlay-get field-overlay 'snippet--field)))
-            (cl-loop for object in (overlay-get field-overlay 'snippet--objects)
-                     when (snippet--field-p object)
-                     do
-                     (insert (describe-field object))
-                     (when (eq object active-field) (insert "*ACTIVE*"))
-                     (insert "\n")
-                     (cl-loop for mirror in (snippet--field-mirrors object)
-                              do (insert (describe-mirror mirror)
-                                         "\n")))))
-        (display-buffer (current-buffer))))))
+  (with-current-buffer (get-buffer-create "*snippet-debug*")
+    (let ((inhibit-read-only t))
+      (erase-buffer)
+      (let ((active-field (overlay-get field-overlay 'snippet--field)))
+        (cl-loop for object in (overlay-get field-overlay 'snippet--objects)
+                 when (snippet--field-p object)
+                 do
+                 (insert (snippet--describe-field object))
+                 (when (eq object active-field) (insert " (active)"))
+                 (insert "\n")
+                 (cl-loop for mirror in (snippet--field-mirrors object)
+                          do (insert "  " (snippet--describe-mirror mirror)
+                                     "\n")))))
+    (display-buffer (current-buffer))))
 
 (provide 'snippet)
 
