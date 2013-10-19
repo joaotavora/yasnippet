@@ -420,26 +420,26 @@ can be:
     (set-marker-insertion-type marker t)
     (set-marker marker (point))))
 
-(defun snippet--open-markers (start end)
-  (set-marker-insertion-type start nil)
-  (set-marker-insertion-type end t))
+(defun snippet--open-markers (object)
+  (set-marker-insertion-type (snippet--object-start object) nil)
+  (set-marker-insertion-type (snippet--object-end object) t))
 
-(defun snippet--close-markers (start end)
-  (cond ((= start end)
-         (set-marker-insertion-type start t)
-         (set-marker-insertion-type end t))
-        (t
-         (set-marker-insertion-type start t)
-         (set-marker-insertion-type end nil))))
+(defun snippet--close-markers (object)
+  (let ((start (snippet--object-start object))
+        (end (snippet--object-end object)))
+    (cond ((= start end)
+           (set-marker-insertion-type start t)
+           (set-marker-insertion-type end t))
+          (t
+           (set-marker-insertion-type start t)
+           (set-marker-insertion-type end nil)))))
 
 (defun snippet--call-with-current-object (object fn)
-  (let* ((start (snippet--object-start object))
-         (end (snippet--object-end object)))
-    (unwind-protect
-        (progn
-          (snippet--open-markers start end)
-          (funcall fn))
-      (snippet--close-markers start end))))
+  (unwind-protect
+      (progn
+        (snippet--open-markers object)
+        (funcall fn))
+    (snippet--close-markers object)))
 
 (defmacro snippet--with-current-object (object &rest body)
   (declare (indent defun) (debug t))
@@ -474,15 +474,13 @@ can be:
   (let* ((field (overlay-get overlay 'snippet--field))
          (inhibit-modification-hooks t))
     (cond (after?
-           (snippet--close-markers (snippet--object-start field)
-                                   (snippet--object-end field))
+           (snippet--close-markers field)
            (mapc #'snippet--update-mirror (snippet--field-mirrors field))
            (move-overlay overlay
                          (snippet--object-start field)
                          (snippet--object-end field)))
           (t
-           (snippet--open-markers (snippet--object-start field)
-                                  (snippet--object-end field))))))
+           (snippet--open-markers field)))))
 
 (defun snippet--field-text (field)
   (buffer-substring-no-properties (snippet--object-start field)
