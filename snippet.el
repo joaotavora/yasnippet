@@ -453,26 +453,35 @@ can be:
   (eq (snippet--object-end prev)
       (snippet--object-start next)))
 
-(defun snippet--open-object (object)
-  (set-marker-insertion-type (snippet--object-start object) nil)
-  (cl-loop for o = object then prev
-           for prev = (snippet--object-prev o)
-           while (and prev
-                      (snippet--objects-adjacent-p prev o)
-                      (snippet--object-empty-p prev))
-           do (set-marker-insertion-type (snippet--object-start prev) nil))
-
-  (set-marker-insertion-type (snippet--object-end object) t)
-  (cl-loop for o = object then next
-           for next = (snippet--object-next o)
-           while (and next
-                      (snippet--objects-adjacent-p o next)
-                      (snippet--object-empty-p next))
-           do (set-marker-insertion-type (snippet--object-end next) t)))
+(defun snippet--open-object (object &optional close-instead)
+  (let ((stay (cons (snippet--object-start object)
+                    (cl-loop for o = object then prev
+                             for prev = (snippet--object-prev o)
+                             while (and prev
+                                        (snippet--objects-adjacent-p prev o)
+                                        (snippet--object-empty-p prev))
+                             collect (snippet--object-start prev))))
+        (push (cons (snippet--object-end object)
+                    (cl-loop for o = object then next
+                             for next = (snippet--object-next o)
+                             while (and next
+                                        (snippet--objects-adjacent-p o next)
+                                        (snippet--object-empty-p next))
+                             collect (snippet--object-end next)))))
+    (when close-instead
+      (if (snippet--object-empty-p object)
+          (setq stay (append stay push)
+                push nil)
+        (cl-rotatef stay push)))
+    (mapc #'(lambda (m) (set-marker-insertion-type m nil)) stay)
+    (mapc #'(lambda (m) (set-marker-insertion-type m t)) push)))
 
 (defun snippet--call-with-current-object (object fn)
-  (snippet--open-object object)
-  (funcall fn))
+  (unwind-protect
+      (progn
+        (snippet--open-object object)
+        (funcall fn))
+    (snippet--open-object object 'close)))
 
 (defmacro snippet--with-current-object (object &rest body)
   (declare (indent defun) (debug t))
