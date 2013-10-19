@@ -25,22 +25,49 @@
 ;;; Code:
 
 (require 'snippet)
+(require 'ert)
+(require 'ert-x)
 
-(setq snippet--printf-snippet-forms
-      '("printf (\""
-        (field 1 "%s")
-        (mirror 1 (if (string-match "%" field-text) "\"," "\")"))
-        (field 2)
-        (mirror 1 (if (string-match "%" field-text) "\)" ""))))
+(defvar snippet--test-snippets-alist nil)
+(setq snippet--test-snippets-alist
+      `((basic ((field 1 "foo")
+                " bar "
+                (mirror 1)))
+        (printf ("printf (\""
+                 (field 1 "%s")
+                 (mirror 1 (if (string-match "%" field-text) "\"," "\")"))
+                 (field 2)
+                 (mirror 1 (if (string-match "%" field-text) "\)" ""))))
+        (sprintf-maybe ((mirror 0 (when field-text "s"))
+                        "printf ("
+                        (field 0)
+                        (mirror 0 (when field-text ","))
+                        "\""
+                        (field 1 "%s")
+                        (mirror 1 (if (string-match "%" field-text) "\"," "\")"))
+                        (field 2)
+                        (mirror 1 (if (string-match "%" field-text) "\)" ""))))))
+
+(defun snippet--insert-test-snippet (name)
+  (funcall (eval `(make-snippet ,(cadr (assoc name snippet--test-snippets-alist))))))
+
+
+(ert-deftest foo-expansion ()
+  (with-temp-buffer
+    (snippet--insert-test-snippet 'basic)
+    (should (equal (buffer-string) "foo bar foo"))
+    (should (equal (buffer-substring (overlay-start snippet--field-overlay)
+                                     (overlay-end snippet--field-overlay))
+                   "foo" ))))
 
 (ert-deftest printf-expansion ()
   (with-temp-buffer
-    (funcall (eval `(make-snippet ,@snippet--printf-snippet-forms)))
+    (snippet--insert-test-snippet 'printf)
     (should (equal (buffer-string) "printf (\"%s\",)"))))
 
 (ert-deftest printf-mirrors ()
   (with-temp-buffer
-    (funcall (eval `(make-snippet ,@snippet--printf-snippet-forms)))
+    (snippet--insert-test-snippet 'printf)
     (ert-simulate-command '(delete-forward-char 1))
     (should (equal (buffer-string) "printf (\"s\")"))
     (ert-simulate-command '((lambda () (interactive) (insert "%"))))
@@ -48,7 +75,7 @@
 
 (ert-deftest printf-mirrors-and-navigation ()
   (with-temp-buffer
-    (funcall (eval `(make-snippet ,@snippet--printf-snippet-forms)))
+    (snippet--insert-test-snippet 'printf)
     (ert-simulate-command '(delete-forward-char 1))
     (should (equal (buffer-string) "printf (\"s\")"))
     (ert-simulate-command '((lambda () (interactive) (insert "%"))))
@@ -59,7 +86,14 @@
 
 (ert-deftest printf-jump-to-second-field-right-away ()
   (with-temp-buffer
-    (funcall (eval `(make-snippet ,@snippet--printf-snippet-forms)))
+    (snippet--insert-test-snippet 'printf)
     (ert-simulate-command '(snippet-next-field))
     (ert-simulate-command '((lambda () (interactive) (insert "somevar"))))
     (should (equal (buffer-string) "printf (\"%s\",somevar)"))))
+
+(ert-deftest sprintf-variation ()
+  (with-temp-buffer
+    (snippet--insert-test-snippet 'sprintf-maybe)
+    (should (equal (buffer-string) "printf (\"%s\",)"))
+    (ert-simulate-command '((lambda () (interactive) (insert "somestring"))))
+    (should (equal (buffer-string) "sprintf (somestring,\"%s\",)"))))
