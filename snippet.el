@@ -215,8 +215,10 @@ I would need these somewhere in the let* form
 
 (defun snippet--transform-lambda (transform-form)
   `(lambda (field-text)
-     ,(or transform-form
-          'field-text)))
+     (if (null field-text)
+         ""
+       ,(or transform-form
+            'field-text))))
 
 (defun define--snippet-body (body)
   "Does the actual work for `define-snippet'"
@@ -231,16 +233,24 @@ I would need these somewhere in the let* form
 
        ,@(cl-loop
           for (sym form) in sym-tuples
-          collect (pcase form
-                    (`(field ,_ ,text)
-                     `(snippet--insert-field ,sym ,(if (stringp text)
-                                                       text)))
-                    (`(mirror . ,_)
-                     `(snippet--insert-mirror ,sym))
-                    ((pred stringp)
-                     `(insert ,form))
-                    ((pred functionp)
-                     `(insert (funcall ,form)))))
+          append (pcase form
+                   (`(field ,_ . ,rest)
+                    `((snippet--insert-object ,sym)
+                      ,(when (stringp (car rest))
+                         `(snippet--with-current-object ,sym
+                            (insert ,(car rest))))))
+                   (`(mirror . ,_)
+                    `((snippet--insert-object ,sym)))
+                   ((pred stringp)
+                    `((insert ,form)))
+                   ((pred functionp)
+                    `((insert (funcall ,form))))))
+       ,@(cl-loop
+          for (sym form) in sym-tuples
+          append (pcase form
+                   (`(field . ,_)
+                    `((mapc #'snippet--update-mirror
+                            (snippet--field-mirrors ,sym))))))
 
        (setq snippet--field-overlay
              (make-overlay (point) (point) nil nil t))
@@ -389,6 +399,7 @@ can be:
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "<tab>")       'snippet-next-field)
     (define-key map (kbd "S-<tab>")     'snippet-prev-field)
+    (define-key map (kbd "<backtab>")   'snippet-prev-field)
     map)
   "The active keymap while a snippet expansion is in progress.")
 
@@ -397,12 +408,14 @@ can be:
 (defun snippet--object-next-field (object)
   (loop for next = (snippet--object-next object)
         then (snippet--object-next next)
+        while next
         when (snippet--field-p next)
         return next))
 
 (defun snippet--object-prev-field (object)
   (loop for prev = (snippet--object-prev object)
         then (snippet--object-prev prev)
+        while prev
         when (snippet--field-p prev)
         return prev))
 
@@ -430,43 +443,44 @@ can be:
                "")))
 
 (defun snippet--make-marker ()
-  (let ((marker (make-marker)))
-    (set-marker-insertion-type marker t)
-    (set-marker marker (point))))
+  (point-marker))
 
-(defun snippet--open-markers (object)
+(defun snippet--object-empty-p (object)
+  (= (snippet--object-start object)
+     (snippet--object-end object)))
+
+(defun snippet--objects-adjacent-p (prev next)
+  (eq (snippet--object-end prev)
+      (snippet--object-start next)))
+
+(defun snippet--open-object (object)
   (set-marker-insertion-type (snippet--object-start object) nil)
-  (set-marker-insertion-type (snippet--object-end object) t))
+  (cl-loop for o = object then prev
+           for prev = (snippet--object-prev o)
+           while (and prev
+                      (snippet--objects-adjacent-p prev o)
+                      (snippet--object-empty-p prev))
+           do (set-marker-insertion-type (snippet--object-start prev) nil))
 
-(defun snippet--close-markers (object)
-  (let ((start (snippet--object-start object))
-        (end (snippet--object-end object)))
-    (cond ((= start end)
-           (set-marker-insertion-type start t)
-           (set-marker-insertion-type end t))
-          (t
-           (set-marker-insertion-type start t)
-           (set-marker-insertion-type end nil)))))
+  (set-marker-insertion-type (snippet--object-end object) t)
+  (cl-loop for o = object then next
+           for next = (snippet--object-next o)
+           while (and next
+                      (snippet--objects-adjacent-p o next)
+                      (snippet--object-empty-p next))
+           do (set-marker-insertion-type (snippet--object-end next) t)))
 
 (defun snippet--call-with-current-object (object fn)
-  (unwind-protect
-      (progn
-        (snippet--open-markers object)
-        (funcall fn))
-    (snippet--close-markers object)))
+  (snippet--open-object object)
+  (funcall fn))
 
 (defmacro snippet--with-current-object (object &rest body)
   (declare (indent defun) (debug t))
   `(snippet--call-with-current-object ,object #'(lambda () ,@body)))
 
-
-(defun snippet--insert-field (field text)
-  (when text
-    (snippet--with-current-object field
-      (insert text))))
-
-(defun snippet--insert-mirror (mirror)
-  (snippet--update-mirror mirror))
+(defun snippet--insert-object (object)
+  (set-marker (snippet--object-start object) (point))
+  (set-marker (snippet--object-end object) (point)))
 
 (defun snippet--update-mirror (mirror)
   (snippet--with-current-object mirror
@@ -484,24 +498,31 @@ can be:
                 (snippet--object-end field))
   (overlay-put snippet--field-overlay 'snippet--field field))
 
-(defun snippet--field-overlay-changed (overlay after? _beg _end &optional _length)
+(defun snippet--field-overlay-changed (overlay after? _beg _end
+                                               &optional _length)
+  ;; there's a slight (apparently innocuous) bug here: if the overlay has
+  ;; zero-length, both `insert-in-front' and `insert-behind' modification hooks
+  ;; are called
+  ;;
   (let* ((field (overlay-get overlay 'snippet--field))
          (inhibit-modification-hooks t))
     (cond (after?
-           (snippet--close-markers field)
            (mapc #'snippet--update-mirror (snippet--field-mirrors field))
            (move-overlay overlay
                          (snippet--object-start field)
                          (snippet--object-end field)))
           (t
-           (snippet--open-markers field)))))
+           (snippet--open-object field)))))
 
 (defun snippet--field-text (field)
-  (buffer-substring-no-properties (snippet--object-start field)
-                                  (snippet--object-end field)))
+  (let ((start (snippet--object-start field))
+        (end (snippet--object-end field)))
+    (and (/= start end)
+         (buffer-substring-no-properties start end))))
 
 (defvar snippet--debug nil)
 ;; (setq snippet--debug t)
+;; (setq snippet--debug nil)
 
 (defun snippet--post-command-hook ()
   (cond ((and snippet--field-overlay
