@@ -348,7 +348,8 @@ can be:
                               (:include snippet--object)
                               (:print-function snippet--describe-field))
   name
-  (mirrors '()))
+  (mirrors '())
+  (modified-p nil))
 
 (defun snippet--describe-field (field)
   (with-current-buffer (snippet--object-buffer field)
@@ -507,8 +508,8 @@ can be:
                 (snippet--object-end field))
   (overlay-put snippet--field-overlay 'snippet--field field))
 
-(defun snippet--field-overlay-changed (overlay after? _beg _end
-                                               &optional _length)
+(defun snippet--field-overlay-changed (overlay after? beg end
+                                               &optional pre-change-len)
   ;; there's a slight (apparently innocuous) bug here: if the overlay has
   ;; zero-length, both `insert-in-front' and `insert-behind' modification hooks
   ;; are called
@@ -516,6 +517,14 @@ can be:
   (let* ((field (overlay-get overlay 'snippet--field))
          (inhibit-modification-hooks t))
     (cond (after?
+           (when (and (not (snippet--field-modified-p field))
+                      (= beg (snippet--field-start field))
+                      (zerop pre-change-len))
+             (delete-region end
+                            (snippet--object-end field)))
+
+           (setf (snippet--field-modified-p field) t)
+
            (mapc #'snippet--update-mirror (snippet--field-mirrors field))
            (move-overlay overlay
                          (snippet--object-start field)
