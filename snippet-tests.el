@@ -33,6 +33,9 @@
       `((basic ((field 1 "foo")
                 " bar "
                 (mirror 1)))
+        (contrived ((field 1)
+                    (field 2)
+                    (field 3)))
         (printf ("printf (\""
                  (field 1 "%s")
                  (mirror 1 (if (string-match "%" field-text) "\"," "\")"))
@@ -59,6 +62,30 @@
     (should (equal (buffer-substring (overlay-start snippet--field-overlay)
                                      (overlay-end snippet--field-overlay))
                    "foo" ))))
+
+(ert-deftest contrived ()
+  (with-temp-buffer
+    (snippet--insert-test-snippet 'contrived)
+    (should (equal (buffer-string) ""))
+    (ert-simulate-command '((lambda () (interactive) (insert "foo"))))
+    (ert-simulate-command '(snippet-next-field))
+    (ert-simulate-command '((lambda () (interactive) (insert "bar"))))
+    (ert-simulate-command '(snippet-next-field))
+    (ert-simulate-command '((lambda () (interactive) (insert "baz"))))
+    (should (equal (buffer-string) "foobarbaz"))))
+
+(ert-deftest contrived-2 ()
+  (with-temp-buffer
+    (snippet--insert-test-snippet 'contrived)
+    (should (equal (buffer-string) ""))
+    (ert-simulate-command '(snippet-next-field))
+    (ert-simulate-command '(snippet-next-field))
+    (ert-simulate-command '((lambda () (interactive) (insert "baz"))))
+    (ert-simulate-command '(snippet-prev-field))
+    (ert-simulate-command '((lambda () (interactive) (insert "bar"))))
+    (ert-simulate-command '(snippet-prev-field))
+    (ert-simulate-command '((lambda () (interactive) (insert "foo"))))
+    (should (equal (buffer-string) "foobarbaz"))))
 
 (ert-deftest printf-expansion ()
   (with-temp-buffer
