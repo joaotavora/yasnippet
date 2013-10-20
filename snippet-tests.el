@@ -49,7 +49,7 @@
                         (mirror 1 (if (string-match "%" field-text) "\)" ""))))))
 
 (defun snippet--insert-test-snippet (name)
-  (funcall (eval `(make-snippet ,(cadr (assoc name snippet--test-snippets-alist))))))
+  (funcall (make-snippet (cadr (assoc name snippet--test-snippets-alist)))))
 
 
 (ert-deftest foo-expansion ()
