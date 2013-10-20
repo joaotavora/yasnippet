@@ -409,16 +409,24 @@ can be:
 (defun snippet--object-next-field (object)
   (loop for next = (snippet--object-next object)
         then (snippet--object-next next)
-        while next
-        when (snippet--field-p next)
+        while (and next)
+        when (and (snippet--field-p next)
+                  (not (snippet--field-skip-p next)))
         return next))
 
 (defun snippet--object-prev-field (object)
   (loop for prev = (snippet--object-prev object)
         then (snippet--object-prev prev)
         while prev
-        when (snippet--field-p prev)
+        when (and (snippet--field-p prev)
+                  (not (snippet--field-skip-p prev)))
         return prev))
+
+(defun snippet--field-skip-p (field)
+  (let ((parent (snippet--field-parent-field field)))
+    (and parent
+         (snippet--object-empty-p field)
+         (snippet--field-modified-p parent))))
 
 (defun snippet-next-field (&optional prev)
   (interactive)
@@ -508,6 +516,11 @@ can be:
                 (snippet--object-end field))
   (overlay-put snippet--field-overlay 'snippet--field field))
 
+(defun snippet--update-field-mirrors (field)
+  (mapc #'snippet--update-mirror (snippet--field-mirrors field))
+  (when (snippet--object-parent-field field)
+    (snippet--update-field-mirrors (snippet--object-parent-field field))))
+
 (defun snippet--field-overlay-changed (overlay after? beg end
                                                &optional pre-change-len)
   ;; there's a slight (apparently innocuous) bug here: if the overlay has
@@ -517,15 +530,27 @@ can be:
   (let* ((field (overlay-get overlay 'snippet--field))
          (inhibit-modification-hooks t))
     (cond (after?
+           ;; field clearing: if we're doing an insertion and the field hasn't
+           ;; been modified yet, we're going to delete previous contents and
+           ;; leave just the newly inserted text.
+           ;;
            (when (and (not (snippet--field-modified-p field))
                       (= beg (snippet--field-start field))
                       (zerop pre-change-len))
-             (delete-region end
-                            (snippet--object-end field)))
-
+             ;; At first glance, we could just delete the region between `end'
+             ;; and the `field's end, but that wouldn't empty any child fields
+             ;; that `field' might have, since that child's markers, albeit
+             ;; closed, may will have legitimately moved to accomodate the
+             ;; insertion. So we save the text, delete the entire field contents
+             ;; and insert it back in place. The child's markers will move
+             ;; together.
+             ;;
+             (let ((saved (buffer-substring beg end)))
+               (delete-region (snippet--object-start field)
+                              (snippet--object-end field))
+               (insert saved)))
            (setf (snippet--field-modified-p field) t)
-
-           (mapc #'snippet--update-mirror (snippet--field-mirrors field))
+           (snippet--update-field-mirrors field)
            (move-overlay overlay
                          (snippet--object-start field)
                          (snippet--object-end field)))

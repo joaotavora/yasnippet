@@ -36,6 +36,18 @@
         (contrived ((field 1)
                     (field 2)
                     (field 3)))
+        (nested ("a "
+                 (field 1 ((field 2 "nested")
+                           " "
+                           (field 3 "field")))
+                 " and its mirror: "
+                 (mirror 1)))
+        (mirror-of-nested-field ("a "
+                                 (field 1 ((field 2 "nested")
+                                           " "
+                                           (field 3 "field")))
+                                 (mirror 3 (concat ", nested mirroring: "
+                                                   field-text))))
         (printf ("printf (\""
                  (field 1 "%s")
                  (mirror 1 (if (string-match "%" field-text) "\"," "\")"))
@@ -99,6 +111,37 @@
     (ert-simulate-command '((lambda () (interactive) (insert "foo"))))
     (should (equal (buffer-string) "foobarbaz"))))
 
+(ert-deftest nested-expansion ()
+  (with-temp-buffer
+    (snippet--insert-test-snippet 'nested)
+    (should (equal (buffer-string) "a nested field and its mirror: nested field"))
+    (ert-simulate-command '(snippet-next-field))
+    (ert-simulate-command '((lambda () (interactive) (insert "nicely"))))
+    (ert-simulate-command '(snippet-next-field))
+    (ert-simulate-command '((lambda () (interactive) (insert "nested field"))))
+    (should (equal (buffer-substring (overlay-start snippet--field-overlay)
+                                     (overlay-end snippet--field-overlay))
+                   "nested field" ))
+    (should (equal (buffer-string) "a nicely nested field and its mirror: nicely nested field"))))
+
+(ert-deftest nested-skip-fields ()
+  (with-temp-buffer
+    (snippet--insert-test-snippet 'nested)
+    (ert-simulate-command '((lambda () (interactive) (insert "foo"))))
+    (should (equal (buffer-string) "a foo and its mirror: foo"))
+    ;; this should exit the snippet now, since the two remaining
+    ;; fields should be skipped
+    (ert-simulate-command '(snippet-next-field))
+    (should (null (overlay-buffer snippet--field-overlay)))))
+
+(ert-deftest mirror-of-nested-field ()
+  (with-temp-buffer
+    (snippet--insert-test-snippet 'mirror-of-nested-field)
+    (should (equal (buffer-string) "a nested field, nested mirroring: field"))
+    (ert-simulate-command '(snippet-next-field))
+    (ert-simulate-command '(snippet-next-field))
+    (ert-simulate-command '((lambda () (interactive) (insert "foo"))))
+    (should (equal (buffer-string) "a nested foo, nested mirroring: foo"))))
 
 (ert-deftest printf-expansion ()
   (with-temp-buffer
