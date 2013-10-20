@@ -326,7 +326,7 @@ can be:
   `(defun ,name ()
      ,(define--snippet-body body)))
 
-(cl-defmacro make-snippet (forms)
+(defun make-snippet (forms)
   "Same as `define-snippet', but return an anonymous function."
   `(lambda () ,(define--snippet-body forms)))
 
