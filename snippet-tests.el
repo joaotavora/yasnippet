@@ -54,14 +54,26 @@
 (defun snippet--insert-test-snippet (name)
   (funcall (make-snippet (cadr (assoc name snippet--test-snippets-alist)))))
 
-
-(ert-deftest foo-expansion ()
+(ert-deftest basic-expansion ()
   (with-temp-buffer
     (snippet--insert-test-snippet 'basic)
     (should (equal (buffer-string) "foo bar foo"))
     (should (equal (buffer-substring (overlay-start snippet--field-overlay)
                                      (overlay-end snippet--field-overlay))
                    "foo" ))))
+
+(ert-deftest basic-clear-field ()
+  (with-temp-buffer
+    (snippet--insert-test-snippet 'basic)
+    (ert-simulate-command '((lambda () (interactive) (insert "baz"))))
+    (should (equal (buffer-string) "baz bar baz"))))
+
+(ert-deftest basic-delete-char-in-field ()
+  (with-temp-buffer
+    (snippet--insert-test-snippet 'basic)
+    (ert-simulate-command '(delete-forward-char 1))
+    (ert-simulate-command '((lambda () (interactive) (insert "b"))))
+    (should (equal (buffer-string) "boo bar boo"))))
 
 (ert-deftest contrived ()
   (with-temp-buffer
@@ -86,6 +98,7 @@
     (ert-simulate-command '(snippet-prev-field))
     (ert-simulate-command '((lambda () (interactive) (insert "foo"))))
     (should (equal (buffer-string) "foobarbaz"))))
+
 
 (ert-deftest printf-expansion ()
   (with-temp-buffer
