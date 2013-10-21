@@ -4394,33 +4394,6 @@ and return the directory.  Return nil if not found."
                  (setq file nil))))
         root))))
 
-;; `c-neutralize-syntax-in-CPP` sometimes fires "End of Buffer" error
-;; (when it execute forward-char) and interrupt the after change
-;; hook. Thus prevent the insert-behind hook of yasnippet to be
-;; invoked. Here's a way to reproduce it:
-
-;; # open a *new* Emacs.
-;; # load yasnippet.
-;; # open a *new* .cpp file.
-;; # input "inc" and press TAB to expand the snippet.
-;; # select the `#include <...>` snippet.
-;; # type inside `<>`
-
-(defadvice c-neutralize-syntax-in-CPP
-  (around yas--mp/c-neutralize-syntax-in-CPP activate)
-  "Adviced `c-neutralize-syntax-in-CPP' to properly
-handle the `end-of-buffer' error fired in it by calling
-`forward-char' at the end of buffer."
-  (condition-case err
-      ad-do-it
-    (error (message (error-message-string err)))))
-
-;; disable c-electric-* serial command in YAS fields
-(add-hook 'c-mode-common-hook
-          '(lambda ()
-             (dolist (k '(":" ">" ";" "<" "{" "}"))
-               (define-key (symbol-value (make-local-variable 'yas-keymap))
-                 k 'self-insert-command))))
 
 ;;; Backward compatibility to yasnippet <= 0.7
 
