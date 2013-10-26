@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: a<%= link_to 'Destroy',post_path(post),method: :delete %>
+# key: %lkdl
+# --
+<%= link_to '${1:Destroy}', ${2:controller}_path(${3:controller}),
+               method: ${4::delete}, data: {${5:confirm:'Are you sure?'}} %>
+$0
