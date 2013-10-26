@@ -2552,8 +2552,11 @@ When called interactively, prompt for the table name."
                   (yas--table-name (yas--template-table yas--editing-template)))))
 
 (defun yas-load-snippet-buffer-and-close (table &optional kill)
-  "Load the snippet with `yas-load-snippet-buffer', offer to
+  "Load the snippet with `yas-load-snippet-buffer', possibly
   save, then `quit-window' if saved.
+
+If the snippet is new, ask the user whether (and where) to save
+it. If the snippet already has a file, just save it.
 
 The prefix argument KILL is passed to `quit-window'.
 
@@ -2583,8 +2586,10 @@ and `kill-buffer' instead."
           (write-file (concat chosen "/"
                               (read-from-minibuffer (format "File name to create in %s? " chosen)
                                                     default-file-name)))
-          (setf (yas--template-file yas--editing-template) buffer-file-name)
-          (quit-window kill))))))
+          (setf (yas--template-file yas--editing-template) buffer-file-name)))))
+  (when buffer-file-name
+    (save-buffer)
+    (quit-window kill)))
 
 (defun yas-tryout-snippet (&optional debug)
   "Test current buffer's snippet template in other buffer."
