@@ -837,7 +837,8 @@ Honour `yas-dont-activate', which see."
                         (when (third ent)
                           (define-key map (third ent) (second ent)))
                         (vector (first ent) (second ent) t))
-                    '(("Load this snippet" yas-load-snippet-buffer "\C-c\C-c")
+                    '(("Load this snippet" yas-load-snippet-buffer "\C-c\C-l")
+                      ("Load and quit window" yas-load-snippet-buffer-and-close "\C-c\C-c")
                       ("Try out this snippet" yas-tryout-snippet "\C-c\C-t")))))
     map)
   "The keymap used when `snippet-mode' is active.")
@@ -2527,7 +2528,9 @@ neither do the elements of PARENTS."
 TABLE is a symbol naming a passed to `yas--table-get-create'.
 
 When called interactively, prompt for the table name and
-whether (and where) to save the snippet, then quit the window."
+whether (and where) to save the snippet.
+
+Returns the name of the file saved (if any)."
   (interactive (list (yas--read-table) t))
   (cond
    ;;  We have `yas--editing-template', this buffer's content comes from a
@@ -2547,35 +2550,42 @@ whether (and where) to save the snippet, then quit the window."
            (yas--define-snippets-1 (yas--parse-template buffer-file-name)
                                   table)))))
 
-  (when (and interactive
-             (or
-              ;; Only offer to save this if it looks like a library or new
-              ;; snippet (loaded from elisp, from a dir in `yas-snippet-dirs'
-              ;; which is not the first, or from an unwritable file)
-              ;;
-              (not (yas--template-file yas--editing-template))
-              (not (file-writable-p (yas--template-file yas--editing-template)))
-              (and (listp yas-snippet-dirs)
-                   (second yas-snippet-dirs)
-                   (not (string-match (expand-file-name (first yas-snippet-dirs))
-                                      (yas--template-file yas--editing-template)))))
-             (y-or-n-p (yas--format "Looks like a library or new snippet. Save to new file? ")))
-    (let* ((option (first (yas--guess-snippet-directories (yas--template-table yas--editing-template))))
-           (chosen (and option
-                        (yas--make-directory-maybe option))))
-      (when chosen
-        (let ((default-file-name (or (and (yas--template-file yas--editing-template)
-                                          (file-name-nondirectory (yas--template-file yas--editing-template)))
-                                     (yas--template-name yas--editing-template))))
-          (write-file (concat chosen "/"
-                              (read-from-minibuffer (format "File name to create in %s? " chosen)
-                                                    default-file-name)))
-          (setf (yas--template-file yas--editing-template) buffer-file-name)))))
-  (when interactive
-    (yas--message 3 "Snippet \"%s\" loaded for %s."
-                  (yas--template-name yas--editing-template)
-                  (yas--table-name (yas--template-table yas--editing-template)))
-    (quit-window interactive)))
+  (prog1
+      (when (and interactive
+                 (or
+                  ;; Only offer to save this if it looks like a library or new
+                  ;; snippet (loaded from elisp, from a dir in `yas-snippet-dirs'
+                  ;; which is not the first, or from an unwritable file)
+                  ;;
+                  (not (yas--template-file yas--editing-template))
+                  (not (file-writable-p (yas--template-file yas--editing-template)))
+                  (and (listp yas-snippet-dirs)
+                       (second yas-snippet-dirs)
+                       (not (string-match (expand-file-name (first yas-snippet-dirs))
+                                          (yas--template-file yas--editing-template)))))
+                 (y-or-n-p (yas--format "Looks like a library or new snippet. Save to new file? ")))
+        (let* ((option (first (yas--guess-snippet-directories (yas--template-table yas--editing-template))))
+               (chosen (and option
+                            (yas--make-directory-maybe option))))
+          (when chosen
+            (let ((default-file-name (or (and (yas--template-file yas--editing-template)
+                                              (file-name-nondirectory (yas--template-file yas--editing-template)))
+                                         (yas--template-name yas--editing-template))))
+              (write-file (concat chosen "/"
+                                  (read-from-minibuffer (format "File name to create in %s? " chosen)
+                                                        default-file-name)))
+              (setf (yas--template-file yas--editing-template) buffer-file-name)))))
+    (when interactive
+      (yas--message 3 "Snippet \"%s\" loaded for %s."
+                    (yas--template-name yas--editing-template)
+                    (yas--table-name (yas--template-table yas--editing-template))))))
+
+(defun yas-load-snippet-buffer-and-close (table &optional kill interactive)
+  "Call `yas-load-snippet-buffer' and then `quit-window', prefix
+  argument KILL passed to `quit-window'."
+  (interactive (list (yas--read-table) current-prefix-arg t))
+  (and (yas-load-snippet-buffer table interactive)
+       (quit-window kill)))
 
 (defun yas-tryout-snippet (&optional debug)
   "Test current buffer's snippet template in other buffer."
