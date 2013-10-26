@@ -837,7 +837,8 @@ Honour `yas-dont-activate', which see."
                         (when (third ent)
                           (define-key map (third ent) (second ent)))
                         (vector (first ent) (second ent) t))
-                    '(("Load this snippet" yas-load-snippet-buffer "\C-c\C-c")
+                    '(("Load this snippet" yas-load-snippet-buffer "\C-c\C-l")
+                      ("Load and quit window" yas-load-snippet-buffer-and-close "\C-c\C-c")
                       ("Try out this snippet" yas-tryout-snippet "\C-c\C-t")))))
     map)
   "The keymap used when `snippet-mode' is active.")
@@ -2526,8 +2527,7 @@ neither do the elements of PARENTS."
 
 TABLE is a symbol naming a passed to `yas--table-get-create'.
 
-When called interactively, prompt for the table name and
-whether (and where) to save the snippet, then quit the window."
+When called interactively, prompt for the table name."
   (interactive (list (yas--read-table) t))
   (cond
    ;;  We have `yas--editing-template', this buffer's content comes from a
@@ -2546,9 +2546,25 @@ whether (and where) to save the snippet, then quit the window."
       (set (make-local-variable 'yas--editing-template)
            (yas--define-snippets-1 (yas--parse-template buffer-file-name)
                                   table)))))
+  (when interactive
+    (yas--message 3 "Snippet \"%s\" loaded for %s."
+                  (yas--template-name yas--editing-template)
+                  (yas--table-name (yas--template-table yas--editing-template)))))
 
-  (when (and interactive
-             (or
+(defun yas-load-snippet-buffer-and-close (table &optional kill)
+  "Load the snippet with `yas-load-snippet-buffer', possibly
+  save, then `quit-window' if saved.
+
+If the snippet is new, ask the user whether (and where) to save
+it. If the snippet already has a file, just save it.
+
+The prefix argument KILL is passed to `quit-window'.
+
+Don't use this from a Lisp program, call `yas-load-snippet-buffer'
+and `kill-buffer' instead."
+  (interactive (list (yas--read-table) current-prefix-arg))
+  (yas-load-snippet-buffer table t)
+  (when (and (or
               ;; Only offer to save this if it looks like a library or new
               ;; snippet (loaded from elisp, from a dir in `yas-snippet-dirs'
               ;; which is not the first, or from an unwritable file)
@@ -2571,11 +2587,9 @@ whether (and where) to save the snippet, then quit the window."
                               (read-from-minibuffer (format "File name to create in %s? " chosen)
                                                     default-file-name)))
           (setf (yas--template-file yas--editing-template) buffer-file-name)))))
-  (when interactive
-    (yas--message 3 "Snippet \"%s\" loaded for %s."
-                  (yas--template-name yas--editing-template)
-                  (yas--table-name (yas--template-table yas--editing-template)))
-    (quit-window interactive)))
+  (when buffer-file-name
+    (save-buffer)
+    (quit-window kill)))
 
 (defun yas-tryout-snippet (&optional debug)
   "Test current buffer's snippet template in other buffer."
