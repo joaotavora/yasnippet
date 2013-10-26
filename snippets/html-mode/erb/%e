@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: <% @post.each do |post| %>
+# key: %e
+# --
+<% ${1:@posts}.each do |${2:post}| %>
+  ${3:}
+<% end %>
+$0

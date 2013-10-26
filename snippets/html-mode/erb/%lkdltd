@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name:td <%= link_to 'Destroy',post_path(post),method: :delete %> </td>
+# key: %lkdl
+# --
+<td>
+  <%= link_to '${1:Destroy}', ${2:controller_path},
+               method: ${3::delete}, data: {${4:confirm:'Are you sure?'}} %>
+</td>
+$0

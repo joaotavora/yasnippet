@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: <p><%= f.label f.text_field %></p>
+# key: %a
+# --
+<p>
+<%= ${1:f}.label :${2:title} %><br />
+<%= ${3:f}.text_area :${4:title} %>
+</p>
+$0

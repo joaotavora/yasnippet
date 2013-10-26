@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name: <%= form_for :post, url:path, method: :patch %>
+# key: %furl
+# --
+<%= form_for ${1::post}, url: ${2:posts_path} ${3:} do |${4:f}| %>
+   $0
+ <p>
+   <%= ${4:f}.submit %>
+ </p>
+<% end %>
