@@ -3819,7 +3819,7 @@ Meant to be called in a narrowed buffer, does various passes"
     (yas--calculate-adjacencies snippet)
     ;; Delete $-constructs
     ;;
-    (yas--delete-regions yas--dollar-regions)
+    (save-restriction (widen) (yas--delete-regions yas--dollar-regions))
     ;; restore backquoted expression values
     ;;
     (yas--restore-backquotes)
