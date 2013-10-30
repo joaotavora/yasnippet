@@ -30,38 +30,38 @@
 
 (defvar snippet--test-snippets-alist nil)
 (setq snippet--test-snippets-alist
-      `((basic ((field 1 "foo")
+      `((basic ((&field 1 "foo")
                 " bar "
-                (mirror 1)))
-        (contrived ((field 1)
-                    (field 2)
-                    (field 3)))
+                (&mirror 1)))
+        (contrived ((&field 1)
+                    (&field 2)
+                    (&field 3)))
         (nested ("a "
-                 (field 1 ((field 2 "nested")
-                           " "
-                           (field 3 "field")))
+                 (&field 1 (&nested (&field 2 "nested")
+                                    " "
+                                    (&field 3 "field")))
                  " and its mirror: "
-                 (mirror 1)))
+                 (&mirror 1)))
         (mirror-of-nested-field ("a "
-                                 (field 1 ((field 2 "nested")
-                                           " "
-                                           (field 3 "field")))
-                                 (mirror 3 (concat ", nested mirroring: "
-                                                   field-text))))
+                                 (&field 1 (&nested (&field 2 "nested")
+                                                    " "
+                                                    (&field 3 "field")))
+                                 (&mirror 3 (concat ", nested mirroring: "
+                                                    field-text))))
         (printf ("printf (\""
-                 (field 1 "%s")
-                 (mirror 1 (if (string-match "%" field-text) "\"," "\")"))
-                 (field 2)
-                 (mirror 1 (if (string-match "%" field-text) "\)" ""))))
-        (sprintf-maybe ((mirror 0 (when field-text "s"))
+                 (&field 1 "%s")
+                 (&mirror 1 (if (string-match "%" field-text) "\"," "\")"))
+                 (&field 2)
+                 (&mirror 1 (if (string-match "%" field-text) "\)" ""))))
+        (sprintf-maybe ((&mirror 0 (when field-text "s"))
                         "printf ("
-                        (field 0)
-                        (mirror 0 (when field-text ","))
+                        (&field 0)
+                        (&mirror 0 (when field-text ","))
                         "\""
-                        (field 1 "%s")
-                        (mirror 1 (if (string-match "%" field-text) "\"," "\")"))
-                        (field 2)
-                        (mirror 1 (if (string-match "%" field-text) "\)" ""))))))
+                        (&field 1 "%s")
+                        (&mirror 1 (if (string-match "%" field-text) "\"," "\")"))
+                        (&field 2)
+                        (&mirror 1 (if (string-match "%" field-text) "\)" ""))))))
 
 (defun snippet--insert-test-snippet (name)
   (funcall (make-snippet (cadr (assoc name snippet--test-snippets-alist)))))
