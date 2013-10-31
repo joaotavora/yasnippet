@@ -13,7 +13,9 @@ FileUtils.mkdir_p('pkg')
 
 desc "run tests in batch mode"
 task :tests do
-  sh "#{$EMACS} -Q -L . -l yasnippet-tests.el -nw --batch -e yas-batch-run-tests"
+  batch_run_line = "(yas-batch-run-tests t)"
+  sh "#{$EMACS} -Q -L . -l yasnippet-tests.el -nw" +
+    " --batch --eval '#{batch_run_line}'"
 end
 
 desc "convert some textmate bundles to yasnippets"

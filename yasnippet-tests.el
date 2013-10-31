@@ -210,8 +210,40 @@
     (yas-minor-mode 1)
     (insert "#include <foo>\n")
     (let ((snippet "main"))
-      (yas-expand-snippet snippet)
+      (let ((yas-good-grace nil)) (yas-expand-snippet snippet))
       (should (string= (yas--buffer-contents) "#include <foo>\nmain")))))
+
+(ert-deftest example-for-issue-404-c-mode ()
+  (with-temp-buffer
+    (c-mode)
+    (yas-minor-mode 1)
+    (insert "#include <foo>\n")
+    (let ((snippet "main"))
+      (let ((yas-good-grace nil)) (yas-expand-snippet snippet))
+      (should (string= (yas--buffer-contents) "#include <foo>\nmain")))))
+
+(ert-deftest example-for-issue-404-external-emacs ()
+  :tags '(:external)
+  (let ((fixture-el-file (make-temp-file "yas-404-fixture" nil ".el")))
+    (with-temp-buffer
+      (insert (pp-to-string
+               `(condition-case _
+                    (progn
+                      (require 'yasnippet)
+                      (yas-global-mode)
+                      (switch-to-buffer "foo.c")
+                      (c-mode)
+                      (insert "#include <iostream>\nmain")
+                      (setq yas-good-grace nil)
+                      (yas-expand)
+                      (kill-emacs 0))
+                  (error (kill-emacs -1)))))
+      (write-file fixture-el-file))
+    (should (= 0
+               (call-process (concat invocation-directory invocation-name)
+                             nil nil nil
+                             "-Q"  ;; "--batch"
+                             "-L" "." "-l" fixture-el-file)))))
 
 (ert-deftest middle-of-buffer-snippet-insertion ()
   (with-temp-buffer
@@ -572,14 +604,14 @@ TODO: be meaner"
 
 ;;; Helpers
 ;;;
-(defun yas-batch-run-tests ()
+(defun yas-batch-run-tests (&optional also-external)
   (interactive)
   (with-temp-buffer
     (yas--with-temporary-redefinitions
-        ((message (&rest _args) nil))
-      (ert t (buffer-name (current-buffer)))
-      (princ (buffer-string)))))
-
+     ((message (&rest _args) nil))
+     (ert (or (and also-external t)
+              '(not (tag :external))) (buffer-name (current-buffer)))
+    (princ (buffer-string)))))
 
 (defun yas-should-expand (keys-and-expansions)
   (dolist (key-and-expansion keys-and-expansions)
