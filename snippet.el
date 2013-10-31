@@ -58,15 +58,40 @@
            (fboundp (cl-second form)))))
 
 (defun snippet--canonicalize-form (form)
-  (cond ((or (atom form)
-             (not (memq (first form) '(&mirror &field &eval))))
-         (list '&eval form))
-        (t
-         (cl-assert (not (cdddr form)) nil "malformed snippet form %s" form)
-         (append form
-                 (make-list (- 3 (length form)) nil)))))
+  (pcase form
+    ((or `&field `(&field))
+     `(&field ,(cl-gensym "auto-") nil))
+    (`(&field ,name)
+     `(&field ,name nil))
+    ((pred atom)
+     `(&eval ,form))
+    (`(&eval ,_)
+     form)
+    (`(&eval . ,_)
+     (error "provide only one form after &eval or &transform"))
+    (`(&mirror ,name)
+     `(&mirror ,name (&transform field-text)))
+    (`(&mirror ,_ (&transform ,_))
+     form)
+    (`(&field ,_ (,(or `&transform `&eval) ,_))
+     form)
+    (`(,(or `&mirror `&field) ,_ (,(or `&transform `&eval) . ,_))
+     (error "provide only one form after &eval or &transform"))
+    (`(&field ,name (&nested . ,more-forms))
+     `(&field ,name (&nested . (mapcar #'snippet--canonicalize-form
+                                       ,more-forms)))
+     form)
+    (`(&mirror ,name ,expr)
+     `(&mirror ,name (&transform ,expr)))
 
-(defun snippet--form-sym-tuples (forms &optional parent-field-sym)
+    (`(&field ,name ,expr)
+     `(&field ,name (&eval ,expr)))
+    ((pred consp)
+     `(&eval ,form))
+    (t
+     (error "invalid snippet form %s" form))))
+
+(defun snippet--form-tuples (forms &optional parent-field-sym)
   "Produce information for composing the snippet expansion function.
 
 A tuple of 6 elements is created for each form in FORMS.
@@ -81,8 +106,10 @@ iterated depth-first, resulting in a flattened list."
            with sym
            with adjacent-prev-sym
            with has-children-p
+
            for (prev-form form next-form) on `(nil ,@forms)
            while form
+
            with collect-sym = #'(lambda () `(,sym ,form
                                                   ,parent-field-sym
                                                   ,adjacent-prev-sym
@@ -97,23 +124,21 @@ iterated depth-first, resulting in a flattened list."
 
               (funcall collect-sym))
 
-             (`(&mirror ,name ,_transform)
+             (`(&mirror ,name ,_expr)
               (incf snippet--form-mirror-sym-idx)
               (setq sym (snippet--form-make-mirror-sym snippet--form-mirror-sym-idx
                                                        name
                                                        parent-field-sym))
               (funcall collect-sym))
              (`(&eval ,_expr)
-              `,form)
-             (t
-              (error "unknown type of snippet form %s" form)))
+              `,form))
            when has-children-p
-           append (snippet--form-sym-tuples (cdr (cl-third form)) sym)
+           append (snippet--form-tuples (cdr (cl-third form)) sym)
            do (setq adjacent-prev-sym sym
                     sym nil
                     has-children-p nil)))
 
-(defun snippet--make-marker-init-forms (tuples)
+(defun snippet--marker-init-forms (tuples)
   "Make marker init forms for the snippet objects in TUPLES.
 
 Imagine this snippet:
@@ -162,7 +187,7 @@ I would need these somewhere in the let* form
                              (eq '&field (car form))))
                     tuples :key #'cadr))
 
-(defun snippet--init-field-and-mirror-forms (tuples)
+(defun snippet--object-init-forms (tuples)
   (let* ((field-mirrors (make-hash-table))
          ;; we first collect `snippet--make-mirror' forms. When
          ;; collecting them, we populate the `field-mirrors' table...
@@ -170,7 +195,7 @@ I would need these somewhere in the let* form
          (tuples (cl-remove '&eval tuples :key #'car))
          (make-mirror-forms
           (cl-loop for ((prev-sym)
-                        (sym (type name transform) parent-sym)
+                        (sym (type name (_ transform)) parent-sym)
                         (next-sym))
                    on `(nil ,@tuples)
                    when (and sym (eq '&mirror type))
@@ -227,34 +252,42 @@ I would need these somewhere in the let* form
   `(lambda (field-text)
      (if (null field-text)
          ""
-       ,(or transform-form
-            'field-text))))
+       ,transform-form)))
+
+(defun snippet--eval-lambda (eval-form)
+  `(lambda (selected-text)
+     ,eval-form))
 
 (defun define--snippet-body (body)
   "Does the actual work for `define-snippet'"
-  (let* ((sym-tuples (snippet--form-sym-tuples body))
-         (marker-init-forms (snippet--make-marker-init-forms sym-tuples))
-         (init-object-forms (snippet--init-field-and-mirror-forms sym-tuples))
-         (first-field-sym (snippet--first-field-sym sym-tuples)))
+  (let* ((tuples (snippet--form-tuples body))
+         (marker-init-forms (snippet--marker-init-forms tuples))
+         (init-object-forms (snippet--object-init-forms tuples))
+         (first-field-sym (snippet--first-field-sym tuples)))
     `(let* (,@(mapcar #'car init-object-forms)
             ,@marker-init-forms)
 
        ,@(mapcar #'second init-object-forms)
 
        ,@(cl-loop
-          for (sym form) in sym-tuples
+          for (sym form) in tuples
           append (pcase form
-                   (`(&field ,_ . ,rest)
+                   (`(&field ,_ ,expr)
                     `((snippet--insert-object ,sym)
-                      ,(when (stringp (car rest))
+                      ,(when (eq `&eval (car expr))
                          `(snippet--with-current-object ,sym
-                            (insert ,(car rest))))))
+                            (insert
+                             (funcall ,(snippet--eval-lambda (cadr expr))
+                                      (and (region-active-p)
+                                           (buffer-substring-no-properties
+                                            (region-beginning)
+                                            (region-end)))))))))
                    (`(&mirror . ,_)
                     `((snippet--insert-object ,sym)))
                    (t
                     `((insert (eval ,form))))))
        ,@(cl-loop
-          for (sym form) in sym-tuples
+          for (sym form) in tuples
           append (pcase form
                    (`(&field . ,_)
                     `((mapc #'snippet--update-mirror
@@ -279,7 +312,7 @@ I would need these somewhere in the let* form
                     snippet-field-keymap)
        (overlay-put snippet--field-overlay
                     'snippet--objects
-                    (list ,@(remove '&eval (mapcar #'car sym-tuples))))
+                    (list ,@(remove '&eval (mapcar #'car tuples))))
        ,(if first-field-sym
             `(snippet--move-to-field ,first-field-sym))
        (add-hook 'post-command-hook 'snippet--post-command-hook t t))))

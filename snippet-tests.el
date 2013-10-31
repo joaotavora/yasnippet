@@ -61,7 +61,10 @@
                         (&field 1 "%s")
                         (&mirror 1 (if (string-match "%" field-text) "\"," "\")"))
                         (&field 2)
-                        (&mirror 1 (if (string-match "%" field-text) "\)" ""))))))
+                        (&mirror 1 (if (string-match "%" field-text) "\)" ""))))
+        (emacs-version ((&field 1 emacs-version)
+                        " " (upcase (emacs-version)) " "
+                        (&mirror 1)))))
 
 (defun snippet--insert-test-snippet (name)
   (funcall (make-snippet (cadr (assoc name snippet--test-snippets-alist)))))
@@ -180,3 +183,59 @@
     (should (equal (buffer-string) "printf (\"%s\",)"))
     (ert-simulate-command '((lambda () (interactive) (insert "somestring"))))
     (should (equal (buffer-string) "sprintf (somestring,\"%s\",)"))))
+
+(ert-deftest emacs-version ()
+  (with-temp-buffer
+    (snippet--insert-test-snippet 'emacs-version)
+    (should (equal (buffer-string)
+                   (concat emacs-version " "
+                           (upcase (emacs-version)) " "
+                           emacs-version)))
+    (ert-simulate-command '((lambda () (interactive) (insert "somestring"))))
+    (should (equal (buffer-string)
+                   (concat "somestring" " "
+                           (upcase (emacs-version)) " "
+                           "somestring")))))
+
+
+;;; input validation
+;;;
+(ert-deftest valid-forms ()
+  ;; fields
+  ;;
+  (should (equal (snippet--canonicalize-form '(&field 1 (foo)))
+                 '(&field 1 (&eval (foo)))))
+  (should (equal (snippet--canonicalize-form '(&field 1 (&eval (foo))))
+                 '(&field 1 (&eval (foo)))))
+  (should (equal (snippet--canonicalize-form '(&field 1 (&transform (foo))))
+                 '(&field 1 (&transform (foo)))))
+  (should (equal (snippet--canonicalize-form '(&field 1 (&nested (foo) (bar))))
+                 '(&field 1 (&nested (foo) (bar)))))
+  (should (equal (snippet--canonicalize-form '(&field 1))
+                 '(&field 1 nil)))
+
+
+  ;; mirrors
+  ;;
+  (should (equal (snippet--canonicalize-form '(&mirror 1))
+                 '(&mirror 1 (&transform field-text))))
+  (should (equal (snippet--canonicalize-form '(&mirror 1 (foo)))
+                 '(&mirror 1 (&transform (foo)))))
+  (should (equal (snippet--canonicalize-form '(&mirror 1 (&transform (foo))))
+                 '(&mirror 1 (&transform (foo)))))
+  ;; normal forms
+  ;;
+  (should (equal (snippet--canonicalize-form "bla")
+                 '(&eval "bla")))
+  (should (equal (snippet--canonicalize-form '(&eval "bla"))
+                 '(&eval "bla")))
+  (should (equal (snippet--canonicalize-form '(foo))
+                 '(&eval (foo))))
+  (should (equal (snippet--canonicalize-form '(&eval (foo)))
+                 '(&eval (foo)))))
+
+(ert-deftest invalid-forms ()
+  ;; fields
+  (should-error (snippet--canonicalize-form '(&field 1 (&transform (foo) (bar)))))
+  (should-error (snippet--canonicalize-form '(&field 1 (&eval (foo) (bar)))))
+  (should-error (snippet--canonicalize-form '(&eval (foo) (bar)))))
