@@ -601,6 +601,31 @@ TODO: be meaner"
     (should (eq (key-binding [(tab)]) 'yas-expand))
     (should (eq (key-binding (kbd "TAB")) 'yas-expand))))
 
+(ert-deftest test-yas-activate-extra-modes ()
+  "Given a symbol, `yas-activate-extra-mode' should be able to
+add the snippets associated with the given mode."
+  (with-temp-buffer
+    (emacs-lisp-mode)
+    (yas-minor-mode-on)
+    (yas-activate-extra-mode 'markdown-mode)
+    (should (eq 'markdown-mode (car yas--extra-modes)))
+    (yas-should-expand '(("_" . "_Text_ ")))
+    (yas-should-expand '(("car" . "(car )")))))
+
+(ert-deftest test-yas-deactivate-extra-modes ()
+  "Given a symbol, `yas-deactive-extra-mode' should be able to
+remove one of the extra modes that is present in the current
+buffer."
+  (with-temp-buffer
+    (emacs-lisp-mode)
+    (yas-minor-mode-on)
+    (yas-activate-extra-mode 'markdown-mode)
+    (should (eq 'markdown-mode (car yas--extra-modes)))
+    (yas-deactivate-extra-mode 'markdown-mode)
+    (should-not (eq 'markdown-mode (car yas--extra-modes)))
+    (yas-should-not-expand '("_"))
+    (yas-should-expand '(("car" . "(car )")))))
+
 
 ;;; Helpers
 ;;;
