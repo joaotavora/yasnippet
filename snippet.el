@@ -90,7 +90,7 @@
      (error "invalid snippet form %s" form))))
 
 (defun snippet--form-tuples (forms &optional parent-field-sym)
-  "Produce information for composing the snippet expansion function.
+  "Produce information for composing the snippet insertion function.
 
 A tuple of 6 elements is created for each form in FORMS.
 
@@ -247,11 +247,11 @@ I would need these somewhere in the let* form
             make-mirror-forms)))
 
 (defun snippet--transform-lambda (transform-form)
-  `(lambda (field-string field-empty)
+  `(lambda (field-string field-empty-p)
      ,transform-form))
 
 (defun snippet--eval-lambda (eval-form)
-  `(lambda (selected-text)
+  `(lambda (region-string)
      ,eval-form))
 
 (defun define--snippet-body (body)
@@ -260,7 +260,7 @@ I would need these somewhere in the let* form
          (marker-init-forms (snippet--marker-init-forms tuples))
          (init-object-forms (snippet--object-init-forms tuples))
          (first-field-sym (snippet--first-field-sym tuples))
-         (region-text-sym (make-symbol "region-text")))
+         (region-text-sym (make-symbol "region-string")))
     `(let* (,@(mapcar #'car init-object-forms)
             ,@marker-init-forms
             (,region-text-sym (and (region-active-p)
@@ -286,7 +286,7 @@ I would need these somewhere in the let* form
                    (t
                     `((insert (or (funcall ,(snippet--eval-lambda form)
                                            ,region-text-sym)
-                                  ""))))))
+                                  " "))))))
        ,@(cl-loop
           for (sym form) in tuples
           append (pcase form
@@ -319,52 +319,76 @@ I would need these somewhere in the let* form
        (add-hook 'post-command-hook 'snippet--post-command-hook t t))))
 
 
-(cl-defmacro define-snippet (name () &rest body)
+(cl-defmacro define-snippet (name () &rest snippet-forms)
   "Define NAME as a snippet-inserting function.
 
 NAME's function definition is set to a function with no arguments
-that inserts the fields components at point.
+that inserts the snippet's components at point.
 
-Each form in BODY can be:
+Each form in SNIPPET-FORMS, inserted at point in order, can be:
 
-* A cons (field FIELD-NAME FIELD-VALUE FIELD-TRANSFORM)
-  definining a snippet field. A snippet field can be navigated to
-  using `snippet-next-field' and
-  `snippet-prev-field'. FIELD-TRANSFORM is currently
-  unimplemented.
+* A cons (&field FIELD-NAME FIELD-DEFAULT) definining a snippet
+  field. A snippet field can be navigated to using
+  `snippet-next-field' and `snippet-prev-field'. FIELD-NAME is
+  optional and used for referring to the field in mirror
+  transforms. FIELD-DEFAULT is also optional and used for
+  producing a string that populates the field's default value at
+  snippet-insertion time.
 
-* A cons (mirror FIELD-NAME MIRROR-TRANSFORM) defining a mirror
-  of the field named FIELD-NAME. Each time the text under the
-  field changes, the form MIRROR-TRANSFORM is invoked with the
-  variable `field-string' set to the text under the field. The
-  string produced become the text under the mirror.
+  FIELD-DEFAULT can thus be a string literal, a lisp form
+  returning a string, or have the form (&nested SUB-FORM ...)
+  where each SUB-FORM is evaluated recursively according to the
+  rules of SNIPPET-FORMS.
 
-* A string literal which is inserted as a literal part of the
-  snippet and remains unchanged while the snippet is navigated.
+  FIELD-DEFAULT can additionally also be (&transform
+  FIELD-TRANSFORM) in which case the string value produced by
+  FIELD-TRANSFORM is used for populating not only the field's
+  default value, but also the field's value after each command
+  while the snippet is alive.
 
-* A symbol designating a function which is called when the
-  snippet is inserted. The string produced is treated as a
-  literal string.
+* A cons (&mirror FIELD-NAME MIRROR-TRANSFORM) defining a mirror
+  of the field named FIELD-NAME. MIRROR-TRANSFORM is optional and
+  is called after each command while the snippet is alive to
+  produce a string that becomes the mirror text.
 
-* A lambda form taking no arguments, called when the snippet is
-  inserted. Again, the string produced is treated as a literal
-  snippet string.
+* A string literal or a lisp form CONSTANT evaluated at
+  snippet-insertion time and producing a string that is a part of
+  the snippet but constant while the snippet is alive.
 
-ARGS is an even-numbered property list of (KEY VAL) pairs. KEY
-can be:
+* A form (&exit EXIT-DEFAULT), defining the point within the
+  snippet where point should be placed when the snippet is
+  exited. EXIT-DEFAULT is optional and is evaluated at
+  snippet-insertion time to produce a string that remains a
+  constant part of the snippet while it is alive, but is
+  automatically selected when the snippet is exited.
 
-* the symbol `:obarray', in which case the symbol NAME in
-  interned in the obarray VAL instead of the global obarray. This
-  options is currently unimplemented."
-  (declare (debug (&define name sexp &rest &or
-                           ;; curiously, function-form doesn't work here
-                           ;;
-                           ("mirror" sexp def-form)
-                           ("lambda" sexp def-form)
-                           ("field" sexp &rest sexp)
-                           sexp)))
+The forms CONSTANT, FIELD-DEFAULT, MIRROR-TRANSFORM,
+FIELD-TRANSFORM and EXIT-DEFAULT are evaluated with the variable
+`region-string' set to the text of the buffer selected at
+snippet-insertion time. If no region was selected the value of
+this variable is the empty string..
+
+The forms MIRROR-TRANSFORM and FIELD-TRANSFORM are evaluated with
+the variable `field-string' set to the text contained in the
+corresponding field. If the field is empty, this variable is the
+empty string and the additional variable `field-empty-p' is t. If
+these forms return nil, they are considered to have returned the
+empty string.
+
+If the form CONSTANT returns nil or the empty string, it is
+considered to have returned a single whitespace.
+
+ARGS is an even-numbered property list of (KEY VAL) pairs. Its
+meaning is not decided yet"
+  (declare (debug (&define name sexp &rest snippet-form)))
   `(defun ,name ()
-     ,(define--snippet-body body)))
+     ,(define--snippet-body snippet-forms)))
+
+(def-edebug-spec snippet-form
+  (&or
+   ("&mirror" sexp def-form)
+   ("&field" sexp &or ("&nested" &rest snippet-form) def-form)
+   def-form))
 
 (defun make-snippet (forms)
   "Same as `define-snippet', but return an anonymous function."
@@ -442,7 +466,7 @@ can be:
     (define-key map (kbd "S-<tab>")     'snippet-prev-field)
     (define-key map (kbd "<backtab>")   'snippet-prev-field)
     map)
-  "The active keymap while a snippet expansion is in progress.")
+  "The active keymap while a live snippet is being navigated.")
 
 (defvar snippet--field-overlay nil)
 

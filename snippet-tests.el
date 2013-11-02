@@ -53,10 +53,10 @@
                  (&mirror 1 (if (string-match "%" field-string) "\"," "\")"))
                  (&field 2)
                  (&mirror 1 (if (string-match "%" field-string) "\)" ""))))
-        (sprintf-maybe ((&mirror 0 (unless field-empty "s"))
+        (sprintf-maybe ((&mirror 0 (unless field-empty-p "s"))
                         "printf ("
                         (&field 0)
-                        (&mirror 0 (unless field-empty ","))
+                        (&mirror 0 (unless field-empty-p ","))
                         "\""
                         (&field 1 "%s")
                         (&mirror 1 (if (string-match "%" field-string) "\"," "\")"))
