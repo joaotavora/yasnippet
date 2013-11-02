@@ -47,24 +47,28 @@
                                                     " "
                                                     (&field 3 "field")))
                                  (&mirror 3 (concat ", nested mirroring: "
-                                                    field-text))))
+                                                    field-string))))
         (printf ("printf (\""
                  (&field 1 "%s")
-                 (&mirror 1 (if (string-match "%" field-text) "\"," "\")"))
+                 (&mirror 1 (if (string-match "%" field-string) "\"," "\")"))
                  (&field 2)
-                 (&mirror 1 (if (string-match "%" field-text) "\)" ""))))
-        (sprintf-maybe ((&mirror 0 (when field-text "s"))
+                 (&mirror 1 (if (string-match "%" field-string) "\)" ""))))
+        (sprintf-maybe ((&mirror 0 (unless field-empty "s"))
                         "printf ("
                         (&field 0)
-                        (&mirror 0 (when field-text ","))
+                        (&mirror 0 (unless field-empty ","))
                         "\""
                         (&field 1 "%s")
-                        (&mirror 1 (if (string-match "%" field-text) "\"," "\")"))
+                        (&mirror 1 (if (string-match "%" field-string) "\"," "\")"))
                         (&field 2)
-                        (&mirror 1 (if (string-match "%" field-text) "\)" ""))))
+                        (&mirror 1 (if (string-match "%" field-string) "\)" ""))))
         (emacs-version ((&field 1 emacs-version)
                         " " (upcase (emacs-version)) " "
-                        (&mirror 1)))))
+                        (&mirror 1)))
+        (wrap-selected-region ("foo"
+                               selected-text
+                               "baz"
+                               (&field 1 selected-text)))))
 
 (defun snippet--insert-test-snippet (name)
   (funcall (make-snippet (cadr (assoc name snippet--test-snippets-alist)))))
@@ -196,6 +200,20 @@
                    (concat "somestring" " "
                            (upcase (emacs-version)) " "
                            "somestring")))))
+
+(ert-deftest wrap-selected-region ()
+  ;; this test needs some work. testing with `region-active-p' is hard
+  ;; and also the "delete-selection" behaviour isn't decided yet
+  ;;
+  :expected-result :failed
+  (with-temp-buffer
+    (ert-simulate-command '((lambda () (interactive) (insert "bar"))))
+    (set-mark (point))
+    (goto-char (point-max))
+    (snippet--insert-test-snippet 'wrap-selected-region)
+    (should (equal (buffer-string)
+                   "foobarbazbar"))))
+
 
 
 ;;; input validation

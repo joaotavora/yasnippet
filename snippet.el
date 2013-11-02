@@ -254,10 +254,8 @@ I would need these somewhere in the let* form
             make-mirror-forms)))
 
 (defun snippet--transform-lambda (transform-form)
-  `(lambda (field-text)
-     (if (null field-text)
-         ""
-       ,transform-form)))
+  `(lambda (field-string field-empty)
+     ,transform-form))
 
 (defun snippet--eval-lambda (eval-form)
   `(lambda (selected-text)
@@ -268,9 +266,14 @@ I would need these somewhere in the let* form
   (let* ((tuples (snippet--form-tuples body))
          (marker-init-forms (snippet--marker-init-forms tuples))
          (init-object-forms (snippet--object-init-forms tuples))
-         (first-field-sym (snippet--first-field-sym tuples)))
+         (first-field-sym (snippet--first-field-sym tuples))
+         (region-text-sym (make-symbol "region-text")))
     `(let* (,@(mapcar #'car init-object-forms)
-            ,@marker-init-forms)
+            ,@marker-init-forms
+            (,region-text-sym (and (region-active-p)
+                                   (buffer-substring-no-properties
+                                    (region-beginning)
+                                    (region-end)))))
 
        ,@(mapcar #'second init-object-forms)
 
@@ -282,15 +285,15 @@ I would need these somewhere in the let* form
                       ,(when (eq `&eval (car expr))
                          `(snippet--with-current-object ,sym
                             (insert
-                             (funcall ,(snippet--eval-lambda (cadr expr))
-                                      (and (region-active-p)
-                                           (buffer-substring-no-properties
-                                            (region-beginning)
-                                            (region-end)))))))))
+                             (or (funcall ,(snippet--eval-lambda (cadr expr))
+                                          ,region-text-sym)
+                                 ""))))))
                    (`(&mirror . ,_)
                     `((snippet--insert-object ,sym)))
                    (t
-                    `((insert (eval ,form))))))
+                    `((insert (or (funcall ,(snippet--eval-lambda form)
+                                           ,region-text-sym)
+                                  ""))))))
        ,@(cl-loop
           for (sym form) in tuples
           append (pcase form
@@ -340,7 +343,7 @@ Each form in BODY can be:
 * A cons (mirror FIELD-NAME MIRROR-TRANSFORM) defining a mirror
   of the field named FIELD-NAME. Each time the text under the
   field changes, the form MIRROR-TRANSFORM is invoked with the
-  variable `field-text' set to the text under the field. The
+  variable `field-string' set to the text under the field. The
   string produced become the text under the mirror.
 
 * A string literal which is inserted as a literal part of the
@@ -550,8 +553,11 @@ can be:
                    (snippet--object-end mirror))
     (save-excursion
       (goto-char (snippet--object-start mirror))
-      (insert (funcall (snippet--mirror-transform mirror)
-                       (snippet--field-text (snippet--mirror-source mirror)))))))
+      (let ((field-string (snippet--field-string (snippet--mirror-source mirror))))
+        (insert (or (funcall (snippet--mirror-transform mirror)
+                             field-string
+                             (string= "" field-string))
+                    ""))))))
 
 (defun snippet--move-to-field (field)
   (goto-char (snippet--object-start field))
@@ -601,11 +607,10 @@ can be:
           (t
            (snippet--open-object field)))))
 
-(defun snippet--field-text (field)
+(defun snippet--field-string (field)
   (let ((start (snippet--object-start field))
         (end (snippet--object-end field)))
-    (and (/= start end)
-         (buffer-substring-no-properties start end))))
+    (buffer-substring-no-properties start end)))
 
 (defvar snippet--debug nil)
 ;; (setq snippet--debug t)
