@@ -50,13 +50,6 @@
 
 (defvar snippet--form-mirror-sym-idx nil)
 
-(defun snippet--function-p (form)
-  (or (functionp form)
-      (and (eq 'function (car form))
-           (fboundp (cl-second form)))
-      (and (eq 'quote (car form))
-           (fboundp (cl-second form)))))
-
 (defun snippet--canonicalize-form (form)
   (pcase form
     ((or `&field `(&field))
