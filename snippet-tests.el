@@ -218,7 +218,7 @@
   ;; mirrors
   ;;
   (should (equal (snippet--canonicalize-form '(&mirror 1))
-                 '(&mirror 1 (&transform field-text))))
+                 '(&mirror 1 (&transform field-string))))
   (should (equal (snippet--canonicalize-form '(&mirror 1 (foo)))
                  '(&mirror 1 (&transform (foo)))))
   (should (equal (snippet--canonicalize-form '(&mirror 1 (&transform (foo))))
@@ -238,4 +238,6 @@
   ;; fields
   (should-error (snippet--canonicalize-form '(&field 1 (&transform (foo) (bar)))))
   (should-error (snippet--canonicalize-form '(&field 1 (&eval (foo) (bar)))))
+  (should-error (snippet--canonicalize-form '(&mirror 1 (foo) (bar))))
+  (should-error (snippet--canonicalize-form '(&field 1 (foo) (bar))))
   (should-error (snippet--canonicalize-form '(&eval (foo) (bar)))))

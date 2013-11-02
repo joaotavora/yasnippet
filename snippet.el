@@ -68,15 +68,20 @@
     (`(&eval ,_)
      form)
     (`(&eval . ,_)
-     (error "provide only one form after &eval or &transform"))
+     (error "provide only one form after &eval in %S" form))
     (`(&mirror ,name)
-     `(&mirror ,name (&transform field-text)))
+     `(&mirror ,name (&transform field-string)))
     (`(&mirror ,_ (&transform ,_))
      form)
     (`(&field ,_ (,(or `&transform `&eval) ,_))
      form)
-    (`(,(or `&mirror `&field) ,_ (,(or `&transform `&eval) . ,_))
-     (error "provide only one form after &eval or &transform"))
+    (`(,(or `&mirror `&field) ,_ (,(or `&transform `&eval) ,_ . (,extra)))
+     (error "expected one form after &eval or &transform in %S, you have %d"
+            form (1+ (length extra))))
+    (`(,(or `&mirror `&field) ,name ,_ . (,extra))
+     (error "expected one form after '%S' in %S, you have %d"
+            name
+            form (1+ (length extra))))
     (`(&field ,name (&nested . ,more-forms))
      `(&field ,name (&nested . (mapcar #'snippet--canonicalize-form
                                        ,more-forms)))
