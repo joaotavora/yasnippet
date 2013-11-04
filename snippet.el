@@ -40,6 +40,11 @@
                            (format "-son-of-%s" parent-field-sym)
                          ""))))
 
+(defun snippet--form-make-exit-sym (parent-field-sym)
+  (make-symbol (format "exit%s" (if parent-field-sym
+                                    (format "-son-of-%s" parent-field-sym)
+                                  ""))))
+
 (defvar snippet--marker-sym-obarray (make-vector 100 nil))
 
 (defun snippet--start-marker-name (sym)
@@ -49,15 +54,14 @@
   (intern (format "%s-end" sym) snippet--marker-sym-obarray))
 
 (defvar snippet--form-mirror-sym-idx nil)
+(defvar snippet--form-exit-seen-p nil)
 
 (defun snippet--canonicalize-form (form)
   (pcase form
     ((or `&field `(&field))
-     `(&field ,(cl-gensym "auto-") nil))
+     `(&field ,(cl-gensym "auto") nil))
     (`(&field ,name)
      `(&field ,name nil))
-    ((pred atom)
-     `(&eval ,form))
     (`(&eval ,_)
      form)
     (`(&eval . ,_)
@@ -84,6 +88,13 @@
 
     (`(&field ,name ,expr)
      `(&field ,name (&eval ,expr)))
+
+    (`(&exit ,expr)
+     `(&exit nil (&eval ,expr)))
+    ((or `&exit `(&exit))
+     `(&exit nil nil))
+    ((pred atom)
+     `(&eval ,form))
     ((pred consp)
      `(&eval ,form))
     (t
@@ -101,6 +112,7 @@ iterated depth-first, resulting in a flattened list."
   (cl-loop with forms = (mapcar #'snippet--canonicalize-form forms)
            with snippet--form-mirror-sym-idx = (or snippet--form-mirror-sym-idx
                                                    0)
+           with snippet--form-exit-seen-p = snippet--form-exit-seen-p
            with sym
            with adjacent-prev-sym
            with has-children-p
@@ -127,6 +139,12 @@ iterated depth-first, resulting in a flattened list."
               (setq sym (snippet--form-make-mirror-sym snippet--form-mirror-sym-idx
                                                        name
                                                        parent-field-sym))
+              (funcall collect-sym))
+             (`(&exit ,_ ,_expr)
+              (when snippet--form-exit-seen-p
+                (error "only one &exit form allowed"))
+              (setq snippet--form-exit-seen-p t)
+              (setq sym (snippet--form-make-exit-sym parent-field-sym))
               (funcall collect-sym))
              (`(&eval ,_expr)
               `,form))
@@ -176,14 +194,18 @@ I would need these somewhere in the let* form
                           `(snippet--make-marker))))))
 
 
-(defun snippet--first-field-sym (tuples)
-  (car (car (snippet--field-tuples tuples))))
-
 (defun snippet--field-tuples (tuples)
-  (cl-remove-if-not #'(lambda (form)
-                        (and (consp form)
-                             (eq '&field (car form))))
-                    tuples :key #'cadr))
+  (cl-sort (cl-remove-if-not #'(lambda (form)
+                                 (and (consp form)
+                                      (eq '&field (car form))))
+                             tuples :key #'cadr)
+           #'(lambda (n1 n2)
+               (cond ((not (integerp n1)) nil)
+                     ((not (integerp n2)) t)
+                     (t (< n1 n2))))
+           ;; cadadr composes cl-second twice to get to the number
+           ;; after the &fild
+           :key #'cadadr))
 
 (defun snippet--object-init-forms (tuples)
   (let* ((field-mirrors (make-hash-table))
@@ -238,10 +260,19 @@ I would need these somewhere in the let* form
                               ,parent-sym
                               ,prev-sym
                               ,next-sym
-                              ,name
+                              ',name
                               (list
                                ,@(reverse
-                                  (gethash sym field-mirrors))))))))
+                                  (gethash sym field-mirrors)))))
+                   when (and sym (eq '&exit type))
+                   collect `((,sym (snippet--make-exit))
+                             (snippet--init-exit
+                              ,sym
+                              ,(snippet--start-marker-name sym)
+                              ,(snippet--end-marker-name sym)
+                              ,parent-sym
+                              ,prev-sym
+                              ,next-sym)))))
 
     (append make-field-forms
             make-mirror-forms)))
@@ -259,34 +290,29 @@ I would need these somewhere in the let* form
   (let* ((tuples (snippet--form-tuples body))
          (marker-init-forms (snippet--marker-init-forms tuples))
          (init-object-forms (snippet--object-init-forms tuples))
-         (first-field-sym (snippet--first-field-sym tuples))
-         (region-text-sym (make-symbol "region-string")))
+         (region-text-sym (make-symbol "region-string"))
+         (objects-sym (make-symbol "objects")))
     `(let* (,@(mapcar #'car init-object-forms)
             ,@marker-init-forms
             (,region-text-sym (and (region-active-p)
                                    (buffer-substring-no-properties
                                     (region-beginning)
-                                    (region-end)))))
-
+                                    (region-end))))
+            (,objects-sym (list ,@(remove '&eval (mapcar #'car tuples)))))
        ,@(mapcar #'second init-object-forms)
 
        ,@(cl-loop
           for (sym form) in tuples
-          append (pcase form
-                   (`(&field ,_ ,expr)
-                    `((snippet--insert-object ,sym)
-                      ,(when (eq `&eval (car expr))
-                         `(snippet--with-current-object ,sym
-                            (insert
-                             (or (funcall ,(snippet--eval-lambda (cadr expr))
-                                          ,region-text-sym)
-                                 ""))))))
-                   (`(&mirror . ,_)
-                    `((snippet--insert-object ,sym)))
-                   (t
-                    `((insert (or (funcall ,(snippet--eval-lambda form)
+          collect (pcase form
+                    (`(,(or `&field `&mirror `&exit) ,_ ,expr)
+                     `(snippet--insert-object
+                       ,sym ,(and (eq '&eval (car expr))
+                                  `(funcall ,(snippet--eval-lambda (cadr expr))
+                                            ,region-text-sym))))
+                    (t
+                     `(insert (or (funcall ,(snippet--eval-lambda form)
                                            ,region-text-sym)
-                                  " "))))))
+                                  " ")))))
        ,@(cl-loop
           for (sym form) in tuples
           append (pcase form
@@ -314,8 +340,17 @@ I would need these somewhere in the let* form
        (overlay-put snippet--field-overlay
                     'snippet--objects
                     (list ,@(remove '&eval (mapcar #'car tuples))))
-       ,(if first-field-sym
-            `(snippet--move-to-field ,first-field-sym))
+       (overlay-put snippet--field-overlay
+                    'snippet--fields
+                    (list ,@(mapcar #'car (snippet--field-tuples tuples))))
+       (overlay-put snippet--field-overlay 'snippet--exit
+                    ,(or (car (cl-find '&exit
+                                       (cl-remove '&eval tuples :key #'car)
+                                       :key #'caadr))
+                         `(point-marker)))
+
+
+       (snippet-next-field)
        (add-hook 'post-command-hook 'snippet--post-command-hook t t))))
 
 
@@ -409,8 +444,7 @@ meaning is not decided yet"
         (snippet--object-prev object) prev))
 
 (cl-defstruct (snippet--field (:constructor snippet--make-field ())
-                              (:include snippet--object)
-                              (:print-function snippet--describe-field))
+                              (:include snippet--object))
   name
   (mirrors '())
   (modified-p nil))
@@ -432,8 +466,7 @@ meaning is not decided yet"
         (snippet--field-mirrors object) mirrors))
 
 (cl-defstruct (snippet--mirror (:constructor snippet--make-mirror ())
-                               (:include snippet--object)
-                               (:print-function snippet--describe-mirror))
+                               (:include snippet--object))
   source
   (transform nil))
 
@@ -451,6 +484,21 @@ meaning is not decided yet"
             (buffer-substring-no-properties
              (snippet--object-start mirror)
              (snippet--object-end mirror)))))
+
+(cl-defstruct (snippet--exit (:constructor snippet--make-exit ())
+                             (:include snippet--object)))
+
+(defun snippet--init-exit (object start end parent-field prev next)
+  (snippet--init-object object start end parent-field prev next))
+
+(defun snippet--describe-exit (exit)
+  (with-current-buffer (snippet--object-buffer exit)
+    (format "exit from %s to %s covering \"%s\""
+            (marker-position (snippet--object-start exit))
+            (marker-position (snippet--object-end exit))
+            (buffer-substring-no-properties
+             (snippet--object-start exit)
+             (snippet--object-end exit)))))
 
 (defgroup snippet nil
   "Customize snippet features"
@@ -470,22 +518,6 @@ meaning is not decided yet"
 
 (defvar snippet--field-overlay nil)
 
-(defun snippet--object-next-field (object)
-  (loop for next = (snippet--object-next object)
-        then (snippet--object-next next)
-        while (and next)
-        when (and (snippet--field-p next)
-                  (not (snippet--field-skip-p next)))
-        return next))
-
-(defun snippet--object-prev-field (object)
-  (loop for prev = (snippet--object-prev object)
-        then (snippet--object-prev prev)
-        while prev
-        when (and (snippet--field-p prev)
-                  (not (snippet--field-skip-p prev)))
-        return prev))
-
 (defun snippet--field-skip-p (field)
   (let ((parent (snippet--field-parent-field field)))
     (and parent
@@ -495,14 +527,19 @@ meaning is not decided yet"
 (defun snippet-next-field (&optional prev)
   (interactive)
   (let* ((field (overlay-get snippet--field-overlay 'snippet--field))
-         (target (if prev
-                     (snippet--object-prev-field field)
-                   (snippet--object-next-field field))))
+         (sorted (overlay-get snippet--field-overlay 'snippet--fields))
+         (sorted (if prev (reverse sorted) sorted))
+         (target (if field
+                     (cadr (cl-remove-if #'snippet--field-skip-p
+                                         (memq field sorted)))
+                   (first sorted))))
     (if target
         (snippet--move-to-field target)
-      (unless prev
-        (goto-char (snippet--object-end field)))
-      (snippet-exit-snippet))))
+      (let ((exit (overlay-get snippet--field-overlay 'snippet--exit)))
+        (goto-char (if (markerp exit)
+                       exit
+                       (snippet--object-start exit)))
+        (snippet-exit-snippet)))))
 
 (defun snippet-prev-field ()
   (interactive)
@@ -560,9 +597,12 @@ meaning is not decided yet"
   (declare (indent defun) (debug t))
   `(snippet--call-with-current-object ,object #'(lambda () ,@body)))
 
-(defun snippet--insert-object (object)
+(defun snippet--insert-object (object &optional default)
   (set-marker (snippet--object-start object) (point))
-  (set-marker (snippet--object-end object) (point)))
+  (set-marker (snippet--object-end object) (point))
+  (when default
+    (snippet--with-current-object object
+      (insert default))))
 
 (defun snippet--update-mirror (mirror)
   (snippet--with-current-object mirror
