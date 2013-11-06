@@ -299,7 +299,7 @@ meaning is not decided yet"
                  :parent parent
                  :prev prev
                  :source source
-                 :transform (snippet--transform-lambda transform))))
+                 :transform (snippet--make-transform-lambda transform))))
     (snippet--inserting-object mirror prev
       (pushnew mirror (snippet--field-mirrors source)))))
 
@@ -314,89 +314,6 @@ meaning is not decided yet"
     (insert constant))
   (when parent
     (setf (snippet--object-end parent) (point-marker))))
-
-(defun snippet--describe-object (object)
-  (with-current-buffer (snippet--object-buffer object)
-    (format "from %s to %s covering \"%s\""
-            (snippet--object-start object)
-            (snippet--object-end object)
-            (buffer-substring-no-properties
-             (snippet--object-start object)
-             (snippet--object-end object)))))
-
-(defun snippet--describe-field (field)
-  (let ((active-field
-         (overlay-get snippet--field-overlay 'snippet--field)))
-    (with-current-buffer (snippet--object-buffer field)
-      (format "field %s %s%s"
-              (snippet--field-name field)
-              (snippet--describe-object field)
-              (if (eq field active-field)
-                  " *active*"
-                "")))))
-
-(defun snippet--describe-mirror (mirror)
-  (with-current-buffer (snippet--object-buffer mirror)
-    (format "mirror of %s %s"
-            (snippet--field-name (snippet--mirror-source mirror))
-            (snippet--describe-object mirror))))
-
-(defun snippet--describe-exit (exit)
-  (with-current-buffer (snippet--object-buffer exit)
-    (format "exit %s" (snippet--describe-object exit))))
-
-(defgroup snippet nil
-  "Customize snippet features"
-  :group 'convenience)
-
-(defface snippet-field-face
-  '((t (:inherit 'region)))
-  "Face used to highlight the currently active field of a snippet")
-
-(defvar snippet-field-keymap
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "<tab>")       'snippet-next-field)
-    (define-key map (kbd "S-<tab>")     'snippet-prev-field)
-    (define-key map (kbd "<backtab>")   'snippet-prev-field)
-    map)
-  "The active keymap while a live snippet is being navigated.")
-
-(defvar snippet--field-overlay nil)
-
-(defun snippet--field-skip-p (field)
-  (let ((parent (snippet--field-parent field)))
-    (and parent
-         (snippet--object-empty-p field)
-         (snippet--field-modified-p parent))))
-
-(defun snippet-next-field (&optional prev)
-  (interactive)
-  (let* ((field (overlay-get snippet--field-overlay 'snippet--field))
-         (sorted (overlay-get snippet--field-overlay 'snippet--fields))
-         (sorted (if prev (reverse sorted) sorted))
-         (target (if field
-                     (cadr (cl-remove-if #'snippet--field-skip-p
-                                         (memq field sorted)))
-                   (first sorted))))
-    (if target
-        (snippet--move-to-field target)
-      (let ((exit (overlay-get snippet--field-overlay
-                               'snippet--exit)))
-        (goto-char (if (markerp exit)
-                       exit
-                       (snippet--object-start exit))))
-      (snippet-exit-snippet))))
-
-(defun snippet-prev-field ()
-  (interactive)
-  (snippet-next-field t))
-
-(defun snippet-exit-snippet (&optional reason)
-  (delete-overlay snippet--field-overlay)
-  (message "snippet exited%s"
-           (or (and reason
-                    (format " (%s)" reason))
-               "")))
 
 (defun snippet--object-empty-p (object)
   (= (snippet--object-start object)
@@ -452,6 +369,8 @@ meaning is not decided yet"
                              (string= "" field-string))
                     ""))))))
 
+(defvar snippet--field-overlay nil)
+
 (defun snippet--move-to-field (field)
   (goto-char (snippet--object-start field))
   (move-overlay snippet--field-overlay
@@ -505,25 +424,66 @@ meaning is not decided yet"
         (end (snippet--object-end field)))
     (buffer-substring-no-properties start end)))
 
+
+;;; Interactive
+;;;
+(defgroup snippet nil
+  "Customize snippet features"
+  :group 'convenience)
+
+(defface snippet-field-face
+  '((t (:inherit 'region)))
+  "Face used to highlight the currently active field of a snippet")
+
+(defvar snippet-field-keymap
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "<tab>")       'snippet-next-field)
+    (define-key map (kbd "S-<tab>")     'snippet-prev-field)
+    (define-key map (kbd "<backtab>")   'snippet-prev-field)
+    map)
+  "The active keymap while a live snippet is being navigated.")
+
+(defun snippet--field-skip-p (field)
+  (let ((parent (snippet--field-parent field)))
+    (and parent
+         (snippet--object-empty-p field)
+         (snippet--field-modified-p parent))))
+
+(defun snippet-next-field (&optional prev)
+  (interactive)
+  (let* ((field (overlay-get snippet--field-overlay 'snippet--field))
+         (sorted (overlay-get snippet--field-overlay 'snippet--fields))
+         (sorted (if prev (reverse sorted) sorted))
+         (target (if field
+                     (cadr (cl-remove-if #'snippet--field-skip-p
+                                         (memq field sorted)))
+                   (first sorted))))
+    (if target
+        (snippet--move-to-field target)
+      (let ((exit (overlay-get snippet--field-overlay
+                               'snippet--exit)))
+        (goto-char (if (markerp exit)
+                       exit
+                       (snippet--object-start exit))))
+      (snippet-exit-snippet))))
+
+(defun snippet-prev-field ()
+  (interactive)
+  (snippet-next-field t))
+
+(defun snippet-exit-snippet (&optional reason)
+  (delete-overlay snippet--field-overlay)
+  (message "snippet exited%s"
+           (or (and reason
+                    (format " (%s)" reason))
+               "")))
+
+
+;;; Main
+;;;
 (defvar snippet--debug nil)
 ;; (setq snippet--debug t)
 ;; (setq snippet--debug nil)
-
-(defun snippet--post-command-hook ()
-  (cond ((and snippet--field-overlay
-              (overlay-buffer snippet--field-overlay))
-         (cond ((or (< (point)
-                       (overlay-start snippet--field-overlay))
-                    (> (point)
-                       (overlay-end snippet--field-overlay)))
-                (snippet-exit-snippet "point left snippet")
-                (remove-hook 'post-command-hook 'snippet--post-command-hook t))
-               (snippet--debug
-                (snippet--debug-snippet snippet--field-overlay))))
-        (snippet--field-overlay
-         ;; snippet must have been exited for some other reason
-         ;;
-         (remove-hook 'post-command-hook 'snippet--post-command-hook t))))
 
 (defun snippet--activate-snippet (objects)
   (let ((mirrors (cl-remove-if-not #'snippet--mirror-p objects))
@@ -560,6 +520,55 @@ meaning is not decided yet"
             overlay))
     (snippet-next-field)
     (add-hook 'post-command-hook 'snippet--post-command-hook t)))
+
+(defun snippet--post-command-hook ()
+  (cond ((and snippet--field-overlay
+              (overlay-buffer snippet--field-overlay))
+         (cond ((or (< (point)
+                       (overlay-start snippet--field-overlay))
+                    (> (point)
+                       (overlay-end snippet--field-overlay)))
+                (snippet-exit-snippet "point left snippet")
+                (remove-hook 'post-command-hook 'snippet--post-command-hook t))
+               (snippet--debug
+                (snippet--debug-snippet snippet--field-overlay))))
+        (snippet--field-overlay
+         ;; snippet must have been exited for some other reason
+         ;;
+         (remove-hook 'post-command-hook 'snippet--post-command-hook t))))
+
+
+;;; Debug helpers
+;;;
+(defun snippet--describe-object (object)
+  (with-current-buffer (snippet--object-buffer object)
+    (format "from %s to %s covering \"%s\""
+            (snippet--object-start object)
+            (snippet--object-end object)
+            (buffer-substring-no-properties
+             (snippet--object-start object)
+             (snippet--object-end object)))))
+
+(defun snippet--describe-field (field)
+  (let ((active-field
+         (overlay-get snippet--field-overlay 'snippet--field)))
+    (with-current-buffer (snippet--object-buffer field)
+      (format "field %s %s%s"
+              (snippet--field-name field)
+              (snippet--describe-object field)
+              (if (eq field active-field)
+                  " *active*"
+                "")))))
+
+(defun snippet--describe-mirror (mirror)
+  (with-current-buffer (snippet--object-buffer mirror)
+    (format "mirror of %s %s"
+            (snippet--field-name (snippet--mirror-source mirror))
+            (snippet--describe-object mirror))))
+
+(defun snippet--describe-exit (exit)
+  (with-current-buffer (snippet--object-buffer exit)
+    (format "exit %s" (snippet--describe-object exit))))
 
 (defun snippet--debug-snippet (field-overlay)
   (with-current-buffer (get-buffer-create "*snippet-debug*")
