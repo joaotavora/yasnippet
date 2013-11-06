@@ -249,7 +249,7 @@
   (should (equal (snippet--canonicalize-form '(&field 1 (&transform (foo))))
                  '(&field 1 (&transform (foo)))))
   (should (equal (snippet--canonicalize-form '(&field 1 (&nested (foo) (bar))))
-                 '(&field 1 (&nested (foo) (bar)))))
+                 '(&field 1 (&nested (&eval (foo)) (&eval (bar))))))
   (should (equal (snippet--canonicalize-form '(&field 1))
                  '(&field 1 nil)))
   ;; mirrors
@@ -264,11 +264,11 @@
   ;; exit
   ;;
   (should (equal (snippet--canonicalize-form '&exit)
-                 '(&exit nil nil)))
+                 '(&exit (&eval nil))))
   (should (equal (snippet--canonicalize-form `(&exit))
-                 '(&exit nil nil)))
+                 '(&exit (&eval nil))))
   (should (equal (snippet--canonicalize-form `(&exit (foo)))
-                 '(&exit nil (&eval (foo)))))
+                 '(&exit (&eval (foo)))))
   ;; constants
   ;;
   (should (equal (snippet--canonicalize-form "bla")
