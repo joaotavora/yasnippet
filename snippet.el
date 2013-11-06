@@ -128,8 +128,8 @@
                     append (pcase form
                              (`(&field ,name ,_expr (&parent ,parent))
                               `((,(snippet--make-field-sym name)
-                                 (snippet--make-field :parent
-                                                      ,parent))))))
+                                 (snippet--make-field :parent ,parent
+                                                      :name ',name))))))
             (region-string (and (region-active-p)
                                 (buffer-substring-no-properties
                                  (region-beginning)
@@ -330,11 +330,17 @@ meaning is not decided yet"
     (cl-assert (null (snippet--object-next prev)) nil
                "previous object already has another sucessor")
     (setf (snippet--object-next prev) object))
+
   (setf (snippet--object-start object)
-        (if (and prev
-                 (= (point) (snippet--object-end prev)))
-            (snippet--object-end prev)
-          (point-marker)))
+        (let ((parent (snippet--object-parent object)))
+          (cond ((and parent
+                      (= (point) (snippet--object-start parent)))
+                 (snippet--object-start parent))
+                ((and prev
+                      (= (point) (snippet--object-end prev)))
+                 (snippet--object-end prev))
+                (t
+                 (point-marker)))))
   (funcall fn)
   (setf (snippet--object-end object)
         (point-marker))
@@ -342,6 +348,7 @@ meaning is not decided yet"
     (setf (snippet--object-end
            (snippet--object-parent object))
           (snippet--object-end object)))
+  (snippet--open-object object 'close)
   object)
 
 (defmacro snippet--inserting-object (object prev &rest body)
@@ -360,8 +367,7 @@ meaning is not decided yet"
                  :source source
                  :transform (snippet--transform-lambda transform))))
     (snippet--inserting-object mirror prev
-      (pushnew mirror (snippet--field-mirrors source)))
-    mirror))
+      (pushnew mirror (snippet--field-mirrors source)))))
 
 (defun snippet--make-and-insert-exit (parent prev constant)
   (let ((exit (snippet--make-exit :parent parent :prev prev)))
@@ -375,35 +381,35 @@ meaning is not decided yet"
   (when parent
     (setf (snippet--object-end parent) (point-marker))))
 
-(defun snippet--describe-field (field)
-  (with-current-buffer (snippet--object-buffer field)
-    (format "field %s from %s to %s covering \"%s\""
-            (snippet--field-name field)
-            (marker-position (snippet--object-start field))
-            (marker-position (snippet--object-end field))
+(defun snippet--describe-object (object)
+  (with-current-buffer (snippet--object-buffer object)
+    (format "from %s to %s covering \"%s\""
+            (snippet--object-start object)
+            (snippet--object-end object)
             (buffer-substring-no-properties
-             (snippet--object-start field)
-             (snippet--object-end field)))))
+             (snippet--object-start object)
+             (snippet--object-end object)))))
 
+(defun snippet--describe-field (field)
+  (let ((active-field
+         (overlay-get snippet--field-overlay 'snippet--field)))
+    (with-current-buffer (snippet--object-buffer field)
+      (format "field %s %s%s"
+              (snippet--field-name field)
+              (snippet--describe-object field)
+              (if (eq field active-field)
+                  " *active*"
+                "")))))
 
 (defun snippet--describe-mirror (mirror)
   (with-current-buffer (snippet--object-buffer mirror)
-    (format "mirror from %s to %s covering \"%s\""
-            (marker-position (snippet--object-start mirror))
-            (marker-position (snippet--object-end mirror))
-            (buffer-substring-no-properties
-             (snippet--object-start mirror)
-             (snippet--object-end mirror)))))
-
+    (format "mirror of %s %s"
+            (snippet--field-name (snippet--mirror-source mirror))
+            (snippet--describe-object mirror))))
 
 (defun snippet--describe-exit (exit)
   (with-current-buffer (snippet--object-buffer exit)
-    (format "exit from %s to %s covering \"%s\""
-            (marker-position (snippet--object-start exit))
-            (marker-position (snippet--object-end exit))
-            (buffer-substring-no-properties
-             (snippet--object-start exit)
-             (snippet--object-end exit)))))
+    (format "exit %s" (snippet--describe-object exit))))
 
 (defgroup snippet nil
   "Customize snippet features"
@@ -589,22 +595,16 @@ meaning is not decided yet"
   (with-current-buffer (get-buffer-create "*snippet-debug*")
     (let ((inhibit-read-only t))
       (erase-buffer)
-      (let ((active-field (overlay-get field-overlay 'snippet--field)))
-        (cl-loop for object in
-                 (cl-sort (cl-copy-list
-                           (overlay-get field-overlay 'snippet--objects)) #'<
-                           :key #'snippet--object-start)
-                 do (cond ((snippet--field-p object)
-                           (insert (snippet--describe-field object))
-                           (when (eq object active-field) (insert " (active)"))
-                           (insert "\n")
-                           (cl-loop for mirror in (snippet--field-mirrors object)
-                                    do (insert "  " (snippet--describe-mirror mirror)
-                                               "\n")))
-                          ((snippet--mirror-p object)
-                           (insert (snippet--describe-mirror object) "\n"))
-                          ((snippet--exit-p object)
-                           (insert (snippet--describe-exit object) "\n"))))))
+      (cl-loop for object in
+               (cl-sort (cl-copy-list
+                         (overlay-get field-overlay 'snippet--objects)) #'<
+                         :key #'snippet--object-start)
+               do (cond ((snippet--field-p object)
+                         (insert (snippet--describe-field object) "\n"))
+                        ((snippet--mirror-p object)
+                         (insert (snippet--describe-mirror object) "\n"))
+                        ((snippet--exit-p object)
+                         (insert (snippet--describe-exit object) "\n")))))
     (display-buffer (current-buffer))))
 
 (provide 'snippet)
