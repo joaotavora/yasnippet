@@ -120,14 +120,16 @@
 (defun define--snippet-body (body)
   "Does the actual work for `define-snippet'"
   (let ((unfolded (snippet--unfold-forms
-                   (mapcar #'snippet--canonicalize-form body))))
+                   (mapcar #'snippet--canonicalize-form body)))
+        explicit-exit
+        all-objects)
     `(let* (,@(loop for form in unfolded
                     append (pcase form
                              (`(&field ,name ,_expr (&parent ,parent))
                               `((,(snippet--make-field-sym name)
                                  (snippet--make-field :parent
                                                       ,parent))))))
-            (region (and (region-active-p)
+            (region-string (and (region-active-p)
                                 (buffer-substring-no-properties
                                  (region-beginning)
                                  (region-end)))))
@@ -136,7 +138,6 @@
                  with mirror-idx = 0
                  with sym
                  with prev-sym
-                 with all-objects
                  append
                  (pcase form
                    (`(&field ,name ,expr (&parent ,_parent))
@@ -146,29 +147,32 @@
                              ,prev-sym
                              ,(pcase expr
                                 (`(&eval ,form)
-                                 `(funcall ,(snippet--eval-lambda form)
-                                           region-string)))))))
-                   (`(&mirror ,name ,transform (&parent ,parent))
+                                 `',form))
+                             region-string))))
+                   (`(&mirror ,name (&transform ,transform) (&parent ,parent))
                     (setq sym (snippet--make-mirror-sym
                                (cl-incf mirror-idx) name))
                     `((,sym (snippet--make-and-insert-mirror
                              ,parent
                              ,prev-sym
                              ,(snippet--make-field-sym name)
-                             ,(snippet--transform-lambda transform)))))
+                             ',transform))))
                    (`(&exit (&eval ,form) (&parent ,parent))
-                    (setq sym (snippet--make-exit-sym))
+                    (when explicit-exit
+                      (error "too many &exit forms given"))
+                    (setq sym (snippet--make-exit-sym)
+                          explicit-exit sym)
+
                     `((,sym (snippet--make-and-insert-exit
                              ,parent
                              ,prev-sym
-                             ,(and form
-                                   `(funcall ,(snippet--eval-lambda form)
-                                             region-string))))))
+                             ',form
+                             region-string))))
                    (`(&eval ,form (&parent ,parent))
                     `((,(cl-gensym "constant-")
                        (snippet--insert-constant
-                        (funcall ,(snippet--eval-lambda form)
-                                 region-string)
+                        ',form
+                        region-string
                         ,parent)))))
                  into object-forms
                  when sym do
@@ -177,10 +181,10 @@
                  (setq sym nil)
                  finally (cl-return
                           (append object-forms
-                                  `((all-objects ,all-objects)))))
-              (sorted-fields ,(snippet--sorted-field-syms
-                               unfolded))
-              (snippet--field-overlay
+                                  `((all-objects (list ,@all-objects))))))
+              (sorted-fields (list ,@(snippet--sorted-field-syms
+                                      unfolded))))
+         (setq snippet--field-overlay
                (let ((overlay (make-overlay (point) (point) nil nil t)))
                  (overlay-put overlay
                               'face
@@ -200,10 +204,16 @@
                  (overlay-put overlay
                               'snippet--objects
                               all-objects)
-                 (overlay-put snippet--field-overlay
+                 (overlay-put overlay
                               'snippet--fields
                               sorted-fields)
-                 overlay)))
+                 (overlay-put overlay
+                              'snippet--exit
+                              ,(or explicit-exit
+                                   `(snippet--make-and-insert-exit
+                                     nil ,(car all-objects)
+                                     nil nil)))
+                 overlay))
          (snippet-next-field)
          (add-hook 'post-command-hook 'snippet--post-command-hook t)))))
 
@@ -290,13 +300,13 @@ meaning is not decided yet"
 (cl-defstruct snippet--object
   start end parent next prev (buffer (current-buffer)))
 
-(cl-defstruct (snippet--field (:constructor snippet--make-field-1)
+(cl-defstruct (snippet--field (:constructor snippet--make-field)
                               (:include snippet--object))
   name
   (mirrors '())
   (modified-p nil))
 
-(cl-defstruct (snippet--mirror (:constructor snippet--make-mirror-1)
+(cl-defstruct (snippet--mirror (:constructor snippet--make-mirror)
                                (:include snippet--object))
   source
   (transform nil))
@@ -304,18 +314,16 @@ meaning is not decided yet"
 (cl-defstruct (snippet--exit (:constructor snippet--make-exit)
                              (:include snippet--object)))
 
-(defun snippet--make-field (&key parent)
-  (let ((field (snippet--make-field-1 :parent parent)))
-    field))
-
 (defmacro snippet--inserting-object (object prev &rest body)
   (declare (indent defun) (debug (sexp sexp &rest form)))
   `(progn
-     (cl-assert (null (snippet--object-next ,prev)) nil
-                "previous object already has another sucessor")
-     (setf (snippet--object-next ,prev) ,object)
+     (when ,prev
+       (cl-assert (null (snippet--object-next ,prev)) nil
+                  "previous object already has another sucessor")
+       (setf (snippet--object-next ,prev) ,object))
      (setf (snippet--object-start ,object)
-           (if (= (point) (snippet--object-end ,prev))
+           (if (and ,prev
+                    (= (point) (snippet--object-end ,prev)))
                (snippet--object-end ,prev)
              (point-marker)))
      ,@body
@@ -324,34 +332,35 @@ meaning is not decided yet"
      (when (snippet--object-parent ,object)
        (setf (snippet--object-end
               (snippet--object-parent ,object))
-             (snippet--object-end ,object)))))
+             (snippet--object-end ,object)))
+     ,object))
 
-(defun snippet--insert-field (field prev default)
+(defun snippet--insert-field (field prev default region-string)
   (snippet--inserting-object field prev
     (when default
-      (insert default))))
+      (insert (funcall (snippet--eval-lambda default)
+                       region-string)))))
 
 (defun snippet--make-and-insert-mirror (parent prev source transform)
-  (let ((mirror (snippet--make-mirror-1
+  (let ((mirror (snippet--make-mirror
                  :parent parent
                  :prev prev
                  :source source
-                 :transform transform)))
+                 :transform (snippet--transform-lambda transform))))
     (snippet--inserting-object mirror prev
-      (pushnew mirror (snippet--field-mirrors source))
-      (setf (snippet--mirror-source mirror) source)
-      (setf (snippet--mirror-transform mirror) transform))
+      (pushnew mirror (snippet--field-mirrors source)))
+    (snippet--update-mirror mirror)
     mirror))
 
-(defun snippet--make-and-insert-exit (parent prev constant)
-  (let ((exit (snippet--make-exit-1 :parent parent :prev prev)))
+(defun snippet--make-and-insert-exit (parent prev constant region-string)
+  (let ((exit (snippet--make-exit :parent parent :prev prev)))
    (snippet--inserting-object exit prev
      (when constant
-       (insert constant)))))
+       (insert (funcall (snippet--eval-lambda constant) region-string))))))
 
-(defun snippet--insert-constant (constant parent)
+(defun snippet--insert-constant (constant region-string parent)
   (when constant
-    (insert constant))
+    (insert (funcall (snippet--eval-lambda constant) region-string)))
   (when parent
     (setf (snippet--object-next parent) (point-marker))))
 
