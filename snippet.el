@@ -41,6 +41,14 @@
 (defun snippet--make-exit-sym ()
   (intern "exit" snippet--sym-obarray))
 
+(defun snippet--make-transform-lambda (transform-form)
+  `(lambda (field-string field-empty-p)
+     ,transform-form))
+
+(defun snippet--make-lambda (eval-form)
+  `#'(lambda (region-string)
+       ,eval-form))
+
 (defun snippet--canonicalize-form (form)
   (pcase form
     ((or `&field `(&field))
@@ -84,8 +92,8 @@
     (t
      (error "invalid snippet form %s" form))))
 
-(defun snippet--unfold-forms (canonic-forms &optional parent-sym)
-  (cl-loop for form in canonic-forms
+(defun snippet--unfold-forms (forms &optional parent-sym)
+  (cl-loop for form in forms
            collect (append form
                            `((&parent ,parent-sym)))
            append (pcase form
@@ -93,37 +101,11 @@
                      (snippet--unfold-forms subforms
                                             (snippet--make-field-sym name))))))
 
-
-(defun snippet--sorted-field-syms (forms)
-  (let* ((field-forms (loop for form in forms
-                            when (eq '&field (car form))
-                            collect form))
-         (sorted (cl-sort field-forms
-                          #'(lambda (n1 n2)
-                              (cond ((not (integerp n1)) nil)
-                                    ((not (integerp n2)) t)
-                                    (t (< n1 n2))))
-                          :key #'(lambda (form)
-                                   (pcase form (`(&field ,name . ,_)
-                                                name))))))
-    (loop for form in sorted
-          collect (snippet--make-field-sym (cadr form)))))
-
-(defun snippet--make-transform-lambda (transform-form)
-  `(lambda (field-string field-empty-p)
-     ,transform-form))
-
-(defun snippet--make-lambda (eval-form)
-  `#'(lambda (region-string)
-       ,eval-form))
-
 (defun define--snippet-body (body)
   "Does the actual work for `define-snippet'"
   (let ((unfolded (snippet--unfold-forms
                    (mapcar #'snippet--canonicalize-form body)))
-        exit-object
-        all-objects
-        all-mirrors)
+        all-objects all-mirrors all-fields exit-object)
     `(let* (,@(loop for form in unfolded
                     append (pcase form
                              (`(&field ,name ,_expr (&parent ,parent))
@@ -143,6 +125,7 @@
                  (pcase form
                    (`(&field ,name ,expr (&parent ,_parent))
                     (setq sym (snippet--make-field-sym name))
+                    (push sym all-fields)
                     `((,sym (snippet--insert-field
                              ,sym
                              ,prev-sym
@@ -177,27 +160,23 @@
                         (funcall ,(snippet--make-lambda form)
                                  region-string))))))
                  into object-forms
+
                  when sym do
                  (push sym all-objects)
                  (setq prev-sym sym)
                  (setq sym nil)
+
                  finally
-                 (progn
-                   (unless exit-object
-                     (setq exit-object (snippet--make-exit-sym))
-                     (push exit-object all-objects)
-                     (nconc object-forms
-                            `((,exit-object (snippet--make-and-insert-exit
-                                             nil
-                                             ,prev-sym
-                                             nil)))))
-                   (cl-return
-                    (append object-forms
-                            `((all-objects (list ,@all-objects)))))))
-              (sorted-fields (list ,@(snippet--sorted-field-syms
-                                      unfolded)))
-              (all-mirrors (list ,@all-mirrors)))
-         (mapc #'snippet--update-mirror all-mirrors)
+                 (unless exit-object
+                   (setq exit-object (snippet--make-exit-sym))
+                   (push exit-object all-objects)
+                   (nconc object-forms
+                          `((,exit-object (snippet--make-and-insert-exit
+                                           nil
+                                           ,prev-sym
+                                           nil)))))
+                 (cl-return object-forms)))
+         (mapc #'snippet--update-mirror (list ,@all-mirrors))
          (setq snippet--field-overlay
                (let ((overlay (make-overlay (point) (point) nil nil t)))
                  (overlay-put overlay
@@ -217,10 +196,15 @@
                               snippet-field-keymap)
                  (overlay-put overlay
                               'snippet--objects
-                              all-objects)
+                              (list ,@all-objects))
                  (overlay-put overlay
                               'snippet--fields
-                              sorted-fields)
+                              (cl-sort (list ,@all-fields)
+                                       #'(lambda (n1 n2)
+                                           (cond ((not (integerp n2)) t)
+                                                 ((not (integerp n1)) nil)
+                                                 (t (< n1 n2))))
+                                       :key #'snippet--field-name))
                  (overlay-put overlay
                               'snippet--exit
                               ,exit-object)
@@ -330,7 +314,6 @@ meaning is not decided yet"
     (cl-assert (null (snippet--object-next prev)) nil
                "previous object already has another sucessor")
     (setf (snippet--object-next prev) object))
-
   (setf (snippet--object-start object)
         (let ((parent (snippet--object-parent object)))
           (cond ((and parent
@@ -460,9 +443,6 @@ meaning is not decided yet"
            (or (and reason
                     (format " (%s)" reason))
                "")))
-
-(defun snippet--make-marker ()
-  (point-marker))
 
 (defun snippet--object-empty-p (object)
   (= (snippet--object-start object)
