@@ -101,11 +101,11 @@
                      (snippet--unfold-forms subforms
                                             (snippet--make-field-sym name))))))
 
-(defun define--snippet-body (body)
+(defun snippet--define-body (body)
   "Does the actual work for `define-snippet'"
   (let ((unfolded (snippet--unfold-forms
                    (mapcar #'snippet--canonicalize-form body)))
-        all-objects all-mirrors all-fields exit-object)
+        all-objects exit-object)
     `(let* (,@(loop for form in unfolded
                     append (pcase form
                              (`(&field ,name ,_expr (&parent ,parent))
@@ -125,7 +125,6 @@
                  (pcase form
                    (`(&field ,name ,expr (&parent ,_parent))
                     (setq sym (snippet--make-field-sym name))
-                    (push sym all-fields)
                     `((,sym (snippet--insert-field
                              ,sym
                              ,prev-sym
@@ -136,7 +135,6 @@
                    (`(&mirror ,name (&transform ,transform) (&parent ,parent))
                     (setq sym (snippet--make-mirror-sym
                                (cl-incf mirror-idx) name))
-                    (push sym all-mirrors)
                     `((,sym (snippet--make-and-insert-mirror
                              ,parent
                              ,prev-sym
@@ -159,58 +157,11 @@
                         ,parent
                         (funcall ,(snippet--make-lambda form)
                                  region-string))))))
-                 into object-forms
-
                  when sym do
                  (push sym all-objects)
                  (setq prev-sym sym)
-                 (setq sym nil)
-
-                 finally
-                 (unless exit-object
-                   (setq exit-object (snippet--make-exit-sym))
-                   (push exit-object all-objects)
-                   (nconc object-forms
-                          `((,exit-object (snippet--make-and-insert-exit
-                                           nil
-                                           ,prev-sym
-                                           nil)))))
-                 (cl-return object-forms)))
-         (mapc #'snippet--update-mirror (list ,@all-mirrors))
-         (setq snippet--field-overlay
-               (let ((overlay (make-overlay (point) (point) nil nil t)))
-                 (overlay-put overlay
-                              'face
-                              'snippet-field-face)
-                 (overlay-put overlay
-                              'modification-hooks
-                              '(snippet--field-overlay-changed))
-                 (overlay-put overlay
-                              'insert-in-front-hooks
-                              '(snippet--field-overlay-changed))
-                 (overlay-put overlay
-                              'insert-behind-hooks
-                              '(snippet--field-overlay-changed))
-                 (overlay-put overlay
-                              'keymap
-                              snippet-field-keymap)
-                 (overlay-put overlay
-                              'snippet--objects
-                              (list ,@all-objects))
-                 (overlay-put overlay
-                              'snippet--fields
-                              (cl-sort (list ,@all-fields)
-                                       #'(lambda (n1 n2)
-                                           (cond ((not (integerp n2)) t)
-                                                 ((not (integerp n1)) nil)
-                                                 (t (< n1 n2))))
-                                       :key #'snippet--field-name))
-                 (overlay-put overlay
-                              'snippet--exit
-                              ,exit-object)
-                 overlay))
-         (snippet-next-field)
-         (add-hook 'post-command-hook 'snippet--post-command-hook t)))))
+                 (setq sym nil)))
+         (snippet--activate-snippet (list ,@all-objects))))))
 
 
 (cl-defmacro define-snippet (name () &rest snippet-forms)
@@ -276,7 +227,7 @@ ARGS is an even-numbered property list of (KEY VAL) pairs. Its
 meaning is not decided yet"
   (declare (debug (&define name sexp &rest snippet-form)))
   `(defun ,name ()
-     ,(define--snippet-body snippet-forms)))
+     ,(snippet--define-body snippet-forms)))
 
 (def-edebug-spec snippet-form
   (&or
@@ -286,7 +237,7 @@ meaning is not decided yet"
 
 (defun make-snippet (forms)
   "Same as `define-snippet', but return an anonymous function."
-  `(lambda () ,(define--snippet-body forms)))
+  `(lambda () ,(snippet--define-body forms)))
 
 
 ;;; Snippet mechanics
@@ -429,8 +380,11 @@ meaning is not decided yet"
                    (first sorted))))
     (if target
         (snippet--move-to-field target)
-      (goto-char (snippet--object-start (overlay-get snippet--field-overlay
-                                                     'snippet--exit)))
+      (let ((exit (overlay-get snippet--field-overlay
+                               'snippet--exit)))
+        (goto-char (if (markerp exit)
+                       exit
+                       (snippet--object-start exit))))
       (snippet-exit-snippet))))
 
 (defun snippet-prev-field ()
@@ -570,6 +524,42 @@ meaning is not decided yet"
          ;; snippet must have been exited for some other reason
          ;;
          (remove-hook 'post-command-hook 'snippet--post-command-hook t))))
+
+(defun snippet--activate-snippet (objects)
+  (let ((mirrors (cl-remove-if-not #'snippet--mirror-p objects))
+        (fields (cl-sort (cl-remove-if-not #'snippet--field-p objects)
+                         #'(lambda (n1 n2)
+                             (cond ((not (integerp n2)) t)
+                                   ((not (integerp n1)) nil)
+                                   (t (< n1 n2))))
+                         :key #'snippet--field-name))
+        (exit (or
+               (cl-find-if #'snippet--exit-p objects)
+               (let ((marker (point-marker)))
+                 (prog1 marker
+                   (set-marker-insertion-type marker t))))))
+    (mapc #'snippet--update-mirror mirrors)
+    (setq snippet--field-overlay
+          (let ((overlay (make-overlay (point) (point) nil nil t)))
+            (overlay-put overlay 'snippet--objects objects)
+            (overlay-put overlay 'snippet--fields  fields)
+            (overlay-put overlay 'snippet--exit    exit)
+            (overlay-put overlay 'face '           snippet-field-face)
+            (overlay-put overlay
+                         'modification-hooks
+                         '(snippet--field-overlay-changed))
+            (overlay-put overlay
+                         'insert-in-front-hooks
+                         '(snippet--field-overlay-changed))
+            (overlay-put overlay
+                         'insert-behind-hooks
+                         '(snippet--field-overlay-changed))
+            (overlay-put overlay
+                         'keymap
+                         snippet-field-keymap)
+            overlay))
+    (snippet-next-field)
+    (add-hook 'post-command-hook 'snippet--post-command-hook t)))
 
 (defun snippet--debug-snippet (field-overlay)
   (with-current-buffer (get-buffer-create "*snippet-debug*")
