@@ -271,6 +271,12 @@ meaning is not decided yet"
                       (= (point) (snippet--object-start parent)))
                  (snippet--object-start parent))
                 ((and prev
+                      (snippet--object-parent prev)
+                      (= (point) (snippet--object-end
+                                  (snippet--object-parent prev))))
+                 (snippet--object-end
+                  (snippet--object-parent prev)))
+                ((and prev
                       (= (point) (snippet--object-end prev)))
                  (snippet--object-end prev))
                 (t

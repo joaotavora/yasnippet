@@ -48,6 +48,18 @@
                                                     (&field 3 "field")))
                                  (&mirror 3 (concat ", nested mirroring: "
                                                     field-string))))
+        (more-nesting ("a "
+                       (&field 1 (&nested
+                                  "'"
+                                  (&field 2 "rain")
+                                  (&mirror 2 (apply #'string
+                                                    (reverse
+                                                     (string-to-list
+                                                      field-string))))
+                                  "'"))
+                       (&field 3 " and a field:")
+                       " "
+                       (&mirror 1)))
         (printf ("printf (\""
                  (&field 1 "%s")
                  (&mirror 1 (if (string-match "%" field-string) "\"," "\")"))
@@ -155,6 +167,19 @@
     (ert-simulate-command '(snippet-next-field))
     (ert-simulate-command '((lambda () (interactive) (insert "foo"))))
     (should (equal (buffer-string) "a nested foo, nested mirroring: foo"))))
+
+(ert-deftest more-nesting ()
+  (with-temp-buffer
+    (snippet--insert-test-snippet 'more-nesting)
+    (should (equal (buffer-string) "a 'rainniar' and a field: 'rainniar'"))
+    (ert-simulate-command '((lambda () (interactive) (insert "bar"))))
+    (should (equal (buffer-string) "a bar and a field: bar"))
+    (ert-simulate-command '(snippet-next-field))
+    (ert-simulate-command '((lambda () (interactive) (insert "baz"))))
+    (should (equal (buffer-string) "a barbaz bar"))
+    (ert-simulate-command '(snippet-prev-field))
+    (ert-simulate-command '((lambda () (interactive) (insert "foo"))))
+    (should (equal (buffer-string) "a foobarbaz foobar"))))
 
 (ert-deftest printf-expansion ()
   (with-temp-buffer
