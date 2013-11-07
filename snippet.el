@@ -486,7 +486,11 @@ meaning is not decided yet"
 ;; (setq snippet--debug nil)
 
 (defun snippet--activate-snippet (objects)
-  (let ((mirrors (cl-remove-if-not #'snippet--mirror-p objects))
+  (let ((mirrors (cl-sort (cl-remove-if-not #'snippet--mirror-p objects)
+                          #'(lambda (p1 p2)
+                              (cond ((not p2) t)
+                                    ((not p1) nil)))
+                          :key #'snippet--object-parent))
         (fields (cl-sort (cl-remove-if-not #'snippet--field-p objects)
                          #'(lambda (n1 n2)
                              (cond ((not (integerp n2)) t)
