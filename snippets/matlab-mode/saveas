@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: saveas
+# expand-env: ((yas/indent-line 'fixed) (yas/wrap-around-region 'nil))
+# --
+saveas(h, ${1:'filename'}, ${2:'format'});$0
