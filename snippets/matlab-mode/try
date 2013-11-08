@@ -1,9 +1,0 @@
-# -*- mode: snippet -*-
-# name: try
-# expand-env: ((yas/indent-line 'fixed) (yas/wrap-around-region 'nil))
-# --
-try
-  $1  
-catch $2
-   $3
-end
