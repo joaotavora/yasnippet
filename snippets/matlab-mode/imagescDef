@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: imagescDef
+# key: imagescDef
+# --
+imagesc($0)
+axis image
+colormap(gray)

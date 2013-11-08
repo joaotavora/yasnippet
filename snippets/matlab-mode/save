@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: save
+# key: save
+# expand-env: ((yas/indent-line 'fixed) (yas/wrap-around-region 'nil))
+# --
+save(${1:filename}, ${2:variables});$0
