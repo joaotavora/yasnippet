@@ -46,7 +46,7 @@
    (add-to-list 'load-path
                  "~/.emacs.d/plugins/yasnippet")
    (require 'yasnippet)
-   (yas/global-mode 1)
+   (yas-global-mode 1)
    #+end_src
 
    Add your own snippets to =~/.emacs.d/snippets= by placing files there or
@@ -75,8 +75,8 @@
    (add-to-list 'load-path
                  "~/.emacs.d/plugins/yasnippet")
    (require 'yasnippet)
-   (setq yas/snippet-dirs '("~/.emacs.d/snippets" "~/.emacs.d/extras/imported"))
-   (yas/global-mode 1)
+   (setq yas-snippet-dirs '("~/.emacs.d/snippets" "~/.emacs.d/extras/imported"))
+   (yas-global-mode 1)
    #+end_example
 
    Open some rails file (model, app, etc) and start using the textmate
@@ -146,11 +146,11 @@
    #+begin_src emacs-lisp :exports code
    ;; Develop in ~/emacs.d/mysnippets, but also
    ;; try out snippets in ~/Downloads/interesting-snippets
-   (setq yas/snippet-dirs '("~/emacs.d/mysnippets"
+   (setq yas-snippet-dirs '("~/emacs.d/mysnippets"
                               "~/Downloads/interesting-snippets"))
 
    ;; OR, keeping yasnippet's defaults try out ~/Downloads/interesting-snippets
-   (setq yas/snippet-dirs (append yas/snippet-dirs
+   (setq yas-snippet-dirs (append yas-snippet-dirs
                                   '("~/Downloads/interesting-snippets")))
    #+end_src
 
