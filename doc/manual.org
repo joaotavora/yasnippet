@@ -158,7 +158,7 @@
    appearing in collections later in the list. [[#yas-new-snippet][=yas-new-snippet=]] always stores
    snippets in the first collection.
 
-** The =.yas.parents= file
+** The =.yas-parents= file
 
    It's very useful to have certain modes share snippets between themselves. To do
    this, choose a mode subdirectory and place a =.yas-parents= containing a
