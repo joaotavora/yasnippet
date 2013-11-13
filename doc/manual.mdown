@@ -13,7 +13,7 @@ YASnippet is an original creation of [pluskid][pluskid] who also wrote its prede
 Watch a demo
 ------------
 
-Do so on [youtube][youtube]
+Do so on [youtube][screencast]
 
 Installation
 ------------
