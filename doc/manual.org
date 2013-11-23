@@ -236,8 +236,14 @@
 
    To make a snippet expand after the cursor:
 
-   * Type an the snippet's *trigger key* then press the key defined in
-     [[#yas-trigger-key][=yas-trigger-key=]] (usually to "TAB").
+   * Type the snippet's *trigger key* then calling [[#yas-expand][=yas-expand=]]. It's bound to
+     =TAB= and =<tab>= by default, to change it use
+
+   #+begin_src emacs-lisp :exports code
+     (define-key yas-minor-mode-map (kbd "<tab>") nil)
+     (define-key yas-minor-mode-map (kbd "TAB") nil)
+     (define-key yas-minor-mode-map (kbd "<the new key>") 'yas-expand)
+   #+end_src
 
    * Use the snippet's *keybinding*.
 
