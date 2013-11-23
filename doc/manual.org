@@ -4,18 +4,6 @@
 
 #+STYLE: <link rel="stylesheet" type="text/css" href="stylesheets/styles.css" />
 
-# External links
-#
-#+LINK: smart-snippet http://code.google.com/p/smart-snippet
-#+LINK: pluskid       http://pluskid.lifegoo.org
-
-#+LINK: screencast         http://www.youtube.com/watch?v=ZCGmZK4V7Sg
-#+LINK: docs               http://capitaomorte.github.com/yasnippet
-#+LINK: issues             https://github.com/capitaomorte/yasnippet/issues
-#+LINK: googlecode-tracker http://code.google.com/p/yasnippet/issues/list
-#+LINK: forum              http://groups.google.com/group/smart-snippet
-
-
 * Quick start
 
   *YASnippet* is a template system for Emacs. It allows you to type an
@@ -24,12 +12,12 @@
   CSS and more. The snippet syntax is inspired from TextMate's syntax, you can
   even [[#import-textmate][import most TextMate snippets]]
 
-  YASnippet is an original creation of [[pluskid]] who also wrote its predecessor
-  [[smart-snippet]].
+  YASnippet is an original creation of [[http://pluskid.lifegoo.org][pluskid]] who also wrote its predecessor
+  [[http://code.google.com/p/smart-snippet][smart-snippet]].
 
 ** Watch a demo
 
-   On [[screencast][youtube]].
+   On [[http://www.youtube.com/watch?v=ZCGmZK4V7Sg][youtube]].
 
 ** Installation
 
@@ -97,14 +85,13 @@
 
 ** Documentation, issues, etc
 
-   Please refer to the comprehensive [[docs][documentation]] for full
-   customization and support.  If you think you've found a bug, please report it
-   on [[issues][the GitHub issue tracker]].  (please **do not** submit new
-   issues to the old [[googlecode-tracker][googlecode tracker]])
+   Please refer to the comprehensive [[http://capitaomorte.github.com/yasnippet][documentation]] for full customization and
+   support. If you think you've found a bug, please report it on [[https://github.com/capitaomorte/yasnippet/issues][the GitHub
+   issue tracker]]. (please **do not** submit new issues to the old [[http://code.google.com/p/yasnippet/issues/list][googlecode
+   tracker]])
 
    If you run into problems using YASnippet, or have snippets to contribute,
-   post to the [[forum][yasnippet forum]]. Thank you very much for using
-   YASnippet!
+   post to the [[http://groups.google.com/group/smart-snippet][yasnippet forum]]. Thank you very much for using YASnippet!
 
 * Organizing snippets
 
