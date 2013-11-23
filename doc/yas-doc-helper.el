@@ -72,8 +72,7 @@
                     body))))
 
 (defun yas--document-symbols (level &rest names-and-predicates)
-  (let ((sym-lists (make-vector (length names-and-predicates) (list)))
-        (retval ""))
+  (let ((sym-lists (make-vector (length names-and-predicates) nil)))
     (loop for sym in yas--exported-syms
           do (loop for test in (mapcar #'cdr names-and-predicates)
                    for i from 0
@@ -82,12 +81,10 @@
                         (return))))
     (loop for slist across sym-lists
           for name in (mapcar #'car names-and-predicates)
-          do (progn
-               (setq retval
-                     (concat retval
-                             (format "\n** %s\n" name)
-                             (mapconcat #'yas--document-symbol slist "\n\n")))))
-    retval))
+          concat (format "\n** %s\n" name)
+          concat (mapconcat (lambda (sym)
+                              (yas--document-symbol sym (1+ level)))
+                            slist "\n\n"))))
 
 (defun yas--internal-link-snippet ()
   (interactive)
