@@ -29,7 +29,7 @@
 
 ** Watch a demo
 
-   [[youtube]]
+   On [[screencast][youtube]].
 
 ** Installation
 
