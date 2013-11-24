@@ -1,3 +1,5 @@
+#+SETUPFILE: org-setup.inc
+
 * Organizing snippets
 
 ** Basic structure
@@ -82,10 +84,10 @@
    considered groups of snippets and [[snippet-menu.org][the menu]] is organized much more
    cleanly:
 
-   [[images/menu-groups.png]]
+   [[./images/menu-groups.png]]
 
    Another way to achieve this is to place a =# group:= directive
-   inside the snippet definition. See [[snippet-development.org][Writing Snippets]].
+   inside the snippet definition. See [[./snippet-development.org][Writing Snippets]].
 
    #+begin_example
    $ tree ruby-mode/
