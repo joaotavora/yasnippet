@@ -2,8 +2,6 @@
 #+OPTIONS: toc:1
 #+STARTUP: showall
 
-#+STYLE: <link rel="stylesheet" type="text/css" href="stylesheets/styles.css" />
-
 * Quick start
 
   *YASnippet* is a template system for Emacs. It allows you to type an
@@ -83,12 +81,40 @@
    files that guide it with more difficult importations. The idea is to deprecate
    =/snippets=  and replace it with =extras/imported=.
 
-** Documentation, issues, etc
+** Documentation
 
-   Please refer to the comprehensive [[http://capitaomorte.github.com/yasnippet][documentation]] for full customization and
-   support. If you think you've found a bug, please report it on [[https://github.com/capitaomorte/yasnippet/issues][the GitHub
-   issue tracker]]. (please **do not** submit new issues to the old [[http://code.google.com/p/yasnippet/issues/list][googlecode
-   tracker]])
+   The documentation has been split into separate parts:
+
+   1. [[file:snippet-organization.org][Organizing Snippets]]
+      #+BEGIN_QUOTE
+      Describes ways to organize your snippets in the hard disk.
+      #+END_QUOTE
+
+   2. [[file:snippet-expansion.org][Expanding Snippets]]
+      #+BEGIN_QUOTE
+      Describes how YASnippet chooses snippets for expansion at point.
+
+      Maybe, you'll want some snippets to be expanded in a particular mode,
+      or only under certain conditions, or be prompted using =ido=, etc...
+      #+END_QUOTE
+
+   3. [[file:snippet-development.org][Writing Snippets]]
+      #+BEGIN_QUOTE
+      Describes the YASnippet definition syntax, which is very close (but
+      not equivalent) to Textmate's. Includes a section about converting
+      TextMate snippets.
+      #+END_QUOTE
+
+   4. [[file:snippet-menu.org][The YASnippet menu]]
+      #+BEGIN_QUOTE
+      Explains how to use the YASnippet menu to explore, learn and modify
+      snippets.
+      #+END_QUOTE
+
+** Bugs, discussion, contributions, etc
+
+   If you think you've found a bug, please report it on [[https://github.com/capitaomorte/yasnippet/issues][the GitHub issue tracker]]
+   (please **do not** submit new issues to the old [[http://code.google.com/p/yasnippet/issues/list][googlecode tracker]]).
 
    If you run into problems using YASnippet, or have snippets to contribute,
    post to the [[http://groups.google.com/group/smart-snippet][yasnippet forum]]. Thank you very much for using YASnippet!

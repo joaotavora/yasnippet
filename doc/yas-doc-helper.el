@@ -92,6 +92,21 @@
 
 (define-key org-mode-map [M-f8] 'yas--internal-link-snippet)
 
+;; This lets all the org files be exported to HTML with
+;; `org-publish-current-project' (C-c C-e P).
+(progn
+  (defvar yas--document-org-project-plist
+    `(:style
+      "<link rel='stylesheet' type='text/css' href='stylesheets/styles.css'/>"
+      :base-directory ,default-directory
+      :publishing-directory ,default-directory))
+
+  (let ((project (assoc "yasnippet" org-publish-project-alist)))
+    (if project
+        (setcdr project yas--document-org-project-plist)
+      (push `("yasnippet" . ,yas--document-org-project-plist)
+            org-publish-project-alist))))
+
 (provide 'yas-doc-helper)
 ;;; yas-doc-helper.el ends here
 ;; Local Variables:
