@@ -1,4 +1,5 @@
 #+SETUPFILE: org-setup.inc
+#+OPTIONS: H:4
 
 * Expanding snippets
 
@@ -43,10 +44,11 @@ When [[sym:yas-minor-mode][=yas-minor-mode=]] is enabled, it binds [[sym:yas-exp
    (define-key yas-minor-mode-map (kbd "<the new key>") 'yas-expand)
 #+end_src
 
-[[./images/minor-mode-indicator.png]]
-
 To enable the YASnippet minor mode in all buffers globally use the
-command [[sym:yas-global-mode][=yas-global-mode=]].
+command [[sym:yas-global-mode][=yas-global-mode=]]. This will enable a modeline indicator,
+=yas=:
+
+[[./images/minor-mode-indicator.png]]
 
 When you use [[sym:yas-global-mode][=yas-global-mode=]] you can also selectively disable
 YASnippet in some buffers by setting the buffer-local variable
@@ -227,9 +229,9 @@ can put in your emacs-file:
 
 Currently there are some alternatives solution with YASnippet.
 
-[[./images/x-menu.png]]
-
 **** Use the X window system
+
+[[./images/x-menu.png]]
 
 The function [[sym:yas-x-prompt][=yas-x-prompt=]] can be used to show a popup menu for you to
 select. This menu will be part of you native window system widget, which
@@ -241,17 +243,17 @@ means:
    navigate this menu.
 -  This function can't be used when in a terminal.
 
-[[./images/ido-menu.png]]
-
 **** Minibuffer prompting
+
+[[./images/ido-menu.png]]
 
 You can use functions [[sym:yas-completing-prompt][=yas-completing-prompt=]] for the classic emacs
 completion method or [[sym:yas-ido-prompt][=yas-ido-prompt=]] for a much nicer looking method.
 The best way is to try it. This works in a terminal.
 
-[[./images/dropdown-menu.png]]
-
 **** Use =dropdown-menu.el=
+
+[[./images/dropdown-menu.png]]
 
 The function [[sym:yas-dropdown-prompt][=yas-dropdown-prompt=]] can also be placed in the
 [[sym:yas-prompt-functions][=yas-prompt-functions=]] list.
