@@ -1,0 +1,93 @@
+@media all
+{
+    body {
+        margin: 1em auto;
+        /*margin: 10px 18% 10px 18%;*/
+        font-family: Arial;
+        /*text-align: justify;*/
+        font-size: 14pt;
+        padding: 10px;
+        line-height: 1.2em;
+        max-width: 600pt;
+    }
+
+    div#table-of-contents {
+        position: fixed;
+        left: 0%;
+        right: 0%;
+        top: 0px;
+        z-index: 100;
+        background: black;
+    }
+
+    div#table-of-contents h2 {
+        display: none;
+    }
+
+    div#table-of-contents a {
+        text-decoration: none;
+        color: white;
+    }
+
+    div#table-of-contents a:visited {
+        color: white;
+    }
+
+    div#table-of-contents a:hover {
+        color: orange;
+    }
+
+    div.outline-2 h2{
+        padding-top: 50px;
+    }
+
+    div#text-table-of-contents {
+        text-color: white;
+        text-align: center;
+        margin-left: 30%;
+        margin-right: 30%;
+    }
+
+    div#text-table-of-contents ul {
+        height: 2em;
+        width: 500px;
+        list-style: none;
+        margin: auto;
+    }
+
+    div#text-table-of-contents ul li {
+        float: left;
+        margin-left:auto;
+        margin-right: auto;
+        padding-left: 10px;
+    }
+
+    div#postamble{
+        position: fixed;
+        width: 800px;
+        height: 250px;
+        left: 50%;
+        right: 50%;
+        margin:-75px 0 0 -400px;
+        bottom: -20px;
+        font-size: 10pt;
+        color: grey;
+        background: url('siscog-bottom-logo.png') no-repeat;
+        /* background-size: 100% 100%; */
+    }
+
+    div#postamble *{
+        display: none;
+    }
+
+    div#postamble p.date{
+        position: relative;
+        bottom: -200px;
+        text-align: center;
+        display: block;
+    }
+
+
+
+
+}
