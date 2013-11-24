@@ -2,6 +2,8 @@
 #+OPTIONS: toc:1
 #+STARTUP: showall
 
+#+SETUPFILE: org-setup.inc
+
 * Quick start
 
   *YASnippet* is a template system for Emacs. It allows you to type an
@@ -36,7 +38,7 @@
    #+end_src
 
    Add your own snippets to =~/.emacs.d/snippets= by placing files there or
-   invoking [[#yas-new-snippet][=yas-new-snippet=]].
+   invoking [[sym:yas-new-snippet][=yas-new-snippet=]].
 
 ** Import textmate snippets (rails example)
    :PROPERTIES:
@@ -73,7 +75,7 @@
 
    Please *do not ask me* to add snippets to the default collection under
    =/snippets=. This collection is considered frozen. By customizing
-   [[#yas-snippet-dirs][=yas-snippet-dirs=]] you can point yasnippet to good
+   [[sym:yas-snippet-dirs][=yas-snippet-dirs=]] you can point yasnippet to good
    snippet collections out there.
 
    The =extras/textmate-import.rb= tool can import many actual Textmate
@@ -111,6 +113,12 @@
       snippets.
       #+END_QUOTE
 
+   5. [[file:snippet-reference.org][YASnippet Symbol Reference]]
+      #+BEGIN_QUOTE
+      An automatically generated listing of all YASnippet commands,
+      (customization) variables, and functions.
+      #+END_QUOTE
+
 ** Bugs, discussion, contributions, etc
 
    If you think you've found a bug, please report it on [[https://github.com/capitaomorte/yasnippet/issues][the GitHub issue tracker]]
@@ -143,10 +151,10 @@
 
 ** Setting up =yas-snippet-dirs=
 
-   The emacs variable [[#yas-snippet-dirs][=yas-snippet-dirs=]] tells YASnippet
+   The emacs variable [[sym:yas-snippet-dirs][=yas-snippet-dirs=]] tells YASnippet
    which collections to consider. It's used when you activate
-   [[#yas-global-mode][=yas-global-mode=]] or call
-   [[#yas-reload-all][=yas-reload-all=]] interactively.
+   [[sym:yas-global-mode][=yas-global-mode=]] or call
+   [[sym:yas-reload-all][=yas-reload-all=]] interactively.
 
    The default considers:
 
@@ -168,7 +176,7 @@
    #+end_src
 
    Collections appearing earlier in the list shadow snippets with same names
-   appearing in collections later in the list. [[#yas-new-snippet][=yas-new-snippet=]] always stores
+   appearing in collections later in the list. [[sym:yas-new-snippet][=yas-new-snippet=]] always stores
    snippets in the first collection.
 
 ** The =.yas-parents= file
@@ -249,7 +257,7 @@
 
    To make a snippet expand after the cursor:
 
-   * Type the snippet's *trigger key* then calling [[#yas-expand][=yas-expand=]]. It's bound to
+   * Type the snippet's *trigger key* then calling [[sym:yas-expand][=yas-expand=]]. It's bound to
      =TAB= and =<tab>= by default, to change it use
 
    #+begin_src emacs-lisp :exports code
@@ -260,7 +268,7 @@
 
    * Use the snippet's *keybinding*.
 
-   * Call [[#yas-insert-snippet][=yas-insert-snippet=]] (use =M-x
+   * Call [[sym:yas-insert-snippet][=yas-insert-snippet=]] (use =M-x
      yas-insert-snippet== or its keybinding =C-c & C-s=).
 
    * By expanding directly from the "YASnippet" menu in the menu-bar
@@ -269,15 +277,6 @@
 
    * Use m2m's excellent auto-complete
 
-* Reference
-#+BEGIN_SRC emacs-lisp :exports results :results value raw
-(yas--document-symbols 2 `("Interactive functions" . ,#'interactive-form)
-                         `("Customization variables" . ,#'(lambda (sym)
-                                                            (and (boundp sym)
-                                                                 (get sym 'standard-value))))
-                         `("Useful functions" . ,#'fboundp)
-                         `("Useful variables" . ,#'boundp))
-#+END_SRC
 # Local Variables:
 # mode: org
 # fill-column: 80
