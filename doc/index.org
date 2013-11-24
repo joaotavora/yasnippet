@@ -127,42 +127,6 @@
    If you run into problems using YASnippet, or have snippets to contribute,
    post to the [[http://groups.google.com/group/smart-snippet][yasnippet forum]]. Thank you very much for using YASnippet!
 
-
-* Expanding Snippets
-
-   :PROPERTIES:
-   :CUSTOM_ID: expand-snippets
-   :END:
-
-  This section describes how YASnippet chooses snippets for expansion at point.
-
-  Maybe, you'll want some snippets to be expanded in a particular
-  mode, or only under certain conditions, or be prompted using
-
-** Triggering expansion
-
-   To make a snippet expand after the cursor:
-
-   * Type the snippet's *trigger key* then calling [[sym:yas-expand][=yas-expand=]]. It's bound to
-     =TAB= and =<tab>= by default, to change it use
-
-   #+begin_src emacs-lisp :exports code
-     (define-key yas-minor-mode-map (kbd "<tab>") nil)
-     (define-key yas-minor-mode-map (kbd "TAB") nil)
-     (define-key yas-minor-mode-map (kbd "<the new key>") 'yas-expand)
-   #+end_src
-
-   * Use the snippet's *keybinding*.
-
-   * Call [[sym:yas-insert-snippet][=yas-insert-snippet=]] (use =M-x
-     yas-insert-snippet== or its keybinding =C-c & C-s=).
-
-   * By expanding directly from the "YASnippet" menu in the menu-bar
-
-   * Using hippie-expand
-
-   * Use m2m's excellent auto-complete
-
 # Local Variables:
 # mode: org
 # fill-column: 80

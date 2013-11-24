@@ -1,38 +1,49 @@
+#+SETUPFILE: org-setup.inc
+
 * Expanding snippets
+
+  This section describes how YASnippet chooses snippets for expansion at point.
+
+  Maybe, you'll want some snippets to be expanded in a particular
+  mode, or only under certain conditions, or be prompted using
 
 ** Triggering expansion
 
-You can use YASnippet to expand snippets in different ways:
+   You can use YASnippet to expand snippets in different ways:
 
--  By typing an abbrev, the snippet /trigger key/, and then pressing the
-   key defined in =yas-trigger-key= (which defaults to "TAB"). This
-   works in buffers where the minor mode =yas-minor-mode= is active;
+   - When =yas-minor-mode= is active:
+     - Type the snippet's *trigger key* then calling [[sym:yas-expand][=yas-expand=]]
+       (bound to =TAB= by default).
 
--  By invoking the command =yas-insert-snippet= (either by typing
-   =M-x yas-insert-snippet= or its keybinding). This does /not/ require
-   =yas-minor-mode= to be active.
+     - Use the snippet's *keybinding*.
 
--  By using the keybinding associated with an active snippet. This also
-   requires =yas-minor-mode= to be active;
+     - By expanding directly from the "YASnippet" menu in the menu-bar
 
--  By expanding directly from the "YASnippet" menu in the menu-bar
+     - Using hippie-expand
 
--  By using hippie-expand
+   - Call [[sym:yas-insert-snippet][=yas-insert-snippet=]] (use =M-x yas-insert-snippet== or its
+     keybinding =C-c & C-s=).
 
--  Expanding from emacs-lisp code
+   - Use m2m's excellent auto-complete
+     TODO: example for this
+
+   - Expanding from emacs-lisp code
 
 *** Trigger key
 
-When =yas-minor-mode= is enabled, the keybinding taken from
-=yas-trigger-key= will take effect.
+=yas-expand= tries to expand a /snippet abbrev/ (also known as
+/snippet key/) before point.
 
-=yas-trigger-key= invokes =yas-expand=, which tries to expand a /snippet
-abbrev/ (also known as /snippet key/) before point.
+When =yas-minor-mode= is enabled, it binds [[sym:yas-expand][=yas-expand=]] to =TAB= and
+=<tab>= by default, however, you can freely set it to some other key:
 
-The default key is ="TAB"=, however, you can freely set it to some other
-key.
+#+begin_src emacs-lisp :exports code
+   (define-key yas-minor-mode-map (kbd "<tab>") nil)
+   (define-key yas-minor-mode-map (kbd "TAB") nil)
+   (define-key yas-minor-mode-map (kbd "<the new key>") 'yas-expand)
+#+end_src
 
-[[images/minor-mode-indicator.png]]
+[[./images/minor-mode-indicator.png]]
 
 To enable the YASnippet minor mode in all buffers globally use the
 command =yas-global-mode=.
@@ -40,9 +51,6 @@ command =yas-global-mode=.
 When you use =yas-global-mode= you can also selectively disable
 YASnippet in some buffers by setting the buffer-local variable
 =yas-dont-active= in the buffer's mode hook.
-
-Trouble when using or understanding the =yas-trigger-key= is easily the
-most controversial issue in YASsnippet. See the [[faq.html][FAQ]].
 
 **** Fallback bahaviour
 
