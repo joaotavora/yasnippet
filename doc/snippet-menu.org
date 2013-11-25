@@ -1,6 +1,8 @@
+#+SETUPFILE: org-setup.inc
+
 * YASnippet menu
 
-When =yas-minor-mode= is active, YASnippet will setup a menu just after
+When [[sym:yas-minor-mode][=yas-minor-mode=]] is active, YASnippet will setup a menu just after
 the "Buffers" menu in the menubar.
 
 In this menu, you can find
@@ -15,16 +17,16 @@ In this menu, you can find
 -  A series of submenus for customizing and exploring YASnippet
    behavior.
 
-[[images/menu-1.png]]
+[[./images/menu-1.png]]
 
 ** Loading snippets from menu
 
-Invoking "Load snippets..." from the menu invokes =yas-load-directory=
+Invoking "Load snippets..." from the menu invokes [[sym:yas-load-directory][=yas-load-directory=]]
 and prompts you for a snippet directory hierarchy to load.
 
-Also useful is the "Reload all" options which uncondionally reloads all
-the snippets directories defined in =yas-root-directory= and rebuilds
-the menus.
+Also useful is the "Reload everything" item to invoke [[#yas-reload-all][=yas-reload-all=]]
+which uncondionally reloads all the snippets directories defined in
+[[sym:yas-snippet-dirs][=yas-snippet-dirs=]] and rebuilds the menus.
 
 ** Snippet menu behavior
 
@@ -35,16 +37,16 @@ You can use this section to explore currently loaded snippets. If you
 click on one of them, the default behavior is to expand it,
 unconditionally, inside the current buffer.
 
-You can however, customize variable =yas-visit-from-menu= to be =t=
+You can however, customize variable [[sym:yas-visit-from-menu][=yas-visit-from-menu=]] to be =t=
 which will take you to the snippet definition file when you select it
 from the menu.
 
 If you want the menu show only snippet tables whose name corresponds to
-a "real" major mode. You do this by setting =yas-use-menu= to
-='real-modes=.
+a "real" major mode. You do this by setting [[sym:yas-use-menu][=yas-use-menu=]] to
+'=real-modes=.
 
 Finally, to have the menu show only the tables for the currently active
-mode, set =yas-use-menu= to =abbreviate=.
+mode, set [[sym:yas-use-menu][=yas-use-menu=]] to =abbreviate=.
 
 These customizations can also be found in the menu itself, under the
 "Snippet menu behavior" submenu.
@@ -52,13 +54,13 @@ These customizations can also be found in the menu itself, under the
 ** Controlling indenting
 
 The "Indenting" submenu contains options to control the values of
-=yas-indent-line= and =yas-also-auto-indent-first-line=. See
-[[snippet-development.html][Writing snippets]] .
+[[sym:yas-indent-line][=yas-indent-line=]] and [[sym:yas-also-auto-indent-first-line][=yas-also-auto-indent-first-line=]]. See
+[[./snippet-development.org][Writing snippets]] .
 
 ** Prompting method
 
 The "Prompting method" submenu contains options to control the value of
-=yas-prompt-functions=. See [[snippet-expansion.html][Expanding
+[[sym:yas-prompt-functions][=yas-prompt-functions=]]. See [[./snippet-expansion.org][Expanding
 snippets]] .
 
 ** Misc
