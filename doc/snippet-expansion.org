@@ -59,7 +59,7 @@ YASnippet in some buffers by setting the buffer-local variable
 [[sym:yas-fallback-behaviour][=yas-fallback-behaviour=]] is a customization variable bound to
 '=call-other-command= by default. If [[sym:yas-expand][=yas-expand=]] failed to find any
 suitable snippet to expand, it will disable the minor mode temporarily
-and find if there's any other command bound the [[sym:yas-trigger-key][=yas-trigger-key=]].
+and find if there's any other command bound to the same key.
 
 If found, the command will be called. Usually this works very well
 --when there's a snippet, expand it, otherwise, call whatever command
@@ -140,13 +140,11 @@ In particular, the following things matter:
    also considered. This works recursively, i.e. parents of parents of
    eligible tables are also considered.
 
--  Buffer-local [[sym:yas-mode-symbol][=yas-mode-symbol=]] variable
+-  Buffer-local list of extra modes
 
-   This can be used to consider snippet tables whose name does not
-   correspond to a major mode. If you set this variable to a name , like
-   =rinari-minor-mode=, you can have some snippets expand only in that
-   minor mode. Naturally, you want to set this conditionally, i.e. only
-   when entering that minor mode, so using a hook is a good idea.
+   Use [[#yas-activate-extra-mode][=yas-activate-extra-mode=]] to consider snippet tables whose name
+   does not correspond to a major mode. Typically, you call this from
+   a minor mode hook.
 
 -  Buffer-local [[sym:yas-buffer-local-condition][=yas-buffer-local-condition=]] variable
 
@@ -158,9 +156,9 @@ In particular, the following things matter:
 *** The condition system
 
 Consider this scenario: you are an old Emacs hacker. You like the
-abbrev-way and set [[sym:yas-trigger-key][=yas-trigger-key=]] to =SPC=. However, you don't want
-=if= to be expanded as a snippet when you are typing in a comment block
-or a string (e.g. in =python-mode=).
+abbrev-way and bind [[sym:yas-expand][=yas-expand=]] to =SPC=. However, you don't want
+=if= to be expanded as a snippet when you are typing in a comment
+block or a string (e.g. in =python-mode=).
 
 If you use the =# condition := directive (see
 [[./snippet-development.org][Writing Snippets]]) you could just specify
