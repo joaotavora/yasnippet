@@ -109,6 +109,10 @@ As with expanding from the menubar, the condition system and multiple
 candidates doesn't affect expansion. In fact, expanding from the
 YASnippet menu has the same effect of evaluating the follow code:
 
+#+BEGIN_SRC emacs-lisp
+  (yas-expand-snippet template)
+#+END_SRC
+
 See the internal documentation on [[sym:yas-expand-snippet][=yas-expand-snippet=]] for more
 information.
 
@@ -144,7 +148,15 @@ In particular, the following things matter:
 
    Use [[#yas-activate-extra-mode][=yas-activate-extra-mode=]] to consider snippet tables whose name
    does not correspond to a major mode. Typically, you call this from
-   a minor mode hook.
+   a minor mode hook, for example:
+
+#+BEGIN_SRC emacs-lisp
+  ;; When entering rinari-minor-mode, consider also the snippets in the
+  ;; snippet table "rails-mode"
+  (add-hook 'rinari-minor-mode-hook
+            #'(lambda ()
+                (yas-activate-extra-mode 'rails-mode)))
+#+END_SRC
 
 -  Buffer-local [[sym:yas-buffer-local-condition][=yas-buffer-local-condition=]] variable
 
@@ -206,6 +218,15 @@ story and look at the rules:
 
 In the mentioned scenario, set [[sym:yas-buffer-local-condition][=yas-buffer-local-condition=]] like this
 
+#+BEGIN_SRC emacs-lisp
+  (add-hook 'python-mode-hook
+            (lambda ()
+              (setq yas-buffer-local-condition
+                    '(if (python-in-string/comment)
+                         '(require-snippet-condition . force-in-comment)
+                       t))))
+#+END_SRC
+
 ... and specify the condition for a snippet that you're going to expand
 in comment to be evaluated to the symbol =force-in-comment=. Then it can
 be expanded as you expected, while other snippets like =if= still can't
@@ -224,6 +245,10 @@ prompted for snippets.
 You can customize it with
 =M-x customize-variable RET yas-prompt-functions RET=. Alternatively you
 can put in your emacs-file:
+
+#+BEGIN_SRC emacs-lisp
+  (setq yas-prompt-functions '(yas-x-prompt yas-dropdown-prompt))
+#+END_SRC
 
 Currently there are some alternatives solution with YASnippet.
 
