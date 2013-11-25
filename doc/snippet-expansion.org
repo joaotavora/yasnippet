@@ -72,10 +72,10 @@ However, you can change this behavior by customizing the
 
 *** Insert at point
 
-The command =M-x yas-insert-snippet= lets you insert snippets at point
-/for you current major mode/. It prompts you for the snippet key first,
-and then for a snippet template if more than one template exists for the
-same key.
+The command [[#yas-insert-snippet][=yas-insert-snippet=]] lets you insert snippets at point
+/for your current major mode/. It prompts you for the snippet key
+first, and then for a snippet template if more than one template
+exists for the same key.
 
 The list presented contains the snippets that can be inserted at point,
 according to the condition system. If you want to see all applicable
@@ -181,42 +181,7 @@ snippets is just boring. So has a buffer local variable
 =(not (python-in-string/comment))= in =python-mode-hook=.
 
 Then, what if you really want some particular snippet to expand even
-inside a comment? This is also possible! But let's stop telling the
-story and look at the rules:
-
--  If [[sym:yas-buffer-local-condition][=yas-buffer-local-condition=]] evaluate to nil, no snippets will be
-   considered for expansion.
-
--  If it evaluates to the a /cons cell/ where the =car= is the symbol
-   =require-snippet-condition= and the =cdr= is a symbol (let's call it
-   =requirement=), then:
-
-   -  Snippets having no =# condition:= directive won't be considered;
-
-   -  Snippets with conditions that evaluate to nil (or produce an
-      error) won't be considered;
-
-   -  If the snippet has a condition that evaluates to non-nil (let's
-      call it =result=):
-
-      -  If =requirement= is =t=, the snippet is ready to be expanded;
-
-      -  If =requirement= is =eq= to =result=, the snippet is ready to
-         be expanded;
-
-      -  Otherwise the snippet won't be considered.
-
--  If it evaluates to the symbol =always=, all snippets are considered
-   for expansion, regardless of any conditions.
-
--  If it evaluate to =t= or some other non-nil value:
-
-   -  If the snippet has no condition, or has a condition that evaluate
-      to non-nil, it is ready to be expanded.
-
-   -  Otherwise, it won't be considered.
-
-In the mentioned scenario, set [[sym:yas-buffer-local-condition][=yas-buffer-local-condition=]] like this
+inside a comment? Set [[sym:yas-buffer-local-condition][=yas-buffer-local-condition=]] like this
 
 #+BEGIN_SRC emacs-lisp
   (add-hook 'python-mode-hook
@@ -231,6 +196,9 @@ In the mentioned scenario, set [[sym:yas-buffer-local-condition][=yas-buffer-loc
 in comment to be evaluated to the symbol =force-in-comment=. Then it can
 be expanded as you expected, while other snippets like =if= still can't
 expanded in comment.
+
+For the full set of possible conditions, see the documentation for
+[[sym:yas-buffer-local-condition][=yas-buffer-local-condition=]].
 
 *** Multiples snippet with the same key
 
