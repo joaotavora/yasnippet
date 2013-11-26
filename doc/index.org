@@ -1,7 +1,5 @@
-#+TITLE: Yet another snippet extension
-#+STARTUP: showall
-
 #+SETUPFILE: org-setup.inc
+#+TITLE: Yet another snippet extension
 
 * Quick start
 

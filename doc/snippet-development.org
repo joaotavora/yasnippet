@@ -1,4 +1,5 @@
 #+SETUPFILE: org-setup.inc
+
 #+TITLE: Writing snippets
 
 * Snippet development

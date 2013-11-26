@@ -1,5 +1,4 @@
 #+SETUPFILE: org-setup.inc
-#+OPTIONS: H:4
 
 #+TITLE: Expanding snippets
 
