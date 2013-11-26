@@ -1,3 +1,5 @@
+#+SETUPFILE: org-setup.inc
+
 * Frequently Asked Questions
 
 ** Why is there an extra newline?
@@ -18,13 +20,17 @@ First check the mode line to see if there's =yas=. If not, then try
 expand the snippet again. If it works, then, you can add the following
 code to your =.emacs= /before/ loading YASnippet:
 
-where =the-major-mode= is the major mode in which =yas-minor-mode= isn't
+#+BEGIN_SRC emacs-lisp
+  (add-hook 'the-major-mode-hook 'yas-minor-mode-on)
+#+END_SRC
+
+where =the-major-mode= is the major mode in which [[sym:yas-minor-mode][=yas-minor-mode=]] isn't
 enabled by default.
 
 From YASnippet 0.6 you can also use the command =M-x yas-global-mode= to
 turn on YASnippet automatically for /all/ major modes.
 
-If =yas-minor-mode= is on but the snippet still not expanded. Then try
+If [[sym:yas-minor-mode][=yas-minor-mode=]] is on but the snippet still not expanded. Then try
 to see what command is bound to the =TAB= key: press =C-h k= and then
 press =TAB=. Emacs will show you the result.
 
@@ -32,24 +38,44 @@ You'll see a buffer prompted by Emacs saying that
 =TAB runs the command ...=. Alternatively, you might see
 =<tab> runs the command ...=, note the difference between =TAB= and
 =<tab>= where the latter has priority. If you see =<tab>= bound to a
-command other than =yas-expand=, (e.g. in =org-mode=) you can try the
+command other than [[sym:yas-expand][=yas-expand=]], (e.g. in =org-mode=) you can try the
 following code to work around:
+
+#+BEGIN_SRC emacs-lisp
+  (add-hook 'org-mode-hook
+            (let ((original-command (lookup-key org-mode-map [tab])))
+              `(lambda ()
+                 (setq yas-fallback-behavior
+                       '(apply ,original-command))
+                 (local-set-key [tab] 'yas-expand))))
+#+END_SRC
 
 replace =org-mode-hook= and =org-mode-map= with the major mode hook you
 are dealing with (Use =C-h m= to see what major mode you are in).
 
 As an alternative, you can also try
 
+#+BEGIN_SRC emacs-lisp
+  (defun yas-advise-indent-function (function-symbol)
+    (eval `(defadvice ,function-symbol (around yas-try-expand-first activate)
+             ,(format
+               "Try to expand a snippet before point, then call `%s' as usual"
+               function-symbol)
+             (let ((yas-fallback-behavior nil))
+               (unless (and (interactive-p)
+                            (yas-expand))
+                 ad-do-it)))))
+  
+  (yas-advise-indent-function 'ruby-indent-line)
+#+END_SRC
+
 To /advise/ the modes indentation function bound to TAB, (in this case
-=ruby-indent-line=) to first try to run =yas-expand=.
+=ruby-indent-line=) to first try to run [[sym:yas-expand][=yas-expand=]].
 
 If the output of =C-h k RET <tab>= tells you that =<tab>= is indeed
-bound to =yas-expand= but YASnippet still doesn't work, check your
-configuration and you may also ask for help on the
-[[http://groups.google.com/group/smart-snippet][discussion group]]. See
-this particular
-[[http://code.google.com/p/yasnippet/issues/detail?id=93&can=1][thread]]
-for quite some solutions and alternatives.
+bound to [[sym:yas-expand][=yas-expand=]] but YASnippet still doesn't work, check your
+configuration and you may also ask for help on the [[http://groups.google.com/group/smart-snippet][discussion group]].
+See this particular [[http://code.google.com/p/yasnippet/issues/detail?id=93&can=1][thread]] for quite some solutions and alternatives.
 
 Don't forget to attach the information on what command is bound to TAB
 as well as the mode information (Can be obtained by =C-h m=).
@@ -58,6 +84,13 @@ as well as the mode information (Can be obtained by =C-h m=).
 
 A workaround is to inhibit flyspell overlays while the snippet is
 active:
+
+#+BEGIN_SRC emacs-lisp
+  (add-hook 'flyspell-incorrect-hook
+            #'(lambda (dummy1 dummy2 dymmy3)
+                (and yas-active-field-overlay
+                     (overlay-buffer yas-active-field-overlay))))
+#+END_SRC
 
 This is apparently related to overlay priorities. For some reason, the
 =keymap= property of flyspell's overlays always takes priority over the
@@ -69,7 +102,14 @@ solve this problem, drop a line in the
 ** How do I turn off the minor mode where in some buffers
 
 The best way, since version 0.6.1c, is to set the default value of the
-variable =yas-dont-activate= to a lambda function like so:
+variable [[sym:yas-dont-activate][=yas-dont-activate=]] to a lambda function like so:
+
+#+BEGIN_SRC emacs-lisp
+  (set-default 'yas-dont-activate
+               #'(lambda ()
+                   (and yas-root-directory
+                        (null (yas-get-snippet-tables)))))
+#+END_SRC
 
 This is also the default value starting for that version. It skips the
 minor mode in buffers where it is not applicable (no snippet tables),
@@ -78,9 +118,9 @@ but only once you have setup your yas-root-directory.
 ** How do I define an abbrev key containing characters not supported by
 the filesystem?
 
--  *Note*: This question applies if you're still defining
-   snippets :: whose key /is/ the filename. This is behavior stil
-   provided by version 0.6 for backward compatibilty, but is somewhat
+-  *Note*: This question applies if you're still defining snippets
+   whose key /is/ the filename. This is behavior still provided by
+   version 0.6 for backward compatibilty, but is somewhat
    deprecated...
 
 For example, you want to define a snippet by the key =<= which is not a
@@ -91,3 +131,10 @@ You should rather use the =# key:= directive to specify the key of the
 defined snippet explicitly and name your snippet with an arbitrary valid
 filename, =lt.yasnippet= for example, using =<= for the =# key:=
 directive:
+
+#+BEGIN_SRC snippet
+  # key: <
+  # name: <...></...>
+  # --
+  <${1:div}>$0</$1>
+#+END_SRC
