@@ -40,20 +40,16 @@ Two commands are defined in this mode:
 
 -  =M-x yas-load-snippet-buffer=
 
-   #+BEGIN_QUOTE
      When editing a snippet, this loads the snippet into the correct
      mode and menu. Bound to =C-c C-c= by default while in
      =snippet-mode=.
-   #+END_QUOTE
 
 -  =M-x yas-tryout-snippet=
 
-   #+BEGIN_QUOTE
      When editing a snippet, this opens a new empty buffer, sets it to
      the appropriate major mode and inserts the snippet there, so you
      can see what it looks like. This is bound to =C-c C-t= while in
      =snippet-mode=.
-   #+END_QUOTE
 
 There are also /snippets for writing snippets/: =vars=, =$f= and =$m=
 :-).
@@ -411,14 +407,12 @@ performs the normal Emacs =delete-char= command.
 There are a couple of tools that take TextMate's ".tmSnippet" xml files
 and create YASnippet definitions:
 
-#+BEGIN_QUOTE
 
   -  [[http://code.nokrev.com/?p=snippet-copier.git;a=blob_plain;f=snippet_copier.py][a python script by Jeff Wheeler]]
 
   -  a [[http://yasnippet.googlecode.com/svn/trunk/extras/textmate_import.rb][ruby tool]] , =textmate_import.rb= adapted from [[http://www.neutronflux.net/2009/07/28/shoulda-snippets-for-emacs/][Rob Christie's]],
      which I have uploaded to the repository.
 
-#+END_QUOTE
 
 In this section, i'll shortly cover the *second* option.
 

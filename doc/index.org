@@ -88,36 +88,26 @@
    The documentation has been split into separate parts:
 
    1. [[file:snippet-organization.org][Organizing Snippets]]
-      #+BEGIN_QUOTE
       Describes ways to organize your snippets in the hard disk.
-      #+END_QUOTE
 
    2. [[file:snippet-expansion.org][Expanding Snippets]]
-      #+BEGIN_QUOTE
       Describes how YASnippet chooses snippets for expansion at point.
 
       Maybe, you'll want some snippets to be expanded in a particular mode,
       or only under certain conditions, or be prompted using =ido=, etc...
-      #+END_QUOTE
 
    3. [[file:snippet-development.org][Writing Snippets]]
-      #+BEGIN_QUOTE
       Describes the YASnippet definition syntax, which is very close (but
       not equivalent) to Textmate's. Includes a section about converting
       TextMate snippets.
-      #+END_QUOTE
 
    4. [[file:snippet-menu.org][The YASnippet menu]]
-      #+BEGIN_QUOTE
       Explains how to use the YASnippet menu to explore, learn and modify
       snippets.
-      #+END_QUOTE
 
    5. [[file:snippet-reference.org][YASnippet Symbol Reference]]
-      #+BEGIN_QUOTE
       An automatically generated listing of all YASnippet commands,
       (customization) variables, and functions.
-      #+END_QUOTE
 
 ** Bugs, discussion, contributions, etc
 
