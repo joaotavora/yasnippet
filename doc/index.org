@@ -1,5 +1,4 @@
 #+TITLE: Yet another snippet extension
-#+OPTIONS: toc:1
 #+STARTUP: showall
 
 #+SETUPFILE: org-setup.inc

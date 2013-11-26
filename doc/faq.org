@@ -1,8 +1,8 @@
 #+SETUPFILE: org-setup.inc
 
-* Frequently Asked Questions
+#+TITLE: Frequently Asked Questions
 
-** Why is there an extra newline?
+* Why is there an extra newline?
 
 If you have a newline at the end of the snippet definition file, then
 YASnippet will add a newline when you expanding a snippet. Please don't
@@ -13,7 +13,7 @@ Note some editors will automatically add a newline for you. In Emacs, if
 you set =require-final-newline= to =t=, it will add the final newline
 for you automatically.
 
-** Why doesn't TAB expand a snippet?
+* Why doesn't TAB expand a snippet?
 
 First check the mode line to see if there's =yas=. If not, then try
 =M-x yas-minor-mode= to manually turn on the minor mode and try to
@@ -80,7 +80,7 @@ See this particular [[http://code.google.com/p/yasnippet/issues/detail?id=93&can
 Don't forget to attach the information on what command is bound to TAB
 as well as the mode information (Can be obtained by =C-h m=).
 
-** Why doesn't TAB navigation work with flyspell
+* Why doesn't TAB navigation work with flyspell
 
 A workaround is to inhibit flyspell overlays while the snippet is
 active:
@@ -99,7 +99,7 @@ same property in yasnippet's overlays, even if one sets the latter's
 solve this problem, drop a line in the
 [[http://groups.google.com/group/smart-snippet][discussion group]].
 
-** How do I turn off the minor mode where in some buffers
+* How do I turn off the minor mode where in some buffers
 
 The best way, since version 0.6.1c, is to set the default value of the
 variable [[sym:yas-dont-activate][=yas-dont-activate=]] to a lambda function like so:
@@ -115,7 +115,7 @@ This is also the default value starting for that version. It skips the
 minor mode in buffers where it is not applicable (no snippet tables),
 but only once you have setup your yas-root-directory.
 
-** How do I define an abbrev key containing characters not supported by
+* How do I define an abbrev key containing characters not supported by
 the filesystem?
 
 -  *Note*: This question applies if you're still defining snippets

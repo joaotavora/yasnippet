@@ -1,6 +1,9 @@
 #+STARTUP: showall
 
+#+TITLE: Reference
+
 * Reference
+
 #+BEGIN_SRC emacs-lisp :exports results :results value raw
 (yas--document-symbols 2 `("Interactive functions" . ,#'interactive-form)
                          `("Customization variables" . ,#'(lambda (sym)

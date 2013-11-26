@@ -1,8 +1,8 @@
 #+SETUPFILE: org-setup.inc
 
-* Organizing snippets
+#+TITLE: Organizing snippets
 
-** Basic structure
+* Basic structure
 
    Snippet collections can be stored in plain text files. They are arranged by
    sub-directories naming *snippet tables*. These mostly name Emacs major names.
@@ -22,7 +22,7 @@
    triggering mechanism (see [[file:snippet-expansion.org][Expanding Snippets]]) looks up and
    (hopefully) causes the right snippet to be expanded for you.
 
-** Setting up =yas-snippet-dirs=
+* Setting up =yas-snippet-dirs=
 
    The emacs variable [[sym:yas-snippet-dirs][=yas-snippet-dirs=]] tells YASnippet
    which collections to consider. It's used when you activate
@@ -52,7 +52,7 @@
    appearing in collections later in the list. [[sym:yas-new-snippet][=yas-new-snippet=]] always stores
    snippets in the first collection.
 
-** The =.yas-parents= file
+* The =.yas-parents= file
 
    It's very useful to have certain modes share snippets between
    themselves. To do this, choose a mode subdirectory and place a
@@ -77,7 +77,7 @@
    #+end_example
 
 
-** TODO The =.yas-make-groups= file
+* TODO The =.yas-make-groups= file
 
    If you place an empty plain text file =.yas-make-groups= inside one
    of the mode directories, the names of these sub-directories are
@@ -108,14 +108,14 @@
    Yet another way to create a nice snippet menu is to write into
    =.yas-make-groups= a menu definition. TODO
 
-** TODO The =.yas-setup.el= file
+* TODO The =.yas-setup.el= file
 
-*** TODO
+** TODO
 
-** TODO The =.yas-compiled-snippet.el= file
+* TODO The =.yas-compiled-snippet.el= file
 
-*** TODO
+** TODO
 
-** TODO The =.yas-skip= file
+* TODO The =.yas-skip= file
 
-*** TODO
+** TODO

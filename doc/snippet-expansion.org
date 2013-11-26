@@ -1,14 +1,14 @@
 #+SETUPFILE: org-setup.inc
 #+OPTIONS: H:4
 
-* Expanding snippets
+#+TITLE: Expanding snippets
 
   This section describes how YASnippet chooses snippets for expansion at point.
 
   Maybe, you'll want some snippets to be expanded in a particular
   mode, or only under certain conditions, or be prompted using
 
-** Triggering expansion
+* Triggering expansion
 
    You can use YASnippet to expand snippets in different ways:
 
@@ -30,7 +30,7 @@
 
    - Expanding from emacs-lisp code
 
-*** Trigger key
+** Trigger key
 
 [[sym:yas-expand][=yas-expand=]] tries to expand a /snippet abbrev/ (also known as
 /snippet key/) before point.
@@ -54,7 +54,7 @@ When you use [[sym:yas-global-mode][=yas-global-mode=]] you can also selectively
 YASnippet in some buffers by setting the buffer-local variable
 [[sym:yas-dont-active][=yas-dont-active=]] in the buffer's mode hook.
 
-**** Fallback bahaviour
+*** Fallback bahaviour
 
 [[sym:yas-fallback-behaviour][=yas-fallback-behaviour=]] is a customization variable bound to
 '=call-other-command= by default. If [[sym:yas-expand][=yas-expand=]] failed to find any
@@ -70,7 +70,7 @@ However, you can change this behavior by customizing the
 '=return-nil=, it will return =nil= instead of trying to call the
 /original/ command when no snippet is found.
 
-*** Insert at point
+** Insert at point
 
 The command [[#yas-insert-snippet][=yas-insert-snippet=]] lets you insert snippets at point
 /for your current major mode/. It prompts you for the snippet key
@@ -84,22 +84,22 @@ snippets for the major mode, prefix this command with =C-u=.
 The prompting methods used are again controlled by
 [[sym:yas-prompt-functions][=yas-prompt-functions=]].
 
-*** Snippet keybinding
+** Snippet keybinding
 
 See the section of the =# binding:= directive in
 [[./snippet-development.org][Writing Snippets]].
 
-*** Expanding from the menu
+** Expanding from the menu
 
 See [[./snippet-menu.org][the YASnippet Menu]].
 
-*** Expanding with =hippie-expand=
+** Expanding with =hippie-expand=
 
 To integrate with =hippie-expand=, just put [[sym:yas-hippie-try-expand][=yas-hippie-try-expand=]] in
 =hippie-expand-try-functions-list=. This probably makes more sense when
 placed at the top of the list, but it can be put anywhere you prefer.
 
-*** Expanding from emacs-lisp code
+** Expanding from emacs-lisp code
 
 Sometimes you might want to expand a snippet directly from you own elisp
 code. You should call [[sym:yas-expand-snippet][=yas-expand-snippet=]] instead of [[sym:yas-expand][=yas-expand=]] in
@@ -116,9 +116,9 @@ YASnippet menu has the same effect of evaluating the follow code:
 See the internal documentation on [[sym:yas-expand-snippet][=yas-expand-snippet=]] for more
 information.
 
-** Controlling expansion
+* Controlling expansion
 
-*** Eligible snippets
+** Eligible snippets
 
 YASnippet does quite a bit of filtering to find out which snippets are
 eligible for expanding at the current cursor position.
@@ -165,7 +165,7 @@ In particular, the following things matter:
    expand snippets inside comments or string literals for example. See
    The condition system\_ for more info.
 
-*** The condition system
+** The condition system
 
 Consider this scenario: you are an old Emacs hacker. You like the
 abbrev-way and bind [[sym:yas-expand][=yas-expand=]] to =SPC=. However, you don't want
@@ -200,7 +200,7 @@ expanded in comment.
 For the full set of possible conditions, see the documentation for
 [[sym:yas-buffer-local-condition][=yas-buffer-local-condition=]].
 
-*** Multiples snippet with the same key
+** Multiples snippet with the same key
 
 The rules outlined [[Eligible%20snippets][above]] can return more than
 one snippet to be expanded at point.
@@ -220,7 +220,7 @@ can put in your emacs-file:
 
 Currently there are some alternatives solution with YASnippet.
 
-**** Use the X window system
+*** Use the X window system
 
 [[./images/x-menu.png]]
 
@@ -234,7 +234,7 @@ means:
    navigate this menu.
 -  This function can't be used when in a terminal.
 
-**** Minibuffer prompting
+*** Minibuffer prompting
 
 [[./images/ido-menu.png]]
 
@@ -242,7 +242,7 @@ You can use functions [[sym:yas-completing-prompt][=yas-completing-prompt=]] for
 completion method or [[sym:yas-ido-prompt][=yas-ido-prompt=]] for a much nicer looking method.
 The best way is to try it. This works in a terminal.
 
-**** Use =dropdown-menu.el=
+*** Use =dropdown-menu.el=
 
 [[./images/dropdown-menu.png]]
 
@@ -253,7 +253,7 @@ This works in both window system and terminal and is customizable, you
 can use =C-n=, =C-p= to navigate, =q= to quit and even press =6= as a
 shortcut to select the 6th candidate.
 
-**** Roll your own
+*** Roll your own
 
 See the documentation on variable [[sym:yas-prompt-functions][=yas-prompt-functions=]]
 
