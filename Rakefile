@@ -54,11 +54,11 @@ task :release => [:package, 'doc:archive'] do
   raise "Not implemented for github yet!"
 end
 
-rule '.html' => '.rst' do |t|
-  sh "doc/compile-doc.py #{t.source} > #{t.name}"
-end
 desc "Generate document"
-task :doc => FileList['doc/*.rst'].ext('html')
+task :doc do
+  sh "#{$EMACS} -Q -L . --batch -l doc/yas-doc-helper.el" +
+    " -f yas--generate-html-batch"
+end
 
 namespace :doc do
   task :archive do
@@ -79,8 +79,10 @@ namespace :doc do
       Dir.glob("doc/images/*").each do |file|
         FileUtils.cp file, 'doc/gh-pages/images'
       end
+      rev = `git rev-parse --verify HEAD`
       Dir.chdir 'doc/gh-pages' do
-        sh "git commit -a -m 'Automatic documentation update.'"
+        sh "git commit -a -m 'Automatic documentation update.\n\n" +
+          "From #{rev.chomp()}'"
         sh "git push"
       end
     end
