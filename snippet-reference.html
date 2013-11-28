@@ -7,7 +7,7 @@
 <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
 <meta name="title" content="Reference"/>
 <meta name="generator" content="Org-mode"/>
-<meta name="generated" content="2013-11-26T23:15-0500"/>
+<meta name="generated" content="2013-11-27T21:59-0500"/>
 <meta name="author" content=""/>
 <meta name="description" content=""/>
 <meta name="keywords" content=""/>
@@ -106,97 +106,7 @@ for the JavaScript code in this tag.
  }
 /*]]>*///-->
 </script>
-<script type="text/javascript" src="http://orgmode.org/mathjax/MathJax.js">
-/**
- *
- * @source: http://orgmode.org/mathjax/MathJax.js
- *
- * @licstart  The following is the entire license notice for the
- *  JavaScript code in http://orgmode.org/mathjax/MathJax.js.
- *
- * Copyright (C) 2012-2013  MathJax
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * @licend  The above is the entire license notice
- * for the JavaScript code in http://orgmode.org/mathjax/MathJax.js.
- *
- */
 
-/*
-@licstart  The following is the entire license notice for the
-JavaScript code below.
-
-Copyright (C) 2012-2013 Free Software Foundation, Inc.
-
-The JavaScript code below is free software: you can
-redistribute it and/or modify it under the terms of the GNU
-General Public License (GNU GPL) as published by the Free Software
-Foundation, either version 3 of the License, or (at your option)
-any later version.  The code is distributed WITHOUT ANY WARRANTY;
-without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
-
-As additional permission under GNU GPL version 3 section 7, you
-may distribute non-source (e.g., minimized or compacted) forms of
-that code without the copy of the GNU GPL normally required by
-section 4, provided you include this license notice and a URL
-through which recipients can access the Corresponding Source.
-
-
-@licend  The above is the entire license notice
-for the JavaScript code below.
-*/
-<!--/*--><![CDATA[/*><!--*/
-    MathJax.Hub.Config({
-        // Only one of the two following lines, depending on user settings
-        // First allows browser-native MathML display, second forces HTML/CSS
-        //  config: ["MMLorHTML.js"], jax: ["input/TeX"],
-            jax: ["input/TeX", "output/HTML-CSS"],
-        extensions: ["tex2jax.js","TeX/AMSmath.js","TeX/AMSsymbols.js",
-                     "TeX/noUndefined.js"],
-        tex2jax: {
-            inlineMath: [ ["\\(","\\)"] ],
-            displayMath: [ ['$$','$$'], ["\\[","\\]"], ["\\begin{displaymath}","\\end{displaymath}"] ],
-            skipTags: ["script","noscript","style","textarea","pre","code"],
-            ignoreClass: "tex2jax_ignore",
-            processEscapes: false,
-            processEnvironments: true,
-            preview: "TeX"
-        },
-        showProcessingMessages: true,
-        displayAlign: "center",
-        displayIndent: "2em",
-
-        "HTML-CSS": {
-             scale: 100,
-             availableFonts: ["STIX","TeX"],
-             preferredFont: "TeX",
-             webFont: "TeX",
-             imageFont: "TeX",
-             showMathMenu: true,
-        },
-        MMLorHTML: {
-             prefer: {
-                 MSIE:    "MML",
-                 Firefox: "MML",
-                 Opera:   "HTML",
-                 other:   "HTML"
-             }
-        }
-    });
-/*]]>*///-->
-</script>
 </head>
 <body>
 <div id="org-div-home-and-up" style="text-align:right;font-size:70%;white-space:nowrap;">
@@ -339,7 +249,10 @@ for the JavaScript code below.
 <h4 id="yas-skip-and-clear-or-delete-char"><a name="sec-1-1-1" id="sec-1-1-1"></a><code>yas-skip-and-clear-or-delete-char</code> (&amp;optional field)</h4>
 <div class="outline-text-4" id="text-yas-skip-and-clear-or-delete-char">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-skip-and-clear-or-delete-char</code>
+<p>Clears unmodified field if at field start, skips to next tab.
+</p>
+<p>
+Otherwise deletes a character normally by calling <code>delete-char</code>.
 </p>
 </div>
 
@@ -349,7 +262,7 @@ for the JavaScript code below.
 <h4 id="yas-exit-all-snippets"><a name="sec-1-1-2" id="sec-1-1-2"></a><code>yas-exit-all-snippets</code> ()</h4>
 <div class="outline-text-4" id="text-yas-exit-all-snippets">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-exit-all-snippets</code>
+<p>Exit all snippets.
 </p>
 </div>
 
@@ -359,7 +272,7 @@ for the JavaScript code below.
 <h4 id="yas-exit-snippet"><a name="sec-1-1-3" id="sec-1-1-3"></a><code>yas-exit-snippet</code> (snippet)</h4>
 <div class="outline-text-4" id="text-yas-exit-snippet">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-exit-snippet</code>
+<p>Goto exit-marker of <i>SNIPPET</i>.
 </p>
 </div>
 
@@ -379,7 +292,7 @@ for the JavaScript code below.
 <h4 id="yas-prev-field"><a name="sec-1-1-5" id="sec-1-1-5"></a><code>yas-prev-field</code> ()</h4>
 <div class="outline-text-4" id="text-yas-prev-field">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-prev-field</code>
+<p>Navigate to prev field.  If there's none, exit the snippet.
 </p>
 </div>
 
@@ -389,7 +302,10 @@ for the JavaScript code below.
 <h4 id="yas-next-field"><a name="sec-1-1-6" id="sec-1-1-6"></a><code>yas-next-field</code> (&amp;optional arg)</h4>
 <div class="outline-text-4" id="text-yas-next-field">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-next-field</code>
+<p>Navigate to the /ARG/th next field.
+</p>
+<p>
+If there's none, exit the snippet.
 </p>
 </div>
 
@@ -399,7 +315,10 @@ for the JavaScript code below.
 <h4 id="yas-next-field-or-maybe-expand"><a name="sec-1-1-7" id="sec-1-1-7"></a><code>yas-next-field-or-maybe-expand</code> ()</h4>
 <div class="outline-text-4" id="text-yas-next-field-or-maybe-expand">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-next-field-or-maybe-expand</code>
+<p>Try to expand a snippet at a key before point.
+</p>
+<p>
+Otherwise delegate to <a href="#yas-next-field"><code>yas-next-field</code></a>.
 </p>
 </div>
 
@@ -409,7 +328,7 @@ for the JavaScript code below.
 <h4 id="yas-describe-tables"><a name="sec-1-1-8" id="sec-1-1-8"></a><code>yas-describe-tables</code> (&amp;optional choose)</h4>
 <div class="outline-text-4" id="text-yas-describe-tables">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-describe-tables</code>
+<p>Display snippets for each table.
 </p>
 </div>
 
@@ -419,7 +338,7 @@ for the JavaScript code below.
 <h4 id="yas-tryout-snippet"><a name="sec-1-1-9" id="sec-1-1-9"></a><code>yas-tryout-snippet</code> (&amp;optional debug)</h4>
 <div class="outline-text-4" id="text-yas-tryout-snippet">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-tryout-snippet</code>
+<p>Test current buffer's snippet template in other buffer.
 </p>
 </div>
 
@@ -429,7 +348,13 @@ for the JavaScript code below.
 <h4 id="yas-load-snippet-buffer"><a name="sec-1-1-10" id="sec-1-1-10"></a><code>yas-load-snippet-buffer</code> (table &amp;optional interactive)</h4>
 <div class="outline-text-4" id="text-yas-load-snippet-buffer">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-load-snippet-buffer</code>
+<p>Parse and load current buffer's snippet definition into <i>TABLE</i>.
+</p>
+<p>
+<i>TABLE</i> is a symbol naming a passed to <a href="#yas--table-get-create"><code>yas&ndash;table-get-create</code></a>.
+</p>
+<p>
+When called interactively, prompt for the table name.
 </p>
 </div>
 
@@ -439,7 +364,11 @@ for the JavaScript code below.
 <h4 id="yas-new-snippet"><a name="sec-1-1-11" id="sec-1-1-11"></a><code>yas-new-snippet</code> (&amp;optional no-template)</h4>
 <div class="outline-text-4" id="text-yas-new-snippet">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-new-snippet</code>
+<p>Pops a new buffer for writing a snippet.
+</p>
+<p>
+Expands a snippet-writing snippet, unless the optional prefix arg
+<i>NO-TEMPLATE</i> is non-nil.
 </p>
 </div>
 
@@ -449,7 +378,11 @@ for the JavaScript code below.
 <h4 id="yas-visit-snippet-file"><a name="sec-1-1-12" id="sec-1-1-12"></a><code>yas-visit-snippet-file</code> ()</h4>
 <div class="outline-text-4" id="text-yas-visit-snippet-file">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-visit-snippet-file</code>
+<p>Choose a snippet to edit, selection like <a href="#yas-insert-snippet"><code>yas-insert-snippet</code></a>.
+</p>
+<p>
+Only success if selected snippet was loaded from a file.  Put the
+visited file in <code>snippet-mode</code>.
 </p>
 </div>
 
@@ -459,7 +392,12 @@ for the JavaScript code below.
 <h4 id="yas-insert-snippet"><a name="sec-1-1-13" id="sec-1-1-13"></a><code>yas-insert-snippet</code> (&amp;optional no-condition)</h4>
 <div class="outline-text-4" id="text-yas-insert-snippet">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-insert-snippet</code>
+<p>Choose a snippet to expand, pop-up a list of choices according
+to <code>yas--prompt-function</code>.
+</p>
+<p>
+With prefix argument <i>NO-CONDITION</i>, bypass filtering of snippets
+by condition.
 </p>
 </div>
 
@@ -480,7 +418,15 @@ for the JavaScript code below.
 <h4 id="yas-expand-from-trigger-key"><a name="sec-1-1-15" id="sec-1-1-15"></a><code>yas-expand-from-trigger-key</code> (&amp;optional field)</h4>
 <div class="outline-text-4" id="text-yas-expand-from-trigger-key">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-expand-from-trigger-key</code>
+<p>Expand a snippet before point.
+</p>
+<p>
+If no snippet expansion is possible, fall back to the behaviour
+defined in <a href="#yas-fallback-behavior"><code>yas-fallback-behavior</code></a>.
+</p>
+<p>
+Optional argument <i>FIELD</i> is for non-interactive use and is an
+object satisfying <a href="#yas--field-p"><code>yas&ndash;field-p</code></a> to restrict the expansion to.
 </p>
 </div>
 
@@ -500,7 +446,7 @@ for the JavaScript code below.
 <h4 id="yas-recompile-all"><a name="sec-1-1-17" id="sec-1-1-17"></a><code>yas-recompile-all</code> ()</h4>
 <div class="outline-text-4" id="text-yas-recompile-all">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-recompile-all</code>
+<p>Compile every dir in <a href="#yas-snippet-dirs"><code>yas-snippet-dirs</code></a>.
 </p>
 </div>
 
@@ -510,7 +456,11 @@ for the JavaScript code below.
 <h4 id="yas-compile-directory"><a name="sec-1-1-18" id="sec-1-1-18"></a><code>yas-compile-directory</code> (top-level-dir)</h4>
 <div class="outline-text-4" id="text-yas-compile-directory">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-compile-directory</code>
+<p>Create .yas-compiled-snippets.el files under subdirs of <i>TOP-LEVEL-DIR</i>.
+</p>
+<p>
+This works by stubbing a few functions, then calling
+<a href="#yas-load-directory"><code>yas-load-directory</code></a>.
 </p>
 </div>
 
@@ -520,7 +470,12 @@ for the JavaScript code below.
 <h4 id="yas-reload-all"><a name="sec-1-1-19" id="sec-1-1-19"></a><code>yas-reload-all</code> (&amp;optional interactive)</h4>
 <div class="outline-text-4" id="text-yas-reload-all">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-reload-all</code>
+<p>Reload all snippets and rebuild the /YAS/nippet menu.
+</p>
+<p>
+When called interactively force immediate reload of all known
+snippets under <a href="#yas-snippet-dirs"><code>yas-snippet-dirs</code></a>, otherwise use just-in-time
+loading.
 </p>
 </div>
 
@@ -530,7 +485,13 @@ for the JavaScript code below.
 <h4 id="yas-load-directory"><a name="sec-1-1-20" id="sec-1-1-20"></a><code>yas-load-directory</code> (top-level-dir &amp;optional use-jit interactive)</h4>
 <div class="outline-text-4" id="text-yas-load-directory">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-load-directory</code>
+<p>Load snippets in directory hierarchy <i>TOP-LEVEL-DIR</i>.
+</p>
+<p>
+Below <i>TOP-LEVEL-DIR</i> each directory should be a mode name.
+</p>
+<p>
+Optional <i>USE-JIT</i> use jit-loading of snippets.
 </p>
 </div>
 
@@ -540,7 +501,10 @@ for the JavaScript code below.
 <h4 id="yas-minor-mode-on"><a name="sec-1-1-21" id="sec-1-1-21"></a><code>yas-minor-mode-on</code> ()</h4>
 <div class="outline-text-4" id="text-yas-minor-mode-on">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-minor-mode-on</code>
+<p>Turn on /YAS/nippet minor mode.
+</p>
+<p>
+Honour <a href="#yas-dont-activate"><code>yas-dont-activate</code></a>, which see.
 </p>
 </div>
 
@@ -550,7 +514,7 @@ for the JavaScript code below.
 <h4 id="yas-direct-keymaps-reload"><a name="sec-1-1-22" id="sec-1-1-22"></a><code>yas-direct-keymaps-reload</code> ()</h4>
 <div class="outline-text-4" id="text-yas-direct-keymaps-reload">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-direct-keymaps-reload</code>
+<p>Force reload the direct keybinding for active snippet tables.
 </p>
 </div>
 
@@ -560,11 +524,15 @@ for the JavaScript code below.
 <h4 id="yas-global-mode"><a name="sec-1-1-23" id="sec-1-1-23"></a><code>yas-global-mode</code> (&amp;optional arg)</h4>
 <div class="outline-text-4" id="text-yas-global-mode">
 
-<p>Non-nil if Yas-Global mode is enabled.
-See the command <a href="#yas-global-mode"><code>yas-global-mode</code></a> for a description of this minor mode.
-Setting this variable directly does not take effect;
-either customize it (see the info node `Easy Customization')
-or call the function <a href="#yas-global-mode"><code>yas-global-mode</code></a>.
+<p>Toggle Yas minor mode in all buffers.
+With prefix <i>ARG</i>, enable Yas-Global mode if <i>ARG</i> is positive;
+otherwise, disable it.  If called from Lisp, enable the mode if
+<i>ARG</i> is omitted or nil.
+</p>
+<p>
+Yas minor mode is enabled in all buffers where
+<a href="#yas-minor-mode-on"><code>yas-minor-mode-on</code></a> would do it.
+See <a href="#yas-minor-mode"><code>yas-minor-mode</code></a> for more information on Yas minor mode.
 </p>
 </div>
 
@@ -574,8 +542,20 @@ or call the function <a href="#yas-global-mode"><code>yas-global-mode</code></a>
 <h4 id="yas-minor-mode"><a name="sec-1-1-24" id="sec-1-1-24"></a><code>yas-minor-mode</code> (&amp;optional arg)</h4>
 <div class="outline-text-4" id="text-yas-minor-mode">
 
-<p>Non-nil if yas minor mode is enabled.
-Use the command <a href="#yas-minor-mode"><code>yas-minor-mode</code></a> to change this variable.
+<p>Toggle /YAS/nippet mode.
+</p>
+<p>
+When /YAS/nippet mode is enabled, <a href="#yas-expand"><code>yas-expand</code></a>, normally bound to the <i>TAB</i> key, expands snippets of code depending on the major
+mode.
+</p>
+<p>
+With no argument, this command toggles the mode.
+positive prefix argument turns on the mode.
+Negative prefix argument turns off the mode.
+</p>
+<p>
+Key bindings:
+\{yas-minor-mode-map}
 </p>
 </div>
 
@@ -586,1609 +566,7 @@ Use the command <a href="#yas-minor-mode"><code>yas-minor-mode</code></a> to cha
 <div class="outline-text-4" id="text-yas-expand">
 
 <p>Expand a snippet before point. If no snippet
-expansion is possible, call command `(keymap
- (keymap
-  (/M-/f8 . yas&ndash;internal-link-snippet)
-  (25 . org-yank)
-  (11 . org-kill-line)
-  (5 . org-end-of-line)
-  (1 . org-beginning-of-line)
-  (menu-bar keymap
-	    (show . undefined)
-	    (hide . undefined)
-	    (headings . undefined)
-	    (Org menu-item "Org"
-		 (keymap "Org"
-			 (Show/Hide menu-item "Show/Hide"
-				    (keymap "Show/Hide"
-					    (Cycle\ Visibility menu-item "Cycle Visibility" org-cycle :enable
-							       (or
-								(bobp)
-								(outline-on-heading-p)))
-					    (Cycle\ Global\ Visibility menu-item "Cycle Global Visibility" org-shifttab :enable
-								       (not
-									(org-at-table-p)))
-					    (Sparse\ Tree\.\.\. menu-item "Sparse Tree&hellip;" org-sparse-tree)
-					    (Reveal\ Context menu-item "Reveal Context" org-reveal)
-					    (Show\ All menu-item "Show All" show-all)
-					    (nil menu-item "&ndash;")
-					    (Subtree\ to\ indirect\ buffer menu-item "Subtree to indirect buffer" org-tree-to-indirect-buffer)))
-			 (nil menu-item "&ndash;")
-			 (New\ Heading menu-item "New Heading" org-insert-heading)
-			 (Navigate\ Headings menu-item "Navigate Headings"
-					     (keymap "Navigate Headings"
-						     (Up menu-item "Up" outline-up-heading)
-						     (Next menu-item "Next" outline-next-visible-heading)
-						     (Previous menu-item "Previous" outline-previous-visible-heading)
-						     (Next\ Same\ Level menu-item "Next Same Level" outline-forward-same-level)
-						     (Previous\ Same\ Level menu-item "Previous Same Level" outline-backward-same-level)
-						     (nil menu-item "&ndash;")
-						     (Jump menu-item "Jump" org-goto)))
-			 (Edit\ Structure menu-item "Edit Structure"
-					  (keymap "Edit Structure"
-						  (Refile\ Subtree menu-item "Refile Subtree" org-refile :enable
-								   (org-in-subtree-not-table-p))
-						  (nil menu-item "&ndash;")
-						  (Move\ Subtree\ Up menu-item "Move Subtree Up" org-shiftmetaup :enable
-								     (org-in-subtree-not-table-p))
-						  (Move\ Subtree\ Down menu-item "Move Subtree Down" org-shiftmetadown :enable
-								       (org-in-subtree-not-table-p))
-						  (nil-4 menu-item "&ndash;")
-						  (Copy\ Subtree menu-item "Copy Subtree" org-copy-special :enable
-								 (org-in-subtree-not-table-p))
-						  (Cut\ Subtree menu-item "Cut Subtree" org-cut-special :enable
-								(org-in-subtree-not-table-p))
-						  (Paste\ Subtree menu-item "Paste Subtree" org-paste-special :enable
-								  (not
-								   (org-at-table-p)))
-						  (nil-8 menu-item "&ndash;")
-						  (Clone\ subtree\,\ shift\ time menu-item "Clone subtree, shift time" org-clone-subtree-with-time-shift)
-						  (nil-10 menu-item "&ndash;")
-						  (Copy\ visible\ text menu-item "Copy visible text" org-copy-visible)
-						  (nil-12 menu-item "&ndash;")
-						  (Promote\ Heading menu-item "Promote Heading" org-metaleft :enable
-								    (org-in-subtree-not-table-p))
-						  (Promote\ Subtree menu-item "Promote Subtree" org-shiftmetaleft :enable
-								    (org-in-subtree-not-table-p))
-						  (Demote\ Heading menu-item "Demote Heading" org-metaright :enable
-								   (org-in-subtree-not-table-p))
-						  (Demote\ Subtree menu-item "Demote Subtree" org-shiftmetaright :enable
-								   (org-in-subtree-not-table-p))
-						  (nil-17 menu-item "&ndash;")
-						  (Sort\ Region/Children menu-item "Sort Region/Children" org-sort)
-						  (nil-19 menu-item "&ndash;")
-						  (Convert\ to\ odd\ levels menu-item "Convert to odd levels" org-convert-to-odd-levels)
-						  (Convert\ to\ odd/even\ levels menu-item "Convert to odd/even levels" org-convert-to-oddeven-levels)))
-			 (Editing menu-item "Editing"
-				  (keymap "Editing"
-					  (Emphasis\.\.\. menu-item "Emphasis&hellip;" org-emphasize)
-					  (Edit\ Source\ Example menu-item "Edit Source Example" org-edit-special)
-					  (nil menu-item "&ndash;")
-					  (Footnote\ new/jump menu-item "Footnote new/jump" org-footnote-action)
-					  (Footnote\ extra menu-item "Footnote extra" menu-function-18 :keys "/C-/u /C-/c /C-/x f")))
-			 (Archive menu-item "Archive"
-				  (keymap "Archive"
-					  (Archive\ \(default\ method\) menu-item "Archive (default method)" org-archive-subtree-default :enable
-									(org-in-subtree-not-table-p))
-					  (nil menu-item "&ndash;")
-					  (Move\ Subtree\ to\ Archive\ file menu-item "Move Subtree to Archive file" org-advertized-archive-subtree :enable
-									    (org-in-subtree-not-table-p))
-					  (Toggle\ <i>ARCHIVE</i>\ tag menu-item "Toggle <i>ARCHIVE</i> tag" org-toggle-archive-tag :enable
-								(org-in-subtree-not-table-p))
-					  (Move\ subtree\ to\ Archive\ sibling menu-item "Move subtree to Archive sibling" org-archive-to-archive-sibling :enable
-									       (org-in-subtree-not-table-p))))
-			 (nil-7 menu-item "&ndash;")
-			 (Hyperlinks menu-item "Hyperlinks"
-				     (keymap "Hyperlinks"
-					     (Store\ Link\ \(Global\) menu-item "Store Link (Global)" org-store-link)
-					     (Find\ existing\ link\ to\ here menu-item "Find existing link to here" org-occur-link-in-agenda-files)
-					     (Insert\ Link menu-item "Insert Link" org-insert-link)
-					     (Follow\ Link menu-item "Follow Link" org-open-at-point)
-					     (nil menu-item "&ndash;")
-					     (Next\ link menu-item "Next link" org-next-link)
-					     (Previous\ link menu-item "Previous link" org-previous-link)
-					     (nil-7 menu-item "&ndash;")
-					     (Descriptive\ Links menu-item "Descriptive Links" org-toggle-link-display :button
-								 (:radio . org-descriptive-links))
-					     (Literal\ Links menu-item "Literal Links" org-toggle-link-display :button
-							     (:radio not org-descriptive-links))))
-			 (nil-9 menu-item "&ndash;")
-			 (<i>TODO</i>\ Lists menu-item "<i>TODO</i> Lists"
-				      (keymap "<i>TODO</i> Lists"
-					      (<i>TODO///DONE/</i>- menu-item "<i>TODO///DONE/</i>-" org-todo)
-					      (Select\ keyword menu-item "Select keyword"
-							       (keymap "Select keyword"
-								       (Next\ keyword menu-item "Next keyword" org-shiftright :enable
-										      (org-at-heading-p))
-								       (Previous\ keyword menu-item "Previous keyword" org-shiftleft :enable
-											  (org-at-heading-p))
-								       (Complete\ Keyword menu-item "Complete Keyword" pcomplete :enable
-											  (assq :todo-keyword
-												(org-context)))
-								       (Next\ keyword\ set menu-item "Next keyword set" org-shiftcontrolright :enable
-											   (and
-											    (&gt;
-											     (length org-todo-sets)
-</p><ol>
-<li>
-</li>
-</ol>
-
-<p>											    (org-at-heading-p)))
-								       (Previous\ keyword\ set menu-item "Previous keyword set" org-shiftcontrolright :enable
-											       (and
-												(&gt;
-												 (length org-todo-sets)
-</p><ol>
-<li>
-</li>
-</ol>
-
-<p>												(org-at-heading-p)))))
-					      (Show\ <i>TODO</i>\ Tree menu-item "Show <i>TODO</i> Tree" org-show-todo-tree :keys "<i>C-/c / t") 					      (Global\ /TODO</i>\ list menu-item "Global <i>TODO</i> list" org-todo-list :keys "/C-/c a t")
-					      (nil menu-item "&ndash;")
-					      (Enforce\ dependencies menu-item "Enforce dependencies" menu-function-19 :key-sequence nil :button
-								     (:toggle . org-enforce-todo-dependencies))
-					      (nil-6 menu-item "Settings for tree at point")
-					      (Do\ Children\ sequentially menu-item "Do Children sequentially" org-toggle-ordered-property :enable org-enforce-todo-dependencies :keys "<i>C-/c /C-/x o" :button 									  (:radio org-entry-get nil "/ORDERED</i>"))
-					      (Do\ Children\ parallel menu-item "Do Children parallel" org-toggle-ordered-property :enable org-enforce-todo-dependencies :keys "/C-/c /C-/x o" :button
-								      (:radio not
-									      (org-entry-get nil "<i>ORDERED</i>")))
-					      (nil-9 menu-item "&ndash;")
-					      (Set\ Priority menu-item "Set Priority" org-priority)
-					      (Priority\ Up menu-item "Priority Up" org-shiftup)
-					      (Priority\ Down menu-item "Priority Down" org-shiftdown)
-					      (nil-13 menu-item "&ndash;")
-					      (Get\ news\ from\ all\ feeds menu-item "Get news from all feeds" org-feed-update-all)
-					      (Go\ to\ the\ inbox\ of\ a\ feed\.\.\. menu-item "Go to the inbox of a feed&hellip;" org-feed-goto-inbox)
-					      (Customize\ feeds menu-item "Customize feeds" menu-function-20 :key-sequence nil)))
-			 (<i>TAGS</i>\ and\ Properties menu-item "<i>TAGS</i> and Properties"
-						(keymap "<i>TAGS</i> and Properties"
-							(Set\ Tags menu-item "Set Tags" org-set-tags-command :enable
-								   (not
-								    (org-before-first-heading-p)))
-							(Change\ tag\ in\ region menu-item "Change tag in region" org-change-tag-in-region :enable
-										 (org-region-active-p))
-							(nil menu-item "&ndash;")
-							(Set\ property menu-item "Set property" org-set-property :enable
-								       (not
-									(org-before-first-heading-p)))
-							(Column\ view\ of\ properties menu-item "Column view of properties" org-columns)
-							(Insert\ Column\ View\ /DB/lock menu-item "Insert Column View /DB/lock" org-insert-columns-dblock)))
-			 (Dates\ and\ Scheduling menu-item "Dates and Scheduling"
-						 (keymap "Dates and Scheduling"
-							 (Timestamp menu-item "Timestamp" org-time-stamp :enable
-								    (not
-								     (org-before-first-heading-p)))
-							 (Timestamp\ \(inactive\) menu-item "Timestamp (inactive)" org-time-stamp-inactive :enable
-										  (not
-										   (org-before-first-heading-p)))
-							 (Change\ Date menu-item "Change Date"
-								       (keymap "Change Date"
-									       (1\ Day\ Later menu-item "1 Day Later" org-shiftright :enable
-											      (org-at-timestamp-p))
-									       (1\ Day\ Earlier menu-item "1 Day Earlier" org-shiftleft :enable
-												(org-at-timestamp-p))
-									       (1\ \.\.\.\ Later menu-item "1 &hellip; Later" org-shiftup :enable
-												 (org-at-timestamp-p))
-									       (1\ \.\.\.\ Earlier menu-item "1 &hellip; Earlier" org-shiftdown :enable
-												   (org-at-timestamp-p))))
-							 (Compute\ Time\ Range menu-item "Compute Time Range" org-evaluate-time-range)
-							 (Schedule\ Item menu-item "Schedule Item" org-schedule :enable
-									 (not
-									  (org-before-first-heading-p)))
-							 (Deadline menu-item "Deadline" org-deadline :enable
-								   (not
-								    (org-before-first-heading-p)))
-							 (nil menu-item "&ndash;")
-							 (Custom\ time\ format menu-item "Custom time format" org-toggle-time-stamp-overlays :button
-									       (:radio . org-display-custom-times))
-							 (nil-8 menu-item "&ndash;")
-							 (Goto\ Calendar menu-item "Goto Calendar" org-goto-calendar)
-							 (Date\ from\ Calendar menu-item "Date from Calendar" org-date-from-calendar)
-							 (nil-11 menu-item "&ndash;")
-							 (Start/Restart\ Timer menu-item "Start/Restart Timer" org-timer-start)
-							 (Pause/Continue\ Timer menu-item "Pause/Continue Timer" org-timer-pause-or-continue)
-							 (Stop\ Timer menu-item "Stop Timer" org-timer-pause-or-continue :keys "/C-/u /C-/c /C-/x ,")
-							 (Insert\ Timer\ String menu-item "Insert Timer String" org-timer)
-							 (Insert\ Timer\ Item menu-item "Insert Timer Item" org-timer-item)))
-			 (Logging\ work menu-item "Logging work"
-					(keymap "Logging work"
-						(Clock\ in menu-item "Clock in" org-clock-in :keys "/C-/c /C-/x /C-/i")
-						(Switch\ task menu-item "Switch task" menu-function-21 :keys "/C-/u /C-/c /C-/x /C-/i")
-						(Clock\ out menu-item "Clock out" org-clock-out)
-						(Clock\ cancel menu-item "Clock cancel" org-clock-cancel)
-						(nil menu-item "&ndash;")
-						(Mark\ as\ default\ task menu-item "Mark as default task" org-clock-mark-default-task)
-						(Clock\ in\,\ mark\ as\ default menu-item "Clock in, mark as default" menu-function-22 :keys "/C-/u /C-/u /C-/c /C-/x /C-/i")
-						(Goto\ running\ clock menu-item "Goto running clock" org-clock-goto)
-						(nil-8 menu-item "&ndash;")
-						(Display\ times menu-item "Display times" org-clock-display)
-						(Create\ clock\ table menu-item "Create clock table" org-clock-report)
-						(nil-11 menu-item "&ndash;")
-						(Record\ <i>DONE</i>\ time menu-item "Record <i>DONE</i> time" menu-function-23 :key-sequence nil :button
-								    (:toggle . org-log-done))))
-			 (nil-14 menu-item "&ndash;")
-			 (Agenda\ Command\.\.\. menu-item "Agenda Command&hellip;" org-agenda)
-			 (Set\ Restriction\ Lock menu-item "Set Restriction Lock" org-agenda-set-restriction-lock)
-			 (File\ List\ for\ Agenda menu-item "File List for Agenda"
-						  (keymap "File List for Agenda"
-							  (Edit\ File\ List menu-item "Edit File List" menu-function-45 :key-sequence nil)
-							  (Add/Move\ Current\ File\ to\ Front\ of\ List menu-item "Add/Move Current File to Front of List" org-agenda-file-to-front)
-							  (Remove\ Current\ File\ from\ List menu-item "Remove Current File from List" org-remove-file)
-							  (Cycle\ through\ agenda\ files menu-item "Cycle through agenda files" org-cycle-agenda-files)
-							  (Occur\ in\ all\ agenda\ files menu-item "Occur in all agenda files" org-occur-in-agenda-files)
-							  (nil menu-item "&ndash;")))
-			 (Special\ views\ current\ file menu-item "Special views current file"
-							(keymap "Special views current file"
-								(<i>TODO</i>\ Tree menu-item "<i>TODO</i> Tree" org-show-todo-tree)
-								(Check\ Deadlines menu-item "Check Deadlines" org-check-deadlines)
-								(Timeline menu-item "Timeline" org-timeline)
-								(Tags/Property\ tree menu-item "Tags/Property tree" org-match-sparse-tree)))
-			 (nil-19 menu-item "&ndash;")
-			 (Export/Publish\.\.\. menu-item "Export/Publish&hellip;" org-export)
-			 (LaTeX menu-item "LaTeX"
-				(keymap "LaTeX"
-					(Org\ /CDL/aTeX\ mode menu-item "Org /CDL/aTeX mode" org-cdlatex-mode :button
-							    (:toggle . org-cdlatex-mode))
-					(Insert\ Environment menu-item "Insert Environment" cdlatex-environment :enable
-							     (fboundp 'cdlatex-environment))
-					(Insert\ math\ symbol menu-item "Insert math symbol" cdlatex-math-symbol :enable
-							      (fboundp 'cdlatex-math-symbol))
-					(Modify\ math\ symbol menu-item "Modify math symbol" org-cdlatex-math-modify :enable
-							      (org-inside-LaTe/X-/fragment-p))
-					(Insert\ citation menu-item "Insert citation" org-reftex-citation)
-					(nil menu-item "&ndash;")
-					(Template\ for\ <i>BEAMER</i> menu-item "Template for <i>BEAMER</i>" menu-function-24 :key-sequence nil)))
-			 (nil-22 menu-item "&ndash;")
-			 (MobileOrg menu-item "MobileOrg"
-				    (keymap "MobileOrg"
-					    (Push\ Files\ and\ Views menu-item "Push Files and Views" org-mobile-push)
-					    (Get\ Captured\ and\ Flagged menu-item "Get Captured and Flagged" org-mobile-pull)
-					    (Find\ <i>FLAGGED</i>\ Tasks menu-item "Find <i>FLAGGED</i> Tasks" menu-function-25 :keys "/C-/c a ?")
-					    (nil menu-item "&ndash;")
-					    (Setup menu-item "Setup" menu-function-26 :key-sequence nil)))
-			 (nil-24 menu-item "&ndash;")
-			 (Documentation menu-item "Documentation"
-					(keymap "Documentation"
-						(Show\ Version menu-item "Show Version" org-version)
-						(Info\ Documentation menu-item "Info Documentation" org-info)))
-			 (Customize menu-item "Customize"
-				    (keymap "Customize"
-					    (Browse\ Org\ Group menu-item "Browse Org Group" org-customize)
-					    (nil menu-item "&ndash;")
-					    (Expand\ This\ Menu menu-item "Expand This Menu" org-create-customize-menu :enable
-								(fboundp 'customize-menu-create))))
-			 (Send\ bug\ report menu-item "Send bug report" org-submit-bug-report)
-			 (nil-28 menu-item "&ndash;")
-			 (Refresh/Reload menu-item "Refresh/Reload"
-					 (keymap "Refresh/Reload"
-						 (Refresh\ setup\ current\ buffer menu-item "Refresh setup current buffer" org-mode-restart)
-						 (Reload\ Org\ \(after\ update\) menu-item "Reload Org (after update)" org-reload)
-						 (Reload\ Org\ uncompiled menu-item "Reload Org uncompiled" menu-function-27 :keys "/C-/u /C-/c /C-/x !")))))
-	    (Tbl menu-item "Tbl"
-		 (keymap "Tbl"
-			 (Align menu-item "Align" org-ctrl-c-ctrl-c :enable
-				(org-at-table-p))
-			 (Next\ Field menu-item "Next Field" org-cycle :enable
-				      (org-at-table-p))
-			 (Previous\ Field menu-item "Previous Field" org-shifttab :enable
-					  (org-at-table-p))
-			 (Next\ Row menu-item "Next Row" org-return :enable
-				    (org-at-table-p))
-			 (nil menu-item "&ndash;")
-			 (Blank\ Field menu-item "Blank Field" org-table-blank-field :enable
-				       (org-at-table-p))
-			 (Edit\ Field menu-item "Edit Field" org-table-edit-field :enable
-				      (org-at-table-p))
-			 (Copy\ Field\ from\ Above menu-item "Copy Field from Above" org-table-copy-down :enable
-						   (org-at-table-p))
-			 (nil-8 menu-item "&ndash;")
-			 (Column menu-item "Column"
-				 (keymap "Column"
-					 (Move\ Column\ Left menu-item "Move Column Left" org-metaleft :enable
-							     (org-at-table-p))
-					 (Move\ Column\ Right menu-item "Move Column Right" org-metaright :enable
-							      (org-at-table-p))
-					 (Delete\ Column menu-item "Delete Column" org-shiftmetaleft :enable
-							 (org-at-table-p))
-					 (Insert\ Column menu-item "Insert Column" org-shiftmetaright :enable
-							 (org-at-table-p))))
-			 (Row menu-item "Row"
-			      (keymap "Row"
-				      (Move\ Row\ Up menu-item "Move Row Up" org-metaup :enable
-						     (org-at-table-p))
-				      (Move\ Row\ Down menu-item "Move Row Down" org-metadown :enable
-						       (org-at-table-p))
-				      (Delete\ Row menu-item "Delete Row" org-shiftmetaup :enable
-						   (org-at-table-p))
-				      (Insert\ Row menu-item "Insert Row" org-shiftmetadown :enable
-						   (org-at-table-p))
-				      (Sort\ lines\ in\ region menu-item "Sort lines in region" org-table-sort-lines :enable
-							       (org-at-table-p))
-				      (nil menu-item "&ndash;")
-				      (Insert\ Hline menu-item "Insert Hline" org-ctrl-c-minus :enable
-						     (org-at-table-p))))
-			 (Rectangle menu-item "Rectangle"
-				    (keymap "Rectangle"
-					    (Copy\ Rectangle menu-item "Copy Rectangle" org-copy-special :enable
-							     (org-at-table-p))
-					    (Cut\ Rectangle menu-item "Cut Rectangle" org-cut-special :enable
-							    (org-at-table-p))
-					    (Paste\ Rectangle menu-item "Paste Rectangle" org-paste-special :enable
-							      (org-at-table-p))
-					    (Fill\ Rectangle menu-item "Fill Rectangle" org-table-wrap-region :enable
-							     (org-at-table-p))))
-			 (nil-12 menu-item "&ndash;")
-			 (Calculate menu-item "Calculate"
-				    (keymap "Calculate"
-					    (Set\ Column\ Formula menu-item "Set Column Formula" org-table-eval-formula :enable
-								  (org-at-table-p))
-					    (Set\ Field\ Formula menu-item "Set Field Formula" menu-function-15 :enable
-								 (org-at-table-p)
-								 :keys "/C-/u /C-/c =")
-					    (Edit\ Formulas menu-item "Edit Formulas" org-edit-special :enable
-							    (org-at-table-p))
-					    (nil menu-item "&ndash;")
-					    (Recalculate\ line menu-item "Recalculate line" org-table-recalculate :enable
-							       (org-at-table-p))
-					    (Recalculate\ all menu-item "Recalculate all" menu-function-16 :enable
-							      (org-at-table-p)
-							      :keys "/C-/u /C-/c *")
-					    (Iterate\ all menu-item "Iterate all" menu-function-17 :enable
-							  (org-at-table-p)
-							  :keys "/C-/u /C-/u /C-/c *")
-					    (nil-7 menu-item "&ndash;")
-					    (Toggle\ Recalculate\ Mark menu-item "Toggle Recalculate Mark" org-table-rotate-recalc-marks :enable
-								       (org-at-table-p))
-					    (nil-9 menu-item "&ndash;")
-					    (Sum\ Column/Rectangle menu-item "Sum Column/Rectangle" org-table-sum :enable
-								   (or
-								    (org-at-table-p)
-								    (org-region-active-p)))
-					    (Which\ Column\? menu-item "Which Column?" org-table-current-column :enable
-							     (org-at-table-p))))
-			 (Debug\ Formulas menu-item "Debug Formulas" org-table-toggle-formula-debugger :button
-					  (:toggle org-bound-and-true-p org-table-formula-debug))
-			 (Show\ Col/Row\ Numbers menu-item "Show Col/Row Numbers" org-table-toggle-coordinate-overlays :button
-						 (:toggle org-bound-and-true-p org-table-overlay-coordinates))
-			 (nil-16 menu-item "&ndash;")
-			 (Create menu-item "Create" org-table-create :enable
-				 (and
-				  (not
-				   (org-at-table-p))
-				  org-enable-table-editor))
-			 (Convert\ Region menu-item "Convert Region" org-table-convert-region :enable
-					  (not
-					   (org-at-table-p 'any)))
-			 (Import\ from\ File menu-item "Import from File" org-table-import :enable
-					     (not
-					      (org-at-table-p)))
-			 (Export\ to\ File menu-item "Export to File" org-table-export :enable
-					   (org-at-table-p))
-			 (nil-21 menu-item "&ndash;")
-			 (Create/Convert\ from/to\ table\.el menu-item "Create/Convert from/to table.el" org-table-create-with-table\.el))))
-  (124 . org-force-self-insert)
-  (67108899 . org-table-rotate-recalc-marks)
-  (10 . org-return-indent)
-  (13 . org-return)
-  (67108903 . org-cycle-agenda-files)
-  (67108908 . org-cycle-agenda-files)
-  (/C-S-/return . org-insert-todo-heading-respect-content)
-  (/C-/return . org-insert-heading-respect-content)
-  (/C-S-/down . org-shiftcontroldown)
-  (/C-S-/up . org-shiftcontrolup)
-  (/C-S-/left . org-shiftcontrolleft)
-  (/C-S-/right . org-shiftcontrolright)
-  (/S-/right . org-shiftright)
-  (/S-/left . org-shiftleft)
-  (/S-/down . org-shiftdown)
-  (/S-/up . org-shiftup)
-  (/M-S-/down . org-shiftmetadown)
-  (/M-S-/up . org-shiftmetaup)
-  (/M-S-/right . org-shiftmetaright)
-  (/M-S-/left . org-shiftmetaleft)
-  (/M-/down . org-metadown)
-  (/M-/up . org-metaup)
-  (/M-/right . org-metaright)
-  (/M-/left . org-metaleft)
-  (/M-/return . org-meta-return)
-  (/M-S-/return . org-insert-todo-heading)
-  (/S-/return . org-table-copy-down)
-  (backtab . org-shifttab)
-  (/S-/tab . org-shifttab)
-  (/S-/iso-lefttab . org-shifttab)
-  (27 keymap
-      (101 . org-forward-sentence)
-      (97 . org-backward-sentence)
-      (104 . org-mark-element)
-      (13 . org-insert-heading)
-      (123 . org-backward-element)
-      (125 . org-forward-element)
-      (20 . org-transpose-element)
-      (/S-/down . org-shiftmetadown)
-      (/S-/up . org-shiftmetaup)
-      (/S-/right . org-shiftmetaright)
-      (/S-/left . org-shiftmetaleft)
-      (/S-/return . org-insert-todo-heading)
-      (tab . pcomplete)
-      (down . org-metadown)
-      (up . org-metaup)
-      (right . org-metaright)
-      (left . org-metaleft)
-      (return . org-meta-return)
-      (9 . pcomplete))
-  (/C-/tab . org-force-cycle-archived)
-  (tab . org-cycle)
-  (9 . org-cycle)
-  (3 keymap
-     (67108906 . org-list-make-subtree)
-     (64 . org-mark-subtree)
-     (58 . org-toggle-fixed-width-section)
-     (5 . org-export)
-     (123 . org-table-toggle-formula-debugger)
-     (125 . org-table-toggle-coordinate-overlays)
-     (126 . org-table-create-with-table\.el)
-     (124 . org-table-create-or-convert-from-region)
-     (96 . org-table-edit-field)
-     (39 . org-edit-special)
-     (61 . org-table-eval-formula)
-     (43 . org-table-sum)
-     (32 . org-table-blank-field)
-     (63 . org-table-field-info)
-     (35 . org-update-statistics-cookies)
-     (11 . org-kill-note-or-show-branches)
-     (3 . org-ctrl-c-ctrl-c)
-     (94 . org-sort)
-     (42 . org-ctrl-c-star)
-     (45 . org-ctrl-c-minus)
-     (93 . org-remove-file)
-     (91 . org-agenda-file-to-front)
-     (60 . org-date-from-calendar)
-     (62 . org-goto-calendar)
-     (25 . org-evaluate-time-range)
-     (44 . org-priority)
-     (33 . org-time-stamp-inactive)
-     (46 . org-time-stamp)
-     (26 . org-add-note)
-     (38 . org-mark-ring-goto)
-     (37 . org-mark-ring-push)
-     (15 . org-open-at-point)
-     (27 keymap
-	 (12 . org-insert-all-links))
-     (12 . org-insert-link)
-     (13 . org-ctrl-c-ret)
-     (92 . org-match-sparse-tree)
-     (47 . org-sparse-tree)
-     (23 . org-refile)
-     (59 . org-toggle-comment)
-     (4 . org-deadline)
-     (19 . org-schedule)
-     (17 . org-set-tags-command)
-     (20 . org-todo)
-     (10 . org-goto)
-     (36 . org-archive-subtree)
-     (2 . org-backward-heading-same-level)
-     (6 . org-forward-heading-same-level)
-     (31 . org-down-element)
-     (30 . org-up-element)
-     (18 . org-reveal)
-     (1 . org-attach)
-     (right . org-shiftright)
-     (left . org-shiftleft)
-     (down . org-shiftdown)
-     (up . org-shiftup)
-     (22 keymap
-	 (27 keymap
-	     (8 . org-babel-mark-block))
-	 (120 . org-babel-do-key-sequence-in-edit-buffer)
-	 (24 . org-babel-do-key-sequence-in-edit-buffer)
-	 (104 . org-babel-describe-bindings)
-	 (97 . org-babel-sha1-hash)
-	 (1 . org-babel-sha1-hash)
-	 (122 . org-babel-switch-to-session-with-code)
-	 (26 . org-babel-switch-to-session)
-	 (73 . org-babel-view-src-block-info)
-	 (105 . org-babel-lob-ingest)
-	 (9 . org-babel-view-src-block-info)
-	 (108 . org-babel-load-in-session)
-	 (12 . org-babel-load-in-session)
-	 (106 . org-babel-insert-header-arg)
-	 (10 . org-babel-insert-header-arg)
-	 (99 . org-babel-check-src-block)
-	 (3 . org-babel-check-src-block)
-	 (102 . org-babel-tangle-file)
-	 (6 . org-babel-tangle-file)
-	 (116 . org-babel-tangle)
-	 (20 . org-babel-tangle)
-	 (100 . org-babel-demarcate-block)
-	 (4 . org-babel-demarcate-block)
-	 (115 . org-babel-execute-subtree)
-	 (19 . org-babel-execute-subtree)
-	 (98 . org-babel-execute-buffer)
-	 (2 . org-babel-execute-buffer)
-	 (18 . org-babel-goto-named-result)
-	 (114 . org-babel-goto-named-result)
-	 (103 . org-babel-goto-named-src-block)
-	 (21 . org-babel-goto-src-block-head)
-	 (117 . org-babel-goto-src-block-head)
-	 (118 . org-babel-expand-src-block)
-	 (22 . org-babel-expand-src-block)
-	 (15 . org-babel-open-src-block-result)
-	 (111 . org-babel-open-src-block-result)
-	 (5 . org-babel-execute-maybe)
-	 (101 . org-babel-execute-maybe)
-	 (14 . org-babel-next-src-block)
-	 (110 . org-babel-next-src-block)
-	 (16 . org-babel-previous-src-block)
-	 (112 . org-babel-previous-src-block))
-     (24 keymap
-	 (91 . org-reftex-citation)
-	 (71 . org-feed-goto-inbox)
-	 (103 . org-feed-update-all)
-	 (33 . org-reload)
-	 (3 . org-columns)
-	 (44 . org-timer-pause-or-continue)
-	 (95 . org-timer-stop)
-	 (48 . org-timer-start)
-	 (45 . org-timer-item)
-	 (46 . org-timer)
-	 (58 . org-timer-cancel-timer)
-	 (59 . org-timer-set-timer)
-	 (105 . org-insert-columns-dblock)
-	 (111 . org-toggle-ordered-property)
-	 (69 . org-inc-effort)
-	 (101 . org-set-effort)
-	 (112 . org-set-property)
-	 (2 . org-toggle-checkbox)
-	 (92 . org-toggle-pretty-entities)
-	 (22 . org-toggle-inline-images)
-	 (12 . org-preview-latex-fragment)
-	 (21 . org-dblock-update)
-	 (18 . org-clock-report)
-	 (4 . org-clock-display)
-	 (17 . org-clock-cancel)
-	 (10 . org-clock-goto)
-	 (15 . org-clock-out)
-	 (26 . org-resolve-clocks)
-	 (24 . org-clock-in-last)
-	 (9 . org-clock-in)
-	 (20 . org-toggle-time-stamp-overlays)
-	 (25 . org-paste-special)
-	 (27 keymap
-	     (22 . org-redisplay-inline-images)
-	     (119 . org-copy-special))
-	 (23 . org-cut-special)
-	 (13 keymap
-	     (112 . org-mobile-push)
-	     (103 . org-mobile-pull))
-	 (102 . org-footnote-action)
-	 (6 . org-emphasize)
-	 (62 . org-agenda-remove-restriction-lock)
-	 (60 . org-agenda-set-restriction-lock)
-	 (16 . org-previous-link)
-	 (14 . org-next-link)
-	 (118 . org-copy-visible)
-	 (98 . org-tree-to-indirect-buffer)
-	 (65 . org-archive-to-archive-sibling)
-	 (97 . org-toggle-archive-tag)
-	 (1 . org-archive-subtree-default)
-	 (19 . org-advertized-archive-subtree)
-	 (left . org-shiftcontrolleft)
-	 (right . org-shiftcontrolright)
-	 (68 . org-shiftmetadown)
-	 (85 . org-shiftmetaup)
-	 (82 . org-shiftmetaright)
-	 (76 . org-shiftmetaleft)
-	 (100 . org-insert-drawer)
-	 (117 . org-metaup)
-	 (114 . org-metaright)
-	 (108 . org-metaleft)
-	 (109 . org-meta-return)
-	 (77 . org-insert-todo-heading)
-	 (99 . org-clone-subtree-with-time-shift)))
-  (remap keymap
-	 (delete-backward-char . org-delete-backward-char)
-	 (delete-char . org-delete-char)
-	 (self-insert-command . org-self-insert-command)
-	 (outline-insert-heading . org-ctrl-c-ret)
-	 (outline-demote . org-demote-subtree)
-	 (outline-promote . org-promote-subtree)
-	 (show-branches . org-kill-note-or-show-branches)
-	 (outline-backward-same-level . org-backward-heading-same-level)
-	 (outline-forward-same-level . org-forward-heading-same-level)
-	 (show-subtree . org-show-subtree)
-	 (outline-mark-subtree . org-mark-subtree))
-  keymap
-  (menu-bar keymap
-	    (headings "Headings" keymap
-		      (outline-up-heading menu-item "Up" outline-up-heading :help "Move to the visible heading line of which the present line is a subheading")
-		      (outline-next-visible-heading menu-item "Next" outline-next-visible-heading :help "Move to the next visible heading line")
-		      (outline-previous-visible-heading menu-item "Previous" outline-previous-visible-heading :help "Move to the previous heading line")
-		      (outline-forward-same-level menu-item "Next Same Level" outline-forward-same-level :help "Move forward to the arg'th subheading at same level as this one")
-		      (outline-backward-same-level menu-item "Previous Same Level" outline-backward-same-level :help "Move backward to the arg'th subheading at same level as this one.")
-		      (outline-insert-heading menu-item "New Heading" outline-insert-heading :help "Insert a new heading at same depth at point")
-		      (copy menu-item "Copy to Kill Ring" outline-headers-as-kill :enable mark-active :help "Save the visible outline headers in region at the start of the kill ring")
-		      (move-subtree-up menu-item "Move Subtree Up" outline-move-subtree-up :help "Move the current subtree up past arg headlines of the same level")
-		      (move-subtree-down menu-item "Move Subtree Down" outline-move-subtree-down :help "Move the current subtree down past arg headlines of the same level")
-		      (promote-subtree menu-item "Promote Subtree" outline-promote :help "Promote headings higher up the tree")
-		      (demote-subtree menu-item "Demote Subtree" outline-demote :help "Demote headings lower down the tree")
-		      "Headings")
-	    (show "Show" keymap
-		  (show-all menu-item "Show All" show-all :help "Show all of the text in the buffer")
-		  (show-entry menu-item "Show Entry" show-entry :help "Show the body directly following this heading")
-		  (show-branches menu-item "Show Branches" show-branches :help "Show all subheadings of this heading, but not their bodies")
-		  (show-children menu-item "Show Children" show-children :help "Show all direct subheadings of this heading")
-		  (show-subtree menu-item "Show Subtree" show-subtree :help "Show everything after this heading at deeper levels")
-		  "Show")
-	    (hide "Hide" keymap
-		  (hide-leaves menu-item "Hide Leaves" hide-leaves :help "Hide the body after this heading and at deeper levels")
-		  (hide-body menu-item "Hide Body" hide-body :help "Hide all body lines in buffer, leaving all headings visible")
-		  (hide-entry menu-item "Hide Entry" hide-entry :help "Hide the body directly following this heading")
-		  (hide-subtree menu-item "Hide Subtree" hide-subtree :help "Hide everything after this heading at deeper levels")
-		  (hide-sublevels menu-item "Hide Sublevels" hide-sublevels :help "Hide everything but the top <i>LEVELS</i> levels of headers, in whole buffer")
-		  (hide-other menu-item "Hide Other" hide-other :help "Hide everything except current body and parent and top-level headings")
-		  "Hide"))
-  (3 keymap
-     (13 . outline-insert-heading)
-     (67108926 . outline-demote)
-     (67108924 . outline-promote)
-     (22 . outline-move-subtree-down)
-     (30 . outline-move-subtree-up)
-     (15 . hide-other)
-     (17 . hide-sublevels)
-     (11 . show-branches)
-     (12 . hide-leaves)
-     (5 . show-entry)
-     (3 . hide-entry)
-     (1 . show-all)
-     (20 . hide-body)
-     (2 . outline-backward-same-level)
-     (6 . outline-forward-same-level)
-     (21 . outline-up-heading)
-     (4 . hide-subtree)
-     (19 . show-subtree)
-     (9 . show-children)
-     (16 . outline-previous-visible-heading)
-     (14 . outline-next-visible-heading)
-     (64 . outline-mark-subtree))
-  keymap
-  (27 keymap
-      (9 . ispell-complete-word)))
- (keymap
-  #<sup>[nil</sup> nil keymap
-	 #^<sup>[3</sup> 0 set-mark-command move-beginning-of-line backward-char mode-specific-command-prefix delete-char move-end-of-line forward-char keyboard-quit help-command indent-for-tab-command newline-and-indent kill-line recenter-top-bottom newline next-line open-line previous-line quoted-insert isearch-backward isearch-forward transpose-chars universal-argument scroll-up-command kill-region Control-/X-/prefix yank suspend-frame /ESC-/prefix toggle-input-method abort-recursive-edit nil undo self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command delete-backward-char]
-	 #^<sup>[1</sup> 0
-	       #^<sup>[2</sup> 0
-		     #^<sup>[3</sup> 0 set-mark-command move-beginning-of-line backward-char mode-specific-command-prefix delete-char move-end-of-line forward-char keyboard-quit help-command indent-for-tab-command newline-and-indent kill-line recenter-top-bottom newline next-line open-line previous-line quoted-insert isearch-backward isearch-forward transpose-chars universal-argument scroll-up-command kill-region Control-/X-/prefix yank suspend-frame /ESC-/prefix toggle-input-method abort-recursive-edit nil undo self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command delete-backward-char]
-		     self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command]
-	       self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command]
-	 self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command self-insert-command]
-  (/S-/mouse-3 . kmacro-end-call-mouse)
-  (/C-/mouse-5 . mwheel-scroll)
-  (/S-/mouse-5 . mwheel-scroll)
-  (mouse-5 . mwheel-scroll)
-  (/C-/mouse-4 . mwheel-scroll)
-  (/S-/mouse-4 . mwheel-scroll)
-  (mouse-4 . mwheel-scroll)
-  (tool-bar menu-item "tool bar" ignore :filter tool-bar-make-keymap)
-  (f10 . menu-bar-open)
-  (vertical-line keymap
-		 (mouse-1 . mouse-select-window)
-		 (down-mouse-1 . mouse-drag-vertical-line)
-		 (/C-/mouse-2 . mouse-split-window-vertically))
-  (vertical-scroll-bar keymap
-		       (drag-mouse-3 . scroll-bar-scroll-down)
-		       (mouse-3 . scroll-bar-scroll-down)
-		       (down-mouse-2 . scroll-bar-drag)
-		       (drag-mouse-1 . scroll-bar-scroll-up)
-		       (mouse-1 . scroll-bar-scroll-up)
-		       (/C-/mouse-2 . mouse-split-window-vertically))
-  (header-line keymap
-	       (mouse-1 . mouse-select-window)
-	       (down-mouse-1 . mouse-drag-header-line))
-  (mode-line keymap
-	     (/C-/mouse-2 . mouse-split-window-horizontally)
-	     (mouse-3 . mouse-delete-window)
-	     (mouse-2 . mouse-delete-other-windows)
-	     (down-mouse-1 . mouse-drag-mode-line)
-	     (drag-mouse-1 . mouse-select-window)
-	     (mouse-1 . mouse-select-window))
-  (/C-/down-mouse-3 menu-item "Menu Bar" ignore :filter
-		  (lambda
-		    (_)
-		    (if
-			(zerop
-			 (or
-			  (frame-parameter nil 'menu-bar-lines)
-			  0))
-			(mouse-menu-bar-map)
-		      (mouse-menu-major-mode-map))))
-  (/S-/down-mouse-1 . mouse-appearance-menu)
-  (/C-/down-mouse-1 . mouse-buffer-menu)
-  (mouse-3 . mouse-save-then-kill)
-  (mouse-2 . mouse-yank-primary)
-  (triple-mouse-1 . mouse-set-point)
-  (double-mouse-1 . mouse-set-point)
-  (drag-mouse-1 . mouse-set-region)
-  (mouse-1 . mouse-set-point)
-  (down-mouse-1 . mouse-drag-region)
-  (/M-/mouse-2 . mouse-yank-secondary)
-  (/M-/mouse-3 . mouse-secondary-save-then-kill)
-  (/M-/down-mouse-1 . mouse-drag-secondary)
-  (/M-/drag-mouse-1 . mouse-set-secondary)
-  (/M-/mouse-1 . mouse-start-secondary)
-  (/C-/down-mouse-2 . facemenu-menu)
-  (compose-last-chars . compose-last-chars)
-  (f1 . help-command)
-  (help . help-command)
-  (f2 . 2/C-/command)
-  (menu-bar keymap
-	    (file "File" keymap
-		  (new-file menu-item "Visit New File&hellip;" find-file :enable
-			    (menu-bar-non-minibuffer-window-p)
-			    :help "Specify a new file's name, to edit the file")
-		  (open-file menu-item "Open File&hellip;" menu-find-file-existing :enable
-			     (menu-bar-non-minibuffer-window-p)
-			     :help "Read an existing file into an Emacs buffer")
-		  (dired menu-item "Open Directory&hellip;" dired :enable
-			 (menu-bar-non-minibuffer-window-p)
-			 :help "Read a directory, to operate on its files")
-		  (insert-file menu-item "Insert File&hellip;" insert-file :enable
-			       (menu-bar-non-minibuffer-window-p)
-			       :help "Insert another file into current buffer")
-		  (kill-buffer menu-item "Close" kill-this-buffer :enable
-			       (kill-this-buffer-enabled-p)
-			       :help "Discard (kill) current buffer")
-		  (separator-save "&ndash;")
-		  (save-buffer menu-item "Save" save-buffer :enable
-			       (and
-				(buffer-modified-p)
-				(buffer-file-name)
-				(menu-bar-non-minibuffer-window-p))
-			       :help "Save current buffer to its file")
-		  (write-file menu-item "Save As&hellip;" write-file :enable
-			      (and
-			       (menu-bar-menu-frame-live-and-visible-p)
-			       (menu-bar-non-minibuffer-window-p))
-			      :help "Write current buffer to another file")
-		  (revert-buffer menu-item "Revert Buffer" revert-buffer :enable
-				 (or revert-buffer-function revert-buffer-insert-file-contents-function
-				     (and buffer-file-number
-					  (or
-					   (buffer-modified-p)
-					   (not
-					    (verify-visited-file-modtime
-					     (current-buffer))))))
-				 :help "Re-read current buffer from its file")
-		  (recover-session menu-item "Recover Crashed Session" recover-session :enable
-				   (and auto-save-list-file-prefix
-					(file-directory-p
-					 (file-name-directory auto-save-list-file-prefix))
-					(directory-files
-					 (file-name-directory auto-save-list-file-prefix)
-					 nil
-					 (concat "\\`"
-						 (regexp-quote
-						  (file-name-nondirectory auto-save-list-file-prefix)))
-					 t))
-				   :help "Recover edits from a crashed session")
-		  (separator-print "&ndash;")
-		  (print-buffer menu-item "Print Buffer" print-buffer :enable
-				(menu-bar-menu-frame-live-and-visible-p)
-				:help "Print current buffer with page headings")
-		  (print-region menu-item "Print Region" print-region :enable mark-active :help "Print region between mark and current position")
-		  (ps-print-buffer-faces menu-item "PostScript Print Buffer" ps-print-buffer-with-faces :enable
-					 (menu-bar-menu-frame-live-and-visible-p)
-					 :help "Pretty-print current buffer to PostScript printer")
-		  (ps-print-region-faces menu-item "PostScript Print Region" ps-print-region-with-faces :enable mark-active :help "Pretty-print marked region to PostScript printer")
-		  (ps-print-buffer menu-item "PostScript Print Buffer (B+W)" ps-print-buffer :enable
-				   (menu-bar-menu-frame-live-and-visible-p)
-				   :help "Pretty-print current buffer in black and white to PostScript printer")
-		  (ps-print-region menu-item "PostScript Print Region (B+W)" ps-print-region :enable mark-active :help "Pretty-print marked region in black and white to PostScript printer")
-		  (separator-window "&ndash;")
-		  (new-window-below menu-item "New Window Below" split-window-below :enable
-				    (and
-				     (menu-bar-menu-frame-live-and-visible-p)
-				     (menu-bar-non-minibuffer-window-p))
-				    :help "Make new window below selected one")
-		  (new-window-on-right menu-item "New Window on Right" split-window-right :enable
-				       (and
-					(menu-bar-menu-frame-live-and-visible-p)
-					(menu-bar-non-minibuffer-window-p))
-				       :help "Make new window on right of selected one")
-		  (one-window menu-item "Remove Other Windows" delete-other-windows :enable
-			      (not
-			       (one-window-p t nil))
-			      :help "Make selected window fill whole frame")
-		  (separator-frame "&ndash;")
-		  (make-frame menu-item "New Frame" make-frame-command :visible
-			      (fboundp 'make-frame-command)
-			      :help "Open a new frame")
-		  (make-frame-on-display menu-item "New Frame on Display&hellip;" make-frame-on-display :visible
-					 (fboundp 'make-frame-on-display)
-					 :help "Open a new frame on another display")
-		  (delete-this-frame menu-item "Delete Frame" delete-frame :visible
-				     (fboundp 'delete-frame)
-				     :enable
-				     (delete-frame-enabled-p)
-				     :help "Delete currently selected frame")
-		  (separator-exit "&ndash;")
-		  (exit-emacs menu-item "Quit" save-buffers-kill-terminal :help "Save unsaved buffers, then exit")
-		  "File")
-	    (edit "Edit" keymap
-		  (undo menu-item "Undo" undo :enable
-			(and
-			 (not buffer-read-only)
-			 (not
-			  (eq t buffer-undo-list))
-			 (if
-			     (eq last-command 'undo)
-			     (listp pending-undo-list)
-			   (consp buffer-undo-list)))
-			:help "Undo last operation")
-		  (cut menu-item "Cut" kill-region :enable
-		       (and mark-active
-			    (not buffer-read-only))
-		       :help "Cut (kill) text in region between mark and current position")
-		  (copy menu-item "Copy" kill-ring-save :enable mark-active :help "Copy text in region between mark and current position" :keys "\\[kill-ring-save]")
-		  (paste menu-item "Paste" yank :enable
-			 (and
-			  (or
-			   (and
-			    (fboundp 'x-selection-exists-p)
-			    (x-selection-exists-p '<i>CLIPBOARD</i>))
-			   (if
-			       (featurep 'ns)
-			       (cdr yank-menu)
-			     kill-ring))
-			  (not buffer-read-only))
-			 :help "Paste (yank) text most recently cut/copied")
-		  (paste-from-menu menu-item "Paste from Kill Menu" yank-menu :enable
-				   (and
-				    (cdr yank-menu)
-				    (not buffer-read-only))
-				   :help "Choose a string from the kill ring and paste it")
-		  (clear menu-item "Clear" delete-region :enable
-			 (and mark-active
-			      (not buffer-read-only))
-			 :help "Delete the text in region between mark and current position")
-		  (mark-whole-buffer menu-item "Select All" mark-whole-buffer :help "Mark the whole buffer for a subsequent cut/copy")
-		  (separator-search "&ndash;")
-		  (search menu-item "Search"
-			  (keymap
-			   (search-forward menu-item "String Forward&hellip;" nonincremental-search-forward :help "Search forward for a string")
-			   (search-backward menu-item "String Backwards&hellip;" nonincremental-search-backward :help "Search backwards for a string")
-			   (re-search-forward menu-item "Regexp Forward&hellip;" nonincremental-re-search-forward :help "Search forward for a regular expression")
-			   (re-search-backward menu-item "Regexp Backwards&hellip;" nonincremental-re-search-backward :help "Search backwards for a regular expression")
-			   (separator-repeat-search "&ndash;")
-			   (repeat-search-fwd menu-item "Repeat Forward" nonincremental-repeat-search-forward :enable
-					      (or
-					       (and
-						(eq menu-bar-last-search-type 'string)
-						search-ring)
-					       (and
-						(eq menu-bar-last-search-type 'regexp)
-						regexp-search-ring))
-					      :help "Repeat last search forward")
-			   (repeat-search-back menu-item "Repeat Backwards" nonincremental-repeat-search-backward :enable
-					       (or
-						(and
-						 (eq menu-bar-last-search-type 'string)
-						 search-ring)
-						(and
-						 (eq menu-bar-last-search-type 'regexp)
-						 regexp-search-ring))
-					       :help "Repeat last search backwards")
-			   (separator-tag-search "&ndash;")
-			   (tags-srch menu-item "Search Tagged Files&hellip;" tags-search :help "Search for a regexp in all tagged files")
-			   (tags-continue menu-item "Continue Tags Search" tags-loop-continue :help "Continue last tags search operation")
-			   (separator-tag-isearch "&ndash;")
-			   (i-search menu-item "Incremental Search"
-				     (keymap
-				      (isearch-forward menu-item "Forward String&hellip;" isearch-forward :help "Search forward for a string as you type it")
-				      (isearch-backward menu-item "Backward String&hellip;" isearch-backward :help "Search backwards for a string as you type it")
-				      (isearch-forward-regexp menu-item "Forward Regexp&hellip;" isearch-forward-regexp :help "Search forward for a regular expression as you type it")
-				      (isearch-backward-regexp menu-item "Backward Regexp&hellip;" isearch-backward-regexp :help "Search backwards for a regular expression as you type it")
-				      "Incremental Search"))
-			   "Search"))
-		  (replace menu-item "Replace"
-			   (keymap
-			    (query-replace menu-item "Replace String&hellip;" query-replace :enable
-					   (not buffer-read-only)
-					   :help "Replace string interactively, ask about each occurrence")
-			    (query-replace-regexp menu-item "Replace Regexp&hellip;" query-replace-regexp :enable
-						  (not buffer-read-only)
-						  :help "Replace regular expression interactively, ask about each occurrence")
-			    (separator-replace-tags "&ndash;")
-			    (tags-repl menu-item "Replace in Tagged Files&hellip;" tags-query-replace :help "Interactively replace a regexp in all tagged files")
-			    (tags-repl-continue menu-item "Continue Replace" tags-loop-continue :help "Continue last tags replace operation")
-			    "Replace"))
-		  (goto menu-item "Go To"
-			(keymap
-			 (go-to-line menu-item "Goto Line&hellip;" goto-line :help "Read a line number and go to that line")
-			 (go-to-pos menu-item "Goto Buffer Position&hellip;" goto-char :help "Read a number N and go to buffer position N")
-			 (beg-of-buf menu-item "Goto Beginning of Buffer" beginning-of-buffer)
-			 (end-of-buf menu-item "Goto End of Buffer" end-of-buffer)
-			 (separator-tags "&ndash;")
-			 (find-tag menu-item "Find Tag&hellip;" find-tag :help "Find definition of function or variable")
-			 (find-tag-otherw menu-item "Find Tag in Other Window&hellip;" find-tag-other-window :help "Find function/variable definition in another window")
-			 (next-tag menu-item "Find Next Tag" menu-bar-next-tag :enable
-				   (and
-				    (boundp 'tags-location-ring)
-				    (not
-				     (ring-empty-p tags-location-ring)))
-				   :help "Find next function/variable matching last tag name")
-			 (next-tag-otherw menu-item "Next Tag in Other Window" menu-bar-next-tag-other-window :enable
-					  (and
-					   (boundp 'tags-location-ring)
-					   (not
-					    (ring-empty-p tags-location-ring)))
-					  :help "Find next function/variable matching last tag name in another window")
-			 (apropos-tags menu-item "Tags Apropos&hellip;" tags-apropos :help "Find function/variables whose names match regexp")
-			 (separator-tag-file "&ndash;")
-			 (set-tags-name menu-item "Set Tags File Name&hellip;" visit-tags-table :help "Tell Tags commands which tag table file to use")
-			 "Go To"))
-		  (bookmark menu-item "Bookmarks" menu-bar-bookmark-map)
-		  (separator-bookmark "&ndash;")
-		  (fill menu-item "Fill" fill-region :enable
-			(and mark-active
-			     (not buffer-read-only))
-			:help "Fill text in region to fit between left and right margin")
-		  (props menu-item "Text Properties" facemenu-menu)
-		  "Edit")
-	    (options "Options" keymap
-		     (transient-mark-mode menu-item "Highlight Active Region" transient-mark-mode :enable
-					  (not cua-mode)
-					  :help "Make text in active region stand out in color (Transient Mark mode)" :button
-					  (:toggle and
-						   (default-boundp 'transient-mark-mode)
-						   (default-value 'transient-mark-mode)))
-		     (highlight-paren-mode menu-item "Highlight Matching Parentheses" show-paren-mode :help "Highlight matching/mismatched parentheses at cursor (Show Paren mode)" :button
-					   (:toggle and
-						    (default-boundp 'show-paren-mode)
-						    (default-value 'show-paren-mode)))
-		     (highlight-separator "&ndash;")
-		     (line-wrapping menu-item "Line Wrapping in This Buffer"
-				    (keymap
-				     (window-wrap menu-item "Wrap at Window Edge"
-						  #[nil "\203 \300\303!\210\304\n\205 \305\306!\207"
-							[visual-line-mode word-wrap truncate-lines 0 nil toggle-truncate-lines -1]
-							2 nil nil]
-						  :help "Wrap long lines at window edge" :button
-						  (:radio and
-							  (null truncate-lines)
-							  (not
-							   (truncated-partial-width-window-p))
-							  (not word-wrap))
-						  :visible
-						  (menu-bar-menu-frame-live-and-visible-p)
-						  :enable
-						  (not
-						   (truncated-partial-width-window-p)))
-				     (truncate menu-item "Truncate Long Lines"
-					       #[nil "\203 \300\302!\210\303\304\305!\207"
-						     [visual-line-mode word-wrap 0 nil toggle-truncate-lines 1]
-						     2 nil nil]
-					       :help "Truncate long lines at window edge" :button
-					       (:radio or truncate-lines
-						       (truncated-partial-width-window-p))
-					       :visible
-					       (menu-bar-menu-frame-live-and-visible-p)
-					       :enable
-					       (not
-						(truncated-partial-width-window-p)))
-				     (word-wrap menu-item "Word Wrap (Visual Line mode)"
-						#[nil "\204 \300\301!\210\302\303!\207"
-						      [visual-line-mode 1 message "Visual-Line mode enabled"]
-						      2 nil nil]
-						:help "Wrap long lines at word boundaries" :button
-						(:radio and
-							(null truncate-lines)
-							(not
-							 (truncated-partial-width-window-p))
-							word-wrap)
-						:visible
-						(menu-bar-menu-frame-live-and-visible-p))
-				     "Line Wrapping"))
-		     (auto-fill-mode menu-item "Auto Fill in Text Modes" menu-bar-text-mode-auto-fill :help "Automatically fill text while typing (Auto Fill mode)" :button
-				     (:toggle if
-					      (listp text-mode-hook)
-					      (member 'turn-on-auto-fill text-mode-hook)
-					      (eq 'turn-on-auto-fill text-mode-hook)))
-		     (case-fold-search menu-item "Ignore Case for Search" toggle-case-fold-search :help "Ignore letter-case in search commands" :button
-				       (:toggle and
-						(default-boundp 'case-fold-search)
-						(default-value 'case-fold-search)))
-		     (cua-emulation-mode menu-item "Shift movement mark region (<i>CUA</i>)" cua-mode :visible
-					 (and
-					  (boundp 'cua-enable-cua-keys)
-					  (not cua-enable-cua-keys))
-					 :help "Use shifted movement keys to set and extend the region" :button
-					 (:toggle and
-						  (default-boundp 'cua-mode)
-						  (default-value 'cua-mode)))
-		     (cua-mode menu-item "Use <i>CUA</i> Keys (Cut/Paste with /C-/x//C-/c//C-/v)" cua-mode :visible
-			       (or
-				(not
-				 (boundp 'cua-enable-cua-keys))
-				cua-enable-cua-keys)
-			       :help "Use /C-/z//C-/x//C-/c//C-/v keys for undo/cut/copy/paste" :button
-			       (:toggle and
-					(default-boundp 'cua-mode)
-					(default-value 'cua-mode)))
-		     (edit-options-separator "&ndash;")
-		     (uniquify menu-item "Use Directory Names in Buffer Names" toggle-uniquify-buffer-names :help "Uniquify buffer names by adding parent directory names" :button
-			       (:toggle and
-					(default-boundp 'uniquify-buffer-name-style)
-					(default-value 'uniquify-buffer-name-style)))
-		     (save-place menu-item "Save Place in Files between Sessions" toggle-save-place-globally :help "Visit files of previous session when restarting Emacs" :button
-				 (:toggle and
-					  (default-boundp 'save-place)
-					  (default-value 'save-place)))
-		     (cursor-separator "&ndash;")
-		     (blink-cursor-mode menu-item "Blink Cursor" blink-cursor-mode :help "Whether the cursor blinks (Blink Cursor mode)" :button
-					(:toggle and
-						 (default-boundp 'blink-cursor-mode)
-						 (default-value 'blink-cursor-mode)))
-		     (debugger-separator "&ndash;")
-		     (debug-on-error menu-item "Enter Debugger on Error" toggle-debug-on-error :help "Enter Lisp debugger when an error is signaled" :button
-				     (:toggle and
-					      (default-boundp 'debug-on-error)
-					      (default-value 'debug-on-error)))
-		     (debug-on-quit menu-item "Enter Debugger on Quit//C-/g" toggle-debug-on-quit :help "Enter Lisp debugger when /C-/g is pressed" :button
-				    (:toggle and
-					     (default-boundp 'debug-on-quit)
-					     (default-value 'debug-on-quit)))
-		     (mule-separator "&ndash;")
-		     (mule menu-item "Multilingual Environment"
-			   (keymap
-			    (set-language-environment menu-item "Set Language Environment"
-						      (keymap
-						       (Default menu-item "Default" setup-specified-language-environment)
-						       "Set Language Environment"
-						       (Chinese "Chinese" . setup-chinese-environment-map)
-						       (Cyrillic "Cyrillic" . setup-cyrillic-environment-map)
-						       (Indian "Indian" . setup-indian-environment-map)
-						       (Sinhala "Sinhala" . setup-specified-language-environment)
-						       (English "English" . setup-specified-language-environment)
-						       (<i>ASCII</i> "<i>ASCII</i>" . setup-specified-language-environment)
-						       (Ethiopic "Ethiopic" . setup-specified-language-environment)
-						       (European "European" . setup-european-environment-map)
-						       (Turkish "Turkish" . setup-specified-language-environment)
-						       (Greek "Greek" . setup-specified-language-environment)
-						       (Hebrew "Hebrew" . setup-specified-language-environment)
-						       (Windows-1255 "Windows-1255" . setup-specified-language-environment)
-						       (Japanese "Japanese" . setup-specified-language-environment)
-						       (Korean "Korean" . setup-specified-language-environment)
-						       (Lao "Lao" . setup-specified-language-environment)
-						       (TaiViet "TaiViet" . setup-specified-language-environment)
-						       (Thai "Thai" . setup-specified-language-environment)
-						       (Tibetan "Tibetan" . setup-specified-language-environment)
-						       (Vietnamese "Vietnamese" . setup-specified-language-environment)
-						       (<i>IPA</i> "<i>IPA</i>" . setup-specified-language-environment)
-						       (Arabic "Arabic" . setup-specified-language-environment)
-						       (Persian "Persian" . setup-specified-language-environment)
-						       (/UTF-/8 "/UTF-/8" . setup-specified-language-environment)
-						       (Khmer "Khmer" . setup-specified-language-environment)
-						       (Burmese "Burmese" . setup-specified-language-environment)
-						       (Cham "Cham" . setup-specified-language-environment)))
-			    (separator-mule "&ndash;")
-			    (toggle-input-method menu-item "Toggle Input Method" toggle-input-method)
-			    (set-input-method menu-item "Select Input Method&hellip;" set-input-method)
-			    (separator-input-method "&ndash;")
-			    (set-various-coding-system menu-item "Set Coding Systems"
-						       (keymap
-							(universal-coding-system-argument menu-item "For Next Command" universal-coding-system-argument :help "Coding system to be used by next command")
-							(separator-1 "&ndash;")
-							(set-buffer-file-coding-system menu-item "For Saving This Buffer" set-buffer-file-coding-system :help "How to encode this buffer when saved")
-							(revert-buffer-with-coding-system menu-item "For Reverting This File Now" revert-buffer-with-coding-system :enable buffer-file-name :help "Revisit this file immediately using specified coding system")
-							(set-file-name-coding-system menu-item "For File Name" set-file-name-coding-system :help "How to decode/encode file names")
-							(separator-2 "&ndash;")
-							(set-keyboard-coding-system menu-item "For Keyboard" set-keyboard-coding-system :help "How to decode keyboard input")
-							(set-terminal-coding-system menu-item "For Terminal" set-terminal-coding-system :enable
-										    (null
-										     (memq initial-window-system
-											   '(x w32 ns)))
-										    :help "How to encode terminal output")
-							(separator-3 "&ndash;")
-							(set-selection-coding-system menu-item "For X Selections/Clipboard" set-selection-coding-system :visible
-										     (display-selections-p)
-										     :help "How to en/decode data to/from selection/clipboard")
-							(set-next-selection-coding-system menu-item "For Next X Selection" set-next-selection-coding-system :visible
-											  (display-selections-p)
-											  :help "How to en/decode next selection/clipboard operation")
-							(set-buffer-process-coding-system menu-item "For I/O with Subprocess" set-buffer-process-coding-system :visible
-											  (fboundp 'start-process)
-											  :enable
-											  (get-buffer-process
-											   (current-buffer))
-											  :help "How to en/decode I/O from/to subprocess connected to this buffer")
-							"Set Coding System")
-						       :enable
-						       (default-value 'enable-multibyte-characters))
-			    (view-hello-file menu-item "Show Multilingual Sample Text" view-hello-file :enable
-					     (file-readable-p
-					      (expand-file-name "<i>HELLO</i>" data-directory))
-					     :help "Demonstrate various character sets")
-			    (separator-coding-system "&ndash;")
-			    (describe-language-environment menu-item "Describe Language Environment"
-							   (keymap
-							    (Default menu-item "Default" describe-specified-language-support)
-							    "Describe Language Environment"
-							    (Chinese "Chinese" . describe-chinese-environment-map)
-							    (Cyrillic "Cyrillic" . describe-cyrillic-environment-map)
-							    (Indian "Indian" . describe-indian-environment-map)
-							    (Sinhala "Sinhala" . describe-specified-language-support)
-							    (English "English" . describe-specified-language-support)
-							    (<i>ASCII</i> "<i>ASCII</i>" . describe-specified-language-support)
-							    (Ethiopic "Ethiopic" . describe-specified-language-support)
-							    (European "European" . describe-european-environment-map)
-							    (Turkish "Turkish" . describe-specified-language-support)
-							    (Greek "Greek" . describe-specified-language-support)
-							    (Hebrew "Hebrew" . describe-specified-language-support)
-							    (Windows-1255 "Windows-1255" . describe-specified-language-support)
-							    (Japanese "Japanese" . describe-specified-language-support)
-							    (Korean "Korean" . describe-specified-language-support)
-							    (Lao "Lao" . describe-specified-language-support)
-							    (TaiViet "TaiViet" . describe-specified-language-support)
-							    (Thai "Thai" . describe-specified-language-support)
-							    (Tibetan "Tibetan" . describe-specified-language-support)
-							    (Vietnamese "Vietnamese" . describe-specified-language-support)
-							    (<i>IPA</i> "<i>IPA</i>" . describe-specified-language-support)
-							    (Arabic "Arabic" . describe-specified-language-support)
-							    (Persian "Persian" . describe-specified-language-support)
-							    (/UTF-/8 "/UTF-/8" . describe-specified-language-support)
-							    (Khmer "Khmer" . describe-specified-language-support)
-							    (Burmese "Burmese" . describe-specified-language-support))
-							   :help "Show multilingual settings for a specific language")
-			    (describe-input-method menu-item "Describe Input Method" describe-input-method)
-			    (describe-coding-system menu-item "Describe Coding System&hellip;" describe-coding-system)
-			    (list-character-sets menu-item "List Character Sets" list-character-sets :help "Show table of available character sets")
-			    (mule-diag menu-item "Show All Multilingual Settings" mule-diag :help "Display multilingual environment settings")
-			    "Mule (Multilingual Environment)"))
-		     (showhide-separator "&ndash;")
-		     (showhide menu-item "Show/Hide"
-			       (keymap
-				(showhide-tool-bar menu-item "Tool-bar" toggle-tool-bar-mode-from-frame :help "Turn tool-bar on/off" :visible
-						   (display-graphic-p)
-						   :button
-						   (:toggle menu-bar-positive-p
-							    (frame-parameter
-							     (menu-bar-frame-for-menubar)
-							     'tool-bar-lines)))
-				(menu-bar-mode menu-item "Menu-bar" toggle-menu-bar-mode-from-frame :help "Turn menu-bar on/off" :button
-					       (:toggle menu-bar-positive-p
-							(frame-parameter
-							 (menu-bar-frame-for-menubar)
-							 'menu-bar-lines)))
-				(showhide-tooltip-mode menu-item "Tooltips" tooltip-mode :help "Turn tooltips on/off" :visible
-						       (and
-							(display-graphic-p)
-							(fboundp 'x-show-tip))
-						       :button
-						       (:toggle . tooltip-mode))
-				(showhide-scroll-bar menu-item "Scroll-bar"
-						     (keymap
-						      (none menu-item "None" menu-bar-no-scroll-bar :help "Turn off scroll-bar" :visible
-							    (display-graphic-p)
-							    :button
-							    (:radio eq
-								    (cdr
-								     (assq 'vertical-scroll-bars
-									   (frame-parameters)))
-								    nil))
-						      (left menu-item "On the Left" menu-bar-left-scroll-bar :help "Scroll-bar on the left side" :visible
-							    (display-graphic-p)
-							    :button
-							    (:radio eq
-								    (cdr
-								     (assq 'vertical-scroll-bars
-									   (frame-parameters)))
-								    'left))
-						      (right menu-item "On the Right" menu-bar-right-scroll-bar :help "Scroll-bar on the right side" :visible
-							     (display-graphic-p)
-							     :button
-							     (:radio eq
-								     (cdr
-								      (assq 'vertical-scroll-bars
-									    (frame-parameters)))
-								     'right))
-						      "Scroll-bar")
-						     :visible
-						     (display-graphic-p))
-				(showhide-fringe menu-item "Fringe"
-						 (keymap
-						  (none menu-item "None" menu-bar-showhide-fringe-menu-customize-disable :help "Turn off fringe" :visible
-							(display-graphic-p)
-							:button
-							(:radio eq fringe-mode 0))
-						  (left menu-item "On the Left" menu-bar-showhide-fringe-menu-customize-left :help "Fringe only on the left side" :visible
-							(display-graphic-p)
-							:button
-							(:radio equal fringe-mode
-								'(nil . 0)))
-						  (right menu-item "On the Right" menu-bar-showhide-fringe-menu-customize-right :help "Fringe only on the right side" :visible
-							 (display-graphic-p)
-							 :button
-							 (:radio equal fringe-mode
-								 '(0)))
-						  (default menu-item "Default" menu-bar-showhide-fringe-menu-customize-reset :help "Default width fringe on both left and right side" :visible
-						    (display-graphic-p)
-						    :button
-						    (:radio eq fringe-mode nil))
-						  (customize menu-item "Customize Fringe" menu-bar-showhide-fringe-menu-customize :help "Detailed customization of fringe" :visible
-							     (display-graphic-p))
-						  (indicate-empty-lines menu-item "Empty Line Indicators" toggle-indicate-empty-lines :help "Indicate trailing empty lines in fringe, globally" :button
-									(:toggle and
-										 (default-boundp 'indicate-empty-lines)
-										 (default-value 'indicate-empty-lines)))
-						  (showhide-fringe-ind menu-item "Buffer Boundaries"
-								       (keymap
-									(none menu-item "No Indicators" menu-bar-showhide-fringe-ind-none :help "Hide all buffer boundary indicators and arrows" :visible
-									      (display-graphic-p)
-									      :button
-									      (:radio eq indicate-buffer-boundaries nil))
-									(left menu-item "In Left Fringe" menu-bar-showhide-fringe-ind-left :help "Show buffer boundaries and arrows in left fringe" :visible
-									      (display-graphic-p)
-									      :button
-									      (:radio eq indicate-buffer-boundaries 'left))
-									(right menu-item "In Right Fringe" menu-bar-showhide-fringe-ind-right :help "Show buffer boundaries and arrows in right fringe" :visible
-									       (display-graphic-p)
-									       :button
-									       (:radio eq indicate-buffer-boundaries 'right))
-									(box menu-item "Opposite, No Arrows" menu-bar-showhide-fringe-ind-box :help "Show top/bottom indicators in opposite fringes, no arrows" :visible
-									     (display-graphic-p)
-									     :button
-									     (:radio equal indicate-buffer-boundaries
-										     '((top . left)
-										       (bottom . right))))
-									(mixed menu-item "Opposite, Arrows Right" menu-bar-showhide-fringe-ind-mixed :help "Show top/bottom indicators in opposite fringes, arrows in right" :visible
-									       (display-graphic-p)
-									       :button
-									       (:radio equal indicate-buffer-boundaries
-										       '((t . right)
-											 (top . left))))
-									(customize menu-item "Other (Customize)" menu-bar-showhide-fringe-ind-customize :help "Additional choices available through Custom buffer" :visible
-										   (display-graphic-p)
-										   :button
-										   (:radio not
-											   (member indicate-buffer-boundaries
-												   '(nil left right
-													 ((top . left)
-													  (bottom . right))
-													 ((t . right)
-													  (top . left))))))
-									"Buffer boundaries")
-								       :visible
-								       (display-graphic-p)
-								       :help "Indicate buffer boundaries in fringe")
-						  "Fringe")
-						 :visible
-						 (display-graphic-p))
-				(showhide-speedbar menu-item "Speedbar" speedbar-frame-mode :help "Display a Speedbar quick-navigation frame" :button
-						   (:toggle and
-							    (boundp 'speedbar-frame)
-							    (frame-live-p
-							     (symbol-value 'speedbar-frame))
-							    (frame-visible-p
-							     (symbol-value 'speedbar-frame))))
-				(datetime-separator "&ndash;")
-				(showhide-date-time menu-item "Time, Load and Mail" display-time-mode :help "Display time, system load averages and mail status in mode line" :button
-						    (:toggle and
-							     (default-boundp 'display-time-mode)
-							     (default-value 'display-time-mode)))
-				(showhide-battery menu-item "Battery Status" display-battery-mode :help "Display battery status information in mode line" :button
-						  (:toggle and
-							   (default-boundp 'display-battery-mode)
-							   (default-value 'display-battery-mode)))
-				(linecolumn-separator "&ndash;")
-				(size-indication-mode menu-item "Size Indication" size-indication-mode :help "Show the size of the buffer in the mode line" :button
-						      (:toggle and
-							       (default-boundp 'size-indication-mode)
-							       (default-value 'size-indication-mode)))
-				(line-number-mode menu-item "Line Numbers" line-number-mode :help "Show the current line number in the mode line" :button
-						  (:toggle and
-							   (default-boundp 'line-number-mode)
-							   (default-value 'line-number-mode)))
-				(column-number-mode menu-item "Column Numbers" column-number-mode :help "Show the current column number in the mode line" :button
-						    (:toggle and
-							     (default-boundp 'column-number-mode)
-							     (default-value 'column-number-mode)))
-				"Show/Hide"))
-		     (menu-system-font menu-item "Use System Font" toggle-use-system-font :help "Use the monospaced font defined by the system" :button
-				       (:toggle and
-						(default-boundp 'font-use-system-font)
-						(default-value 'font-use-system-font)))
-		     (menu-set-font menu-item "Set Default Font&hellip;" menu-set-font :visible
-				    (display-multi-font-p)
-				    :help "Select a default font")
-		     (custom-separator "&ndash;")
-		     (save menu-item "Save Options" menu-bar-options-save :help "Save options set from the menu above")
-		     (package menu-item "Manage Emacs Packages" package-list-packages :help "Install or uninstall additional Emacs packages")
-		     (customize menu-item "Customize Emacs"
-				(keymap
-				 (customize-themes menu-item "Custom Themes" customize-themes :help "Choose a pre-defined customization theme")
-				 (customize menu-item "Top-level Customization Group" customize :help "The master group called `Emacs'")
-				 (customize-browse menu-item "Browse Customization Groups" customize-browse :help "Browse all customization groups")
-				 (separator-3 "&ndash;")
-				 (customize-saved menu-item "Saved Options" customize-saved :help "Customize previously saved options")
-				 (customize-changed-options menu-item "New Options&hellip;" customize-changed-options :help "Options added or changed in recent Emacs versions")
-				 (separator-2 "&ndash;")
-				 (customize-option menu-item "Specific Option&hellip;" customize-option :help "Customize value of specific option")
-				 (customize-face menu-item "Specific Face&hellip;" customize-face :help "Customize attributes of specific face")
-				 (customize-group menu-item "Specific Group&hellip;" customize-group :help "Customize settings of specific group")
-				 (separator-1 "&ndash;")
-				 (customize-apropos menu-item "All Settings Matching&hellip;" customize-apropos :help "Browse customizable settings matching a regexp or word list")
-				 (customize-apropos-options menu-item "Options Matching&hellip;" customize-apropos-options :help "Browse options matching a regexp or word list")
-				 (customize-apropos-faces menu-item "Faces Matching&hellip;" customize-apropos-faces :help "Browse faces matching a regexp or word list")
-				 "Customize"))
-		     "Options")
-	    (buffer "Buffers" keymap "Select Buffer"
-		    [("<b>scratch</b>  "
-		      (nil)
-		      lambda nil
-		      (interactive)
-		      (funcall menu-bar-select-buffer-function #&lt;buffer <b>scratch*&gt;)) 		     ("*Messages</b>  *"
-		      (nil)
-		      lambda nil
-		      (interactive)
-		      (funcall menu-bar-select-buffer-function #&lt;buffer *Messages*&gt;))]
-		    (command-separator "&ndash;")
-		    (next-buffer menu-item "Next Buffer" next-buffer :help "Switch to the \"next\" buffer in a cyclic order")
-		    (previous-buffer menu-item "Previous Buffer" previous-buffer :help "Switch to the \"previous\" buffer in a cyclic order")
-		    (select-named-buffer menu-item "Select Named Buffer&hellip;" switch-to-buffer :help "Prompt for a buffer name, and select that buffer in the current window")
-		    (list-all-buffers menu-item "List All Buffers" list-buffers :help "Pop up a window listing all Emacs buffers"))
-	    (tools "Tools" keymap
-		   (grep menu-item "Search Files (Grep)&hellip;" grep :help "Search files for strings or regexps (with Grep)")
-		   (compile menu-item "Compile&hellip;" compile :help "Invoke compiler or Make, view compilation errors")
-		   (shell menu-item "Shell Command&hellip;" shell-command :help "Invoke a shell command and catch its output")
-		   (shell-on-region menu-item "Shell Command on Region&hellip;" shell-command-on-region :enable mark-active :help "Pass marked region to a shell command")
-		   (gdb menu-item "Debugger (<i>GDB</i>)&hellip;" gdb :help "Debug a program from within Emacs with <i>GDB</i>")
-		   (ede menu-item "Project support (<i>EDE</i>)" global-ede-mode :help "Toggle the Emacs Development Environment (Global <i>EDE</i> mode)" :button
-			(:toggle bound-and-true-p global-ede-mode))
-		   (semantic menu-item "Source Code Parsers (Semantic)" semantic-mode :help "Toggle automatic parsing in source code buffers (Semantic mode)" :button
-			     (:toggle bound-and-true-p semantic-mode))
-		   (separator-prog "&ndash;")
-		   (spell menu-item "Spell Checking" ispell-menu-map)
-		   (separator-spell "&ndash;")
-		   (compare menu-item "Compare (Ediff)" menu-bar-ediff-menu)
-		   (ediff-merge menu-item "Merge" menu-bar-ediff-merge-menu)
-		   (epatch menu-item "Apply Patch" menu-bar-epatch-menu)
-		   (separator-compare "&ndash;")
-		   (vc menu-item "Version Control" vc-menu-map :filter vc-menu-map-filter)
-		   (separator-vc "&ndash;")
-		   (gnus menu-item "Read Net News (Gnus)" gnus :help "Read network news groups")
-		   (rmail menu-item
-			  (format "Read Mail (with %s)"
-				  (read-mail-item-name))
-			  menu-bar-read-mail :visible
-			  (and read-mail-command
-			       (not
-				(eq read-mail-command 'ignore)))
-			  :help "Read your mail and reply to it")
-		   (compose-mail menu-item
-				 (format "Send Mail (with %s)"
-					 (send-mail-item-name))
-				 compose-mail :visible
-				 (and mail-user-agent
-				      (not
-				       (eq mail-user-agent 'ignore)))
-				 :help "Send a mail message")
-		   (directory-search menu-item "Directory Search" eudc-tools-menu)
-		   (separator-net "&ndash;")
-		   (calendar menu-item "Calendar" calendar :help "Invoke the Emacs built-in calendar")
-		   (calc menu-item "Programmable Calculator" calc :help "Invoke the Emacs built-in full scientific calculator")
-		   (simple-calculator menu-item "Simple Calculator" calculator :help "Invoke the Emacs built-in quick calculator")
-		   (separator-encryption-decryption "&ndash;")
-		   (encryption-decryption menu-item "Encryption/Decryption"
-					  (keymap
-					   (decrypt-file menu-item "Decrypt File&hellip;" epa-decrypt-file :help "Decrypt a file")
-					   (encrypt-file menu-item "Encrypt File&hellip;" epa-encrypt-file :help "Encrypt a file")
-					   (verify-file menu-item "Verify File&hellip;" epa-verify-file :help "Verify digital signature of a file")
-					   (sign-file menu-item "Sign File&hellip;" epa-sign-file :help "Create digital signature of a file")
-					   (separator-file "&ndash;")
-					   (decrypt-region menu-item "Decrypt Region" epa-decrypt-region :help "Decrypt the current region")
-					   (encrypt-region menu-item "Encrypt Region" epa-encrypt-region :help "Encrypt the current region")
-					   (verify-region menu-item "Verify Region" epa-verify-region :help "Verify digital signature of the current region")
-					   (sign-region menu-item "Sign Region" epa-sign-region :help "Create digital signature of the current region")
-					   (separator-keys "&ndash;")
-					   (list-keys menu-item "List Keys" epa-list-keys :help "Browse your public keyring")
-					   (import-keys menu-item "Import Keys from File&hellip;" epa-import-keys :help "Import public keys from a file")
-					   (import-keys-region menu-item "Import Keys from Region" epa-import-keys-region :help "Import public keys from the current region")
-					   (export-keys menu-item "Export Keys" epa-export-keys :help "Export public keys to a file")
-					   (insert-keys menu-item "Insert Keys" epa-insert-keys :help "Insert public keys after the current point")
-					   "Encryption/Decryption"))
-		   (separator-games "&ndash;")
-		   (games menu-item "Games"
-			  (keymap
-			   (5x5 menu-item "5x5" 5x5 :help "Fill in all the squares on a 5x5 board")
-			   (adventure menu-item "Adventure" dunnet :help "Dunnet, a text Adventure game for Emacs")
-			   (black-box menu-item "Blackbox" blackbox :help "Find balls in a black box by shooting rays")
-			   (bubbles menu-item "Bubbles" bubbles :help "Remove all bubbles using the fewest moves")
-			   (gomoku menu-item "Gomoku" gomoku :help "Mark 5 contiguous squares (like tic-tac-toe)")
-			   (hanoi menu-item "Towers of Hanoi" hanoi :help "Watch Towers-of-Hanoi puzzle solved by Emacs")
-			   (land menu-item "Landmark" landmark :help "Watch a neural-network robot learn landmarks")
-			   (life menu-item "Life" life :help "Watch how John Conway's cellular automaton evolves")
-			   (mult menu-item "Multiplication Puzzle" mpuz :help "Exercise brain with multiplication")
-			   (pong menu-item "Pong" pong :help "Bounce the ball to your opponent")
-			   (snake menu-item "Snake" snake :help "Move snake around avoiding collisions")
-			   (solitaire menu-item "Solitaire" solitaire :help "Get rid of all the stones")
-			   (tetris menu-item "Tetris" tetris :help "Falling blocks game")
-			   (zone menu-item "Zone Out" zone :help "Play tricks with Emacs display when Emacs is idle")
-			   "Games"))
-		   "Tools")
-	    (mouse-1 . tmm-menubar-mouse)
-	    (help-menu "Help" keymap
-		       (emacs-tutorial menu-item "Emacs Tutorial" help-with-tutorial :help "Learn how to use Emacs")
-		       (emacs-tutorial-language-specific menu-item "Emacs Tutorial (choose language)&hellip;" help-with-tutorial-spec-language :help "Learn how to use Emacs (choose a language)")
-		       (emacs-faq menu-item "Emacs <i>FAQ</i>" view-emacs-/FAQ/ :help "Frequently asked (and answered) questions about Emacs")
-		       (emacs-news menu-item "Emacs News" view-emacs-news :help "New features of this version")
-		       (emacs-known-problems menu-item "Emacs Known Problems" view-emacs-problems :help "Read about known problems with Emacs")
-		       (emacs-manual-bug menu-item "How to Report a Bug" info-emacs-bug :help "Read about how to report an Emacs bug")
-		       (send-emacs-bug-report menu-item "Send Bug Report&hellip;" report-emacs-bug :help "Send e-mail to Emacs maintainers")
-		       (emacs-psychotherapist menu-item "Emacs Psychotherapist" doctor :help "Our doctor will help you feel better")
-		       (sep1 "&ndash;")
-		       (search-documentation menu-item "Search Documentation"
-					     (keymap
-					      (emacs-terminology menu-item "Emacs Terminology" search-emacs-glossary :help "Display the Glossary section of the Emacs manual")
-					      (lookup-subject-in-emacs-manual menu-item "Look Up Subject in User Manual&hellip;" emacs-index-search :help "Find description of a subject in Emacs User manual")
-					      (lookup-subject-in-elisp-manual menu-item "Look Up Subject in /EL/isp Manual&hellip;" elisp-index-search :help "Find description of a subject in Emacs Lisp manual")
-					      (lookup-key-in-manual menu-item "Look Up Key in User Manual&hellip;" Info-goto-emacs-key-command-node :help "Display manual section that describes a key")
-					      (lookup-command-in-manual menu-item "Look Up Command in User Manual&hellip;" Info-goto-emacs-command-node :help "Display manual section that describes a command")
-					      (sep1 "&ndash;")
-					      (find-commands-by-name menu-item "Find Commands by Name&hellip;" apropos-command :help "Find commands whose names match a regexp")
-					      (find-options-by-name menu-item "Find Options by Name&hellip;" apropos-variable :help "Find variables whose names match a regexp")
-					      (find-option-by-value menu-item "Find Options by Value&hellip;" apropos-value :help "Find variables whose values match a regexp")
-					      (find-any-object-by-name menu-item "Find Any Object by Name&hellip;" apropos :help "Find symbols of any kind whose names match a regexp")
-					      (search-documentation-strings menu-item "Search Documentation Strings&hellip;" apropos-documentation :help "Find functions and variables whose doc strings match a regexp")
-					      "Search Documentation"))
-		       (describe menu-item "Describe"
-				 (keymap
-				  (describe-mode menu-item "Describe Buffer Modes" describe-mode :help "Describe this buffer's major and minor mode")
-				  (describe-key-1 menu-item "Describe Key or Mouse Operation&hellip;" describe-key :help "Display documentation of command bound to a key, a click, or a menu-item")
-				  (describe-function menu-item "Describe Function&hellip;" describe-function :help "Display documentation of function/command")
-				  (describe-variable menu-item "Describe Variable&hellip;" describe-variable :help "Display documentation of variable/option")
-				  (describe-face menu-item "Describe Face&hellip;" describe-face :help "Display the properties of a face")
-				  (describe-package menu-item "Describe Package&hellip;" describe-package :help "Display documentation of a Lisp package")
-				  (describe-current-display-table menu-item "Describe Display Table" describe-current-display-table :help "Describe the current display table")
-				  (list-keybindings menu-item "List Key Bindings" describe-bindings :help "Display all current key bindings (keyboard shortcuts)")
-				  (separator-desc-mule "&ndash;")
-				  (describe-language-environment menu-item "Describe Language Environment"
-								 (keymap
-								  (Default menu-item "Default" describe-specified-language-support)
-								  "Describe Language Environment"
-								  (Chinese "Chinese" . describe-chinese-environment-map)
-								  (Cyrillic "Cyrillic" . describe-cyrillic-environment-map)
-								  (Indian "Indian" . describe-indian-environment-map)
-								  (Sinhala "Sinhala" . describe-specified-language-support)
-								  (English "English" . describe-specified-language-support)
-								  (<i>ASCII</i> "<i>ASCII</i>" . describe-specified-language-support)
-								  (Ethiopic "Ethiopic" . describe-specified-language-support)
-								  (European "European" . describe-european-environment-map)
-								  (Turkish "Turkish" . describe-specified-language-support)
-								  (Greek "Greek" . describe-specified-language-support)
-								  (Hebrew "Hebrew" . describe-specified-language-support)
-								  (Windows-1255 "Windows-1255" . describe-specified-language-support)
-								  (Japanese "Japanese" . describe-specified-language-support)
-								  (Korean "Korean" . describe-specified-language-support)
-								  (Lao "Lao" . describe-specified-language-support)
-								  (TaiViet "TaiViet" . describe-specified-language-support)
-								  (Thai "Thai" . describe-specified-language-support)
-								  (Tibetan "Tibetan" . describe-specified-language-support)
-								  (Vietnamese "Vietnamese" . describe-specified-language-support)
-								  (<i>IPA</i> "<i>IPA</i>" . describe-specified-language-support)
-								  (Arabic "Arabic" . describe-specified-language-support)
-								  (Persian "Persian" . describe-specified-language-support)
-								  (/UTF-/8 "/UTF-/8" . describe-specified-language-support)
-								  (Khmer "Khmer" . describe-specified-language-support)
-								  (Burmese "Burmese" . describe-specified-language-support)))
-				  (describe-input-method menu-item "Describe Input Method&hellip;" describe-input-method :visible
-							 (default-value 'enable-multibyte-characters)
-							 :help "Keyboard layout for specific input method")
-				  (describe-coding-system menu-item "Describe Coding System&hellip;" describe-coding-system :visible
-							  (default-value 'enable-multibyte-characters))
-				  (describe-coding-system-briefly menu-item "Describe Coding System (Briefly)" describe-current-coding-system-briefly :visible
-								  (default-value 'enable-multibyte-characters))
-				  (mule-diag menu-item "Show All of Mule Status" mule-diag :visible
-					     (default-value 'enable-multibyte-characters)
-					     :help "Display multilingual environment settings")
-				  "Describe"))
-		       (emacs-manual menu-item "Read the Emacs Manual" info-emacs-manual :help "Full documentation of Emacs features")
-		       (more-manuals menu-item "More Manuals"
-				     (keymap
-				      (emacs-lisp-intro menu-item "Introduction to Emacs Lisp" menu-bar-read-lispintro :help "Read the Introduction to Emacs Lisp Programming")
-				      (emacs-lisp-reference menu-item "Emacs Lisp Reference" menu-bar-read-lispref :help "Read the Emacs Lisp Reference manual")
-				      (other-manuals menu-item "All Other Manuals (Info)" Info-directory :help "Read any of the installed manuals")
-				      (lookup-subject-in-all-manuals menu-item "Lookup Subject in all Manuals&hellip;" info-apropos :help "Find description of a subject in all installed manuals")
-				      (order-emacs-manuals menu-item "Ordering Manuals" view-order-manuals :help "How to order manuals from the Free Software Foundation")
-				      (sep2 "&ndash;")
-				      (man menu-item "Read Man Page&hellip;" manual-entry :help "Man-page docs for external commands and libraries")
-				      "More Manuals"))
-		       (find-emacs-packages menu-item "Search Built-in Packages" finder-by-keyword :help "Find built-in packages and features by keyword")
-		       (external-packages menu-item "Finding Extra Packages" menu-bar-help-extra-packages :help "Lisp packages distributed separately for use in Emacs")
-		       (sep2 "&ndash;")
-		       (getting-new-versions menu-item "Getting New Versions" describe-distribution :help "How to get the latest version of Emacs")
-		       (describe-copying menu-item "Copying Conditions" describe-copying :help "Show the Emacs license (<i>GPL</i>)")
-		       (describe-no-warranty menu-item "(Non)Warranty" describe-no-warranty :help "Explain that Emacs has <i>NO</i> <i>WARRANTY</i>")
-		       (sep4 "&ndash;")
-		       (about-emacs menu-item "About Emacs" about-emacs :help "Display version number, copyright info, and basic help")
-		       (about-gnu-project menu-item "About <i>GNU</i>" describe-gnu-project :help "About the <i>GNU</i> System, <i>GNU</i> Project, and /GNU//Linux")
-		       "Help"))
-  (f4 . kmacro-end-or-call-macro)
-  (f3 . kmacro-start-macro-or-insert-counter)
-  (/C-M-/end . end-of-defun)
-  (/C-M-/home . beginning-of-defun)
-  (/C-M-/down . down-list)
-  (/C-M-/up . backward-up-list)
-  (/C-M-/right . forward-sexp)
-  (/C-M-/left . backward-sexp)
-  (/S-/delete . kill-region)
-  (/C-/backspace . backward-kill-word)
-  (/C-/delete . kill-word)
-  (/C-/left . left-word)
-  (/C-/right . right-word)
-  (/M-/left . left-word)
-  (/M-/right . right-word)
-  (mouse-movement . ignore)
-  (deletechar . delete-forward-char)
-  (deleteline . kill-line)
-  (insertline . open-line)
-  (open . find-file)
-  (again . repeat-complex-command)
-  (redo . repeat-complex-command)
-  (undo . undo)
-  (/S-/insertchar . yank)
-  (/C-/insertchar . kill-ring-save)
-  (insertchar . overwrite-mode)
-  (/S-/insert . yank)
-  (/C-/insert . kill-ring-save)
-  (insert . overwrite-mode)
-  (execute . execute-extended-command)
-  (/M-/begin . beginning-of-buffer-other-window)
-  (begin . beginning-of-buffer)
-  (/M-/end . end-of-buffer-other-window)
-  (/C-/end . end-of-buffer)
-  (end . move-end-of-line)
-  (/M-/prior . scroll-other-window-down)
-  (/M-/next . scroll-other-window)
-  (/C-/next . scroll-left)
-  (/C-/prior . scroll-right)
-  (/C-/down . forward-paragraph)
-  (/C-/up . backward-paragraph)
-  (next . scroll-up-command)
-  (prior . scroll-down-command)
-  (down . next-line)
-  (right . right-char)
-  (up . previous-line)
-  (left . left-char)
-  (/M-/home . beginning-of-buffer-other-window)
-  (/C-/home . beginning-of-buffer)
-  (home . move-beginning-of-line)
-  (/C-S-/backspace . kill-whole-line)
-  (find . search-forward)
-  (menu . execute-extended-command)
-  (67108896 . set-mark-command)
-  (67108909 . negative-argument)
-  (67108921 . digit-argument)
-  (67108920 . digit-argument)
-  (67108919 . digit-argument)
-  (67108918 . digit-argument)
-  (67108917 . digit-argument)
-  (67108916 . digit-argument)
-  (67108915 . digit-argument)
-  (67108914 . digit-argument)
-  (67108913 . digit-argument)
-  (67108912 . digit-argument)
-  (/XF/86Back . previous-buffer)
-  (/XF/86Forward . next-buffer)
-  (67108911 . undo)
-  (make-frame-visible . ignore-event)
-  (iconify-frame . ignore-event)
-  (delete-frame . handle-delete-frame)
-  (select-window . handle-select-window)
-  (switch-frame . handle-switch-frame)))
-'.
+expansion is possible, defer to <code>yas-fallback-behaviour</code> (which see).
 </p>
 <p>
 Optional argument <i>FIELD</i> is for non-interactive use and is an
@@ -2515,15 +893,7 @@ nil.
 <h4 id="yas-snippet-dirs"><a name="sec-1-2-15" id="sec-1-2-15"></a><code>yas-snippet-dirs</code> ()</h4>
 <div class="outline-text-4" id="text-yas-snippet-dirs">
 
-<p>Directory or list of snippet dirs for each major mode.
-</p>
-<p>
-The directory where user-created snippets are to be stored.  Can
-also be a list of directories.  In that case, when used for
-bulk (re)loading of snippets (at startup or via
-<a href="#yas-reload-all"><code>yas-reload-all</code></a>), directories appearing earlier in the list
-shadow other dir's snippets.  Also, the first directory is taken
-as the default for storing the user's new snippets.
+<p>Return <a href="#yas-snippet-dirs"><code>yas-snippet-dirs</code></a> (which see) as a list.
 </p></div>
 </div>
 
@@ -2540,7 +910,7 @@ as the default for storing the user's new snippets.
 <h4 id="yas-active-keys"><a name="sec-1-3-1" id="sec-1-3-1"></a><code>yas-active-keys</code> ()</h4>
 <div class="outline-text-4" id="text-yas-active-keys">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-active-keys</code>
+<p>Return all active trigger keys for current buffer and point.
 </p>
 </div>
 
@@ -2550,7 +920,10 @@ as the default for storing the user's new snippets.
 <h4 id="yas-hippie-try-expand"><a name="sec-1-3-2" id="sec-1-3-2"></a><code>yas-hippie-try-expand</code> (first-time?)</h4>
 <div class="outline-text-4" id="text-yas-hippie-try-expand">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-hippie-try-expand</code>
+<p>Integrate with hippie expand.
+</p>
+<p>
+Just put this function in <code>hippie-expand-try-functions-list</code>.
 </p>
 </div>
 
@@ -2560,7 +933,12 @@ as the default for storing the user's new snippets.
 <h4 id="yas-define-condition-cache"><a name="sec-1-3-3" id="sec-1-3-3"></a><code>yas-define-condition-cache</code> (func doc &amp;rest body)</h4>
 <div class="outline-text-4" id="text-yas-define-condition-cache">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-define-condition-cache</code>
+<p>Define a function <i>FUNC</i> with doc <i>DOC</i> and body <i>BODY</i>.
+<i>BODY</i> is executed at most once every snippet expansion attempt, to check
+expansion conditions.
+</p>
+<p>
+It doesn't make any sense to call <i>FUNC</i> programatically.
 </p>
 </div>
 
@@ -2580,7 +958,7 @@ as the default for storing the user's new snippets.
 <h4 id="yas-inside-string"><a name="sec-1-3-5" id="sec-1-3-5"></a><code>yas-inside-string</code> ()</h4>
 <div class="outline-text-4" id="text-yas-inside-string">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-inside-string</code>
+<p>Return non-nil if the point is inside a string according to font-lock.
 </p>
 </div>
 
@@ -2600,7 +978,7 @@ as the default for storing the user's new snippets.
 <h4 id="yas-selected-text"><a name="sec-1-3-7" id="sec-1-3-7"></a><code>yas-selected-text</code> ()</h4>
 <div class="outline-text-4" id="text-yas-selected-text">
 
-<p>The selected region deleted on the last snippet expansion.
+<p>Return <a href="#yas-selected-text"><code>yas-selected-text</code></a> if that exists and is non-empty, else nil.
 </p>
 </div>
 
@@ -2610,7 +988,7 @@ as the default for storing the user's new snippets.
 <h4 id="yas-text"><a name="sec-1-3-8" id="sec-1-3-8"></a><code>yas-text</code> ()</h4>
 <div class="outline-text-4" id="text-yas-text">
 
-<p>Contains current field text.
+<p>Return <a href="#yas-text"><code>yas-text</code></a> if that exists and is non-empty, else nil.
 </p>
 </div>
 
@@ -2620,7 +998,10 @@ as the default for storing the user's new snippets.
 <h4 id="yas-field-value"><a name="sec-1-3-9" id="sec-1-3-9"></a><code>yas-field-value</code> (number)</h4>
 <div class="outline-text-4" id="text-yas-field-value">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-field-value</code>
+<p>Get the string for field with <i>NUMBER</i>.
+</p>
+<p>
+Use this in primary and mirror transformations to tget.
 </p>
 </div>
 
@@ -2630,7 +1011,10 @@ as the default for storing the user's new snippets.
 <h4 id="yas-verify-value"><a name="sec-1-3-10" id="sec-1-3-10"></a><code>yas-verify-value</code> (possibilities)</h4>
 <div class="outline-text-4" id="text-yas-verify-value">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-verify-value</code>
+<p>Verify that the current field value is in <i>POSSIBILITIES</i>.
+</p>
+<p>
+Otherwise throw exception.
 </p>
 </div>
 
@@ -2640,7 +1024,7 @@ as the default for storing the user's new snippets.
 <h4 id="yas-throw"><a name="sec-1-3-11" id="sec-1-3-11"></a><code>yas-throw</code> (text)</h4>
 <div class="outline-text-4" id="text-yas-throw">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-throw</code>
+<p>Throw a yas&ndash;exception with <i>TEXT</i> as the reason.
 </p>
 </div>
 
@@ -2660,7 +1044,10 @@ as the default for storing the user's new snippets.
 <h4 id="yas-choose-value"><a name="sec-1-3-13" id="sec-1-3-13"></a><code>yas-choose-value</code> (&amp;rest possibilities)</h4>
 <div class="outline-text-4" id="text-yas-choose-value">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-choose-value</code>
+<p>Prompt for a string in <i>POSSIBILITIES</i> and return it.
+</p>
+<p>
+The last element of <i>POSSIBILITIES</i> may be a list of strings.
 </p>
 </div>
 
@@ -2670,7 +1057,11 @@ as the default for storing the user's new snippets.
 <h4 id="yas-substr"><a name="sec-1-3-14" id="sec-1-3-14"></a><code>yas-substr</code> (str pattern &amp;optional subexp)</h4>
 <div class="outline-text-4" id="text-yas-substr">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-substr</code>
+<p>Search <i>PATTERN</i> in <i>STR</i> and return /SUBEXP/th match.
+</p>
+<p>
+If found, the content of subexp group <i>SUBEXP</i> (default 0) is
+  returned, or else the original <i>STR</i> will be returned.
 </p>
 </div>
 
@@ -2680,7 +1071,7 @@ as the default for storing the user's new snippets.
 <h4 id="yas-text"><a name="sec-1-3-15" id="sec-1-3-15"></a><code>yas-text</code> ()</h4>
 <div class="outline-text-4" id="text-yas-text">
 
-<p>Contains current field text.
+<p>Return <a href="#yas-text"><code>yas-text</code></a> if that exists and is non-empty, else nil.
 </p>
 </div>
 
@@ -2690,7 +1081,33 @@ as the default for storing the user's new snippets.
 <h4 id="yas-define-menu"><a name="sec-1-3-16" id="sec-1-3-16"></a><code>yas-define-menu</code> (mode menu &amp;optional omit-items)</h4>
 <div class="outline-text-4" id="text-yas-define-menu">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-define-menu</code>
+<p>Define a snippet menu for <i>MODE</i> according to <i>MENU</i>, omitting <i>OMIT-ITEMS</i>.
+</p>
+<p>
+<i>MENU</i> is a list, its elements can be:
+</p>
+<ul>
+<li>(yas-item <i>UUID</i>) : Creates an entry the snippet identified with
+  <i>UUID</i>.  The menu entry for a snippet thus identified is
+  permanent, i.e. it will never move (be reordered) in the menu.
+
+</li>
+<li>(yas-separator) : Creates a separator
+
+</li>
+<li>(yas-submenu <i>NAME</i> <i>SUBMENU</i>) : Creates a submenu with <i>NAME</i>,
+  <i>SUBMENU</i> has the same form as <i>MENU</i>.  <i>NAME</i> is also added to the
+  list of groups of the snippets defined thereafter.
+</li>
+</ul>
+
+
+<p>
+<i>OMIT-ITEMS</i> is a list of snippet uuid's that will always be
+omitted from <i>MODE</i>'s menu, even if they're manually loaded.
+</p>
+<p>
+This function does nothing if <a href="#yas-use-menu"><code>yas-use-menu</code></a> is nil.
 </p>
 </div>
 
@@ -2700,7 +1117,41 @@ as the default for storing the user's new snippets.
 <h4 id="yas-define-snippets"><a name="sec-1-3-17" id="sec-1-3-17"></a><code>yas-define-snippets</code> (mode snippets)</h4>
 <div class="outline-text-4" id="text-yas-define-snippets">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-define-snippets</code>
+<p>Define <i>SNIPPETS</i> for <i>MODE</i>.
+</p>
+<p>
+<i>SNIPPETS</i> is a list of snippet definitions, each taking the
+following form
+</p>
+<p>
+ (<i>KEY</i> <i>TEMPLATE</i> <i>NAME</i> <i>CONDITION</i> <i>GROUP</i> <i>EXPAND-ENV</i> <i>FILE</i> <i>KEYBINDING</i> <i>UUID</i>)
+</p>
+<p>
+Within these, only <i>KEY</i> and <i>TEMPLATE</i> are actually mandatory.
+</p>
+<p>
+<i>TEMPLATE</i> might be a Lisp form or a string, depending on whether
+this is a snippet or a snippet-command.
+</p>
+<p>
+<i>CONDITION</i>, <i>EXPAND-ENV</i> and <i>KEYBINDING</i> are Lisp forms, they have
+been <a href="#yas--read-lisp"><code>yas&ndash;read-lisp</code></a>-ed and will eventually be
+<a href="#yas--eval-lisp"><code>yas&ndash;eval-lisp</code></a>-ed.
+</p>
+<p>
+The remaining elements are strings.
+</p>
+<p>
+<i>FILE</i> is probably of very little use if you're programatically
+defining snippets.
+</p>
+<p>
+<i>UUID</i> is the snippets "unique-id". Loading a second snippet file
+with the same uuid replaced the previous snippet.
+</p>
+<p>
+You can use <a href="#yas--parse-template"><code>yas&ndash;parse-template</code></a> to return such lists based on
+the current buffers contents.
 </p>
 </div>
 
@@ -2710,7 +1161,12 @@ as the default for storing the user's new snippets.
 <h4 id="yas-expand-snippet"><a name="sec-1-3-18" id="sec-1-3-18"></a><code>yas-expand-snippet</code> (content &amp;optional start end expand-env)</h4>
 <div class="outline-text-4" id="text-yas-expand-snippet">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-expand-snippet</code>
+<p>Expand snippet <i>CONTENT</i> at current point.
+</p>
+<p>
+Text between <i>START</i> and <i>END</i> will be deleted before inserting
+template.  <i>EXPAND-ENV</i> is are let-style variable to value bindings
+considered when expanding the snippet.
 </p>
 </div>
 
@@ -2760,7 +1216,7 @@ as the default for storing the user's new snippets.
 <h4 id="yas-x-prompt"><a name="sec-1-3-23" id="sec-1-3-23"></a><code>yas-x-prompt</code> (prompt choices &amp;optional display-fn)</h4>
 <div class="outline-text-4" id="text-yas-x-prompt">
 
-<p><b>/WARNING/</b>: no doc for symbol <code>yas-x-prompt</code>
+<p>Display choices in a x-window prompt.
 </p></div>
 </div>
 
@@ -3047,7 +1503,7 @@ The active keymap while a snippet expansion is in progress.
 </div>
 
 <div id="postamble">
-<hr><p class='creator'>Generated by <a href="http://orgmode.org">Org</a> version 7.9.3f with <a href="http://www.gnu.org/software/emacs/">Emacs</a> version 24 on 2013-11-26T23:15-0500 from fd3fa394449da99b191e56eae35e4ad4db6679ee
+<hr><p class='creator'>Generated by <a href="http://orgmode.org">Org</a> version 7.9.3f with <a href="http://www.gnu.org/software/emacs/">Emacs</a> version 24 on 2013-11-27T21:59-0500 from 860858de429775c17c74537805dbbc7906f8f994
 </p>
 <p class='xhtml-validation'><a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a></p>
 
