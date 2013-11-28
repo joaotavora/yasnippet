@@ -46,13 +46,13 @@
             (concat-lines ":PROPERTIES:"
                           (format ":CUSTOM_ID: %s" symbol)
                           ":END:"))
-           (body (or (cond ((boundp symbol)
-                            (documentation-property symbol 'variable-documentation t))
-                           ((fboundp symbol)
+           (body (or (cond ((fboundp symbol)
                             (let ((doc-synth (car-safe (get symbol 'function-documentation))))
                               (if (functionp doc-synth)
                                   (funcall doc-synth nil)
                                 (documentation symbol t))))
+                           ((boundp symbol)
+                            (documentation-property symbol 'variable-documentation t))
                            (t
                             (format "*WARNING*: no symbol named =%s=" symbol)))
                      (format "*WARNING*: no doc for symbol =%s=" symbol)))
