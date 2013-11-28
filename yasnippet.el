@@ -4298,31 +4298,33 @@ When multiple expressions are found, only the last one counts."
 ;; depending on the context.
 ;;
 (put 'yas-expand  'function-documentation
-     '(yas--expand-from-trigger-key-doc))
-(defun yas--expand-from-trigger-key-doc ()
+     '(yas--expand-from-trigger-key-doc t))
+(defun yas--expand-from-trigger-key-doc (context)
   "A doc synthesizer for `yas--expand-from-trigger-key-doc'."
-  (let ((fallback-description
-         (cond ((eq yas-fallback-behavior 'call-other-command)
-                (let* ((fallback (yas--keybinding-beyond-yasnippet)))
-                  (or (and fallback
-                           (format " call command `%s'." (pp-to-string fallback)))
-                      " do nothing (`yas-expand' doesn't shadow\nanything)")))
-               ((eq yas-fallback-behavior 'return-nil)
-                ", do nothing.")
-               (t
-                ", defer to `yas-fallback-behaviour' (which see)"))))
+  (let* ((yas-fallback-behavior (and context yas-fallback-behavior))
+         (fallback-description
+          (cond ((eq yas-fallback-behavior 'call-other-command)
+                 (let* ((fallback (yas--keybinding-beyond-yasnippet)))
+                   (or (and fallback
+                            (format "call command `%s'."
+                                    (pp-to-string fallback)))
+                       "do nothing (`yas-expand' doesn't shadow\nanything).")))
+                ((eq yas-fallback-behavior 'return-nil)
+                 "do nothing.")
+                (t "defer to `yas-fallback-behaviour' (which see)."))))
     (concat "Expand a snippet before point. If no snippet
-expansion is possible,"
+expansion is possible, "
             fallback-description
             "\n\nOptional argument FIELD is for non-interactive use and is an
 object satisfying `yas--field-p' to restrict the expansion to.")))
 
-(put 'yas-expand-from-keymap  'function-documentation '(yas--expand-from-keymap-doc))
-(defun yas--expand-from-keymap-doc ()
+(put 'yas-expand-from-keymap 'function-documentation
+     '(yas--expand-from-keymap-doc t))
+(defun yas--expand-from-keymap-doc (context)
   "A doc synthesizer for `yas--expand-from-keymap-doc'."
   (add-hook 'temp-buffer-show-hook 'yas--snippet-description-finish-runonce)
   (concat "Expand/run snippets from keymaps, possibly falling back to original binding.\n"
-          (when (eq this-command 'describe-key)
+          (when (and context (eq this-command 'describe-key))
             (let* ((vec (this-single-command-keys))
                    (templates (mapcan #'(lambda (table)
                                           (yas--fetch table vec))
