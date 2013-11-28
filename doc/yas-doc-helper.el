@@ -49,7 +49,7 @@
            (body (or (cond ((boundp symbol)
                             (documentation-property symbol 'variable-documentation t))
                            ((fboundp symbol)
-                            (documentation-property symbol 'function-documentation t))
+                            (documentation symbol t))
                            (t
                             (format "*WARNING*: no symbol named =%s=" symbol)))
                      (format "*WARNING*: no doc for symbol =%s=" symbol)))
