@@ -65,23 +65,26 @@
       ;; FOO becomes /foo/
       ;; `bar' becomes [[#bar][=bar=]]
       (setq body (replace-regexp-in-string
-                  "[A-Z][A-Z-]+" #'(lambda (match)
-                                     (setq match (downcase match))
-                                     (format (if (member match args)
-                                                 "=%s=" "/%s/")
-                                             match))
+                  "[A-Z][A-Z-]+"
+                  #'(lambda (match)
+                      (setq match (downcase match))
+                      (format (if (member match args)
+                                  "=%s=" "/%s/")
+                              match))
                   body t)
-            body (replace-regexp-in-string "`\\([a-z-]+\\)'" #'(lambda (match)
-                                                                 (let* ((name (downcase (match-string 1 match)))
-                                                                        (sym (intern name)))
-                                                                   (if (and (or (boundp sym)
-                                                                                (fboundp sym))
-                                                                            (save-match-data
-                                                                              (string-match "^yas-" name)))
-                                                                       (format "[[#%s][=%s=]]"
-                                                                               name name)
-                                                                     (format "=%s=" name))))
-                                           body))
+            body (replace-regexp-in-string
+                  "`\\([a-z-]+\\)'"
+                  #'(lambda (match)
+                      (let* ((name (downcase (match-string 1 match)))
+                             (sym (intern name)))
+                        (if (and (or (boundp sym)
+                                     (fboundp sym))
+                                 (save-match-data
+                                   (string-match "^yas-" name)))
+                            (format "[[#%s][=%s=]]"
+                                    name name)
+                          (format "=%s=" name))))
+                  body))
       ;; output the paragraph
       ;;
       (concat-lines heading
