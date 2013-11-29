@@ -77,14 +77,10 @@
                   #'(lambda (match)
                       (let* ((name (downcase (match-string 1 match)))
                              (sym (intern name)))
-                        (if (and (or (boundp sym)
-                                     (fboundp sym))
-                                 (save-match-data
-                                   (string-match "^yas-" name)))
-                            (format "[[#%s][=%s=]]"
-                                    name name)
+                        (if (memq sym yas--exported-syms)
+                            (format "[[#%s][=%s=]]" name name)
                           (format "=%s=" name))))
-                  body))
+                  body t))
       ;; output the paragraph
       ;;
       (concat-lines heading
