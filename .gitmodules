@@ -1,9 +1,6 @@
-[submodule "extras/bundles/ruby-tmbundle"]
-	path = extras/bundles/ruby-tmbundle
-	url = https://github.com/textmate/ruby.tmbundle.git
-[submodule "extras/bundles/html-tmbundle"]
-	path = extras/bundles/html-tmbundle
-	url = https://github.com/textmate/html.tmbundle.git
-[submodule "extras/bundles/rails-tmbundle"]
-	path = extras/bundles/rails-tmbundle
-	url = https://github.com/textmate/ruby-on-rails-tmbundle.git
+[submodule "snippets"]
+	path = snippets
+	url = git@github.com:AndreaCrotti/yasnippet-snippets.git
+[submodule "yasmate"]
+	path = yasmate
+	url = git@github.com:capitaomorte/yasmate.git

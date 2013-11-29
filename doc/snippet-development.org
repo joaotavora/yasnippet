@@ -191,7 +191,7 @@ escaped as =\\= sometimes.
 Emacs-Lisp code can be embedded inside the template, written inside
 back-quotes (==). The lisp forms are evaluated when the snippet is
 being expanded. The evaluation is done in the same buffer as the
-snippet being expanded. 
+snippet being expanded.
 
 Here's an example for c-mode` to calculate the header file guard
 dynamically:
@@ -199,9 +199,9 @@ dynamically:
 #+BEGIN_SRC snippet
   #ifndef ${1:_`(upcase (file-name-nondirectory (file-name-sans-extension (buffer-file-name))))`_H_}
   #define $1
-  
+
   $0
-  
+
   #endif /* $1 */
 #+END_SRC
 
@@ -279,7 +279,7 @@ contained in the field =n=.Here's an example for Objective-C:
   {
       return $2;
   }
-  
+
   - (void)set${2:$(capitalize text)}:($1)aValue
   {
       [$2 autorelease];
@@ -319,7 +319,7 @@ is not. Here's an snippet for rst title:
   ${1:$(make-string (string-width text) ?\=)}
   ${1:Title}
   ${1:$(make-string (string-width text) ?\=)}
-  
+
   $0
 #+END_SRC
 
@@ -377,12 +377,11 @@ enter snippet field 2. This one makes use of [[sym:yas-modified-p][=yas-modified
   \section{${1:"Titel der Tour"}}%
   \index{$1}%
   \label{{2:"waiting for reftex-label call..."$(unless yas-modified-p (reftex-label nil 'dont-
-  insert))}}%  
+  insert))}}%
 #+END_SRC
 
-The function [[sym:yas-verify-value][=yas-verify-value=]] has another neat trick, and makes use of
-[[sym:yas-moving-away-p][=yas-moving-away-p=]]. Try it and see! Also, check out this
-[[http://groups.google.com/group/smart-snippet/browse_thread/thread/282a90a118e1b662][thread]]
+The function [[sym:yas-verify-value][=yas-verify-value=]] has another neat trick, and makes use
+of [[sym:yas-moving-away-p][=yas-moving-away-p=]]. Try it and see! Also, check out this [[http://groups.google.com/group/smart-snippet/browse_thread/thread/282a90a118e1b662][thread]]
 
 ** Nested placeholder fields
 
@@ -401,50 +400,3 @@ the exit marker.
 By the way, =C-d= will only clear the field if you cursor is at the
 beginning of the field /and/ it hasn't been changed yet. Otherwise, it
 performs the normal Emacs =delete-char= command.
-
-* Importing TextMate snippets
-
-There are a couple of tools that take TextMate's ".tmSnippet" xml files
-and create YASnippet definitions:
-
-
-  -  [[http://code.nokrev.com/?p=snippet-copier.git;a=blob_plain;f=snippet_copier.py][a python script by Jeff Wheeler]]
-
-  -  a [[http://yasnippet.googlecode.com/svn/trunk/extras/textmate_import.rb][ruby tool]] , =textmate_import.rb= adapted from [[http://www.neutronflux.net/2009/07/28/shoulda-snippets-for-emacs/][Rob Christie's]],
-     which I have uploaded to the repository.
-
-
-In this section, i'll shortly cover the *second* option.
-
-Download the =textmate_import.rb= tool and the TextMate bundle you're
-interested in.
-
-#+BEGIN_EXAMPLE
-  $ curl -O http://yasnippet.googlecode.com/svn/trunk/extras/textmate_import.rb
-  $ svn export http://svn.textmate.org/trunk/Bundles/HTML.tmbundle/
-#+END_EXAMPLE
-
-Then invoke =textmate_import.rb= like this:
-
-#+BEGIN_EXAMPLE
-  $ ./textmate_import.rb -d HTML.tmbundle/Snippets/ -o html-mode -g HTML.tmbundle/info.plist
-#+END_EXAMPLE
-
-You should end up with a =html-mode= subdir containing snippets exported
-from textmate.
-
-#+BEGIN_EXAMPLE
-  $ tree html-mode # to view dir contents, if you have 'tree' installed
-#+END_EXAMPLE
-
-The =-g= is optional but helps the tool figure out the grouping.
-According to [[./snippet-organization.org][Organizing Snippets]], don't forget to touch
-=.yas-make-groups= and =.yas-ignore-filename-triggers= inside the
-=html-mode= dir.
-
-Also try =textmate_import.rb --help= for a list of options.
-
-Please note that snippet importation is not yet perfect. You'll probably
-have some adjustments to some/many snippets. Please contribute these
-adjustments to the google group or, better yet, patch the
-=textmate_import.rb= to automatically perform them and submit that.

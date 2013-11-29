@@ -5,12 +5,11 @@ type an abbreviation and automatically expand it into function
 templates. Bundled language templates include: C, C++, C#, Perl,
 Python, Ruby, SQL, LaTeX, HTML, CSS and more. The snippet syntax
 is inspired from [TextMate's][textmate-snippets] syntax, you can
-even [import][import-docs] most TextMate templates to
+even [import][#import] most TextMate templates to
 YASnippet. Watch [a demo on YouTube][youtube-demo] or download a
 [higher resolution version][high-res-demo].
 
 [textmate-snippets]: http://manual.macromates.com/en/snippets
-[import-docs]: http://yasnippet.googlecode.com/svn/trunk/doc/snippet-development.html#importing-textmate-snippets
 [youtube-demo]: http://www.youtube.com/watch?v=ZCGmZK4V7Sg
 [high-res-demo]: http://yasnippet.googlecode.com/files/yas_demo.avi
 
@@ -21,7 +20,7 @@ YASnippet. Watch [a demo on YouTube][youtube-demo] or download a
 Clone this repository somewhere
 
     $ cd ~/.emacs.d/plugins
-    $ git clone https://github.com/capitaomorte/yasnippet
+    $ git clone --recursive https://github.com/capitaomorte/yasnippet
 
 Add the following in your `.emacs` file:
 
@@ -63,65 +62,48 @@ To use YASnippet as a non-global minor mode, replace `(yas-global-mode 1)` with
               '(lambda ()
                  (yas-minor-mode)))
 
-# (NOT) Contributing snippets
+# Where are the snippets?
 
-Please **do not** open pull requests or ask me to add snippets to
-YASnippet.
+Yasnippet no longer bundles snippets directly, but it's very easy to
+get some!
 
-The bundled collection under `/snippets` is considered frozen: **I
-will not add more snippets to it**.
+If you git-cloned yasnippet with the `--recursive` option you'll also
+download "git submodules" and find two subdirs under the main tree.
 
-You can point `yas-snippet-dirs` to good snippet collections out
+1. `snippets/`
+
+    Points to [yasnippet-snippets][yasnippet-snippets] the snippet
+    collection of [AndreaCrotti](https://github.com/AndreaCrotti).
+
+    The default configuraiton already points to this dir, so to use
+    them, just make sure the submodule really was downloaded
+    (i.e. there are some files under `snippets/`)
+
+2. `yasmate/`
+
+    Points to a github repo of the [yasmate][yasmate] tool, which is
+    dedicated to converting textmate bundles into yasnippet snippets.
+
+    To use these snippets you have to run the tool first, so
+    [see its doc][yasmate]), and then point the `yas-snippet-dirs`
+    variable to the `.../yasmate/snippets` subdir.
+
+    If you have a working ruby environment, you can probably get lucky
+    directly with `rake convert-bundles`.
+
+Naturally, you can point `yas-snippet-dirs` to good snippet collections out
 there. If you have created snippets for a mode, or multiple modes,
 consider creating a repository to host them, then tell users that it
 should be added like this to `yas-snippet-dirs`:
 
     (setq yas-snippet-dirs
-          '("~/.emacs.d/snippets"            ;; personal snippets
-            "/path/to/some/collection/"      ;; just some foo-mode snippets
-            "/path/to/some/othercollection/" ;; some more foo-mode and a complete baz-mode
-            "/path/to/yasnippet/snippets"    ;; the default collection
+          '("~/.emacs.d/snippets"                 ;; personal snippets
+            "/path/to/some/collection/"           ;; foo-mode and bar-mode snippet collection
+            "/path/to/yasnippet/yasmate/snippets" ;; the yasmate collection
+            "/path/to/yasnippet/snippets"         ;; the default collection
             ))
 
     (yas-global-mode 1) ;; or M-x yas-reload-all if you've started YASnippet already.
-
-# Importing TextMate snippets
-
-There is a tool `extras/textmate-import.rb` than can import many
-actual TextMate snippets. These can be quite complex so the
-`extras/imported/*-mode/.yas-setup.el` files help it with the more
-difficult importation.
-
-I'm focusing on developing `textmate-import.rb` tool and some
-`yas-setup.el` files. In the future `/snippets` snippets will be
-deprecated and might be replaced with `extras/imported`.
-
-## Example importation of rails snippets
-
-To start using [drnic's](https://github.com/drnic) snippets for rails
-development, follow this example. It will convert `ruby`, `rails` and
-`html` bundles from github repositories. The importation will be
-guided by the `.yas-setup.el` files.
-
-After cloning this repository to `~/.emacs.d/plugins/yasnippet`
-
-    cd ~/.emacs.d/plugins/yasnippet
-    git submodule init
-    git submodule update
-    gem install plist trollop
-    rake convert_bundles             # will convert ruby, rails and html bundles
-
-Then, in your `.emacs` file
-
-    (add-to-list 'load-path
-                  "~/.emacs.d/plugins/yasnippet")
-    (require 'yasnippet)
-    (setq yas-snippet-dirs '("~/.emacs.d/snippets" "~/.emacs.d/plugins/yasnippet/extras/imported"))
-    (yas-global-mode 1)
-
-Open some rails file (model, app, etc) and start using the textmate
-snippets.  Note that in the example above we have abandoned the
-default snippet collection on `~/.emacs.d/plugins/yasnippet/snippets`
 
 # Documentation, issues, etc
 
@@ -133,20 +115,20 @@ and support.  If you find a bug, please report it on
 
 ## Important note regarding bug reporting
 If you think have found a bug, please report it clearly.  Yasnippet
-does have (lots of) bugs and your reports are very valuable. Here's 
-a  [great example](https://github.com/capitaomorte/yasnippet/issues/318) 
-of a bug report. It has everything needed for a sucessfull analysis and 
+does have (lots of) bugs and your reports are very valuable. Here's
+a  [great example](https://github.com/capitaomorte/yasnippet/issues/318)
+of a bug report. It has everything needed for a sucessfull analysis and
 speedy resolution:
 
 *Before* reporting try to reproduce the bug **without** your usual
 `.emacs` (or whatever startup file you use). Do so either by starting
 emacs from the command line with the `-Q` switch, or by temporarily
 moving away your `.emacs` and creating a new smaller one just for
-reproducing the bug. Paste that file in your bug report. Paste any sequence 
+reproducing the bug. Paste that file in your bug report. Paste any sequence
 of relevant shell commands before you launch Emacs.
 
 *Then*, describe steps taken to reproduce from an
-end-user perspective. Try to be as unambiguous as possible. 
+end-user perspective. Try to be as unambiguous as possible.
 
 Also, don't forget to state the Emacs version (use `M-x emacs-version`) and
 the yasnippet version you are using (if using the latest from github,
@@ -169,3 +151,5 @@ Finally, thank you very much for using YASnippet!
 [googlecode tracker]: http://code.google.com/p/yasnippet/issues/list
 [forum]: http://groups.google.com/group/smart-snippet
 [melpa]: http://melpa.milkbox.net/
+[yasmate]: http://github.com/capitaomorte/yasmate
+[yasnippet-snippets]: http://github.com/AndreaCrotti/yasnippet-snippets

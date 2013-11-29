@@ -18,18 +18,6 @@ task :tests do
     " --batch --eval '#{batch_run_line}'"
 end
 
-desc "convert some textmate bundles to yasnippets"
-task :convert_bundles do
-  Dir.glob "extras/bundles/*-tmbundle" do |bundle_dir|
-    puts "Converting from #{bundle_dir}"
-    mode_prefix = File.basename(bundle_dir).match(/[^-]*/)[0]
-    raise "Couldn't guess mode name for #{bundle_dir}" unless mode_prefix
-    output = "./extras/imported/#{mode_prefix}-mode"
-    FileUtils.mkdir_p output
-    sh "./extras/textmate_import.rb -d #{bundle_dir} -o #{output} -q"
-  end
-end
-
 desc "create a release package"
 task :package do
   release_dir = "pkg/yasnippet-#{$version}"
@@ -97,3 +85,9 @@ end
 task :compile => FileList["yasnippet.el"].ext('elc')
 
 task :default => :doc
+
+desc "use yasmate to convert textmate bundles"
+task :convert_bundles do
+      cd "yasmate"
+      sh "rake convert_bundles"
+    end
