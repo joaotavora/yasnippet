@@ -5,7 +5,7 @@ type an abbreviation and automatically expand it into function
 templates. Bundled language templates include: C, C++, C#, Perl,
 Python, Ruby, SQL, LaTeX, HTML, CSS and more. The snippet syntax
 is inspired from [TextMate's][textmate-snippets] syntax, you can
-even [import][#import] most TextMate templates to
+even [import](#import) most TextMate templates to
 YASnippet. Watch [a demo on YouTube][youtube-demo] or download a
 [higher resolution version][high-res-demo].
 
@@ -63,6 +63,8 @@ To use YASnippet as a non-global minor mode, replace `(yas-global-mode 1)` with
                  (yas-minor-mode)))
 
 # Where are the snippets?
+
+<a name="import"></a>
 
 Yasnippet no longer bundles snippets directly, but it's very easy to
 get some!
