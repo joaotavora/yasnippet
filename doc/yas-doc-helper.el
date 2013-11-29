@@ -65,7 +65,7 @@
       ;; FOO becomes /foo/
       ;; `bar' becomes [[#bar][=bar=]]
       (setq body (replace-regexp-in-string
-                  "[A-Z][A-Z-]+"
+                  "\\<[A-Z][A-Z-]+\\>"
                   #'(lambda (match)
                       (setq match (downcase match))
                       (format (if (member match args)
