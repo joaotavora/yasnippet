@@ -2346,7 +2346,7 @@ Honours `yas-choose-tables-first', `yas-choose-keys-first' and
 
 (defun yas-insert-snippet (&optional no-condition)
   "Choose a snippet to expand, pop-up a list of choices according
-to `yas--prompt-function'.
+to `yas-prompt-functions'.
 
 With prefix argument NO-CONDITION, bypass filtering of snippets
 by condition."
@@ -4311,7 +4311,7 @@ When multiple expressions are found, only the last one counts."
                        "do nothing (`yas-expand' doesn't shadow\nanything).")))
                 ((eq yas-fallback-behavior 'return-nil)
                  "do nothing.")
-                (t "defer to `yas-fallback-behaviour' (which see)."))))
+                (t "defer to `yas-fallback-behavior' (which see)."))))
     (concat "Expand a snippet before point. If no snippet
 expansion is possible, "
             fallback-description
