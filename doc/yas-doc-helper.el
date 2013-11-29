@@ -34,12 +34,15 @@
   (flet ((concat-lines (&rest lines)
                        (mapconcat #'identity lines "\n")))
     (let* ((stars (make-string level ?*))
+           (args (and (fboundp symbol)
+                      (mapcar #'symbol-name (help-function-arglist symbol t))))
            (heading (cond ((fboundp symbol)
-                           (format "%s =%s= (%s)"
-                                   stars
-                                   symbol
-                                   (mapconcat #'symbol-name
-                                              (help-function-arglist symbol t) " ")))
+                           (format
+                            "%s =%s= (%s)" stars symbol
+                            (mapconcat (lambda (a)
+                                         (format (if (string-prefix-p "&" a)
+                                                     "/%s/" "=%s=") a))
+                                       args " ")))
                           (t
                            (format "%s =%s=\n" stars symbol))))
            (after-heading
@@ -57,12 +60,17 @@
                             (format "*WARNING*: no symbol named =%s=" symbol)))
                      (format "*WARNING*: no doc for symbol =%s=" symbol)))
            (case-fold-search nil))
-      ;; do some transformations on the body: FOO becomes /foo/ and
+      ;; do some transformations on the body:
+      ;; ARG becomes =arg=
+      ;; FOO becomes /foo/
       ;; `bar' becomes [[#bar][=bar=]]
       (setq body (replace-regexp-in-string
                   "[A-Z][A-Z-]+" #'(lambda (match)
-                                     (format "/%s/" (downcase match)))
-                  body)
+                                     (setq match (downcase match))
+                                     (format (if (member match args)
+                                                 "=%s=" "/%s/")
+                                             match))
+                  body t)
             body (replace-regexp-in-string "`\\([a-z-]+\\)'" #'(lambda (match)
                                                                  (let* ((name (downcase (match-string 1 match)))
                                                                         (sym (intern name)))
