@@ -94,15 +94,18 @@ See [[./snippet-menu.org][the YASnippet Menu]].
 
 ** Expanding with =hippie-expand=
 
-To integrate with =hippie-expand=, just put [[sym:yas-hippie-try-expand][=yas-hippie-try-expand=]] in
-=hippie-expand-try-functions-list=. This probably makes more sense when
-placed at the top of the list, but it can be put anywhere you prefer.
+To integrate with =hippie-expand=, just put
+[[sym:yas-hippie-try-expand][=yas-hippie-try-expand=]] in
+=hippie-expand-try-functions-list=. This probably makes more sense
+when placed at the top of the list, but it can be put anywhere you
+prefer.
 
 ** Expanding from emacs-lisp code
 
-Sometimes you might want to expand a snippet directly from you own elisp
-code. You should call [[sym:yas-expand-snippet][=yas-expand-snippet=]] instead of [[sym:yas-expand][=yas-expand=]] in
-this case.
+Sometimes you might want to expand a snippet directly from you own
+elisp code. You should call
+[[sym:yas-expand-snippet][=yas-expand-snippet=]] instead of
+[[sym:yas-expand][=yas-expand=]] in this case.
 
 As with expanding from the menubar, the condition system and multiple
 candidates doesn't affect expansion. In fact, expanding from the
@@ -145,9 +148,9 @@ In particular, the following things matter:
 
 -  Buffer-local list of extra modes
 
-   Use [[#yas-activate-extra-mode][=yas-activate-extra-mode=]] to consider snippet tables whose name
-   does not correspond to a major mode. Typically, you call this from
-   a minor mode hook, for example:
+   Use [[#yas-activate-extra-mode][=yas-activate-extra-mode=]] to
+   consider snippet tables whose name does not correspond to a major
+   mode. Typically, you call this from a minor mode hook, for example:
 
 #+BEGIN_SRC emacs-lisp
   ;; When entering rinari-minor-mode, consider also the snippets in the
@@ -157,7 +160,9 @@ In particular, the following things matter:
                 (yas-activate-extra-mode 'rails-mode)))
 #+END_SRC
 
--  Buffer-local [[sym:yas-buffer-local-condition][=yas-buffer-local-condition=]] variable
+-  Buffer-local
+   [[sym:yas-buffer-local-condition][=yas-buffer-local-condition=]]
+   variable
 
    This variable provides finer grained control over what snippets can
    be expanded in the current buffer. The default value won't let you
@@ -255,4 +260,3 @@ shortcut to select the 6th candidate.
 *** Roll your own
 
 See the documentation on variable [[sym:yas-prompt-functions][=yas-prompt-functions=]]
-

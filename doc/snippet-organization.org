@@ -43,7 +43,7 @@
    (setq yas-snippet-dirs '("~/emacs.d/mysnippets"
                               "~/Downloads/interesting-snippets"))
 
-   ;; OR, keeping yasnippet's defaults try out ~/Downloads/interesting-snippets
+   ;; OR, keeping YASnippet defaults try out ~/Downloads/interesting-snippets
    (setq yas-snippet-dirs (append yas-snippet-dirs
                                   '("~/Downloads/interesting-snippets")))
    #+end_src

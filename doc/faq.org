@@ -94,7 +94,7 @@ active:
 
 This is apparently related to overlay priorities. For some reason, the
 =keymap= property of flyspell's overlays always takes priority over the
-same property in yasnippet's overlays, even if one sets the latter's
+same property in YASnippet's overlays, even if one sets the latter's
 =priority= property to something big. If you know emacs-lisp and can
 solve this problem, drop a line in the
 [[http://groups.google.com/group/smart-snippet][discussion group]].
@@ -148,7 +148,7 @@ filename as a trigger key in this case.
 
 You should rather use the =# key:= directive to specify the key of the
 defined snippet explicitly and name your snippet with an arbitrary valid
-filename, =lt.yasnippet= for example, using =<= for the =# key:=
+filename, =lt.YASnippet= for example, using =<= for the =# key:=
 directive:
 
 #+BEGIN_SRC snippet
