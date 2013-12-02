@@ -78,10 +78,10 @@ Here's a list of currently supported directives:
 
 ** =# key:= snippet abbrev
 
-This is the probably the most important directive, it's the abbreviation
-you type to expand a snippet just before hitting [[sym:yas-trigger-key][=yas-trigger-key=]]. If
-you don't specify this the snippet will not be expandable through the
-key mechanism.
+This is the probably the most important directive, it's the
+abbreviation you type to expand a snippet just before hitting the key
+that runs [[sym:yas-expand][=yas-expand=]]. If you don't specify this
+the snippet will not be expandable through the trigger mechanism.
 
 ** =# name:= snippet name
 
