@@ -7,7 +7,7 @@
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
 <meta name="title" content="Yet another snippet extension"/>
 <meta name="generator" content="Org-mode"/>
-<meta name="generated" content="2013-11-28T23:36-0500"/>
+<meta name="generated" content="2013-12-02T19:38+0000"/>
 <meta name="author" content=""/>
 <meta name="description" content=""/>
 <meta name="keywords" content=""/>
@@ -122,221 +122,67 @@ for the JavaScript code in this tag.
 <div id="content">
 <h1 class="title">Yet another snippet extension</h1>
 
-
-<div id="table-of-contents">
-<h2>Table of Contents</h2>
-<div id="text-table-of-contents">
-<ul>
-<li><a href="#sec-1">Quick start</a>
-<ul>
-<li><a href="#sec-1-1">Watch a demo</a></li>
-<li><a href="#sec-1-2">Installation</a></li>
-<li><a href="#import-textmate">Import textmate snippets (rails example)</a></li>
-<li><a href="#sec-1-4">Contributing snippets</a></li>
-<li><a href="#sec-1-5">Documentation</a></li>
-<li><a href="#sec-1-6">Bugs, discussion, contributions, etc</a></li>
-</ul>
-</li>
-</ul>
-</div>
-</div>
-
-<div id="outline-container-1" class="outline-2">
-<h2 id="sec-1">Quick start</h2>
-<div class="outline-text-2" id="text-1">
-
-
-<p>
-  <b>YASnippet</b> is a template system for Emacs. It allows you to type an
-  abbreviation and automatically expand it into function templates. Bundled
-  language templates includes: C, C++, C#, Perl, Python, Ruby, SQL, LaTeX, HTML,
-  CSS and more. The snippet syntax is inspired from TextMate's syntax, you can
-  even <a href="#import-textmate">import most TextMate snippets</a>
-</p>
-<p>
-  YASnippet is an original creation of <a href="http://pluskid.lifegoo.org">pluskid</a> who also wrote its predecessor
-  <a href="http://code.google.com/p/smart-snippet">smart-snippet</a>.
-</p>
-
-</div>
-
-<div id="outline-container-1-1" class="outline-3">
-<h3 id="sec-1-1">Watch a demo</h3>
-<div class="outline-text-3" id="text-1-1">
-
-
-<p>
-   On <a href="http://www.youtube.com/watch?v=ZCGmZK4V7Sg">youtube</a>.
-</p>
-</div>
-
-</div>
-
-<div id="outline-container-1-2" class="outline-3">
-<h3 id="sec-1-2">Installation</h3>
-<div class="outline-text-3" id="text-1-2">
-
-
-<p>
-   Clone this repository somewhere
-</p>
-
-
-
-<pre class="example">$ cd ~/.emacs.d/plugins
-$ git clone https://github.com/capitaomorte/yasnippet
-</pre>
-
-
-<p>
-   Add the following in your <code>.emacs</code> file:
-</p>
-
-
-
-<pre class="example">(add-to-list 'load-path
-              "~/.emacs.d/plugins/yasnippet")
-(require 'yasnippet)
-(yas-global-mode 1)
-</pre>
-
-
-<p>
-   Add your own snippets to <code>~/.emacs.d/snippets</code> by placing files there or
-   invoking <a href="snippet-reference.html#yas-new-snippet"><code>yas-new-snippet</code></a>.
-</p>
-</div>
-
-</div>
-
-<div id="outline-container-import-textmate" class="outline-3">
-<h3 id="import-textmate"><a name="sec-1-3" id="sec-1-3"></a>Import textmate snippets (rails example)</h3>
-<div class="outline-text-3" id="text-import-textmate">
-
-
-<p>
-   YASnippet lets you use TextMate bundles directly:
-</p>
-
-
-
-<pre class="example">$ cd ~/.emacs.d/plugins
-$ git clone https://github.com/capitaomorte/yasnippet
-$ cd yasnippet
-$ git submodule init
-$ git submodule update
-$ gem install plist trollop
-$ rake convert_bundles             # will convert ruby, rails and html bundles from drnic
-</pre>
-
-
-<p>
-   Then, in your <code>.emacs</code> file
-</p>
-
-
-
-<pre class="example">(add-to-list 'load-path
-              "~/.emacs.d/plugins/yasnippet")
-(require 'yasnippet)
-(setq yas-snippet-dirs '("~/.emacs.d/snippets" "~/.emacs.d/extras/imported"))
-(yas-global-mode 1)
-</pre>
-
-
-<p>
-   Open some rails file (model, app, etc) and start using the textmate
-   snippets. Consider that this is a work-in-progress and many snippets/commands
-   might not work. Patches welcome!
-</p>
-</div>
-
-</div>
-
-<div id="outline-container-1-4" class="outline-3">
-<h3 id="sec-1-4">Contributing snippets</h3>
-<div class="outline-text-3" id="text-1-4">
-
-
-<p>
-   Please <b>do not ask me</b> to add snippets to the default collection under
-   <code>/snippets</code>. This collection is considered frozen. By customizing
-   <a href="snippet-reference.html#yas-snippet-dirs"><code>yas-snippet-dirs</code></a> you can point yasnippet to good
-   snippet collections out there.
-</p>
-<p>
-   The <code>extras/textmate-import.rb</code> tool can import many actual Textmate
-   snippets.  I'm focusing on developing it and the accompanying <code>yas-setup.el</code>
-   files that guide it with more difficult importations. The idea is to deprecate
-   <code>/snippets</code>  and replace it with <code>extras/imported</code>.
-</p>
-</div>
-
-</div>
-
-<div id="outline-container-1-5" class="outline-3">
-<h3 id="sec-1-5">Documentation</h3>
-<div class="outline-text-3" id="text-1-5">
-
-
-<p>
-   The documentation has been split into separate parts:
+<p>The YASnippet documentation has been split into separate parts:
 </p>
 <ol>
-<li><a href="snippet-organization.html">Organizing Snippets</a>
-      Describes ways to organize your snippets in the hard disk.
-
-</li>
-<li><a href="snippet-expansion.html">Expanding Snippets</a>
-      Describes how YASnippet chooses snippets for expansion at point.
+<li><a href="https://github.com/capitaomorte/yasnippet/blob/master/README.mdown">README</a>
 
 <p>
-      Maybe, you'll want some snippets to be expanded in a particular mode,
-      or only under certain conditions, or be prompted using <code>ido</code>, etc&hellip;
+   Contains an introduction, installation instructions and other important
+   notes.
+</p>
+</li>
+<li><a href="snippet-organization.html">Organizing Snippets</a>
+
+<p>
+   Describes ways to organize your snippets in the hard disk.
+</p>
+</li>
+<li><a href="snippet-expansion.html">Expanding Snippets</a>
+
+<p>
+   Describes how YASnippet chooses snippets for expansion at point.
+</p>
+<p>
+   Maybe, you'll want some snippets to be expanded in a particular mode,
+   or only under certain conditions, or be prompted using <code>ido</code>, etc&hellip;
 </p>
 </li>
 <li><a href="snippet-development.html">Writing Snippets</a>
-      Describes the YASnippet definition syntax, which is very close (but
-      not equivalent) to Textmate's. Includes a section about converting
-      TextMate snippets.
 
+<p>
+   Describes the YASnippet definition syntax, which is very close (but
+   not equivalent) to Textmate's. Includes a section about converting
+   TextMate snippets.
+</p>
 </li>
 <li><a href="snippet-menu.html">The YASnippet menu</a>
-      Explains how to use the YASnippet menu to explore, learn and modify
-      snippets.
 
+<p>
+   Explains how to use the YASnippet menu to explore, learn and modify
+   snippets.
+</p>
+</li>
+<li><a href="faq.html">Frequently asked questions</a>
+
+<p>
+   Answers to frequently asked questions.
+</p>
 </li>
 <li><a href="snippet-reference.html">YASnippet Symbol Reference</a>
-      An automatically generated listing of all YASnippet commands,
-      (customization) variables, and functions.
-</li>
+
+<p>
+   An automatically generated listing of all YASnippet commands,
+   (customization) variables, and functions.
+</p></li>
 </ol>
 
 
-</div>
 
-</div>
-
-<div id="outline-container-1-6" class="outline-3">
-<h3 id="sec-1-6">Bugs, discussion, contributions, etc</h3>
-<div class="outline-text-3" id="text-1-6">
-
-
-<p>
-   If you think you've found a bug, please report it on <a href="https://github.com/capitaomorte/yasnippet/issues">the GitHub issue tracker</a>
-   (please **do not** submit new issues to the old <a href="http://code.google.com/p/yasnippet/issues/list">googlecode tracker</a>).
-</p>
-<p>
-   If you run into problems using YASnippet, or have snippets to contribute,
-   post to the <a href="http://groups.google.com/group/smart-snippet">yasnippet forum</a>. Thank you very much for using YASnippet!
-</p>
-</div>
-</div>
-</div>
 </div>
 
 <div id="postamble">
-<hr><p class='creator'>Generated by <a href="http://orgmode.org">Org</a> version 7.9.3f with <a href="http://www.gnu.org/software/emacs/">Emacs</a> version 24 on 2013-11-28T23:36-0500 from eda83304afc7894f0b5ddc15b04b041be52b94fb
+<hr><p class='creator'>Generated by <a href="http://orgmode.org">Org</a> version 7.9.3f with <a href="http://www.gnu.org/software/emacs/">Emacs</a> version 24 on 2013-12-02T19:38+0000 from 582e3680b66a62f304034376516207c006f77fe4
 </p>
 <p class='xhtml-validation'><a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a></p>
 
