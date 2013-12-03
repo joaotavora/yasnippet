@@ -778,8 +778,7 @@ activate snippets associated with that mode."
       (when (not (string= "" symbol))
         (intern symbol)))))
   (when mode
-    (make-variable-buffer-local 'yas--extra-modes)
-    (add-to-list 'yas--extra-modes mode)
+    (add-to-list (make-local-variable 'yas--extra-modes) mode)
     (yas--load-pending-jits)))
 
 (defun yas-deactivate-extra-mode (mode)
@@ -788,9 +787,9 @@ activate snippets associated with that mode."
    (list (intern
           (completing-read
            "Deactivate mode: " (mapcar #'list yas--extra-modes) nil t))))
-  (setq yas--extra-modes
-        (remove mode
-                yas--extra-modes)))
+  (set (make-local-variable 'yas--extra-modes)
+       (remove mode
+               yas--extra-modes)))
 
 (defvar yas-dont-activate '(minibufferp)
   "If non-nil don't let `yas-global-mode' affect some buffers.

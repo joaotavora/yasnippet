@@ -605,26 +605,24 @@ TODO: be meaner"
   "Given a symbol, `yas-activate-extra-mode' should be able to
 add the snippets associated with the given mode."
   (with-temp-buffer
-    (emacs-lisp-mode)
-    (yas-minor-mode-on)
-    (yas-activate-extra-mode 'markdown-mode)
-    (should (eq 'markdown-mode (car yas--extra-modes)))
-    (yas-should-expand '(("_" . "_Text_ ")))
-    (yas-should-expand '(("car" . "(car )")))))
-
-(ert-deftest test-yas-deactivate-extra-modes ()
-  "Given a symbol, `yas-deactive-extra-mode' should be able to
-remove one of the extra modes that is present in the current
-buffer."
-  (with-temp-buffer
-    (emacs-lisp-mode)
-    (yas-minor-mode-on)
-    (yas-activate-extra-mode 'markdown-mode)
-    (should (eq 'markdown-mode (car yas--extra-modes)))
-    (yas-deactivate-extra-mode 'markdown-mode)
-    (should-not (eq 'markdown-mode (car yas--extra-modes)))
-    (yas-should-not-expand '("_"))
-    (yas-should-expand '(("car" . "(car )")))))
+    (yas-saving-variables
+     (yas-with-snippet-dirs
+       '((".emacs.d/snippets"
+          ("markdown-mode"
+           ("_" . "_Text_ "))
+          ("emacs-lisp-mode"
+           ("car" . "(car )"))))
+       (yas-reload-all)
+       (emacs-lisp-mode)
+       (yas-minor-mode-on)
+       (yas-activate-extra-mode 'markdown-mode)
+       (should (eq 'markdown-mode (car yas--extra-modes)))
+       (yas-should-expand '(("_" . "_Text_ ")))
+       (yas-should-expand '(("car" . "(car )")))
+       (yas-deactivate-extra-mode 'markdown-mode)
+       (should-not (eq 'markdown-mode (car yas--extra-modes)))
+       (yas-should-not-expand '("_"))
+       (yas-should-expand '(("car" . "(car )")))))))
 
 
 ;;; Helpers
