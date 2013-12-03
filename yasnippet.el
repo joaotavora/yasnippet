@@ -778,7 +778,7 @@ activate snippets associated with that mode."
       (when (not (string= "" symbol))
         (intern symbol)))))
   (when mode
-    (make-variable-buffer-local 'yas--extra-modes)
+    (make-local-variable 'yas--extra-modes)
     (add-to-list 'yas--extra-modes mode)
     (yas--load-pending-jits)))
 
