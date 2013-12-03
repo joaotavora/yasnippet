@@ -61,17 +61,20 @@
                      (format "*WARNING*: no doc for symbol =%s=" symbol)))
            (case-fold-search nil))
       ;; do some transformations on the body:
-      ;; ARG becomes =arg=
+      ;; ARGxxx becomes @<code>arg@</code>xxx
       ;; FOO becomes /foo/
       ;; `bar' becomes [[#bar][=bar=]]
       (setq body (replace-regexp-in-string
-                  "\\<[A-Z][A-Z-]+\\>"
+                  "\\<\\([A-Z][-A-Z0-9]+\\)\\(\\sw+\\)?\\>"
                   #'(lambda (match)
-                      (setq match (downcase match))
-                      (format (if (member match args)
-                                  "=%s=" "/%s/")
-                              match))
-                  body t)
+                      (let* ((match1 (downcase (match-string 1 match)))
+                             (suffix (match-string 2 match))
+                             (fmt (cond
+                                   ((member match1 args) "@<code>%s@</code>")
+                                   ((null suffix) "/%s/"))))
+                        (if fmt (format fmt match1)
+                          match)))
+                  body t t 1)
             body (replace-regexp-in-string
                   "`\\([a-z-]+\\)'"
                   #'(lambda (match)
