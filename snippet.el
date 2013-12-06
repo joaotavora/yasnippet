@@ -302,6 +302,174 @@ Argument FORMS is a list of forms as described in `define-snippet'."
   `(lambda () ,(snippet--define-body forms)))
 
 
+;;; Parsing snippets
+;;;
+
+
+(defun snippet--char-escaped-p ()
+  "Return non-nil if point is preceded by backslash which is not
+itself escaped"
+  (unless (or (bobp) (eobp))
+    (save-excursion
+      (/= 0 (% (skip-chars-backward "\\\\") 2)))))
+
+
+(defun snippet--parse-unescape-substring (start-pos end-pos)
+  (replace-regexp-in-string
+   "\\\\\\(.\\)" "\\1"
+   (buffer-substring-no-properties start-pos end-pos)))
+
+
+(defun snippet--parse-text-block (stop-chars)
+  (let ((start-pos (point)))
+    (while (and (/= 0 (skip-chars-forward (concat "^" stop-chars)))
+                (snippet--char-escaped-p))
+      (goto-char (1+ (point))))
+    (snippet--parse-unescape-substring start-pos (point))))
+
+
+(defun snippet--parse-constant ()
+  "Parse `expr` construct.
+
+`expr` contents are evaluated at the moment of expansion and
+remain constant afterwards (unlike transformation fields), hence
+the name."
+  (when (eq (char-after) ?`)
+    (let ((start-pos (point))
+          (contents (progn (forward-char)
+                           (snippet--parse-text-block "`"))))
+
+      (when (eobp)
+        (error "Runaway constant starting at position %s" start-pos))
+
+      (forward-char)
+      (read contents))))
+
+
+(defun snippet--parse-tabstop ()
+  (when (re-search-forward "\\=\\$\\([0-9]+\\)" nil t)
+    (list '&field (match-string-no-properties 1) nil)))
+
+
+;; (declare-function snippet--parse-next-primitive "snippet.el")
+
+
+(defun snippet--parse-make-field-expr (subexprs)
+  (cond
+   ((eq 1 (length subexprs))
+    (car subexprs))
+
+   (t subexprs)))
+
+(defun snippet--parse-field-or-mirror ()
+  (let ((start-pos (point))
+        field-type field-name field-exprs)
+    (when (re-search-forward "\\=\\${\\([0-9]+\\)?:" nil t)
+      (setq field-name (match-string-no-properties 1)
+            field-type '&field)
+      ;; Field-or-mirror preamble parsed successfully.  Let's parse the body.
+      (cond
+       ;; If it's a mirror, the body is empty, just mark it as such.
+       ((looking-at "\\$(")
+        (setq field-type '&mirror))
+       ;; If it's a field with no default value, just skip one '$' character.
+       ((looking-at "\\$\\$(")
+        (forward-char))
+       ;; Otherwise parse all primitives inside field definition
+       (t (while (and (not (looking-at "\\(}\\|\\$(\\)")))
+            (push (snippet--parse-next-primitive "}$`") field-exprs))))
+
+      ;; Now let's try parsing field transformation.
+      (when (looking-at "\\$(")
+        (forward-char)
+        (push (cons '&transform (read (current-buffer))) field-exprs)
+
+        (unless (eq (char-after) ?})
+          (error "More text after transformation in %s at position %s"
+                 (if (eq field-type '&mirror) "mirror" "field")
+                 start-pos)))
+
+      (cond
+       ;; Skip closing brace if it's there.
+       ((eq (char-after) ?}) (forward-char))
+       ;; If not, report runaway field-or-mirror.
+       ((eobp) (error "Runaway %s at position %s"
+               (if (eq field-type '&mirror) "mirror" "field")
+               start-pos))
+       ;; This should not happen, because field body parser only stops before
+       ;; '}' or '$(', and '$(' triggers transformation parsing, which has its
+       ;; own '}'-verification.  Still, a sanity check won't hurt.
+       (t
+        (error "Close brace not found for %s at position %s, should not happen"
+               (if (eq field-type '&mirror) "mirror" "field")
+               start-pos)))
+
+      (list field-type field-name
+            (snippet--parse-make-field-expr (nreverse field-exprs))))))
+
+
+(defun snippet--parse-snippet (str)
+  "Parse snippet definition STR to format supported by `define-snippet'.
+
+The parsing is done in temporary buffer."
+  (let (result)
+    (if (string= str "")
+        (push "" result)
+
+      (with-temp-buffer
+        (setq buf (current-buffer))
+        (insert str)
+        (goto-char (point-min))
+
+        (while (not (eobp))
+          (push (snippet--parse-next-primitive "$`") result))))
+
+    (snippet--finalize-parsed (nreverse result))))
+
+
+(defun snippet--parse-next-primitive (text-block-stop-chars)
+  (or (snippet--parse-tabstop)
+      (snippet--parse-field-or-mirror)
+      (snippet--parse-constant)
+      (snippet--parse-text-block text-block-stop-chars)
+      (when (and (eq (char-after) ?$)
+                 (memq ?$ (string-to-list text-block-stop-chars)))
+        (forward-char)
+        "$")))
+
+
+(defun snippet--finalize-parsed (parsed &optional field-table)
+  (when (null field-table)
+    (setq field-table (make-hash-table :test 'equal)))
+
+  (cl-loop for cur-elt in parsed
+           when (and (listp cur-elt)
+                     (eq (car cur-elt) '&field))
+           do (push cur-elt (gethash (cadr cur-elt) field-table)))
+
+  (maphash
+   (lambda (field-name fields)
+     (setq fields (nreverse fields))
+
+     (cond
+      ;; Fields with name == '0' are exits.
+      ((string= field-name "0")
+       (cl-loop for f in fields
+                do (progn (setcar f '&exit)
+                          (setcdr f (cddr f)))))
+      (t
+       (cl-loop for f in fields
+                with primary = nil
+
+                if primary do (setcar f '&mirror)
+                else do (setq primary f)))))
+   field-table)
+
+  parsed)
+
+
+
+
 ;;; Snippet mechanics
 ;;;
 
