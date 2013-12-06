@@ -167,7 +167,7 @@ Argument BODY is a list of forms as described in `define-snippet'."
   (let ((unfolded (snippet--unfold-forms
                    (mapcar #'snippet--canonicalize-form body)))
         all-objects exit-object)
-    `(let* (,@(loop for form in unfolded
+    `(let* (,@(cl-loop for form in unfolded
                     append (pcase form
                              (`(&field ,name ,_expr (&parent ,parent))
                               `((,(snippet--make-field-sym name)
@@ -177,7 +177,7 @@ Argument BODY is a list of forms as described in `define-snippet'."
                                 (buffer-substring-no-properties
                                  (region-beginning)
                                  (region-end)))))
-       (let* (,@(loop
+       (let* (,@(cl-loop
                  for form in unfolded
                  with mirror-idx = 0
                  with sym
@@ -369,7 +369,7 @@ Argument FORMS is a list of forms as described in `define-snippet'."
                  :source source
                  :transform (snippet--make-transform-lambda transform))))
     (snippet--inserting-object mirror prev
-      (pushnew mirror (snippet--field-mirrors source)))))
+      (cl-pushnew mirror (snippet--field-mirrors source)))))
 
 (defun snippet--make-and-insert-exit (parent prev constant)
   (let ((exit (snippet--make-exit :parent parent :prev prev)))
@@ -530,7 +530,7 @@ PREV means move to the previous field."
          (target (if field
                      (cadr (cl-remove-if #'snippet--field-skip-p
                                          (memq field sorted)))
-                   (first sorted))))
+                   (cl-first sorted))))
     (if target
         (snippet--move-to-field target)
       (let ((exit (overlay-get snippet--field-overlay
