@@ -354,12 +354,33 @@ the name."
 ;; (declare-function snippet--parse-next-primitive "snippet.el")
 
 
-(defun snippet--parse-make-field-expr (subexprs)
-  (cond
-   ((eq 1 (length subexprs))
-    (car subexprs))
+(defun snippet--parse-make-field-expr (raw-subexprs)
+  (cl-loop for sub in raw-subexprs
+           with has-subfields = nil
+           with transform = nil
 
-   (t subexprs)))
+           if (memq (car-safe sub) '(&field &mirror))
+           do (setq has-subfields t)
+
+           if (eq (car-safe sub) '&transform)
+           do (setq transform sub)
+           else collect sub into subexprs
+
+           finally return
+           (cond
+            (transform
+             (when subexprs
+               (error (concat "Parsing field with both subexprs and transformation is not implemented")))
+             transform)
+
+            (has-subfields
+             (cons '&nested subexprs))
+
+            ((> (length subexprs) 1)
+             `(&eval (concat ,subexprs)))
+
+            (t (car-safe subexprs)))))
+
 
 (defun snippet--parse-field-or-mirror ()
   (let ((start-pos (point))
