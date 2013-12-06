@@ -114,13 +114,13 @@
 ;; This lets all the org files be exported to HTML with
 ;; `org-publish-current-project' (C-c C-e P).
 
-(let* ((rev (or (with-temp-buffer
-                  (when (eq (call-process "git" nil t nil
-                                          "rev-parse" "--verify" "HEAD") 0)
-                    (buffer-string)))
-                yas--version))
-       (dir (if load-file-name (file-name-directory load-file-name)
+(let* ((dir (if load-file-name (file-name-directory load-file-name)
               default-directory))
+       (rev (with-temp-file (expand-file-name "html-revision" dir)
+              (or (when (eq (call-process "git" nil t nil
+                                          "rev-parse" "--verify" "HEAD") 0)
+                    (buffer-string))
+                  (princ yas--version (current-buffer)))))
        (proj-plist
         (list
          :base-directory dir :publishing-directory dir
