@@ -1,0 +1,47 @@
+#+SETUPFILE: org-setup.inc
+#+TITLE: Yet another snippet extension
+
+The YASnippet documentation has been split into separate parts:
+
+0. [[https://github.com/capitaomorte/yasnippet/blob/master/README.mdown][README]]
+
+   Contains an introduction, installation instructions and other important
+   notes.
+
+1. [[file:snippet-organization.org][Organizing Snippets]]
+
+   Describes ways to organize your snippets in the hard disk.
+
+2. [[file:snippet-expansion.org][Expanding Snippets]]
+
+   Describes how YASnippet chooses snippets for expansion at point.
+
+   Maybe, you'll want some snippets to be expanded in a particular mode,
+   or only under certain conditions, or be prompted using =ido=, etc...
+
+3. [[file:snippet-development.org][Writing Snippets]]
+
+   Describes the YASnippet definition syntax, which is very close (but
+   not equivalent) to Textmate's. Includes a section about converting
+   TextMate snippets.
+
+4. [[file:snippet-menu.org][The YASnippet menu]]
+
+   Explains how to use the YASnippet menu to explore, learn and modify
+   snippets.
+
+5. [[file:faq.org][Frequently asked questions]]
+
+   Answers to frequently asked questions.
+
+6. [[file:snippet-reference.org][YASnippet Symbol Reference]]
+
+   An automatically generated listing of all YASnippet commands,
+   (customization) variables, and functions.
+
+
+# Local Variables:
+# mode: org
+# fill-column: 80
+# coding: utf-8
+# End:

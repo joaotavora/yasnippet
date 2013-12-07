@@ -13,19 +13,9 @@ FileUtils.mkdir_p('pkg')
 
 desc "run tests in batch mode"
 task :tests do
-  sh "#{$EMACS} -Q -L . -l yasnippet-tests.el -nw --batch -e yas-batch-run-tests"
-end
-
-desc "convert some textmate bundles to yasnippets"
-task :convert_bundles do
-  Dir.glob "extras/bundles/*-tmbundle" do |bundle_dir|
-    puts "Converting from #{bundle_dir}"
-    mode_prefix = File.basename(bundle_dir).match(/[^-]*/)[0]
-    raise "Couldn't guess mode name for #{bundle_dir}" unless mode_prefix
-    output = "./extras/imported/#{mode_prefix}-mode"
-    FileUtils.mkdir_p output
-    sh "./extras/textmate_import.rb -d #{bundle_dir} -o #{output} -q"
-  end
+  batch_run_line = "(yas-batch-run-tests t)"
+  sh "#{$EMACS} -Q -L . -l yasnippet-tests.el -nw" +
+    " --batch --eval '#{batch_run_line}'"
 end
 
 desc "create a release package"
@@ -52,11 +42,11 @@ task :release => [:package, 'doc:archive'] do
   raise "Not implemented for github yet!"
 end
 
-rule '.html' => '.rst' do |t|
-  sh "doc/compile-doc.py #{t.source} > #{t.name}"
-end
 desc "Generate document"
-task :doc => FileList['doc/*.rst'].ext('html')
+task :doc do
+  sh "#{$EMACS} -Q -L . --batch -l doc/yas-doc-helper.el" +
+    " -f yas--generate-html-batch"
+end
 
 namespace :doc do
   task :archive do
@@ -77,8 +67,10 @@ namespace :doc do
       Dir.glob("doc/images/*").each do |file|
         FileUtils.cp file, 'doc/gh-pages/images'
       end
+      rev = `git rev-parse --verify HEAD`
       Dir.chdir 'doc/gh-pages' do
-        sh "git commit -a -m 'Automatic documentation update.'"
+        sh "git commit -a -m 'Automatic documentation update.\n\n" +
+          "From #{rev.chomp()}'"
         sh "git push"
       end
     end
@@ -93,3 +85,9 @@ end
 task :compile => FileList["yasnippet.el"].ext('elc')
 
 task :default => :doc
+
+desc "use yasmate to convert textmate bundles"
+task :convert_bundles do
+      cd "yasmate"
+      sh "rake convert_bundles"
+    end

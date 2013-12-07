@@ -1,0 +1,121 @@
+#+SETUPFILE: org-setup.inc
+
+#+TITLE: Organizing snippets
+
+* Basic structure
+
+   Snippet collections can be stored in plain text files. They are arranged by
+   sub-directories naming *snippet tables*. These mostly name Emacs major names.
+
+   #+begin_example
+   .
+   |-- c-mode
+   |   `-- printf
+   |-- java-mode
+   |   `-- println
+   `-- text-mode
+       |-- email
+       `-- time
+   #+end_example
+
+   The collections are loaded into *snippet tables* which the
+   triggering mechanism (see [[file:snippet-expansion.org][Expanding Snippets]]) looks up and
+   (hopefully) causes the right snippet to be expanded for you.
+
+* Setting up =yas-snippet-dirs=
+
+   The emacs variable [[sym:yas-snippet-dirs][=yas-snippet-dirs=]] tells YASnippet
+   which collections to consider. It's used when you activate
+   [[sym:yas-global-mode][=yas-global-mode=]] or call
+   [[sym:yas-reload-all][=yas-reload-all=]] interactively.
+
+   The default considers:
+
+    - a personal collection that lives in =~/.emacs.d/snippets=
+    - the bundled collection, taken as a relative path to =yasnippet.el= localtion
+
+   When you come across other snippet collections, do the following to try them
+   out:
+
+   #+begin_src emacs-lisp :exports code
+   ;; Develop in ~/emacs.d/mysnippets, but also
+   ;; try out snippets in ~/Downloads/interesting-snippets
+   (setq yas-snippet-dirs '("~/emacs.d/mysnippets"
+                              "~/Downloads/interesting-snippets"))
+
+   ;; OR, keeping YASnippet defaults try out ~/Downloads/interesting-snippets
+   (setq yas-snippet-dirs (append yas-snippet-dirs
+                                  '("~/Downloads/interesting-snippets")))
+   #+end_src
+
+   Collections appearing earlier in the list shadow snippets with same names
+   appearing in collections later in the list. [[sym:yas-new-snippet][=yas-new-snippet=]] always stores
+   snippets in the first collection.
+
+* The =.yas-parents= file
+
+   It's very useful to have certain modes share snippets between
+   themselves. To do this, choose a mode subdirectory and place a
+   =.yas-parents= containing a whitespace-separated list of other mode
+   names. When you reload those modes become parents of the original
+   mode.
+
+   #+begin_example
+   .
+   |-- c-mode
+   |   |-- .yas-parents    # contains "cc-mode text-mode"
+   |   `-- printf
+   |-- cc-mode
+   |   |-- for
+   |   `-- while
+   |-- java-mode
+   |   |-- .yas-parents    # contains "cc-mode text-mode"
+   |   `-- println
+   `-- text-mode
+       |-- email
+       `-- time
+   #+end_example
+
+
+* TODO The =.yas-make-groups= file
+
+   If you place an empty plain text file =.yas-make-groups= inside one
+   of the mode directories, the names of these sub-directories are
+   considered groups of snippets and [[snippet-menu.org][the menu]] is organized much more
+   cleanly:
+
+   [[./images/menu-groups.png]]
+
+   Another way to achieve this is to place a =# group:= directive
+   inside the snippet definition. See [[./snippet-development.org][Writing Snippets]].
+
+   #+begin_example
+   $ tree ruby-mode/
+   ruby-mode/
+   |-- .yas-make-groups
+   |-- collections
+   |   |-- each
+   |   `-- ...
+   |-- control structure
+   |   |-- forin
+   |   `-- ...
+   |-- definitions
+   |   `-- ...
+   `-- general
+      `-- ...
+   #+end_example
+
+   Yet another way to create a nice snippet menu is to write into
+   =.yas-make-groups= a menu definition. TODO
+
+* TODO The =.yas-setup.el= file
+
+** TODO
+
+* TODO The =.yas-compiled-snippet.el= file
+
+** TODO
+
+* TODO The =.yas-skip= file
+
+** TODO

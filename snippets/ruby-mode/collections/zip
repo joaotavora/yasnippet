@@ -1,4 +1,0 @@
-#name : zip(...) { |...| ... }
-# key: zip
-# --
-zip(${enums}) { |${row}| $0 }

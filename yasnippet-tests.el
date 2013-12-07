@@ -204,6 +204,56 @@
       (ert-simulate-command `(yas-mock-insert "bbb"))
       (should (string= (yas--buffer-contents) "if condition\naaa\nelse\nbbb\nend")))))
 
+(ert-deftest example-for-issue-404 ()
+  (with-temp-buffer
+    (c++-mode)
+    (yas-minor-mode 1)
+    (insert "#include <foo>\n")
+    (let ((snippet "main"))
+      (let ((yas-good-grace nil)) (yas-expand-snippet snippet))
+      (should (string= (yas--buffer-contents) "#include <foo>\nmain")))))
+
+(ert-deftest example-for-issue-404-c-mode ()
+  (with-temp-buffer
+    (c-mode)
+    (yas-minor-mode 1)
+    (insert "#include <foo>\n")
+    (let ((snippet "main"))
+      (let ((yas-good-grace nil)) (yas-expand-snippet snippet))
+      (should (string= (yas--buffer-contents) "#include <foo>\nmain")))))
+
+(ert-deftest example-for-issue-404-external-emacs ()
+  :tags '(:external)
+  (let ((fixture-el-file (make-temp-file "yas-404-fixture" nil ".el")))
+    (with-temp-buffer
+      (insert (pp-to-string
+               `(condition-case _
+                    (progn
+                      (require 'yasnippet)
+                      (yas-global-mode)
+                      (switch-to-buffer "foo.c")
+                      (c-mode)
+                      (insert "#include <iostream>\nmain")
+                      (setq yas-good-grace nil)
+                      (yas-expand)
+                      (kill-emacs 0))
+                  (error (kill-emacs -1)))))
+      (write-file fixture-el-file))
+    (should (= 0
+               (call-process (concat invocation-directory invocation-name)
+                             nil nil nil
+                             "-Q"  ;; "--batch"
+                             "-L" "." "-l" fixture-el-file)))))
+
+(ert-deftest middle-of-buffer-snippet-insertion ()
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    (insert "beginning")
+    (save-excursion (insert "end"))
+    (let ((snippet "-middle-"))
+      (yas-expand-snippet snippet))
+    (should (string= (yas--buffer-contents) "beginning-middle-end"))))
+
 (ert-deftest another-example-for-issue-271 ()
   ;; expect this to fail in batch mode since `region-active-p' doesn't
   ;; used by `yas-expand-snippet' doesn't make sense in that context.
@@ -551,17 +601,40 @@ TODO: be meaner"
     (should (eq (key-binding [(tab)]) 'yas-expand))
     (should (eq (key-binding (kbd "TAB")) 'yas-expand))))
 
+(ert-deftest test-yas-activate-extra-modes ()
+  "Given a symbol, `yas-activate-extra-mode' should be able to
+add the snippets associated with the given mode."
+  (with-temp-buffer
+    (yas-saving-variables
+     (yas-with-snippet-dirs
+       '((".emacs.d/snippets"
+          ("markdown-mode"
+           ("_" . "_Text_ "))
+          ("emacs-lisp-mode"
+           ("car" . "(car )"))))
+       (yas-reload-all)
+       (emacs-lisp-mode)
+       (yas-minor-mode-on)
+       (yas-activate-extra-mode 'markdown-mode)
+       (should (eq 'markdown-mode (car yas--extra-modes)))
+       (yas-should-expand '(("_" . "_Text_ ")))
+       (yas-should-expand '(("car" . "(car )")))
+       (yas-deactivate-extra-mode 'markdown-mode)
+       (should-not (eq 'markdown-mode (car yas--extra-modes)))
+       (yas-should-not-expand '("_"))
+       (yas-should-expand '(("car" . "(car )")))))))
+
 
 ;;; Helpers
 ;;;
-(defun yas-batch-run-tests ()
+(defun yas-batch-run-tests (&optional also-external)
   (interactive)
   (with-temp-buffer
     (yas--with-temporary-redefinitions
-        ((message (&rest _args) nil))
-      (ert t (buffer-name (current-buffer)))
-      (princ (buffer-string)))))
-
+     ((message (&rest _args) nil))
+     (ert (or (and also-external t)
+              '(not (tag :external))) (buffer-name (current-buffer)))
+    (princ (buffer-string)))))
 
 (defun yas-should-expand (keys-and-expansions)
   (dolist (key-and-expansion keys-and-expansions)

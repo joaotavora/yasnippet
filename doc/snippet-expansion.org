@@ -1,0 +1,262 @@
+#+SETUPFILE: org-setup.inc
+
+#+TITLE: Expanding snippets
+
+  This section describes how YASnippet chooses snippets for expansion at point.
+
+  Maybe, you'll want some snippets to be expanded in a particular
+  mode, or only under certain conditions, or be prompted using
+
+* Triggering expansion
+
+   You can use YASnippet to expand snippets in different ways:
+
+   - When [[sym:yas-minor-mode][=yas-minor-mode=]] is active:
+     - Type the snippet's *trigger key* then calling [[sym:yas-expand][=yas-expand=]]
+       (bound to =TAB= by default).
+
+     - Use the snippet's *keybinding*.
+
+     - By expanding directly from the "YASnippet" menu in the menu-bar
+
+     - Using hippie-expand
+
+   - Call [[sym:yas-insert-snippet][=yas-insert-snippet=]] (use =M-x yas-insert-snippet== or its
+     keybinding =C-c & C-s=).
+
+   - Use m2m's excellent auto-complete
+     TODO: example for this
+
+   - Expanding from emacs-lisp code
+
+** Trigger key
+
+[[sym:yas-expand][=yas-expand=]] tries to expand a /snippet abbrev/ (also known as
+/snippet key/) before point.
+
+When [[sym:yas-minor-mode][=yas-minor-mode=]] is enabled, it binds [[sym:yas-expand][=yas-expand=]] to =TAB= and
+=<tab>= by default, however, you can freely set it to some other key:
+
+#+begin_src emacs-lisp :exports code
+   (define-key yas-minor-mode-map (kbd "<tab>") nil)
+   (define-key yas-minor-mode-map (kbd "TAB") nil)
+   (define-key yas-minor-mode-map (kbd "<the new key>") 'yas-expand)
+#+end_src
+
+To enable the YASnippet minor mode in all buffers globally use the
+command [[sym:yas-global-mode][=yas-global-mode=]]. This will enable a modeline indicator,
+=yas=:
+
+[[./images/minor-mode-indicator.png]]
+
+When you use [[sym:yas-global-mode][=yas-global-mode=]] you can also selectively disable
+YASnippet in some buffers by setting the buffer-local variable
+[[sym:yas-dont-active][=yas-dont-active=]] in the buffer's mode hook.
+
+*** Fallback bahaviour
+
+[[sym:yas-fallback-behaviour][=yas-fallback-behaviour=]] is a customization variable bound to
+'=call-other-command= by default. If [[sym:yas-expand][=yas-expand=]] failed to find any
+suitable snippet to expand, it will disable the minor mode temporarily
+and find if there's any other command bound to the same key.
+
+If found, the command will be called. Usually this works very well
+--when there's a snippet, expand it, otherwise, call whatever command
+originally bind to the trigger key.
+
+However, you can change this behavior by customizing the
+[[sym:yas-fallback-behavior][=yas-fallback-behavior=]] variable. If you set this variable to
+'=return-nil=, it will return =nil= instead of trying to call the
+/original/ command when no snippet is found.
+
+** Insert at point
+
+The command [[#yas-insert-snippet][=yas-insert-snippet=]] lets you insert snippets at point
+/for your current major mode/. It prompts you for the snippet key
+first, and then for a snippet template if more than one template
+exists for the same key.
+
+The list presented contains the snippets that can be inserted at point,
+according to the condition system. If you want to see all applicable
+snippets for the major mode, prefix this command with =C-u=.
+
+The prompting methods used are again controlled by
+[[sym:yas-prompt-functions][=yas-prompt-functions=]].
+
+** Snippet keybinding
+
+See the section of the =# binding:= directive in
+[[./snippet-development.org][Writing Snippets]].
+
+** Expanding from the menu
+
+See [[./snippet-menu.org][the YASnippet Menu]].
+
+** Expanding with =hippie-expand=
+
+To integrate with =hippie-expand=, just put
+[[sym:yas-hippie-try-expand][=yas-hippie-try-expand=]] in
+=hippie-expand-try-functions-list=. This probably makes more sense
+when placed at the top of the list, but it can be put anywhere you
+prefer.
+
+** Expanding from emacs-lisp code
+
+Sometimes you might want to expand a snippet directly from you own
+elisp code. You should call
+[[sym:yas-expand-snippet][=yas-expand-snippet=]] instead of
+[[sym:yas-expand][=yas-expand=]] in this case.
+
+As with expanding from the menubar, the condition system and multiple
+candidates doesn't affect expansion. In fact, expanding from the
+YASnippet menu has the same effect of evaluating the follow code:
+
+#+BEGIN_SRC emacs-lisp
+  (yas-expand-snippet template)
+#+END_SRC
+
+See the internal documentation on [[sym:yas-expand-snippet][=yas-expand-snippet=]] for more
+information.
+
+* Controlling expansion
+
+** Eligible snippets
+
+YASnippet does quite a bit of filtering to find out which snippets are
+eligible for expanding at the current cursor position.
+
+In particular, the following things matter:
+
+-  Currently loaded snippets tables
+
+   These are loaded from a directory hierarchy in your file system. See
+   [[./snippet-organization.org][Organizing Snippets]]. They are named
+   after major modes like =html-mode=, =ruby-mode=, etc...
+
+-  Major mode of the current buffer
+
+   If the currrent major mode matches one of the loaded snippet tables,
+   then all that table's snippets are considered for expansion. Use
+   =M-x describe-variable RET major-mode RET= to find out which major
+   mode you are in currently.
+
+-  Parent tables
+
+   Snippet tables defined as the parent of some other eligible table are
+   also considered. This works recursively, i.e. parents of parents of
+   eligible tables are also considered.
+
+-  Buffer-local list of extra modes
+
+   Use [[#yas-activate-extra-mode][=yas-activate-extra-mode=]] to
+   consider snippet tables whose name does not correspond to a major
+   mode. Typically, you call this from a minor mode hook, for example:
+
+#+BEGIN_SRC emacs-lisp
+  ;; When entering rinari-minor-mode, consider also the snippets in the
+  ;; snippet table "rails-mode"
+  (add-hook 'rinari-minor-mode-hook
+            #'(lambda ()
+                (yas-activate-extra-mode 'rails-mode)))
+#+END_SRC
+
+-  Buffer-local
+   [[sym:yas-buffer-local-condition][=yas-buffer-local-condition=]]
+   variable
+
+   This variable provides finer grained control over what snippets can
+   be expanded in the current buffer. The default value won't let you
+   expand snippets inside comments or string literals for example. See
+   The condition system\_ for more info.
+
+** The condition system
+
+Consider this scenario: you are an old Emacs hacker. You like the
+abbrev-way and bind [[sym:yas-expand][=yas-expand=]] to =SPC=. However, you don't want
+=if= to be expanded as a snippet when you are typing in a comment
+block or a string (e.g. in =python-mode=).
+
+If you use the =# condition := directive (see
+[[./snippet-development.org][Writing Snippets]]) you could just specify
+the condition for =if= to be =(not (python-in-string/comment))=. But how
+about =while=, =for=, etc. ? Writing the same condition for all the
+snippets is just boring. So has a buffer local variable
+[[sym:yas-buffer-local-condition][=yas-buffer-local-condition=]]. You can set this variable to
+=(not (python-in-string/comment))= in =python-mode-hook=.
+
+Then, what if you really want some particular snippet to expand even
+inside a comment? Set [[sym:yas-buffer-local-condition][=yas-buffer-local-condition=]] like this
+
+#+BEGIN_SRC emacs-lisp
+  (add-hook 'python-mode-hook
+            (lambda ()
+              (setq yas-buffer-local-condition
+                    '(if (python-in-string/comment)
+                         '(require-snippet-condition . force-in-comment)
+                       t))))
+#+END_SRC
+
+... and specify the condition for a snippet that you're going to expand
+in comment to be evaluated to the symbol =force-in-comment=. Then it can
+be expanded as you expected, while other snippets like =if= still can't
+expanded in comment.
+
+For the full set of possible conditions, see the documentation for
+[[sym:yas-buffer-local-condition][=yas-buffer-local-condition=]].
+
+** Multiples snippet with the same key
+
+The rules outlined [[Eligible%20snippets][above]] can return more than
+one snippet to be expanded at point.
+
+When there are multiple candidates, YASnippet will let you select one.
+The UI for selecting multiple candidate can be customized through
+[[sym:yas-prompt-functions][=yas-prompt-functions=]] , which defines your preferred methods of being
+prompted for snippets.
+
+You can customize it with
+=M-x customize-variable RET yas-prompt-functions RET=. Alternatively you
+can put in your emacs-file:
+
+#+BEGIN_SRC emacs-lisp
+  (setq yas-prompt-functions '(yas-x-prompt yas-dropdown-prompt))
+#+END_SRC
+
+Currently there are some alternatives solution with YASnippet.
+
+*** Use the X window system
+
+[[./images/x-menu.png]]
+
+The function [[sym:yas-x-prompt][=yas-x-prompt=]] can be used to show a popup menu for you to
+select. This menu will be part of you native window system widget, which
+means:
+
+-  It usually looks beautiful. E.g. when you compile Emacs with gtk
+   support, this menu will be rendered with your gtk theme.
+-  Your window system may or may not allow to you use =C-n=, =C-p= to
+   navigate this menu.
+-  This function can't be used when in a terminal.
+
+*** Minibuffer prompting
+
+[[./images/ido-menu.png]]
+
+You can use functions [[sym:yas-completing-prompt][=yas-completing-prompt=]] for the classic emacs
+completion method or [[sym:yas-ido-prompt][=yas-ido-prompt=]] for a much nicer looking method.
+The best way is to try it. This works in a terminal.
+
+*** Use =dropdown-menu.el=
+
+[[./images/dropdown-menu.png]]
+
+The function [[sym:yas-dropdown-prompt][=yas-dropdown-prompt=]] can also be placed in the
+[[sym:yas-prompt-functions][=yas-prompt-functions=]] list.
+
+This works in both window system and terminal and is customizable, you
+can use =C-n=, =C-p= to navigate, =q= to quit and even press =6= as a
+shortcut to select the 6th candidate.
+
+*** Roll your own
+
+See the documentation on variable [[sym:yas-prompt-functions][=yas-prompt-functions=]]
