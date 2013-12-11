@@ -79,7 +79,7 @@ namespace :doc do
       end
       Dir.chdir 'doc/gh-pages' do
         sh "git commit -a -m 'Automatic documentation update.\n\n" +
-          "From #{rev.chomp()}'"
+          "From #{curRev.chomp()}'"
         sh "git push"
       end
     end
