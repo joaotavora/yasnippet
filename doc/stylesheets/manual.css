@@ -1,0 +1,26 @@
+nav > ul > li.center > ul {
+    padding: 0;
+}
+
+nav li {
+    vertical-align: top;
+
+    display: inline;
+    list-style-type: none;
+    padding: 0.5em;
+}
+
+nav > ul > li {
+    display: inline-block;
+}
+
+/* match org's css for <pre> */
+code {
+    background-color: #F3F5F7;
+    font-family: courier, monospace;
+}
+
+#content {
+    margin-left: 5%;
+    margin-right: 10%;
+}
