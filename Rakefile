@@ -67,6 +67,9 @@ namespace :doc do
       Dir.glob("doc/images/*").each do |file|
         FileUtils.cp file, 'doc/gh-pages/images'
       end
+      Dir.glob("doc/stylesheets/*.css").each do |file|
+        FileUtils.cp file, 'doc/gh-pages/stylesheets'
+      end
       curRev = `git rev-parse --verify HEAD`.chomp()
       expRev = IO.read('doc/html-revision').chomp()
       if curRev != expRev
