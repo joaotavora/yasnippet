@@ -134,8 +134,7 @@ This is also the default value starting for that version. It skips the
 minor mode in buffers where it is not applicable (no snippet tables),
 but only once you have setup your yas-root-directory.
 
-* How do I define an abbrev key containing characters not supported by
-the filesystem?
+* How do I define an abbrev key containing characters not supported by the filesystem?
 
 -  *Note*: This question applies if you're still defining snippets
    whose key /is/ the filename. This is behavior still provided by
