@@ -4518,7 +4518,6 @@ and return the directory.  Return nil if not found."
                              yas-snippet-end
                              yas-modified-p
                              yas-moving-away-p
-                             yas-text
                              yas-substr
                              yas-choose-value
                              yas-key-to-value
