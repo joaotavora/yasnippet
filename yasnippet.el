@@ -4442,7 +4442,7 @@ and return the directory.  Return nil if not found."
 
 ;;; Backward compatibility to yasnippet <= 0.7
 
-(defvar yas--exported-syms '(;; `defcustom's
+(defvar yas--backported-syms '(;; `defcustom's
                              ;;
                              yas-snippet-dirs
                              yas-prompt-functions
@@ -4531,7 +4531,6 @@ and return the directory.  Return nil if not found."
                              yas-unimplemented
                              yas-define-condition-cache
                              yas-hippie-try-expand
-                             yas-active-keys
 
                              ;; debug definitions
                              ;; yas-debug-snippet-vars
@@ -4548,16 +4547,11 @@ and return the directory.  Return nil if not found."
                              ;; yas-call-with-snippet-dirs
                              ;; yas-with-snippet-dirs
 )
-  "Exported yasnippet symbols.
+  "Backported yasnippet symbols.
 
-i.e. ones that I will try to keep in future yasnippet versions
-and ones that other elisp libraries can more or less safely rely
-upon.")
+They are mapped to \"yas/*\" variants.")
 
-(defvar yas--dont-backport '(yas-active-keys)
-  "Exported symbols that don't map back to \"yas/*\" variants.")
-
-(dolist (sym (set-difference yas--exported-syms yas--dont-backport))
+(dolist (sym yas--backported-syms)
   (let ((backported (intern (replace-regexp-in-string "^yas-" "yas/" (symbol-name sym)))))
     (when (boundp sym)
       (make-obsolete-variable backported sym "yasnippet 0.8")
@@ -4565,6 +4559,22 @@ upon.")
     (when (fboundp sym)
       (make-obsolete backported sym "yasnippet 0.8")
       (defalias backported sym))))
+
+(defvar yas--exported-syms
+  (let (exported)
+    (mapatoms (lambda (atom)
+                (if (and (or (and (boundp atom)
+                                  (not (get atom 'byte-obsolete-variable)))
+                             (and (fboundp atom)
+                                  (not (get atom 'byte-obsolete-info))))
+                         (string-match-p "^yas-[^-]" (symbol-name atom)))
+                    (push atom exported))))
+    exported)
+  "Exported yasnippet symbols.
+
+i.e. the ones with \"yas-\" single dash prefix. I will try to
+keep them in future yasnippet versions and other elisp libraries
+can more or less safely rely upon them.")
 
 
 (provide 'yasnippet)
