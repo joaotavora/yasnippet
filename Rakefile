@@ -2,7 +2,10 @@
 
 require 'fileutils'
 
-$EMACS=ENV["EMACS"] || "emacs"
+$EMACS = ENV["EMACS"]
+if not $EMACS or $EMACS == 't'
+  $EMACS = "emacs"
+end
 
 def find_version
   File.read("yasnippet.el", :encoding => "UTF-8") =~ /;; Package-version: *([0-9.]+?) *$/
