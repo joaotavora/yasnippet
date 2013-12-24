@@ -91,7 +91,8 @@
                     body))))
 
 (defun yas--document-symbols (level &rest names-and-predicates)
-  (let ((sym-lists (make-vector (length names-and-predicates) nil)))
+  (let ((sym-lists (make-vector (length names-and-predicates) nil))
+        (stars (make-string level ?*)))
     (loop for sym in yas--exported-syms
           do (loop for test in (mapcar #'cdr names-and-predicates)
                    for i from 0
@@ -100,7 +101,7 @@
                         (return))))
     (loop for slist across sym-lists
           for name in (mapcar #'car names-and-predicates)
-          concat (format "\n** %s\n" name)
+          concat (format "\n%s %s\n" stars name)
           concat (mapconcat (lambda (sym)
                               (yas--document-symbol sym (1+ level)))
                             slist "\n\n"))))
