@@ -67,13 +67,14 @@
       (setq body (replace-regexp-in-string
                   "\\<\\([A-Z][-A-Z0-9]+\\)\\(\\sw+\\)?\\>"
                   #'(lambda (match)
-                      (let* ((match1 (downcase (match-string 1 match)))
+                      (let* ((match1 (match-string 1 match))
+                             (prefix (downcase match1))
                              (suffix (match-string 2 match))
                              (fmt (cond
-                                   ((member match1 args) "@<code>%s@</code>")
+                                   ((member prefix args) "@<code>%s@</code>")
                                    ((null suffix) "/%s/"))))
-                        (if fmt (format fmt match1)
-                          match)))
+                        (if fmt (format fmt prefix)
+                          match1)))
                   body t t 1)
             body (replace-regexp-in-string
                   "`\\([a-z-]+\\)'"
