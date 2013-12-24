@@ -11,5 +11,6 @@
         <li> <a href="snippet-menu.html">Menu</a>
       </ul>
     <li> <a href="faq.html">FAQ</a>
+    <li> <a href="snippet-reference.html">Reference</a>
   </ul>
 </nav>
