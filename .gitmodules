@@ -1,6 +1,6 @@
 [submodule "snippets"]
-	path = snippets
-	url = git@github.com:AndreaCrotti/yasnippet-snippets.git
+        path = snippets
+        url = https://github.com/AndreaCrotti/yasnippet-snippets.git
 [submodule "yasmate"]
-	path = yasmate
-	url = git@github.com:capitaomorte/yasmate.git
+        path = yasmate
+        url = https://github.com/capitaomorte/yasmate.git
