@@ -1,0 +1,18 @@
+2013-12-31  João Távora  <joaotavora@gmail.com>
+
+	* yasnippet.el (require): require cl-lib during byte-compilation
+	and load.
+
+	* yasnippet-tests.el (example-for-issue-404-external-emacs): Use
+	`yas-with-snippet-dirs' to not depend on bundled snippets.
+	(yas--call-with-temporary-redefinitions): Use `cl-labels' since no
+	cl-flet in emacs-24.3's cl-lib.el.
+	(loading-with-cyclic-parenthood): prog-mode doesn't exist in emacs
+	24.3.
+	(yas-batch-run-tests): remove it.
+
+	* Rakefile: use ert-run-tests-batch-and-exit.
+
+	* README.mdown: Add Travis CI badge.
+
+	* .travis.yml: new file

@@ -16,9 +16,8 @@ FileUtils.mkdir_p('pkg')
 
 desc "run tests in batch mode"
 task :tests do
-  batch_run_line = "(yas-batch-run-tests t)"
-  sh "#{$EMACS} -Q -L . -l yasnippet-tests.el -nw" +
-    " --batch --eval '#{batch_run_line}'"
+  sh "#{$EMACS} -Q -L . -l yasnippet-tests.el" +
+    " --batch -f ert-run-tests-batch-and-exit"
 end
 
 desc "create a release package"

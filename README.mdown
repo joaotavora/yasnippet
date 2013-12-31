@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/capitaomorte/yasnippet.png)](https://travis-ci.org/capitaomorte/yasnippet)
+
 # Intro
 
 **YASnippet** is a template system for Emacs. It allows you to

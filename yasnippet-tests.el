@@ -229,20 +229,26 @@
       (insert (pp-to-string
                `(condition-case _
                     (progn
-                      (require 'yasnippet)
-                      (yas-global-mode)
-                      (switch-to-buffer "foo.c")
-                      (c-mode)
-                      (insert "#include <iostream>\nmain")
-                      (setq yas-good-grace nil)
-                      (yas-expand)
-                      (kill-emacs 0))
+                      (require 'yasnippet-tests)
+                      (yas-with-snippet-dirs
+                        '((".emacs.d/snippets"
+                           ("c-mode"
+                            ("main" . "int main ()"))))
+                        (yas-global-mode)
+                        (switch-to-buffer "foo.c")
+                        (c-mode)
+                        (insert "#include <iostream>\nmain")
+                        (setq yas-good-grace nil)
+                        (yas-expand)
+                        (should (string= (buffer-string)
+                                         "#include <iostream>\nint main ()"))
+                        (kill-emacs 0)))
                   (error (kill-emacs -1)))))
       (write-file fixture-el-file))
     (should (= 0
                (call-process (concat invocation-directory invocation-name)
                              nil nil nil
-                             "-Q"  ;; "--batch"
+                             "-Q"  "--batch"
                              "-L" "." "-l" fixture-el-file)))))
 
 (ert-deftest middle-of-buffer-snippet-insertion ()
@@ -325,10 +331,10 @@ TODO: correct this bug!"
     ;; saving all definitions before overriding anything ensures FDEFINITION
     ;; errors don't cause accidental permanent redefinitions.
     ;;
-    (cl-flet ((set-fdefinitions (names functions)
-                                (loop for name in names
-                                      for fn in functions
-                                      do (fset name fn))))
+    (cl-labels ((set-fdefinitions (names functions)
+                                  (loop for name in names
+                                        for fn in functions
+                                        do (fset name fn))))
       (set-fdefinitions definition-names overriding-functions)
       (unwind-protect (funcall function)
 	(set-fdefinitions definition-names saved-functions)))))
@@ -409,12 +415,14 @@ TODO: correct this bug!"
      (yas-reload-all)
      (with-temp-buffer
        (let* ((major-mode 'c-mode)
-              (expected '(c-mode
+              (expected `(c-mode
                           cc-mode
                           yet-another-c-mode
                           and-also-this-one
                           and-that-one
-                          prog-mode
+                          ;; prog-mode doesn't exit in emacs 24.3
+                          ,@(if (fboundp 'prog-mode)
+                                '(prog-mode))
                           emacs-lisp-mode
                           lisp-interaction-mode))
               (observed (yas--modes-to-activate)))
@@ -627,15 +635,6 @@ add the snippets associated with the given mode."
 
 ;;; Helpers
 ;;;
-(defun yas-batch-run-tests (&optional also-external)
-  (interactive)
-  (with-temp-buffer
-    (yas--with-temporary-redefinitions
-     ((message (&rest _args) nil))
-     (ert (or (and also-external t)
-              '(not (tag :external))) (buffer-name (current-buffer)))
-    (princ (buffer-string)))))
-
 (defun yas-should-expand (keys-and-expansions)
   (dolist (key-and-expansion keys-and-expansions)
     (yas-exit-all-snippets)

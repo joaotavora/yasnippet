@@ -130,6 +130,8 @@
 ;;; Code:
 
 (require 'cl)
+(eval-and-compile
+  (require 'cl-lib))
 (require 'easymenu)
 (require 'help-mode)
 

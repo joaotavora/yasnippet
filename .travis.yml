@@ -1,0 +1,23 @@
+language: emacs
+before_install:
+  - echo -e "\ndeb http://us.archive.ubuntu.com/ubuntu raring universe multiverse main" | sudo tee -a /etc/apt/sources.list
+  - echo -e "\ndeb http://emacs.naquadah.org/ stable/" | sudo tee -a /etc/apt/sources.list
+  - echo -e "\ndeb-src http://emacs.naquadah.org/ stable/" | sudo tee -a /etc/apt/sources.list
+  - cat /etc/apt/sources.list
+  - wget -q -O - http://emacs.naquadah.org/key.gpg | sudo apt-key add -
+  - sudo apt-get update
+install:
+  - sudo apt-get install emacs
+  - sudo apt-get -t raring install libgnutls26
+  - sudo apt-get install emacs-snapshot-nox
+  - curl -O https://raw.github.com/ohler/ert/c619b56c5bc6a866e33787489545b87d79973205/lisp/emacs-lisp/ert.el
+  - curl -O https://raw.github.com/ohler/ert/c619b56c5bc6a866e33787489545b87d79973205/lisp/emacs-lisp/ert-x.el
+  - curl -o cl-lib.el http://elpa.gnu.org/packages/cl-lib-0.3.el
+before_script:
+script:
+  - export EMACS=emacs; rm *.elc; rake compile; rake tests
+  - rm ert*.el; rm cl-lib.el
+  - export EMACS=emacs-snapshot; rm *.elc; rake compile; rake tests
+notifications:
+  email:
+    - joaotavora@gmail.com
