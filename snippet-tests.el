@@ -312,3 +312,73 @@
   (should-error (snippet--canonicalize-form '(&mirror 1 (foo) (bar))))
   (should-error (snippet--canonicalize-form '(&field 1 (foo) (bar))))
   (should-error (snippet--canonicalize-form '(&eval (foo) (bar)))))
+
+
+;;; Snippet parser tests.
+;;;
+
+(ert-deftest parse-string-literals ()
+  (should (equal (snippet--parse-snippet "") '("")))
+  (should (equal (snippet--parse-snippet "foobar") '("foobar"))))
+
+(ert-deftest parse-escape-sequences ()
+  (should (equal (snippet--parse-snippet "foobar\\$123") '("foobar$123")))
+  (should (equal (snippet--parse-snippet "foobar\\\\") '("foobar\\")))
+  (should (equal (snippet--parse-snippet "foobar\\\\\\\\") '("foobar\\\\")))
+  (should (equal (snippet--parse-snippet "\\$") '("$")))
+  (should (equal (snippet--parse-snippet "\\a") '("a"))))
+
+(ert-deftest parse-invalid-escape-sequences ()
+  :expected-result :failed
+  (should-error (snippet--parse-snippet "\\"))
+  (should-error (snippet--parse-snippet "foobar \\"))
+  (should-error (snippet--parse-snippet "foobar \\\\\\")))
+
+(ert-deftest parse-eval-blocks ()
+  (should (equal (snippet--parse-snippet "foo`(upcase region-string)`bar")
+                 '("foo" (upcase region-string) "bar")))
+  (should (equal (snippet--parse-snippet "`(upcase region-string)`")
+                 '((upcase region-string))))
+  (should (equal (snippet--parse-snippet "`(apply concat \\`(,region-string \"foobar\"))`")
+                 '((apply concat `(,region-string "foobar"))))))
+
+
+(ert-deftest parse-tabstops ()
+  (should (equal (snippet--parse-snippet "foo$1")
+                 '("foo" (&field "1" nil))))
+
+  (should (equal (snippet--parse-snippet "foo$123")
+                 '("foo" (&field "123" nil))))
+
+  (should (equal (snippet--parse-snippet "foo$1 $2 $1")
+                 '("foo" (&field "1" nil) " " (&field "2" nil) " "
+                   (&mirror "1" nil)))))
+
+(ert-deftest parse-exits ()
+  (should (equal (snippet--parse-snippet "$0") '((&exit nil))))
+  (should (equal (snippet--parse-snippet "${0:foobar}") '((&exit "foobar"))))
+  (should (equal (snippet--parse-snippet "${0:`(upcase \"foobar\")`}")
+                 '((&exit (upcase "foobar"))))))
+
+(ert-deftest parse-primary-field ()
+  :expected-result :failed
+  (should (equal (snippet--parse-snippet "$1 ${1:foobar} $1")
+                 '((&mirror "1" nil) " " (&field "1" "foobar") " "
+                   (&mirror "1" nil))))
+
+  (should (equal (snippet--parse-snippet "${1:$(upcase region-string)} $1")
+                 '((&mirror "1" (&transform (upcase region-string))) " "
+                   (&field "1" nil))))
+
+  (should (equal (snippet--parse-snippet "${1:$(upcase region-string)} $1 ${1:foobar}")
+                 '((&mirror "1" (&transform (upcase region-string))) " "
+                   (&mirror "1" nil) " " (&field "1" "foobar")))))
+
+(ert-deftest parse-field-contents ()
+  (should (equal (snippet--parse-snippet "${1:foo`(upcase region-string)`bar}")
+                 '((&field "1" (&eval (concat ("foo"
+                                               (upcase region-string)
+                                               "bar")))))))
+
+  (should (equal (snippet--parse-snippet "${1:foo$2bar}")
+                 '((&field "1" (&nested "foo" (&field "2" nil) "bar"))))))
