@@ -708,9 +708,16 @@ and friends."
                 (push mode explored)
                 (cons mode
                       (loop for neighbour
-                            in (remove nil (cons (get mode
-                                                      'derived-mode-parent)
-                                                 (gethash mode yas--parents)))
+                            in (remove nil
+                                       (let ((d 'derived-mode-parent)
+                                             (pmode (gethash mode yas--parents)))
+                                         (cons (and
+                                                (not
+                                                 (memq
+                                                  (intern (concat "-" (symbol-name d)))
+                                                  pmode))
+                                                (get mode d))
+                                               pmode)))
 
                             unless (memq neighbour explored)
                             append (funcall dfs neighbour explored)))))
