@@ -1597,7 +1597,7 @@ Optional PROMPT sets the prompt to use."
   (when (and (fboundp 'ido-completing-read)
 	     (or (>= emacs-major-version 24)
 		 ido-mode))
-    (yas-completing-prompt prompt choices display-fn #'ido-completing-read)))
+    (yas-completing-prompt prompt (reverse choices) display-fn #'ido-completing-read)))
 
 (defun yas-dropdown-prompt (_prompt choices &optional display-fn)
   (when (fboundp 'dropdown-list)
