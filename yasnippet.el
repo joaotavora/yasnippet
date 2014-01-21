@@ -1582,7 +1582,6 @@ Optional PROMPT sets the prompt to use."
                      (dolist (tl templates)
                        (push (cons (concat prefix (yas--template-name tl)) tl) menu))) organized)
       (setq menu (mapcar #'(lambda (tl) (cons (concat prefix (yas--template-name tl)) tl)) templates)))
-
     (setq menu (nreverse menu))
     (or (x-popup-menu (if (fboundp 'posn-at-point)
                           (let ((x-y (posn-x-y (posn-at-point (point)))))
@@ -1605,7 +1604,7 @@ Optional PROMPT sets the prompt to use."
           filtered-choices
           d
           n)
-      (dolist (choice choices)
+      (dolist (choice (nreverse choices))
         (setq d (or (and display-fn (funcall display-fn choice))
                       choice))
         (when (stringp d)
