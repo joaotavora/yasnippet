@@ -157,3 +157,7 @@ Finally, thank you very much for using YASnippet!
 [melpa]: http://melpa.milkbox.net/
 [yasmate]: http://github.com/capitaomorte/yasmate
 [yasnippet-snippets]: http://github.com/AndreaCrotti/yasnippet-snippets
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/capitaomorte/yasnippet/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
