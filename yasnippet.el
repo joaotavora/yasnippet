@@ -185,7 +185,7 @@ as the default for storing the user's new snippets."
 (defvaralias 'yas/root-directory 'yas-snippet-dirs)
 
 (defcustom yas-new-snippet-default "\
-# -*- mode: snippet -*-
+# -*- mode: snippet; require-final-newline: nil -*-
 # name: $1
 # key: ${2:${1:$(yas--key-from-desc yas-text)}}${3:
 # binding: ${4:direct-keybinding}}${5:
