@@ -1542,25 +1542,24 @@ Optional PROMPT sets the prompt to use."
   ;; up as `yas--all-templates' I think.
   ;;
   (when (and window-system choices)
-    (let ((chosen
-           (let (menu d) ;; d for display
-             (dolist (c choices)
-               (setq d (or (and display-fn (funcall display-fn c))
-                           c))
-               (cond ((stringp d)
-                      (push (cons (concat "   " d) c) menu))
-                     ((listp d)
-                      (push (car d) menu))))
-             (setq menu (list prompt (push "title" menu)))
-             (x-popup-menu (if (fboundp 'posn-at-point)
-                               (let ((x-y (posn-x-y (posn-at-point (point)))))
-                                 (list (list (+ (car x-y) 10)
-                                             (+ (cdr x-y) 20))
-                                       (selected-window)))
-                             t)
-                           menu))))
-      (or chosen
-          (keyboard-quit)))))
+    (or
+     (let* ((display-fn (or display-fn #'identity))
+            (menu
+             (list prompt
+                   (cons "title"
+                         (mapcar (lambda (c)
+                                   (let ((d (funcall display-fn c)))
+                                     (cond ((stringp d) (cons (concat "   " d) c))
+                                           ((listp d) (car d)))))
+                                 choices)))))
+       (x-popup-menu (if (fboundp 'posn-at-point)
+                         (let ((x-y (posn-x-y (posn-at-point (point)))))
+                           (list (list (+ (car x-y) 10)
+                                       (+ (cdr x-y) 20))
+                                 (selected-window)))
+                       t)
+                     menu))
+     (keyboard-quit))))
 
 (defun yas--x-pretty-prompt-templates (prompt templates)
   "Display TEMPLATES, grouping neatly by table name."
@@ -1601,46 +1600,28 @@ Optional PROMPT sets the prompt to use."
 
 (defun yas-dropdown-prompt (_prompt choices &optional display-fn)
   (when (fboundp 'dropdown-list)
-    (let (formatted-choices
-          filtered-choices
-          d
-          n)
-      (dolist (choice choices)
-        (setq d (or (and display-fn (funcall display-fn choice))
-                      choice))
-        (when (stringp d)
-          (push d formatted-choices)
-          (push choice filtered-choices)))
-
-      (setq n (and formatted-choices (dropdown-list formatted-choices)))
+    (let* ((formatted-choices (if display-fn (delete-if-not display-fn choices)
+                                choices))
+           (filtered-choices (if display-fn (mapcar display-fn filtered-choices)
+                               choices))
+           (n (and formatted-choices
+                   (dropdown-list formatted-choices))))
       (if n
           (nth n filtered-choices)
         (keyboard-quit)))))
 
 (defun yas-completing-prompt (prompt choices &optional display-fn completion-fn)
-  (let (formatted-choices
-        filtered-choices
-        chosen
-        d
-        (completion-fn (or completion-fn
-                           #'completing-read)))
-    (dolist (choice choices)
-      (setq d (or (and display-fn (funcall display-fn choice))
-                    choice))
-      (when (stringp d)
-        (push d formatted-choices)
-        (push choice filtered-choices)))
-    (setq chosen (and formatted-choices
-                      (funcall completion-fn prompt
-                               formatted-choices
-                               nil
-                               'require-match
-                               nil
-                               nil)))
-    (let ((position (or (and chosen
-                             (position chosen formatted-choices :test #'string=))
-                        0)))
-      (nth position filtered-choices))))
+  (let* ((formatted-choices (if display-fn (delete-if-not display-fn choices)
+                              choices))
+         (filtered-choices (if display-fn (mapcar display-fn filtered-choices)
+                             choices))
+         (chosen (and formatted-choices
+                      (funcall (or completion-fn #'completing-read)
+                               prompt formatted-choices
+                               nil 'require-match nil nil)))
+         (position (and chosen
+                        (position chosen formatted-choices :test #'string=))))
+    (nth (or position 0) filtered-choices)))
 
 (defun yas-no-prompt (_prompt choices &optional _display-fn)
   (first choices))
@@ -2808,10 +2789,11 @@ If found, the content of subexp group SUBEXP (default 0) is
 The last element of POSSIBILITIES may be a list of strings."
   (unless (or yas-moving-away-p
               yas-modified-p)
-    (setq possibilities (nreverse possibilities))
-    (setq possibilities (if (listp (car possibilities))
-                            (append (reverse (car possibilities)) (rest possibilities))
-                                   possibilities))
+    (let* ((last-link (last possibilities))
+           (last-elem (car last-link)))
+      (when (listp last-elem)
+        (setcar last-link (car last-elem))
+        (setcdr last-link (cdr last-elem))))
     (some #'(lambda (fn)
               (funcall fn "Choose: " possibilities))
           yas-prompt-functions)))
