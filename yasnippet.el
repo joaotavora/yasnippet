@@ -1534,13 +1534,6 @@ Optional PROMPT sets the prompt to use."
 
 (defun yas-x-prompt (prompt choices &optional display-fn)
   "Display choices in a x-window prompt."
-  ;; FIXME: HACK: if we notice that one of the objects in choices is
-  ;; actually a `yas--template', defer to `yas--x-prompt-pretty-templates'
-  ;;
-  ;; This would be better implemented by passing CHOICES as a
-  ;; structured tree rather than a list. Modifications would go as far
-  ;; up as `yas--all-templates' I think.
-  ;;
   (when (and window-system choices)
     (let ((chosen
            (let (menu d) ;; d for display
