@@ -1600,28 +1600,22 @@ Optional PROMPT sets the prompt to use."
 
 (defun yas-dropdown-prompt (_prompt choices &optional display-fn)
   (when (fboundp 'dropdown-list)
-    (let* ((formatted-choices (if display-fn (delete-if-not display-fn choices)
-                                choices))
-           (filtered-choices (if display-fn (mapcar display-fn filtered-choices)
-                               choices))
-           (n (and formatted-choices
-                   (dropdown-list formatted-choices))))
-      (if n
-          (nth n filtered-choices)
+    (let* ((formatted-choices
+            (if display-fn (mapcar display-fn choices) choices))
+           (n (dropdown-list formatted-choices)))
+      (if n (nth n choices)
         (keyboard-quit)))))
 
 (defun yas-completing-prompt (prompt choices &optional display-fn completion-fn)
-  (let* ((formatted-choices (if display-fn (delete-if-not display-fn choices)
-                              choices))
-         (filtered-choices (if display-fn (mapcar display-fn filtered-choices)
-                             choices))
-         (chosen (and formatted-choices
-                      (funcall (or completion-fn #'completing-read)
-                               prompt formatted-choices
-                               nil 'require-match nil nil)))
-         (position (and chosen
-                        (position chosen formatted-choices :test #'string=))))
-    (nth (or position 0) filtered-choices)))
+  (let* ((formatted-choices
+          (if display-fn (mapcar display-fn choices) choices))
+         (chosen (funcall (or completion-fn #'completing-read)
+                          prompt formatted-choices
+                          nil 'require-match nil nil)))
+    (if (eq choices formatted-choices)
+        chosen
+      (nth (or (position chosen formatted-choices :test #'string=) 0)
+           choices))))
 
 (defun yas-no-prompt (_prompt choices &optional _display-fn)
   (first choices))
