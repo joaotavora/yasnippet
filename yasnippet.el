@@ -1543,22 +1543,17 @@ Optional PROMPT sets the prompt to use."
   ;;
   (when (and window-system choices)
     (or
-     (let* ((display-fn (or display-fn #'identity))
-            (menu
-             (list prompt
-                   (cons "title"
-                         (mapcar (lambda (c)
-                                   (let ((d (funcall display-fn c)))
-                                     (cond ((stringp d) (cons (concat "   " d) c))
-                                           ((listp d) (car d)))))
-                                 choices)))))
-       (x-popup-menu (if (fboundp 'posn-at-point)
-                         (let ((x-y (posn-x-y (posn-at-point (point)))))
-                           (list (list (+ (car x-y) 10)
-                                       (+ (cdr x-y) 20))
-                                 (selected-window)))
-                       t)
-                     menu))
+     (x-popup-menu
+      (if (fboundp 'posn-at-point)
+          (let ((x-y (posn-x-y (posn-at-point (point)))))
+            (list (list (+ (car x-y) 10)
+                        (+ (cdr x-y) 20))
+                  (selected-window)))
+        t)
+      `(,prompt ("title"
+                 ,@(mapcar* (lambda (c d) `(,(concat "   " d) . ,c))
+                            choices
+                            (if display-fn (mapcar display-fn choices) choices)))))
      (keyboard-quit))))
 
 (defun yas--x-pretty-prompt-templates (prompt templates)
