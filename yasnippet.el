@@ -1489,10 +1489,6 @@ Here's a list of currently recognized directives:
 
 ;;; Popping up for keys and templates
 
-(defvar yas--x-pretty-prompt-templates nil
-  "If non-nil, attempt to prompt for templates like TextMate.")
-
-
 (defun yas--prompt-for-template (templates &optional prompt)
   "Interactively choose a template from the list TEMPLATES.
 
@@ -1504,13 +1500,11 @@ Optional PROMPT sets the prompt to use."
           (sort templates #'(lambda (t1 t2)
                               (< (length (yas--template-name t1))
                                  (length (yas--template-name t2))))))
-    (if yas--x-pretty-prompt-templates
-        (yas--x-pretty-prompt-templates "Choose a snippet" templates)
-      (some #'(lambda (fn)
-                (funcall fn (or prompt "Choose a snippet: ")
-                         templates
-                         #'yas--template-name))
-            yas-prompt-functions))))
+    (some #'(lambda (fn)
+              (funcall fn (or prompt "Choose a snippet: ")
+                       templates
+                       #'yas--template-name))
+          yas-prompt-functions)))
 
 (defun yas--prompt-for-keys (keys &optional prompt)
   "Interactively choose a template key from the list KEYS.
@@ -1555,37 +1549,6 @@ Optional PROMPT sets the prompt to use."
                             choices
                             (if display-fn (mapcar display-fn choices) choices)))))
      (keyboard-quit))))
-
-(defun yas--x-pretty-prompt-templates (prompt templates)
-  "Display TEMPLATES, grouping neatly by table name."
-  (let ((organized (make-hash-table :test #'equal))
-        menu
-        more-than-one-table
-        prefix)
-    (dolist (tl templates)
-      (puthash (yas--template-table tl)
-               (cons tl
-                     (gethash (yas--template-table tl) organized))
-               organized))
-    (setq more-than-one-table (> (hash-table-count organized) 1))
-    (setq prefix (if more-than-one-table
-                     "   " ""))
-    (if more-than-one-table
-        (maphash #'(lambda (table templates)
-                     (push (yas--table-name table) menu)
-                     (dolist (tl templates)
-                       (push (cons (concat prefix (yas--template-name tl)) tl) menu))) organized)
-      (setq menu (mapcar #'(lambda (tl) (cons (concat prefix (yas--template-name tl)) tl)) templates)))
-
-    (setq menu (nreverse menu))
-    (or (x-popup-menu (if (fboundp 'posn-at-point)
-                          (let ((x-y (posn-x-y (posn-at-point (point)))))
-                            (list (list (+ (car x-y) 10)
-                                        (+ (cdr x-y) 20))
-                                  (selected-window)))
-                        t)
-                      (list prompt (push "title" menu)))
-        (keyboard-quit))))
 
 (defun yas-ido-prompt (prompt choices &optional display-fn)
   (when (and (fboundp 'ido-completing-read)
@@ -2224,8 +2187,8 @@ Prompt the user if TEMPLATES has more than one element, else
 expand immediately.  Common gateway for
 `yas-expand-from-trigger-key' and `yas-expand-from-keymap'."
   (let ((yas--current-template (or (and (rest templates) ;; more than one
-                                       (yas--prompt-for-template (mapcar #'cdr templates)))
-                                  (cdar templates))))
+                                        (yas--prompt-for-template (mapcar #'cdr templates)))
+                                   (cdar templates))))
     (when yas--current-template
       (yas-expand-snippet (yas--template-content yas--current-template)
                           start
