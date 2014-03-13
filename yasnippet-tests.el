@@ -600,7 +600,11 @@ TODO: be meaner"
           (yas-reload-all)
           (should (not (eq (key-binding (yas--read-keybinding "TAB")) 'yas-expand)))
           (should (eq (key-binding (yas--read-keybinding "SPC")) 'yas-expand))))
-    (setcdr yas-minor-mode-map (cdr (yas--init-minor-keymap)))))
+    ;; FIXME: actually should restore to whatever saved values where there.
+    ;; 
+    (define-key yas-minor-mode-map [tab] 'yas-expand)
+    (define-key yas-minor-mode-map (kbd "TAB") 'yas-expand)
+    (define-key yas-minor-mode-map (kbd "SPC") nil)))
 
 (ert-deftest test-yas-in-org ()
   (with-temp-buffer
