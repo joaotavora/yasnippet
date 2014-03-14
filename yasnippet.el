@@ -313,6 +313,8 @@ menu and the modes set in `yas--extra-modes' are listed.
 
 - If set to `full', every submenu is listed
 
+- If set to `nil', hide the menu.
+
 Any other non-nil value, every submenu is listed."
   :type '(choice (const :tag "Full"  full)
                  (const :tag "Abbreviate" abbreviate)
@@ -546,7 +548,7 @@ snippet itself contains a condition that returns the symbol
 (easy-menu-define yas--minor-mode-menu
       yas-minor-mode-map
       "Menu used when `yas-minor-mode' is active."
-  '("YASnippet"
+  '("YASnippet" :visible yas-use-menu
     "----"
     ["Expand trigger" yas-expand
      :help "Possibly expand tab trigger before point"]
@@ -1063,8 +1065,7 @@ Also takes care of adding and updating to the associated menu."
   (yas--add-template table template)
   ;; Take care of the menu
   ;;
-  (when yas-use-menu
-    (yas--update-template-menu table template)))
+  (yas--update-template-menu table template))
 
 (defun yas--update-template-menu (table template)
   "Update every menu-related for TEMPLATE."
@@ -1976,10 +1977,7 @@ static in the menu."
                (mapcar #'(lambda (table)
                            (yas--table-mode table))
                        (yas--get-snippet-tables))))
-        ((eq yas-use-menu 'full)
-         t)
-        ((eq yas-use-menu t)
-         t)))
+        (yas-use-menu t)))
 
 (defun yas--delete-from-keymap (keymap uuid)
   "Recursively delete items with UUID from KEYMAP and its submenus."
@@ -2022,24 +2020,21 @@ MENU is a list, its elements can be:
   list of groups of the snippets defined thereafter.
 
 OMIT-ITEMS is a list of snippet uuid's that will always be
-omitted from MODE's menu, even if they're manually loaded.
-
-This function does nothing if `yas-use-menu' is nil."
-  (when yas-use-menu
-    (let* ((table (yas--table-get-create mode))
-           (hash (yas--table-uuidhash table)))
-      (yas--define-menu-1 table
-                          (yas--menu-keymap-get-create mode)
-                          menu
-                          hash)
-      (dolist (uuid omit-items)
-        (let ((template (or (gethash uuid hash)
-                            (yas--populate-template (puthash uuid
-                                                             (yas--make-blank-template)
-                                                             hash)
-                                                    :table table
-                                                    :uuid uuid))))
-          (setf (yas--template-menu-binding-pair template) (cons nil :none)))))))
+omitted from MODE's menu, even if they're manually loaded."
+  (let* ((table (yas--table-get-create mode))
+         (hash (yas--table-uuidhash table)))
+    (yas--define-menu-1 table
+                        (yas--menu-keymap-get-create mode)
+                        menu
+                        hash)
+    (dolist (uuid omit-items)
+      (let ((template (or (gethash uuid hash)
+                          (yas--populate-template (puthash uuid
+                                                           (yas--make-blank-template)
+                                                           hash)
+                                                  :table table
+                                                  :uuid uuid))))
+        (setf (yas--template-menu-binding-pair template) (cons nil :none))))))
 
 (defun yas--define-menu-1 (table menu-keymap menu uuidhash &optional group-list)
   "Helper for `yas-define-menu'."
