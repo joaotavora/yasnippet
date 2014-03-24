@@ -6,4 +6,6 @@
 
 #+OPTIONS: author:nil num:nil
 #+AUTHOR:
+# org < 8.0 use +STYLE, after use +HTML_HEAD
 #+STYLE: <link rel="stylesheet" type="text/css" href="stylesheets/manual.css" />
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="stylesheets/manual.css" />

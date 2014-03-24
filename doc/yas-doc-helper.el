@@ -27,8 +27,17 @@
 (eval-when-compile
   (require 'cl))
 (require 'org)
-(require 'org-publish)
+(or (require 'org-publish nil t)
+    (require 'ox-publish))
 (require 'yasnippet) ; docstrings must be loaded
+
+(defun yas--org-raw-html (tag content)
+  ;; in version 8.0 org-mode changed the export syntax, see
+  ;; http://orgmode.org/worg/org-8.0.html#sec-8-1
+  (format (if (version< org-version "8.0.0")
+              "@<%s>%s@</%s>"                ; old: @<tag>
+            "@@html:<%s>@@%s@@html:</%s>@@") ; new: @@html:<tag>@@
+          tag content tag))
 
 (defun yas--document-symbol (symbol level)
   (flet ((concat-lines (&rest lines)
@@ -71,7 +80,8 @@
                              (prefix (downcase match1))
                              (suffix (match-string 2 match))
                              (fmt (cond
-                                   ((member prefix args) "@<code>%s@</code>")
+                                   ((member prefix args)
+                                    (yas--org-raw-html "code" "%s"))
                                    ((null suffix) "/%s/"))))
                         (if fmt (format fmt prefix)
                           match1)))
@@ -125,6 +135,7 @@
                   (princ yas--version (current-buffer)))))
        (proj-plist
         (list
+         :publishing-function 'org-html-publish-to-html
          :base-directory dir :publishing-directory dir
          :html-preamble
          (with-temp-buffer
