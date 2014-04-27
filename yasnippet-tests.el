@@ -204,60 +204,55 @@
       (ert-simulate-command `(yas-mock-insert "bbb"))
       (should (string= (yas--buffer-contents) "if condition\naaa\nelse\nbbb\nend")))))
 
-(ert-deftest example-for-issue-404 ()
-  (with-temp-buffer
-    (c++-mode)
-    (yas-minor-mode 1)
-    (insert "#include <foo>\n")
-    (let ((snippet "main"))
-      (let ((yas-good-grace nil)) (yas-expand-snippet snippet))
-      (should (string= (yas--buffer-contents) "#include <foo>\nmain")))))
+(defmacro yas--temp-buffer-with-font-lock (&rest body)
+  "like `with-temp-buffer', but make sure `font-lock-mode' is enabled,
+  even with -batch. "
+  (declare (indent 0) (debug t))
+  (let ((temp-buffer (make-symbol "temp-buffer")))
+    ;; NOTE: buffer name must not start with a space, otherwise
+    ;; `font-lock-mode' doesn't turn on.
+    `(let ((,temp-buffer (generate-new-buffer "*yas-temp*")))
+       (with-current-buffer ,temp-buffer
+         ;; pretened we're interactive so `font-lock-mode' turns on
+         (let ((noninteractive nil)
+               (change-major-mode-after-body-hook #'font-lock-mode))
+           (unwind-protect
+               (progn (require 'font-lock)
+                      (font-lock-mode +1)
+                      ,@body)
+             (and (buffer-name ,temp-buffer)
+                  (kill-buffer ,temp-buffer))))))))
 
-(ert-deftest example-for-issue-404-c-mode ()
-  (with-temp-buffer
+(ert-deftest example-for-issue-474 ()
+  (yas--temp-buffer-with-font-lock
     (c-mode)
     (yas-minor-mode 1)
     (insert "#include <foo>\n")
-    (let ((snippet "main"))
-      (let ((yas-good-grace nil)) (yas-expand-snippet snippet))
-      (should (string= (yas--buffer-contents) "#include <foo>\nmain")))))
+    (let ((yas-good-grace nil)) (yas-expand-snippet "`(insert \"TODO: \")`"))
+    (should (string= (yas--buffer-contents) "#include <foo>\nTODO: "))))
 
-(ert-deftest example-for-issue-404-external-emacs ()
-  :tags '(:external)
-  (let ((fixture-el-file (make-temp-file "yas-404-fixture" nil ".el")))
-    (with-temp-buffer
-      (insert (pp-to-string
-               `(condition-case _
-                    (progn
-                      (require 'yasnippet-tests)
-                      (yas-with-snippet-dirs
-                        '((".emacs.d/snippets"
-                           ("c-mode"
-                            ("main" . "int main ()"))))
-                        (yas-global-mode)
-                        (switch-to-buffer "foo.c")
-                        (c-mode)
-                        (insert "#include <iostream>\nmain")
-                        (setq yas-good-grace nil)
-                        (yas-expand)
-                        (should (string= (buffer-string)
-                                         "#include <iostream>\nint main ()"))
-                        (kill-emacs 0)))
-                  (error (kill-emacs -1)))))
-      (write-file fixture-el-file))
-    (should (= 0
-               (call-process (concat invocation-directory invocation-name)
-                             nil nil nil
-                             "-Q"  "--batch"
-                             "-L" "." "-l" fixture-el-file)))))
+(ert-deftest example-for-issue-404 ()
+  (yas--temp-buffer-with-font-lock
+    (c++-mode)
+    (yas-minor-mode 1)
+    (insert "#include <foo>\n")
+    (let ((yas-good-grace nil)) (yas-expand-snippet "main"))
+    (should (string= (yas--buffer-contents) "#include <foo>\nmain"))))
+
+(ert-deftest example-for-issue-404-c-mode ()
+  (yas--temp-buffer-with-font-lock
+    (c-mode)
+    (yas-minor-mode 1)
+    (insert "#include <foo>\n")
+    (let ((yas-good-grace nil)) (yas-expand-snippet "main"))
+    (should (string= (yas--buffer-contents) "#include <foo>\nmain"))))
 
 (ert-deftest middle-of-buffer-snippet-insertion ()
   (with-temp-buffer
     (yas-minor-mode 1)
     (insert "beginning")
     (save-excursion (insert "end"))
-    (let ((snippet "-middle-"))
-      (yas-expand-snippet snippet))
+    (yas-expand-snippet "-middle-")
     (should (string= (yas--buffer-contents) "beginning-middle-end"))))
 
 (ert-deftest another-example-for-issue-271 ()

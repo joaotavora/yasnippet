@@ -3907,7 +3907,8 @@ With optional string TEXT do it in string instead of the buffer."
 with their evaluated value into `yas--backquote-markers-and-strings'."
   (while (re-search-forward yas--backquote-lisp-expression-regexp nil t)
     (let ((current-string (match-string-no-properties 1)) transformed)
-      (delete-region (match-beginning 0) (match-end 0))
+      (save-restriction (widen)
+                        (delete-region (match-beginning 0) (match-end 0)))
       (setq transformed (yas--eval-lisp (yas--read-lisp (yas--restore-escapes current-string '(?`)))))
       (goto-char (match-beginning 0))
       (when transformed
