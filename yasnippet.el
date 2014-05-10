@@ -1250,7 +1250,7 @@ yasnippet keeps a list of modes like this to help the judgment."
   "Handle error depending on value of `yas-good-grace'."
   (let ((msg (yas--format "elisp error: %s" (error-message-string err))))
     (if yas-good-grace msg
-      (error msg))))
+      (error "%s" msg))))
 
 (defun yas--eval-lisp (form)
   "Evaluate FORM and convert the result to string."
@@ -1272,7 +1272,7 @@ yasnippet keeps a list of modes like this to help the judgment."
 (defun yas--eval-lisp-no-saves (form)
   (condition-case err
       (eval form)
-    (error (yas--handle-error err))))
+    (error (message "%s" (yas--handle-error err)))))
 
 (defun yas--read-lisp (string &optional nil-on-error)
   "Read STRING as a elisp expression and return it.
