@@ -169,6 +169,12 @@ This binding will be recorded in the keymap =html-mode-map=. To expand a
 paragraph tag newlines, just press =C-u C-c C-c C-m=. Omitting the =C-u=
 will expand the paragraph tag without newlines.
 
+** =# uuid:= unique identifier
+
+This provides to a way to identify a snippet, independent of its name.
+Loading a second snippet file with the same uuid would replace the
+previous snippet.
+
 ** =# contributor:= snippet author
 
 This is optional and has no effect whatsoever on snippet functionality,

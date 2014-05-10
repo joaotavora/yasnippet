@@ -1631,8 +1631,8 @@ The remaining elements are strings.
 FILE is probably of very little use if you're programatically
 defining snippets.
 
-UUID is the snippets \"unique-id\". Loading a second snippet file
-with the same uuid replaced the previous snippet.
+UUID is the snippet's \"unique-id\". Loading a second snippet
+file with the same uuid would replace the previous snippet.
 
 You can use `yas--parse-template' to return such lists based on
 the current buffers contents."
