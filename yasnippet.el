@@ -1246,6 +1246,12 @@ yasnippet keeps a list of modes like this to help the judgment."
   (or (fboundp mode)
       (find mode yas--known-modes)))
 
+(defun yas--handle-error (err)
+  "Handle error depending on value of `yas-good-grace'."
+  (let ((msg (yas--format "elisp error: %s" (error-message-string err))))
+    (if yas-good-grace msg
+      (error msg))))
+
 (defun yas--eval-lisp (form)
   "Evaluate FORM and convert the result to string."
   (let ((retval (catch 'yas--exception
@@ -1257,10 +1263,7 @@ yasnippet keeps a list of modes like this to help the judgment."
                             (let ((result (eval form)))
                               (when result
                                 (format "%s" result))))))
-                    (error (if yas-good-grace
-                               (yas--format "elisp error! %s" (error-message-string err))
-                             (error (yas--format "elisp error: %s"
-                                            (error-message-string err)))))))))
+                    (error (yas--handle-error err))))))
     (when (and (consp retval)
                (eq 'yas--exception (car retval)))
       (error (cdr retval)))
@@ -1269,10 +1272,7 @@ yasnippet keeps a list of modes like this to help the judgment."
 (defun yas--eval-lisp-no-saves (form)
   (condition-case err
       (eval form)
-    (error (if yas-good-grace
-               (yas--format "elisp error! %s" (error-message-string err))
-             (error (yas--format "elisp error: %s"
-                            (error-message-string err)))))))
+    (error (yas--handle-error err))))
 
 (defun yas--read-lisp (string &optional nil-on-error)
   "Read STRING as a elisp expression and return it.
