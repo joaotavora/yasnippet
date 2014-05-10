@@ -169,6 +169,16 @@ This binding will be recorded in the keymap =html-mode-map=. To expand a
 paragraph tag newlines, just press =C-u C-c C-c C-m=. Omitting the =C-u=
 will expand the paragraph tag without newlines.
 
+** =# type:= =snippet= or =command=
+
+If the =type= directive is set to =command=, the body of the snippet
+is interpreted as lisp code to be evaluated when the snippet is
+triggered.
+
+If it's =snippet= (the default when there is no =type= directive), the
+snippet body will be parsed according to the [[Template Syntax]],
+described below.
+
 ** =# uuid:= unique identifier
 
 This provides to a way to identify a snippet, independent of its name.
@@ -180,7 +190,7 @@ previous snippet.
 This is optional and has no effect whatsoever on snippet functionality,
 but it looks nice.
 
-* Template syntax
+* <<Template syntax>>
 
 The syntax of the snippet template is simple but powerful, very similar
 to TextMate's.
