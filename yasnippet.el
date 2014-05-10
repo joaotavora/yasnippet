@@ -188,9 +188,7 @@ as the default for storing the user's new snippets."
 # -*- mode: snippet; require-final-newline: nil -*-
 # name: $1
 # key: ${2:${1:$(yas--key-from-desc yas-text)}}${3:
-# binding: ${4:direct-keybinding}}${5:
-# expand-env: ((${6:some-var} ${7:some-value}))}${8:
-# type: command}
+# binding: ${4:direct-keybinding}}
 # --
 $0"
   "Default snippet to use when creating a new snippet.
