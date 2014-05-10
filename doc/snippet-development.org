@@ -182,14 +182,14 @@ to TextMate's.
 ** Plain Text
 
 Arbitrary text can be included as the content of a template. They are
-usually interpreted as plain text, except =$= and ==. You need to
-use \` to escape them: =\$= and =\=. The \` itself may also needed to be
+usually interpreted as plain text, except =$= and =`=. You need to
+use =\= to escape them: =\$= and =\`=. The =\= itself may also needed to be
 escaped as =\\= sometimes.
 
 ** Embedded Emacs-lisp code
 
 Emacs-Lisp code can be embedded inside the template, written inside
-back-quotes (==). The lisp forms are evaluated when the snippet is
+back-quotes (=`=). The lisp forms are evaluated when the snippet is
 being expanded. The evaluation is done in the same buffer as the
 snippet being expanded.
 
