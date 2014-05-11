@@ -7,7 +7,7 @@
 <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
 <meta name="title" content="Reference"/>
 <meta name="generator" content="Org-mode"/>
-<meta name="generated" content="2013-12-24T11:50-0500"/>
+<meta name="generated" content="2014-05-11T19:37-0400"/>
 <meta name="author" content=""/>
 <meta name="description" content=""/>
 <meta name="keywords" content=""/>
@@ -227,6 +227,7 @@ for the JavaScript code in this tag.
 <li><a href="#sec-4">Useful variables</a>
 <ul>
 <li><a href="#yas-global-mode-buffers"><code>yas-global-mode-buffers</code></a></li>
+<li><a href="#yas-after-reload-hook"><code>yas-after-reload-hook</code></a></li>
 <li><a href="#yas-snippet-beg"><code>yas-snippet-beg</code></a></li>
 <li><a href="#yas-after-exit-snippet-hook"><code>yas-after-exit-snippet-hook</code></a></li>
 <li><a href="#yas-global-mode-hook"><code>yas-global-mode-hook</code></a></li>
@@ -879,8 +880,7 @@ under the menu "Yasnippet".
 <li>If set to <code>full</code>, every submenu is listed
 
 </li>
-<li>It set to nil, don't display a menu at all (this requires a
-  <a href="#yas-reload-all"><code>yas-reload-all</code></a> call if the menu is already visible).
+<li>If set to <code>nil</code>, hide the menu.
 </li>
 </ul>
 
@@ -1122,8 +1122,8 @@ The remaining elements are strings.
 defining snippets.
 </p>
 <p>
-<i>uuid</i> is the snippets "unique-id". Loading a second snippet file
-with the same uuid replaced the previous snippet.
+<i>uuid</i> is the snippet's "unique-id". Loading a second snippet
+file with the same uuid would replace the previous snippet.
 </p>
 <p>
 You can use <code>yas--parse-template</code> to return such lists based on
@@ -1216,9 +1216,6 @@ It doesn't make any sense to call <code>func</code> programatically.
 <p>
 <code>omit-items</code> is a list of snippet uuid's that will always be
 omitted from <code>mode</code>'s menu, even if they're manually loaded.
-</p>
-<p>
-This function does nothing if <a href="#yas-use-menu"><code>yas-use-menu</code></a> is nil.
 </p>
 </div>
 
@@ -1331,8 +1328,20 @@ considered when expanding the snippet.
 
 </div>
 
+<div id="outline-container-yas-after-reload-hook" class="outline-3">
+<h3 id="yas-after-reload-hook"><a name="sec-4-2" id="sec-4-2"></a><code>yas-after-reload-hook</code></h3>
+<div class="outline-text-3" id="text-yas-after-reload-hook">
+
+
+<p>
+Hooks run after <a href="#yas-reload-all"><code>yas-reload-all</code></a>.
+</p>
+</div>
+
+</div>
+
 <div id="outline-container-yas-snippet-beg" class="outline-3">
-<h3 id="yas-snippet-beg"><a name="sec-4-2" id="sec-4-2"></a><code>yas-snippet-beg</code></h3>
+<h3 id="yas-snippet-beg"><a name="sec-4-3" id="sec-4-3"></a><code>yas-snippet-beg</code></h3>
 <div class="outline-text-3" id="text-yas-snippet-beg">
 
 
@@ -1344,7 +1353,7 @@ Beginning position of the last snippet committed.
 </div>
 
 <div id="outline-container-yas-after-exit-snippet-hook" class="outline-3">
-<h3 id="yas-after-exit-snippet-hook"><a name="sec-4-3" id="sec-4-3"></a><code>yas-after-exit-snippet-hook</code></h3>
+<h3 id="yas-after-exit-snippet-hook"><a name="sec-4-4" id="sec-4-4"></a><code>yas-after-exit-snippet-hook</code></h3>
 <div class="outline-text-3" id="text-yas-after-exit-snippet-hook">
 
 
@@ -1369,7 +1378,7 @@ Attention: These hooks are not run when exiting nested/stacked snippet expansion
 </div>
 
 <div id="outline-container-yas-global-mode-hook" class="outline-3">
-<h3 id="yas-global-mode-hook"><a name="sec-4-4" id="sec-4-4"></a><code>yas-global-mode-hook</code></h3>
+<h3 id="yas-global-mode-hook"><a name="sec-4-5" id="sec-4-5"></a><code>yas-global-mode-hook</code></h3>
 <div class="outline-text-3" id="text-yas-global-mode-hook">
 
 
@@ -1381,7 +1390,7 @@ Attention: These hooks are not run when exiting nested/stacked snippet expansion
 </div>
 
 <div id="outline-container-yas-dont-activate" class="outline-3">
-<h3 id="yas-dont-activate"><a name="sec-4-5" id="sec-4-5"></a><code>yas-dont-activate</code></h3>
+<h3 id="yas-dont-activate"><a name="sec-4-6" id="sec-4-6"></a><code>yas-dont-activate</code></h3>
 <div class="outline-text-3" id="text-yas-dont-activate">
 
 
@@ -1413,7 +1422,7 @@ mode's hook.
 </div>
 
 <div id="outline-container-yas-minor-mode-map" class="outline-3">
-<h3 id="yas-minor-mode-map"><a name="sec-4-6" id="sec-4-6"></a><code>yas-minor-mode-map</code></h3>
+<h3 id="yas-minor-mode-map"><a name="sec-4-7" id="sec-4-7"></a><code>yas-minor-mode-map</code></h3>
 <div class="outline-text-3" id="text-yas-minor-mode-map">
 
 
@@ -1425,7 +1434,7 @@ The keymap used when <a href="#yas-minor-mode"><code>yas-minor-mode</code></a> i
 </div>
 
 <div id="outline-container-yas-moving-away-p" class="outline-3">
-<h3 id="yas-moving-away-p"><a name="sec-4-7" id="sec-4-7"></a><code>yas-moving-away-p</code></h3>
+<h3 id="yas-moving-away-p"><a name="sec-4-8" id="sec-4-8"></a><code>yas-moving-away-p</code></h3>
 <div class="outline-text-3" id="text-yas-moving-away-p">
 
 
@@ -1437,7 +1446,7 @@ Non-nil if user is about to exit field.
 </div>
 
 <div id="outline-container-yas-buffer-local-condition" class="outline-3">
-<h3 id="yas-buffer-local-condition"><a name="sec-4-8" id="sec-4-8"></a><code>yas-buffer-local-condition</code></h3>
+<h3 id="yas-buffer-local-condition"><a name="sec-4-9" id="sec-4-9"></a><code>yas-buffer-local-condition</code></h3>
 <div class="outline-text-3" id="text-yas-buffer-local-condition">
 
 
@@ -1528,7 +1537,7 @@ snippet itself contains a condition that returns the symbol
 </div>
 
 <div id="outline-container-yas-modified-p" class="outline-3">
-<h3 id="yas-modified-p"><a name="sec-4-9" id="sec-4-9"></a><code>yas-modified-p</code></h3>
+<h3 id="yas-modified-p"><a name="sec-4-10" id="sec-4-10"></a><code>yas-modified-p</code></h3>
 <div class="outline-text-3" id="text-yas-modified-p">
 
 
@@ -1540,7 +1549,7 @@ Non-nil if field has been modified by user or transformation.
 </div>
 
 <div id="outline-container-yas-before-expand-snippet-hook" class="outline-3">
-<h3 id="yas-before-expand-snippet-hook"><a name="sec-4-10" id="sec-4-10"></a><code>yas-before-expand-snippet-hook</code></h3>
+<h3 id="yas-before-expand-snippet-hook"><a name="sec-4-11" id="sec-4-11"></a><code>yas-before-expand-snippet-hook</code></h3>
 <div class="outline-text-3" id="text-yas-before-expand-snippet-hook">
 
 
@@ -1552,7 +1561,7 @@ Hooks to run just before expanding a snippet.
 </div>
 
 <div id="outline-container-yas-keymap" class="outline-3">
-<h3 id="yas-keymap"><a name="sec-4-11" id="sec-4-11"></a><code>yas-keymap</code></h3>
+<h3 id="yas-keymap"><a name="sec-4-12" id="sec-4-12"></a><code>yas-keymap</code></h3>
 <div class="outline-text-3" id="text-yas-keymap">
 
 
@@ -1564,7 +1573,7 @@ The active keymap while a snippet expansion is in progress.
 </div>
 
 <div id="outline-container-yas-key-syntaxes" class="outline-3">
-<h3 id="yas-key-syntaxes"><a name="sec-4-12" id="sec-4-12"></a><code>yas-key-syntaxes</code></h3>
+<h3 id="yas-key-syntaxes"><a name="sec-4-13" id="sec-4-13"></a><code>yas-key-syntaxes</code></h3>
 <div class="outline-text-3" id="text-yas-key-syntaxes">
 
 
@@ -1590,7 +1599,7 @@ isn't a trigger key, "foo-bar" is tried, respecting a second
 </div>
 
 <div id="outline-container-yas-snippet-end" class="outline-3">
-<h3 id="yas-snippet-end"><a name="sec-4-13" id="sec-4-13"></a><code>yas-snippet-end</code></h3>
+<h3 id="yas-snippet-end"><a name="sec-4-14" id="sec-4-14"></a><code>yas-snippet-end</code></h3>
 <div class="outline-text-3" id="text-yas-snippet-end">
 
 
@@ -1602,7 +1611,7 @@ End position of the last snippet committed.
 </div>
 
 <div id="outline-container-yas-minor-mode-hook" class="outline-3">
-<h3 id="yas-minor-mode-hook"><a name="sec-4-14" id="sec-4-14"></a><code>yas-minor-mode-hook</code></h3>
+<h3 id="yas-minor-mode-hook"><a name="sec-4-15" id="sec-4-15"></a><code>yas-minor-mode-hook</code></h3>
 <div class="outline-text-3" id="text-yas-minor-mode-hook">
 
 
@@ -1614,7 +1623,7 @@ Hook run when <a href="#yas-minor-mode"><code>yas-minor-mode</code></a> is turne
 </div>
 
 <div id="outline-container-yas-verbosity" class="outline-3">
-<h3 id="yas-verbosity"><a name="sec-4-15" id="sec-4-15"></a><code>yas-verbosity</code></h3>
+<h3 id="yas-verbosity"><a name="sec-4-16" id="sec-4-16"></a><code>yas-verbosity</code></h3>
 <div class="outline-text-3" id="text-yas-verbosity">
 
 
@@ -1626,7 +1635,7 @@ Log level for <code>yas--message</code> 4 means trace most anything, 0 means not
 </div>
 
 <div id="outline-container-yas-minor-mode-major-mode" class="outline-3">
-<h3 id="yas-minor-mode-major-mode"><a name="sec-4-16" id="sec-4-16"></a><code>yas-minor-mode-major-mode</code></h3>
+<h3 id="yas-minor-mode-major-mode"><a name="sec-4-17" id="sec-4-17"></a><code>yas-minor-mode-major-mode</code></h3>
 <div class="outline-text-3" id="text-yas-minor-mode-major-mode">
 
 
@@ -1639,7 +1648,7 @@ Log level for <code>yas--message</code> 4 means trace most anything, 0 means not
 </div>
 
 <div id="postamble">
-<hr><p class='creator'>Generated by <a href="http://orgmode.org">Org</a> version 7.9.3f with <a href="http://www.gnu.org/software/emacs/">Emacs</a> version 24 on 2013-12-24T11:50-0500 from 78c8b5eb8058e8da523542b1b1de7e21a5b60e14
+<hr><p class='creator'>Generated by <a href="http://orgmode.org">Org</a> version 7.9.3f with <a href="http://www.gnu.org/software/emacs/">Emacs</a> version 24 on 2014-05-11T19:37-0400 from fe288a156c063666d9c6613b6eea0ed5a515a86b
 </p>
 <p class='xhtml-validation'><a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a></p>
 
