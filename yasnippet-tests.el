@@ -229,7 +229,7 @@
     (c-mode)
     (yas-minor-mode 1)
     (insert "#include <foo>\n")
-    (let ((yas-good-grace nil)) (yas-expand-snippet "`(insert \"TODO: \")`"))
+    (let ((yas-good-grace nil)) (yas-expand-snippet "`\"TODO: \"`"))
     (should (string= (yas--buffer-contents) "#include <foo>\nTODO: "))))
 
 (ert-deftest example-for-issue-404 ()
