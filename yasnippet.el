@@ -3911,9 +3911,11 @@ with their evaluated value into `yas--backquote-markers-and-strings'."
       (goto-char (match-beginning 0))
       (when transformed
         (let ((marker (make-marker)))
-          (insert "Y") ;; quite horrendous, I love it :)
-          (set-marker marker (point))
-          (insert "Y")
+          (save-restriction
+            (widen)
+            (insert "Y") ;; quite horrendous, I love it :)
+            (set-marker marker (point))
+            (insert "Y"))
           (push (cons marker transformed) yas--backquote-markers-and-strings))))))
 
 (defun yas--restore-backquotes ()
@@ -3924,9 +3926,11 @@ with their evaluated value into `yas--backquote-markers-and-strings'."
            (string (cdr marker-and-string)))
       (save-excursion
         (goto-char marker)
-        (delete-char -1)
-        (insert string)
-        (delete-char 1)
+        (save-restriction
+          (widen)
+          (delete-char -1)
+          (insert string)
+          (delete-char 1))
         (set-marker marker nil)))))
 
 (defun yas--scan-sexps (from count)
