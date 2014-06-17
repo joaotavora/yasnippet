@@ -283,12 +283,13 @@ the field and others mirrors.
 
 ** Mirrors with <<transformations>>
 
-If the value of an =${n:=-construct starts with and contains =$(=, then
-it is interpreted as a mirror for field =n= with a transformation. The
-mirror's text content is calculated according to this transformation,
-which is Emacs-lisp code that gets evaluated in an environment where the
-variable =text= (or [[sym:yas-text][=yas-text=]]) is bound to the text content (string)
-contained in the field =n=.Here's an example for Objective-C:
+If the value of an =${n:=-construct starts with and contains =$(=,
+then it is interpreted as a mirror for field =n= with a
+transformation. The mirror's text content is calculated according to
+this transformation, which is Emacs-lisp code that gets evaluated in
+an environment where the variable [[sym:yas-text][=yas-text=]] is bound to the text
+content (string) contained in the field =n=. Here's an example for
+Objective-C:
 
 #+BEGIN_SRC snippet
   - (${1:id})${2:foo}
@@ -296,7 +297,7 @@ contained in the field =n=.Here's an example for Objective-C:
       return $2;
   }
 
-  - (void)set${2:$(capitalize text)}:($1)aValue
+  - (void)set${2:$(capitalize yas-text)}:($1)aValue
   {
       [$2 autorelease];
       $2 = [aValue retain];
@@ -304,12 +305,13 @@ contained in the field =n=.Here's an example for Objective-C:
   $0
 #+END_SRC
 
-Look at =${2:$(capitalize text)}=, it is a mirror with transformation
-instead of a field. The actual field is at the first line: =${2:foo}=.
-When you type text in =${2:foo}=, the transformation will be evaluated
-and the result will be placed there as the transformed text. So in this
-example, if you type "baz" in the field, the transformed text will be
-"Baz". This example is also available in the screencast.
+Look at =${2:$(capitalize yas-text)}=, it is a mirror with
+transformation instead of a field. The actual field is at the first
+line: =${2:foo}=. When you type text in =${2:foo}=, the transformation
+will be evaluated and the result will be placed there as the
+transformed text. So in this example, if you type "baz" in the field,
+the transformed text will be "Baz". This example is also available in
+the screencast.
 
 Another example is for =rst-mode=. In reStructuredText, the document
 title can be some text surrounded by "===" below and above. The "==="
@@ -332,9 +334,9 @@ is a valid title but
 is not. Here's an snippet for rst title:
 
 #+BEGIN_SRC snippet
-  ${1:$(make-string (string-width text) ?\=)}
+  ${1:$(make-string (string-width yas-text) ?\=)}
   ${1:Title}
-  ${1:$(make-string (string-width text) ?\=)}
+  ${1:$(make-string (string-width yas-text) ?\=)}
 
   $0
 #+END_SRC
