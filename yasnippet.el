@@ -1698,7 +1698,7 @@ the current buffers contents."
 Below TOP-LEVEL-DIR each directory should be a mode name.
 
 Optional USE-JIT use jit-loading of snippets."
-  (interactive "DSelect the root directory: ni\np")
+  (interactive "DSelect the root directory: \ni\np")
   (unless yas-snippet-dirs
     (setq yas-snippet-dirs top-level-dir))
   (dolist (dir (yas--subdirs top-level-dir))
