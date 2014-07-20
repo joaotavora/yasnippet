@@ -1697,8 +1697,10 @@ the current buffers contents."
 
 Below TOP-LEVEL-DIR each directory should be a mode name.
 
-Optional USE-JIT use jit-loading of snippets."
-  (interactive "DSelect the root directory: ni\np")
+With prefix argument USE-JIT do jit-loading of snippets."
+  (interactive
+   (list (read-directory-name "Select the root directory: " nil nil t)
+         current-prefix-arg t))
   (unless yas-snippet-dirs
     (setq yas-snippet-dirs top-level-dir))
   (dolist (dir (yas--subdirs top-level-dir))
@@ -1791,13 +1793,16 @@ prompt the user to select one."
       (call-interactively 'yas-load-directory))
     errors))
 
-(defun yas-reload-all (&optional interactive)
+(defun yas-reload-all (&optional no-jit interactive)
   "Reload all snippets and rebuild the YASnippet menu.
 
-When called interactively force immediate reload of all known
+When NO-JIT is non-nil force immediate reload of all known
 snippets under `yas-snippet-dirs', otherwise use just-in-time
-loading."
-  (interactive "p")
+loading.
+
+When called interactively, use just-in-time loading when given a
+prefix argument."
+  (interactive (list (not current-prefix-arg) t))
   (catch 'abort
     (let ((errors)
           (snippet-editing-buffers
@@ -1842,14 +1847,14 @@ loading."
       ;; Reload the directories listed in `yas-snippet-dirs' or prompt
       ;; the user to select one.
       ;;
-      (setq errors (yas--load-snippet-dirs interactive))
+      (setq errors (yas--load-snippet-dirs no-jit))
       ;; Reload the direct keybindings
       ;;
       (yas-direct-keymaps-reload)
 
       (run-hooks 'yas-after-reload-hook)
       (yas--message 3 "Reloaded everything%s...%s."
-                   (if interactive "" " (snippets will load just-in-time)")
+                   (if no-jit "" " (snippets will load just-in-time)")
                    (if errors " (some errors, check *Messages*)" "")))))
 
 (defvar yas-after-reload-hook nil
