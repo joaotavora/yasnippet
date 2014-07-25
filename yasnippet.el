@@ -692,12 +692,13 @@ defined direct keybindings to the command
            yas--tables))
 
 (defun yas--indirect-modes (mode)
-  "Return the reversed (ending in MODE) alias function chain of MODE."
-  (let (modes)
-    (while (and (symbolp mode)
-                (fboundp mode))
-      (push mode modes)
-      (setq mode (symbol-function mode)))
+  "Return the reversed (ending in MODE) alias function chain of MODE.
+MODE must be in this chain even if it is a void function."
+  (let ((modes (list mode)))
+    (while (and (fboundp mode)
+                (symbolp (symbol-function mode)))
+      (setq mode (symbol-function mode))
+      (push mode modes))
     modes))
 
 (defun yas--modes-to-activate ()
