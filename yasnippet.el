@@ -699,11 +699,12 @@ and friends."
                 (push mode explored)
                 (cons mode
                       (loop for neighbour
-                            in (remove nil (cons (get mode
-                                                      'derived-mode-parent)
-                                                 (gethash mode yas--parents)))
-
-                            unless (memq neighbour explored)
+                            in (cl-list* (get mode 'derived-mode-parent)
+                                         (ignore-errors (symbol-function mode))
+                                         (gethash mode yas--parents))
+                            when (and neighbour
+                                      (not (memq neighbour explored))
+                                      (symbolp neighbour))
                             append (funcall dfs neighbour explored)))))
     (remove-duplicates (append yas--extra-modes
                                (funcall dfs major-mode)))))

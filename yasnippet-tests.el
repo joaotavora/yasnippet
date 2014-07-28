@@ -426,6 +426,24 @@ TODO: correct this bug!"
          (should (= (length expected)
                     (length observed))))))))
 
+(ert-deftest issue-492-and-494 ()
+  (defalias 'yas--phony-c-mode 'c-mode)
+  (define-derived-mode yas--test-mode yas--phony-c-mode "Just a test mode")
+  (yas-with-snippet-dirs '((".emacs.d/snippets"
+                            ("yas--test-mode")))
+                         (yas-reload-all)
+                         (with-temp-buffer
+                           (let* ((major-mode 'yas--test-mode)
+                                  (expected `(c-mode
+                                              ,@(if (fboundp 'prog-mode)
+                                                    '(prog-mode))
+                                              yas--phony-c-mode
+                                              yas--test-mode))
+                                  (observed (yas--modes-to-activate)))
+                             (should (null (cl-set-exclusive-or expected observed)))
+                             (should (= (length expected)
+                                        (length observed)))))))
+
 (defun yas--basic-jit-loading-1 ()
   (with-temp-buffer
     (should (= 4 (hash-table-count yas--scheduled-jit-loads)))
