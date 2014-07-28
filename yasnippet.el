@@ -691,12 +691,24 @@ defined direct keybindings to the command
                      yas--direct-keymaps))
            yas--tables))
 
+(defun yas--indirect-modes (mode)
+  "Return the reversed (ending in MODE) alias function chain of MODE.
+MODE must be in this chain even if it is a void function."
+  (let ((modes (list mode)))
+    (while (and (fboundp mode)
+                (symbolp (symbol-function mode)))
+      (setq mode (symbol-function mode))
+      (push mode modes))
+    modes))
+
 (defun yas--modes-to-activate ()
   "Compute list of mode symbols that are active for `yas-expand'
 and friends."
   (let (dfs)
     (setq dfs (lambda (mode &optional explored)
-                (push mode explored)
+                (let ((indirect-modes (yas--indirect-modes mode)))
+                  (setq mode (car indirect-modes))
+                  (setq explored (nconc indirect-modes explored)))
                 (cons mode
                       (loop for neighbour
                             in (cl-list* (get mode 'derived-mode-parent)
