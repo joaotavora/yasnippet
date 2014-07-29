@@ -389,19 +389,43 @@ the trigger key itself."
   "The active keymap while a snippet expansion is in progress.")
 
 (defvar yas-key-syntaxes (list "w" "w_" "w_." "w_.()" "^ ")
-  "List of character syntaxes used to find a trigger key before point.
-The list is tried in the order while scanning characters
-backwards from point.  For example, if the list is '(\"w\" \"w_\")
-first look for trigger keys which are composed exclusively of
-\"word\"-syntax characters, and then, if that fails, look for
-keys which are either of \"word\" or \"symbol\"
-syntax.  Triggering after
+  "Syntaxes and functions to help look for trigger keys before point.
+
+Its elements can be either strings or functions (see below for
+the difference) and are tried in order by the snippet expansion
+mechanism until one or more expandable snippets are found.
+
+Each element is a way to skip buffer positions backwards and look
+for the start of a trigger key. A string element is simply passed
+to `skip-syntax-backward' whereas a function element is called
+with no arguments and should also place point before the original
+position.
+
+If no expandable snippets are found but the function returns the
+symbol `try-again' it will be called again from the previous
+position and may again reposition point until it returns some
+other value.
+
+The buffer's string starting at the resulting position and ending
+at the original point is matched against the active snippet
+tables.
+
+For example, if `yas-key-syntaxes'' value is '(\"w\" \"w_\"),
+trigger keys composed exclusively of \"word\"-syntax characters
+are looked for first. Failing that, longer keys composed of
+\"word\" or \"symbol\" syntax are looked for. Therefore,
+triggering after
 
 foo-bar
 
-will, according to the \"w\" element first try \"bar\".  If that
-isn't a trigger key, \"foo-bar\" is tried, respecting a second
-\"w_\" element.")
+will, according to the \"w\" element first try \"barbaz\". If
+that isn't a trigger key, \"foo-barbaz\" is tried, respecting the
+second \"w_\" element. Notice that even if \"baz\" is a trigger
+key for an active snippet, it won't be expanded, unless a
+function is added to `yas-key-syntaxes' that eventually places
+point between \"bar\" and \"baz\".
+
+See also Info node `(elisp) Syntax Descriptors'.")
 
 (defvar yas-after-exit-snippet-hook
   '()
@@ -1193,32 +1217,40 @@ conditions to filter out potential expansions."
                (yas--table-hash table))
       (yas--filter-templates-by-condition acc))))
 
-(defun yas--current-key ()
-  "Get the key under current position.
-A key is used to find the template of a snippet in the current snippet-table."
-  (let ((start (point))
-        (end (point))
-        (syntaxes yas-key-syntaxes)
-        syntax
-        done
-        templates)
-    (while (and (not done) syntaxes)
-      (setq syntax (car syntaxes))
-      (setq syntaxes (cdr syntaxes))
-      (save-excursion
-        (skip-syntax-backward syntax)
-        (setq start (point)))
-      (setq templates
-            (mapcan #'(lambda (table)
-                        (yas--fetch table (buffer-substring-no-properties start end)))
-                    (yas--get-snippet-tables)))
-      (if templates
-          (setq done t)
-        (setq start end)))
-    (list templates
-          start
-          end)))
-
+(defun yas--templates-for-key-at-point ()
+  "Find `yas--template' objects for any trigger keys preceding point.
+Returns (TEMPLATES START END). This function respects
+`yas-key-syntaxes', which see."
+  (save-excursion
+    (let ((original (point))
+          (methods yas-key-syntaxes)
+          (templates)
+          (method))
+      (while (and methods
+                  (not templates))
+        (unless (eq method (car methods))
+          ;; TRICKY: `eq'-ness test means we can only be here if
+          ;; `method' is a function that returned `again', and hence
+          ;; don't revert back to original position as per
+          ;; `yas-key-syntaxes'.
+          (goto-char original))
+        (setq method (car methods))
+        (cond ((stringp method)
+               (skip-syntax-backward method)
+               (setq methods (cdr methods)))
+              ((functionp method)
+               (unless (eq (funcall method)
+                           'again)
+                 (setq methods (cdr methods))))
+              (t
+               (error "[yas] invalid element in `yas-key-syntaxes'")))
+        (setq templates
+              (mapcan #'(lambda (table)
+                          (yas--fetch table (buffer-substring-no-properties (point)
+                                                                            original)))
+                      (yas--get-snippet-tables))))
+      (when templates
+        (list templates (point) original)))))
 
 (defun yas--table-all-keys (table)
   "Get trigger keys of all active snippets in TABLE."
@@ -2137,13 +2169,12 @@ object satisfying `yas--field-p' to restrict the expansion to."
                                   (save-restriction
                                     (narrow-to-region (yas--field-start field)
                                                       (yas--field-end field))
-                                    (yas--current-key))
-                                (yas--current-key))))
-    (if (and templates-and-pos
-             (first templates-and-pos))
+                                    (yas--templates-for-key-at-point))
+                                (yas--templates-for-key-at-point))))
+    (if templates-and-pos
         (yas--expand-or-prompt-for-template (first templates-and-pos)
-                                           (second templates-and-pos)
-                                           (third templates-and-pos))
+                                            (second templates-and-pos)
+                                            (third templates-and-pos))
       (yas--fallback))))
 
 (defun yas-expand-from-keymap ()

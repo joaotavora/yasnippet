@@ -313,6 +313,37 @@ TODO: correct this bug!"
     (should (string= (yas--buffer-contents)
                      "brother from another mother") ;; no newline should be here!
             )))
+
+;; See issue #497. To understand this test, follow the example of the
+;; `yas-key-syntaxes' docstring.
+;; 
+(ert-deftest complicated-yas-key-syntaxes ()
+  (with-temp-buffer
+    (yas-saving-variables
+     (yas-with-snippet-dirs
+       '((".emacs.d/snippets"
+          ("text-mode"
+           ("foo-barbaz" . "# condition: yas--foobarbaz\n# --\nOKfoo-barbazOK")
+           ("barbaz" . "# condition: yas--barbaz\n# --\nOKbarbazOK")
+           ("baz" . "OKbazOK"))))
+       (yas-reload-all)
+       (text-mode)
+       (yas-minor-mode-on)
+       (let ((yas-key-syntaxes '("w" "w_")))
+         (let ((yas--barbaz t))
+           (yas-should-expand '(("foo-barbaz" . "foo-OKbarbazOK")
+                                ("barbaz" . "OKbarbazOK"))))
+         (let ((yas--foobarbaz t))
+           (yas-should-expand '(("foo-barbaz" . "OKfoo-barbazOK"))))
+         (let ((yas-key-syntaxes
+                (cons #'(lambda ()
+                          (unless (looking-back "-")
+                            (backward-char)
+                            'again))
+                      yas-key-syntaxes))
+               (yas--foobarbaz t))
+           (yas-should-expand '(("foo-barbaz" . "foo-barOKbazOK")))))))))
+
 
 ;;; Loading
 ;;;
@@ -656,21 +687,28 @@ add the snippets associated with the given mode."
 (defun yas-should-expand (keys-and-expansions)
   (dolist (key-and-expansion keys-and-expansions)
     (yas-exit-all-snippets)
-    (erase-buffer)
+    (narrow-to-region (point) (point))
     (insert (car key-and-expansion))
     (let ((yas-fallback-behavior nil))
       (ert-simulate-command '(yas-expand)))
-    (should (string= (yas--buffer-contents) (cdr key-and-expansion))))
+    (unless (string= (yas--buffer-contents) (cdr key-and-expansion))
+      (ert-fail (format "\"%s\" should have expanded to \"%s\" but got \"%s\""
+                        (car key-and-expansion)
+                        (cdr key-and-expansion)
+                        (yas--buffer-contents)))))
   (yas-exit-all-snippets))
 
 (defun yas-should-not-expand (keys)
   (dolist (key keys)
     (yas-exit-all-snippets)
-    (erase-buffer)
+    (narrow-to-region (point) (point))
     (insert key)
     (let ((yas-fallback-behavior nil))
       (ert-simulate-command '(yas-expand)))
-    (should (string= (yas--buffer-contents) key))))
+    (unless (string= (yas--buffer-contents) key)
+      (ert-fail (format "\"%s\" should have stayed put, but instead expanded to \"%s\""
+                        key
+                        (yas--buffer-contents))))))
 
 (defun yas-mock-insert (string)
   (interactive)
