@@ -391,24 +391,23 @@ the trigger key itself."
 (defvar yas-key-syntaxes (list "w" "w_" "w_." "w_.()" "^ ")
   "Syntaxes and functions to help look for trigger keys before point.
 
-Its elements can be either strings or functions (see below for
-the difference) and are tried in order by the snippet expansion
-mechanism until one or more expandable snippets are found.
+Each element in this list specifies how to skip buffer positions
+backwards and look for the start of a trigger key.
 
-Each element is a way to skip buffer positions backwards and look
-for the start of a trigger key. A string element is simply passed
-to `skip-syntax-backward' whereas a function element is called
-with no arguments and should also place point before the original
+Each element can be either a string or a functino of no
+arguments. A string element is simply passed to
+`skip-syntax-backward' whereas a function element is called with
+no arguments and should also place point before the original
 position.
 
-If no expandable snippets are found but the function returns the
-symbol `try-again' it will be called again from the previous
-position and may again reposition point until it returns some
-other value.
+The string between the resulting buffer position and the original
+point.in the is matched against the trigger keys in the active
+snippet tables.
 
-The buffer's string starting at the resulting position and ending
-at the original point is matched against the active snippet
-tables.
+If no expandable snippets are found, the next element is the list
+is tried, unless a function element returned the symbol `again',
+in which case it is called again from the previous position and
+may once more reposition point.
 
 For example, if `yas-key-syntaxes'' value is '(\"w\" \"w_\"),
 trigger keys composed exclusively of \"word\"-syntax characters
