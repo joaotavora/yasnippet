@@ -322,12 +322,13 @@ TODO: correct this bug!"
     (yas-saving-variables
      (yas-with-snippet-dirs
        '((".emacs.d/snippets"
-          ("text-mode"
+          ("emacs-lisp-mode"
            ("foo-barbaz" . "# condition: yas--foobarbaz\n# --\nOKfoo-barbazOK")
            ("barbaz" . "# condition: yas--barbaz\n# --\nOKbarbazOK")
-           ("baz" . "OKbazOK"))))
+           ("baz" . "OKbazOK")
+           ("'quote" . "OKquoteOK"))))
        (yas-reload-all)
-       (text-mode)
+       (emacs-lisp-mode)
        (yas-minor-mode-on)
        (let ((yas-key-syntaxes '("w" "w_")))
          (let ((yas--barbaz t))
@@ -342,7 +343,10 @@ TODO: correct this bug!"
                             'again))
                       yas-key-syntaxes))
                (yas--foobarbaz t))
-           (yas-should-expand '(("foo-barbaz" . "foo-barOKbazOK")))))))))
+           (yas-should-expand '(("foo-barbaz" . "foo-barOKbazOK")))))
+       (let ((yas-key-syntaxes '(yas-try-key-from-whitespace)))
+         (yas-should-expand '(("xxx\n'quote" . "xxx\nOKquoteOK")
+                              ("xxx 'quote" . "xxx OKquoteOK"))))))))
 
 
 ;;; Loading

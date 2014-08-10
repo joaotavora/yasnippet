@@ -388,7 +388,8 @@ the trigger key itself."
                       map)
   "The active keymap while a snippet expansion is in progress.")
 
-(defvar yas-key-syntaxes (list "w" "w_" "w_." "w_.()" "^ ")
+(defvar yas-key-syntaxes (list "w" "w_" "w_." "w_.()"
+                               #'yas-try-key-from-whitespace)
   "Syntaxes and functions to help look for trigger keys before point.
 
 Each element in this list specifies how to skip buffer positions
@@ -2724,6 +2725,17 @@ and `kill-buffer' instead."
              (insert "\n"))))
      groups-hash)))
 
+
+
+;;; User convenience functions, for using in `yas-key-syntaxes'
+
+(defun yas-try-key-from-whitespace ()
+  "Go back to nearest whitespace.
+
+A newline will be considered whitespace even if the mode syntax
+marks it as something else (typically comment ender). Use as
+element of `yas-key-syntaxes'."
+  (skip-chars-backward "^[:space:]\n"))
 
 
 ;;; User convenience functions, for using in snippet definitions
