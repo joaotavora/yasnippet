@@ -346,7 +346,10 @@ TODO: correct this bug!"
            (yas-should-expand '(("foo-barbaz" . "foo-barOKbazOK")))))
        (let ((yas-key-syntaxes '(yas-try-key-from-whitespace)))
          (yas-should-expand '(("xxx\n'quote" . "xxx\nOKquoteOK")
-                              ("xxx 'quote" . "xxx OKquoteOK"))))))))
+                              ("xxx 'quote" . "xxx OKquoteOK"))))
+       (let ((yas-key-syntaxes '(yas-shortest-key-until-whitespace))
+             (yas--foobarbaz t) (yas--barbaz t))
+         (yas-should-expand '(("foo-barbaz" . "foo-barOKbazOK"))))))))
 
 
 ;;; Loading

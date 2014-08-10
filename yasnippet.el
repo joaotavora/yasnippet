@@ -2737,6 +2737,15 @@ marks it as something else (typically comment ender). Use as
 element of `yas-key-syntaxes'."
   (skip-chars-backward "^[:space:]\n"))
 
+(defun yas-shortest-key-until-whitespace ()
+  "Return `again' until at whitespace.
+
+A newline will be considered whitespace even if the mode syntax
+marks it as something else (typically comment ender). Use as
+element of `yas-key-syntaxes'."
+  (when (/= (skip-chars-backward "^[:space:]\n" (1- (point))) 0)
+    'again))
+
 
 ;;; User convenience functions, for using in snippet definitions
 
