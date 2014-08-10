@@ -2749,7 +2749,7 @@ marks it as something else (typically comment ender)."
   (if (= (point) start-point)
       (yas-try-key-from-whitespace start-point)
     (forward-char))
-  (unless (= original (1+ (point)))
+  (unless (<= start-point (1+ (point)))
     'again))
 
 

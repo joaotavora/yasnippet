@@ -351,7 +351,8 @@ TODO: correct this bug!"
              (yas--foobarbaz t) (yas--barbaz t))
          (yas-should-expand '(("foo-barbaz" . "foo-barOKbazOK")))
          (setq yas-key-syntaxes '(yas-longest-key-from-whitespace))
-         (yas-should-expand '(("foo-barbaz" . "OKfoo-barbazOK"))))))))
+         (yas-should-expand '(("foo-barbaz" . "OKfoo-barbazOK")
+                              ("foo " . "foo "))))))))
 
 
 ;;; Loading
