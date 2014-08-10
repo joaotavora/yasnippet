@@ -337,7 +337,7 @@ TODO: correct this bug!"
          (let ((yas--foobarbaz t))
            (yas-should-expand '(("foo-barbaz" . "OKfoo-barbazOK"))))
          (let ((yas-key-syntaxes
-                (cons #'(lambda ()
+                (cons #'(lambda (_start-point)
                           (unless (looking-back "-")
                             (backward-char)
                             'again))
