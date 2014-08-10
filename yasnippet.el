@@ -2730,28 +2730,22 @@ and `kill-buffer' instead."
 ;;; User convenience functions, for using in `yas-key-syntaxes'
 
 (defun yas-try-key-from-whitespace (_start-point)
-  "Go back to nearest whitespace.
+  "As `yas-key-syntaxes' element, look for whitespace delimited key.
 
 A newline will be considered whitespace even if the mode syntax
-marks it as something else (typically comment ender). Use as
-element of `yas-key-syntaxes'."
+marks it as something else (typically comment ender)."
   (skip-chars-backward "^[:space:]\n"))
 
 (defun yas-shortest-key-until-whitespace (_start-point)
-  "Return `again' until at whitespace.
-
-A newline will be considered whitespace even if the mode syntax
-marks it as something else (typically comment ender). Use as
-element of `yas-key-syntaxes'."
+  "Like `yas-longest-key-from-whitespace' but take the shortest key."
   (when (/= (skip-chars-backward "^[:space:]\n" (1- (point))) 0)
     'again))
 
 (defun yas-longest-key-from-whitespace (start-point)
-  "Go back to nearest whitespace, then go forward and return `again' until at START-POINT.
+  "As `yas-key-syntaxes' element, look for longest key between point and whitespace.
 
 A newline will be considered whitespace even if the mode syntax
-marks it as something else (typically comment ender). Use as
-element of `yas-key-syntaxes'."
+marks it as something else (typically comment ender)."
   (if (= (point) start-point)
       (yas-try-key-from-whitespace start-point)
     (forward-char))
