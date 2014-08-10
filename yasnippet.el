@@ -388,21 +388,22 @@ the trigger key itself."
                       map)
   "The active keymap while a snippet expansion is in progress.")
 
-(defvar yas-key-syntaxes (list "w" "w_" "w_." "w_.()" "^ ")
+(defvar yas-key-syntaxes (list "w" "w_" "w_." "w_.()"
+                               #'yas-try-key-from-whitespace)
   "Syntaxes and functions to help look for trigger keys before point.
 
 Each element in this list specifies how to skip buffer positions
 backwards and look for the start of a trigger key.
 
-Each element can be either a string or a functino of no
-arguments. A string element is simply passed to
-`skip-syntax-backward' whereas a function element is called with
-no arguments and should also place point before the original
+Each element can be either a string or a function receiving the
+original point as an argument. A string element is simply passed
+to `skip-syntax-backward' whereas a function element is called
+with no arguments and should also place point before the original
 position.
 
 The string between the resulting buffer position and the original
-point.in the is matched against the trigger keys in the active
-snippet tables.
+point is matched against the trigger keys in the active snippet
+tables.
 
 If no expandable snippets are found, the next element is the list
 is tried, unless a function element returned the symbol `again',
@@ -1238,7 +1239,7 @@ Returns (TEMPLATES START END). This function respects
                (skip-syntax-backward method)
                (setq methods (cdr methods)))
               ((functionp method)
-               (unless (eq (funcall method)
+               (unless (eq (funcall method original)
                            'again)
                  (setq methods (cdr methods))))
               (t
@@ -2723,6 +2724,33 @@ and `kill-buffer' instead."
                                                15 0 ?  "...") " ")
              (insert "\n"))))
      groups-hash)))
+
+
+
+;;; User convenience functions, for using in `yas-key-syntaxes'
+
+(defun yas-try-key-from-whitespace (_start-point)
+  "As `yas-key-syntaxes' element, look for whitespace delimited key.
+
+A newline will be considered whitespace even if the mode syntax
+marks it as something else (typically comment ender)."
+  (skip-chars-backward "^[:space:]\n"))
+
+(defun yas-shortest-key-until-whitespace (_start-point)
+  "Like `yas-longest-key-from-whitespace' but take the shortest key."
+  (when (/= (skip-chars-backward "^[:space:]\n" (1- (point))) 0)
+    'again))
+
+(defun yas-longest-key-from-whitespace (start-point)
+  "As `yas-key-syntaxes' element, look for longest key between point and whitespace.
+
+A newline will be considered whitespace even if the mode syntax
+marks it as something else (typically comment ender)."
+  (if (= (point) start-point)
+      (yas-try-key-from-whitespace start-point)
+    (forward-char))
+  (unless (<= start-point (1+ (point)))
+    'again))
 
 
 
