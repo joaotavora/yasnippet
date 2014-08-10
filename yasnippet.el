@@ -2746,6 +2746,19 @@ element of `yas-key-syntaxes'."
   (when (/= (skip-chars-backward "^[:space:]\n" (1- (point))) 0)
     'again))
 
+(defun yas-longest-key-from-whitespace (start-point)
+  "Go back to nearest whitespace, then go forward and return `again' until at START-POINT.
+
+A newline will be considered whitespace even if the mode syntax
+marks it as something else (typically comment ender). Use as
+element of `yas-key-syntaxes'."
+  (if (= (point) start-point)
+      (yas-try-key-from-whitespace start-point)
+    (forward-char))
+  (unless (= original (1+ (point)))
+    'again))
+
+
 
 ;;; User convenience functions, for using in snippet definitions
 

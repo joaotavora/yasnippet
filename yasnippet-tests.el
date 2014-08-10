@@ -349,7 +349,9 @@ TODO: correct this bug!"
                               ("xxx 'quote" . "xxx OKquoteOK"))))
        (let ((yas-key-syntaxes '(yas-shortest-key-until-whitespace))
              (yas--foobarbaz t) (yas--barbaz t))
-         (yas-should-expand '(("foo-barbaz" . "foo-barOKbazOK"))))))))
+         (yas-should-expand '(("foo-barbaz" . "foo-barOKbazOK")))
+         (setq yas-key-syntaxes '(yas-longest-key-from-whitespace))
+         (yas-should-expand '(("foo-barbaz" . "OKfoo-barbazOK"))))))))
 
 
 ;;; Loading
