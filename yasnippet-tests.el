@@ -485,6 +485,23 @@ TODO: correct this bug!"
                              (should (= (length expected)
                                         (length observed)))))))
 
+(ert-deftest issue-504-tricky-jit ()
+  (define-derived-mode yas--test-mode c-mode "Just a test mode")
+  (define-derived-mode yas--another-test-mode c-mode "Another test mode")
+  (yas-with-snippet-dirs
+   '((".emacs.d/snippets"
+      ("yas--another-test-mode"
+       (".yas-parents" . "yas--test-mode"))
+      ("yas--test-mode")))
+   (let ((b (with-current-buffer (generate-new-buffer "*yas-test*")
+              (yas--another-test-mode)
+              (current-buffer))))
+     (unwind-protect
+         (progn
+           (yas-reload-all)
+           (should (= 0 (hash-table-count yas--scheduled-jit-loads))))
+       (kill-buffer b)))))
+
 (defun yas--basic-jit-loading-1 ()
   (with-temp-buffer
     (should (= 4 (hash-table-count yas--scheduled-jit-loads)))

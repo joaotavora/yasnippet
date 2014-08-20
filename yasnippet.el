@@ -130,8 +130,7 @@
 ;;; Code:
 
 (require 'cl)
-(eval-and-compile
-  (require 'cl-lib))
+(require 'cl-lib)
 (require 'easymenu)
 (require 'help-mode)
 
@@ -1736,36 +1735,44 @@ With prefix argument USE-JIT do jit-loading of snippets."
          current-prefix-arg t))
   (unless yas-snippet-dirs
     (setq yas-snippet-dirs top-level-dir))
-  (dolist (dir (yas--subdirs top-level-dir))
-    (let* ((major-mode-and-parents (yas--compute-major-mode-and-parents
-                                    (concat dir "/dummy")))
-           (mode-sym (car major-mode-and-parents))
-           (parents (cdr major-mode-and-parents)))
-      ;; Attention: The parents and the menus are already defined
-      ;; here, even if the snippets are later jit-loaded.
-      ;;
-      ;; * We need to know the parents at this point since entering a
-      ;;   given mode should jit load for its parents
-      ;;   immediately. This could be reviewed, the parents could be
-      ;;   discovered just-in-time-as well
-      ;;
-      ;; * We need to create the menus here to support the `full'
-      ;;   option to `yas-use-menu' (all known snippet menus are shown to the user)
-      ;;
-      (yas--define-parents mode-sym parents)
-      (yas--menu-keymap-get-create mode-sym)
-      (let ((fun `(lambda () ;; FIXME: Simulating lexical-binding.
-                    (yas--load-directory-1 ',dir ',mode-sym))))
-        (if (and use-jit
-                 (not (some #'(lambda (buffer)
-                                (with-current-buffer buffer
-                                  ;; FIXME: Shouldn't this use derived-mode-p?
-                                  (when (eq major-mode mode-sym)
-                                    (yas--message 3 "Discovered there was already %s in %s" buffer mode-sym)
-                                    t)))
-                            (buffer-list))))
-            (yas--schedule-jit mode-sym fun)
-            (funcall fun)))))
+  (let ((impatient-buffers))
+    (dolist (dir (yas--subdirs top-level-dir))
+      (let* ((major-mode-and-parents (yas--compute-major-mode-and-parents
+                                      (concat dir "/dummy")))
+             (mode-sym (car major-mode-and-parents))
+             (parents (cdr major-mode-and-parents)))
+        ;; Attention: The parents and the menus are already defined
+        ;; here, even if the snippets are later jit-loaded.
+        ;;
+        ;; * We need to know the parents at this point since entering a
+        ;;   given mode should jit load for its parents
+        ;;   immediately. This could be reviewed, the parents could be
+        ;;   discovered just-in-time-as well
+        ;;
+        ;; * We need to create the menus here to support the `full'
+        ;;   option to `yas-use-menu' (all known snippet menus are shown to the user)
+        ;;
+        (yas--define-parents mode-sym parents)
+        (yas--menu-keymap-get-create mode-sym)
+        (let ((fun `(lambda () ;; FIXME: Simulating lexical-binding.
+                      (yas--load-directory-1 ',dir ',mode-sym))))
+          (if use-jit
+              (yas--schedule-jit mode-sym fun)
+            (funcall fun)))
+        ;; Look for buffers that are already in `mode-sym', and so
+        ;; need the new snippets immediately...
+        ;; 
+        (when use-jit 
+          (cl-loop for buffer in (buffer-list)
+                   do (with-current-buffer buffer
+                        (when (eq major-mode mode-sym)
+                          (yas--message 3 "Discovered there was already %s in %s" buffer mode-sym)
+                          (push buffer impatient-buffers)))))))
+    ;; ...after TOP-LEVEL-DIR has been completely loaded, call
+    ;; `yas--load-pending-jits' in these impatient buffers.
+    ;; 
+    (cl-loop for buffer in impatient-buffers
+             do (with-current-buffer buffer (yas--load-pending-jits))))
   (when interactive
     (yas--message 3 "Loaded snippets from %s." top-level-dir)))
 
