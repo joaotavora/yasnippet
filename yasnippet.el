@@ -150,21 +150,25 @@
   "Yet Another Snippet extension"
   :group 'editing)
 
-(defvar yas--load-file-name load-file-name
-  "Store the filename that yasnippet.el was originally loaded from.")
+(defvar yas-installed-snippets-dir nil)
+(setq yas-installed-snippets-dir
+      (when load-file-name
+        (concat (file-name-directory load-file-name) "snippets")))
 
 (defcustom yas-snippet-dirs (remove nil
                                     (list "~/.emacs.d/snippets"
-                                          (when yas--load-file-name
-                                            (concat (file-name-directory yas--load-file-name) "snippets"))))
-  "Directory or list of snippet dirs for each major mode.
+                                          'yas-installed-snippets-dir))
+  "List of top-level snippet directories.
 
-The directory where user-created snippets are to be stored.  Can
-also be a list of directories.  In that case, when used for
-bulk (re)loading of snippets (at startup or via
-`yas-reload-all'), directories appearing earlier in the list
-shadow other dir's snippets.  Also, the first directory is taken
-as the default for storing the user's new snippets."
+Each element, a string or a symbol whose value is a string,
+designates a top-level directory where per-mode snippet
+directories can be found.
+
+Elements appearing earlier in the list shadow later elements'
+snippets.
+
+The first directory is taken as the default for storing snippet's
+created with `yas-new-snippet'. "
   :type '(choice (string :tag "Single directory (string)")
                  (repeat :args (string) :tag "List of directories (strings)"))
   :group 'yasnippet
@@ -178,8 +182,18 @@ as the default for storing the user's new snippets."
                (yas-reload-all)))))
 
 (defun yas-snippet-dirs ()
-  "Return `yas-snippet-dirs' (which see) as a list."
-  (if (listp yas-snippet-dirs) yas-snippet-dirs (list yas-snippet-dirs)))
+  "Return variable `yas-snippet-dirs' as list of strings."
+  (cl-loop for e in (if (listp yas-snippet-dirs)
+                        yas-snippet-dirs
+                      (list yas-snippet-dirs))
+           collect
+           (cond ((stringp e) e)
+                 ((and (symbolp e)
+                       (boundp e)
+                       (stringp (symbol-value e)))
+                  (symbol-value e))
+                 (t
+                  (error "[yas] invalid element %s in `yas-snippet-dirs'" e)))))
 
 (defvaralias 'yas/root-directory 'yas-snippet-dirs)
 
