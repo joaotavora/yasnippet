@@ -1243,7 +1243,7 @@ Returns (TEMPLATES START END). This function respects
                            'again)
                  (setq methods (cdr methods))))
               (t
-               (error "[yas] invalid element in `yas-key-syntaxes'")))
+               (yas--warning "Warning invalid element %s in `yas-key-syntaxes'" method)))
         (setq templates
               (mapcan #'(lambda (table)
                           (yas--fetch table (buffer-substring-no-properties (point)
@@ -4365,6 +4365,11 @@ object satisfying `yas--field-p' to restrict the expansion to.")))
   "When LEVEL is above `yas-verbosity-level', log MESSAGE and ARGS."
   (when (> yas-verbosity level)
     (message "%s" (apply #'yas--format message args))))
+
+(defun yas--warning (format-control &rest format-args)
+  (let ((msg (apply #'format format-control format-args)))
+    (display-warning 'yasnippet msg :warning)
+    (yas--message 1 msg)))
 
 (defun yas--format (format-control &rest format-args)
   (apply #'format (concat "[yas] " format-control) format-args))
