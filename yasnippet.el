@@ -1257,11 +1257,13 @@ Returns (TEMPLATES START END). This function respects
                  (setq methods (cdr methods))))
               (t
                (yas--warning "Warning invalid element %s in `yas-key-syntaxes'" method)))
-        (setq templates
-              (mapcan #'(lambda (table)
-                          (yas--fetch table (buffer-substring-no-properties (point)
-                                                                            original)))
-                      (yas--get-snippet-tables))))
+        (let ((possible-key (buffer-substring-no-properties (point) original)))
+          (save-excursion
+            (goto-char original)
+            (setq templates
+                  (mapcan #'(lambda (table)
+                              (yas--fetch table possible-key))
+                          (yas--get-snippet-tables))))))
       (when templates
         (list templates (point) original)))))
 
