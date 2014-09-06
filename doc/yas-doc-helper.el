@@ -161,7 +161,7 @@
 
 
 (provide 'yas-doc-helper)
-;;; yas-doc-helper.el ends here
 ;; Local Variables:
 ;; coding: utf-8
 ;; End:
+;;; yas-doc-helper.el ends here

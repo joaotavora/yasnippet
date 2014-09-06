@@ -4593,9 +4593,8 @@ can more or less safely rely upon them.")
 
 
 (provide 'yasnippet)
-
-;;; yasnippet.el ends here
 ;; Local Variables:
 ;; coding: utf-8
 ;; byte-compile-warnings: (not cl-functions)
 ;; End:
+;;; yasnippet.el ends here
