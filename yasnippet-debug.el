@@ -124,4 +124,7 @@
     (add-hook 'post-command-hook 'yas-debug-snippet-vars 't 'local)))
 
 (provide 'yasnippet-debug)
+;; Local Variables:
+;; byte-compile-warnings: (not cl-functions)
+;; End:
 ;;; yasnippet-debug.el ends here
