@@ -821,8 +821,9 @@ add the snippets associated with the given mode."
 
 
 (provide 'yasnippet-tests)
-;;; yasnippet-tests.el ends here
 ;; Local Variables:
+;; indent-tabs-mode: nil
 ;; lexical-binding: t
 ;; byte-compile-warnings: (not cl-functions)
 ;; End:
+;;; yasnippet-tests.el ends here

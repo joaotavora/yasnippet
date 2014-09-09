@@ -161,7 +161,8 @@
 
 
 (provide 'yas-doc-helper)
-;;; yas-doc-helper.el ends here
 ;; Local Variables:
+;; indent-tabs-mode: nil
 ;; coding: utf-8
 ;; End:
+;;; yas-doc-helper.el ends here
