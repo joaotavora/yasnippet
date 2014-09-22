@@ -148,6 +148,7 @@
 
 (defgroup yasnippet nil
   "Yet Another Snippet extension"
+  :prefix "yas-"
   :group 'editing)
 
 (defvar yas-installed-snippets-dir nil)
