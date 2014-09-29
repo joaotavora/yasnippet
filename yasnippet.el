@@ -559,7 +559,7 @@ snippet itself contains a condition that returns the symbol
 
 (defun yas--snippet-next-id ()
   (let ((id yas--snippet-id-seed))
-    (incf yas--snippet-id-seed)
+    (cl-incf yas--snippet-id-seed)
     id))
 
 
@@ -3953,7 +3953,7 @@ Meant to be called in a narrowed buffer, does various passes"
         (n (line-beginning-position)))
     (while (or (eql c ?\ )
                (eql c ?\t))
-      (incf n)
+      (cl-incf n)
       (setq c (char-after n)))
     n))
 
