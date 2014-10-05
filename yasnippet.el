@@ -2248,8 +2248,13 @@ Common gateway for `yas-expand-from-trigger-key' and
   (cond ((eq yas-fallback-behavior 'return-nil)
          ;; return nil
          nil)
+        ((eq yas-fallback-behavior 'yas--fallback)
+         (error (concat "yasnippet fallback loop!\n"
+                        "This can happen when you bind `yas-expand' "
+                        "outside of the `yas-minor-mode-map'.")))
         ((eq yas-fallback-behavior 'call-other-command)
-         (let* ((beyond-yasnippet (yas--keybinding-beyond-yasnippet)))
+         (let* ((yas-fallback-behavior 'yas--fallback)
+                (beyond-yasnippet (yas--keybinding-beyond-yasnippet)))
            (yas--message 4 "Falling back to %s"  beyond-yasnippet)
            (assert (or (null beyond-yasnippet) (commandp beyond-yasnippet)))
            (setq this-original-command beyond-yasnippet)
@@ -2258,12 +2263,13 @@ Common gateway for `yas-expand-from-trigger-key' and
         ((and (listp yas-fallback-behavior)
               (cdr yas-fallback-behavior)
               (eq 'apply (car yas-fallback-behavior)))
-         (if (cddr yas-fallback-behavior)
-             (apply (cadr yas-fallback-behavior)
-                    (cddr yas-fallback-behavior))
-           (when (commandp (cadr yas-fallback-behavior))
-             (setq this-command (cadr yas-fallback-behavior))
-             (call-interactively (cadr yas-fallback-behavior)))))
+         (let ((yas-fallback-behavior 'yas--fallback))
+           (if (cddr yas-fallback-behavior)
+               (apply (cadr yas-fallback-behavior)
+                      (cddr yas-fallback-behavior))
+             (when (commandp (cadr yas-fallback-behavior))
+               (setq this-command (cadr yas-fallback-behavior))
+               (call-interactively (cadr yas-fallback-behavior))))))
         (t
          ;; also return nil if all the other fallbacks have failed
          nil)))
