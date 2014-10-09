@@ -289,7 +289,7 @@ next field"
   `yas-expand' returns nil)
 
 - A Lisp form (apply COMMAND . ARGS) means interactively call
-  COMMAND, if ARGS is non-nil, call COMMAND non-interactively
+  COMMAND. If ARGS is non-nil, call COMMAND non-interactively
   with ARGS as arguments."
   :type '(choice (const :tag "Call previous command"  call-other-command)
                  (const :tag "Do nothing"             return-nil))
@@ -2269,14 +2269,15 @@ Common gateway for `yas-expand-from-trigger-key' and
         ((and (listp yas-fallback-behavior)
               (cdr yas-fallback-behavior)
               (eq 'apply (car yas-fallback-behavior)))
-         (let ((yas-fallback-behavior 'yas--fallback)
+         (let ((command-or-fn (cadr yas-fallback-behavior))
+               (args (cddr yas-fallback-behavior))
+               (yas-fallback-behavior 'yas--fallback)
                (yas-minor-mode nil))
-           (if (cddr yas-fallback-behavior)
-               (apply (cadr yas-fallback-behavior)
-                      (cddr yas-fallback-behavior))
-             (when (commandp (cadr yas-fallback-behavior))
-               (setq this-command (cadr yas-fallback-behavior))
-               (call-interactively (cadr yas-fallback-behavior))))))
+           (if args
+               (apply command-or-fn args)
+             (when (commandp command-or-fn)
+               (setq this-command command-or-fn)
+               (call-interactively command-or-fn)))))
         (t
          ;; also return nil if all the other fallbacks have failed
          nil)))
