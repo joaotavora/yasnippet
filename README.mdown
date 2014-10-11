@@ -119,15 +119,14 @@ documentation, please report it on [the GitHub issue tracker][issues].
 
 Your bug reports are very valuable.
 
-The most important thing when reporting bugs is making sure that the
-developer has a way to reproduce the problem exactly like it happened
-to you.
+The most important thing when reporting bugs is making sure that we have
+a way to reproduce the problem exactly like it happened to you.
 
-To do this, he needs to rule out interference from external factors
-like other Emacs extensions or other Lisp-side code.
+To do this, we need to rule out interference from external factors
+like other Emacs extensions or your own customizations.
 
-Here's an example that "sandboxes" an emacs just for reproducing the
-bug.
+Here's an example report that "sandboxes" an Emacs session just for 
+reproducing a bug.
 
 ```
 $ emacs --version
@@ -147,6 +146,9 @@ OR
 I can't get yasnippet to load because frankinbogen!
 ```
 
+Using `emacs -Q` or temporarily moving your `.emacs` init file to the side 
+is another way to achieve good reproductability.
+
 Here's a
 [another example](https://github.com/capitaomorte/yasnippet/issues/318)
 of a bug report. It has everything needed for a sucessfull analysis
@@ -159,9 +161,8 @@ do `git log -1` in the dir).
 Any more info is welcome, but don't just paste a backtrace or an error
 message string you got, unless we ask for it.
 
-
 There is also a [YASnippet google group][forum]. I will keep the group
-open for reference and for discussion among users, unfortunately I
+open for reference and for discussion among users. Unfortunately I
 can't guarantee a timely response, so maybe it's better to create a
 github issue clearly marking your intent (user support/bug/feature
 request).
