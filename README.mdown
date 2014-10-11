@@ -109,44 +109,62 @@ should be added like this to `yas-snippet-dirs`:
 
     (yas-global-mode 1) ;; or M-x yas-reload-all if you've started YASnippet already.
 
-# Documentation, issues, etc
+# Manual, issues etc
 
-Please refer to the comprehensive (albeit slightly outdated)
-[documentation][docs] for full customization
-and support.  If you find a bug, please report it on
-[the GitHub issue tracker][issues].  (please **do not** submit new issues to the old
-[googlecode tracker][googlecode tracker])
+Please refer to the comprehensive [documentation][docs] for full
+customization and support.  If you find a bug in the code or in the
+documentation, please report it on [the GitHub issue tracker][issues].
 
 ## Important note regarding bug reporting
-If you think have found a bug, please report it clearly.  Yasnippet
-does have (lots of) bugs and your reports are very valuable. Here's
-a  [great example](https://github.com/capitaomorte/yasnippet/issues/318)
-of a bug report. It has everything needed for a sucessfull analysis and
-speedy resolution:
 
-*Before* reporting try to reproduce the bug **without** your usual
-`.emacs` (or whatever startup file you use). Do so either by starting
-emacs from the command line with the `-Q` switch, or by temporarily
-moving away your `.emacs` and creating a new smaller one just for
-reproducing the bug. Paste that file in your bug report. Paste any sequence
-of relevant shell commands before you launch Emacs.
+Your bug reports are very valuable.
 
-*Then*, describe steps taken to reproduce from an
-end-user perspective. Try to be as unambiguous as possible.
+The most important thing when reporting bugs is making sure that the
+developer has a way to reproduce the problem exactly like it happened
+to you.
+
+To do this, he needs to rule out interference from external factors
+like other Emacs extensions or other Lisp-side code.
+
+Here's an example that "sandboxes" an emacs just for reproducing the
+bug.
+
+```
+$ emacs --version
+Emacs 24.3
+$ cd /tmp/
+$ git clone https://github.com/capitaomorte/yasnippet.git yasnippet-bug
+$ cd yasnippet-bug
+$ git log -1 --oneline
+6053db0 Closes #527: Unbreak case where yas-fallback-behaviour is a list
+$ HOME=$PWD emacs -L  # This "sandboxes" your emacs, melpa configuration, etc
+
+(require 'yasnippet)
+(yas-global-mode 1)
+
+When I open a foo-mode file I can't expand foo-mode snippets! 
+OR
+I can't get yasnippet to load because frankinbogen!
+```
+
+Here's a
+[another example](https://github.com/capitaomorte/yasnippet/issues/318)
+of a bug report. It has everything needed for a sucessfull analysis
+and speedy resolution.
 
 Also, don't forget to state the Emacs version (use `M-x emacs-version`) and
 the yasnippet version you are using (if using the latest from github,
 do `git log -1` in the dir).
 
 Any more info is welcome, but don't just paste a backtrace or an error
-message string you got. I'm not saying your analysis might not be
-useful but following the instructions above immediately gives me a
-clear picture of what is happening.
+message string you got, unless we ask for it.
+
 
 There is also a [YASnippet google group][forum]. I will keep the group
 open for reference and for discussion among users, unfortunately I
-can't guarantee a timely response, so maybe creating a github issue
-clearly marking your intent (user support/bug/feature request).
+can't guarantee a timely response, so maybe it's better to create a
+github issue clearly marking your intent (user support/bug/feature
+request).
 
 Finally, thank you very much for using YASnippet!
 
