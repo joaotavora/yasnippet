@@ -118,6 +118,11 @@ YASnippet menu has the same effect of evaluating the follow code:
 See the internal documentation on [[sym:yas-expand-snippet][=yas-expand-snippet=]] for more
 information.
 
+** Automatically expanding snippets
+
+You may not want to press the *trigger key* to expand certain snippets. See
+[[file:snippet-development.org][Writing Snippets]] to learn how to automatically expand certain snippets.
+
 * Controlling expansion
 
 ** Eligible snippets
