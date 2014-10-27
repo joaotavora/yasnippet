@@ -930,6 +930,7 @@ Honour `yas-dont-activate', which see."
   group      ;; as dictated by the #group: directive or .yas-make-groups
   perm-group ;; as dictated by `yas-define-menu'
   table
+  trigger
   )
 
 (defun yas--populate-template (template &rest args)
@@ -1421,7 +1422,8 @@ Here's a list of currently recognized directives:
  * key
  * expand-env
  * binding
- * uuid"
+ * uuid
+ * trigger"
   (goto-char (point-min))
   (let* ((type 'snippet)
          (name (and file
@@ -1434,7 +1436,8 @@ Here's a list of currently recognized directives:
                      (yas--calculate-group file)))
          expand-env
          binding
-         uuid)
+         uuid
+         trigger)
     (if (re-search-forward "^# --\n" nil t)
         (progn (setq template
                      (buffer-substring-no-properties (point)
@@ -1460,7 +1463,9 @@ Here's a list of currently recognized directives:
                    (setq expand-env (yas--read-lisp (match-string-no-properties 2)
                                                    'nil-on-error)))
                  (when (string= "binding" (match-string-no-properties 1))
-                   (setq binding (match-string-no-properties 2)))))
+                   (setq binding (match-string-no-properties 2)))
+                 (when (string= "trigger" (match-string-no-properties 1))
+                   (setq trigger (match-string-no-properties 2)))))
       (setq template
             (buffer-substring-no-properties (point-min) (point-max))))
     (unless (or key binding)
@@ -1469,7 +1474,8 @@ Here's a list of currently recognized directives:
       (setq template (yas--read-lisp (concat "(progn" template ")"))))
     (when group
       (setq group (split-string group "\\.")))
-    (list key template name condition group expand-env file binding uuid)))
+    (list key template name condition group expand-env
+          file binding uuid trigger)))
 
 (defun yas--calculate-group (file)
   "Calculate the group for snippet file path FILE."
@@ -1616,10 +1622,12 @@ Optional PROMPT sets the prompt to use."
 ;; correct tables.
 ;;
 
-(defmacro yas--auto-expand-on-keypress (key mode)
+(defmacro yas--auto-expand-on-keypress (key name mode)
   "Set a snippet to automatically expand when its key is pressed.
 
-KEY is both the name of the snippet and the name of its corresponding key.
+KEY is the name of the trigger-key.
+
+NAME is the name of the snippet.
 
 MODE is the name of the given MODE."
   (interactive)
@@ -1627,7 +1635,7 @@ MODE is the name of the given MODE."
      ,(kbd key)
      (lambda ()
        (interactive)
-       (yas-expand-snippet-by-name ,key ,mode))))
+       (yas-expand-snippet-by-name ,name ,mode))))
 
 (defvar yas--creating-compiled-snippets nil)
 
@@ -1646,6 +1654,8 @@ MODE is the name of the given MODE."
          (keybinding (yas--read-keybinding (eighth snippet)))
          (uuid (or (ninth snippet)
                   name))
+         (trigger (or (tenth snippet)
+                      "normal"))
          (template (or (gethash uuid (yas--table-uuidhash snippet-table))
                        (yas--make-blank-template))))
     ;; X) populate the template object
@@ -1660,7 +1670,8 @@ MODE is the name of the given MODE."
                            :expand-env  (sixth snippet)
                            :file        (seventh snippet)
                            :keybinding  keybinding
-                           :uuid         uuid)
+                           :uuid         uuid
+                           :trigger      trigger)
     ;; X) Update this template in the appropriate table. This step
     ;;    also will take care of adding the key indicators in the
     ;;    templates menu entry, if any
@@ -1712,7 +1723,8 @@ the current buffers contents."
                   (expand-env             (nth 5 snippet))
                   (file                   nil) ;; omit on purpose
                   (binding                (nth 7 snippet))
-                  (uuid                   (nth 8 snippet)))
+                  (uuid                   (nth 8 snippet))
+                  (trigger                (nth 9 snippet)))
               (push `(,key
                       ,template-content
                       ,name
@@ -1721,10 +1733,13 @@ the current buffers contents."
                       ,expand-env
                       ,file
                       ,binding
-                      ,uuid)
+                      ,uuid
+                      ,trigger)
                     literal-snippets)
-              (when (string= binding "auto-trigger")
-                (eval `(yas--auto-expand-on-keypress ,name ,mode)))))
+              (when (string= trigger "auto")
+                (eval `(yas--auto-expand-on-keypress ,key
+                                                     ,name
+                                                     ,mode)))))
           (insert (pp-to-string
                    `(yas-define-snippets ',mode ',literal-snippets)))
           (insert "\n\n")))
@@ -1734,9 +1749,13 @@ the current buffers contents."
       (dolist (snippet snippets)
         (setq template (yas--define-snippets-1 snippet
                                                snippet-table))
-        (when (string= (nth 7 snippet) "auto-trigger")
-          (eval `(yas--auto-expand-on-keypress ,(nth 2 snippet)
-                                               ,mode))))
+        (let ((key (nth 0 snippet))
+              (name (nth 2 snippet))
+              (trigger (nth 9 snippet)))
+          (when (string= trigger "auto")
+            (eval `(yas--auto-expand-on-keypress ,key
+                                                 ,name
+                                                 ,mode)))))
       template)))
 
 

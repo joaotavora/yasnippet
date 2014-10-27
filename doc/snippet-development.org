@@ -169,6 +169,12 @@ This binding will be recorded in the keymap =html-mode-map=. To expand a
 paragraph tag newlines, just press =C-u C-c C-c C-m=. Omitting the =C-u=
 will expand the paragraph tag without newlines.
 
+** =# trigger:= =auto=
+    
+If =trigger= is set to =auto=, the snippet will automatically expand
+when the =key= (or if =key= is not defined, the key corresponding to =name=)
+is pressed.
+
 ** =# type:= =snippet= or =command=
 
 If the =type= directive is set to =command=, the body of the snippet
