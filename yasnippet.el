@@ -1616,6 +1616,19 @@ Optional PROMPT sets the prompt to use."
 ;; correct tables.
 ;;
 
+(defmacro yas--auto-expand-on-keypress (key mode)
+  "Set a snippet to automatically expand when its key is pressed.
+
+KEY is both the name of the snippet and the name of its corresponding key.
+
+MODE is the name of the given MODE."
+  (interactive)
+  `(define-key yas-minor-mode-map
+     ,(kbd key)
+     (lambda ()
+       (interactive)
+       (yas-expand-snippet-by-name ,key ,mode))))
+
 (defvar yas--creating-compiled-snippets nil)
 
 (defun yas--define-snippets-1 (snippet snippet-table)
@@ -1709,7 +1722,9 @@ the current buffers contents."
                       ,file
                       ,binding
                       ,uuid)
-                    literal-snippets)))
+                    literal-snippets)
+              (when (string= binding "auto-trigger")
+                (eval `(yas--auto-expand-on-keypress ,name ,mode)))))
           (insert (pp-to-string
                    `(yas-define-snippets ',mode ',literal-snippets)))
           (insert "\n\n")))
@@ -1718,7 +1733,10 @@ the current buffers contents."
           (template nil))
       (dolist (snippet snippets)
         (setq template (yas--define-snippets-1 snippet
-                                               snippet-table)))
+                                               snippet-table))
+        (when (string= (nth 7 snippet) "auto-trigger")
+          (eval `(yas--auto-expand-on-keypress ,(nth 2 snippet)
+                                               ,mode))))
       template)))
 
 
@@ -3627,6 +3645,15 @@ considered when expanding the snippet."
                (yas--move-to-field snippet first-field)))
            (yas--message 3 "snippet expanded.")
            t))))
+
+(defmacro yas-expand-snippet-by-name (name mode)
+  "Expand the given snippet in the current major mode.
+
+NAME is the name of the snippet.
+
+MODE is the major mode wherein the snippet is defined."
+  `(yas-expand-snippet (aref (yas--get-template-by-uuid ',mode ,name)
+                             2)))
 
 (defun yas--take-care-of-redo (_beg _end snippet)
   "Commits SNIPPET, which in turn pushes an undo action for reviving it.
