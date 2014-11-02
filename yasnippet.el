@@ -3032,12 +3032,14 @@ through the field's start point"
    ;; field must be zero length
    ;;
    (zerop (- (yas--field-start field) (yas--field-end field)))
-   ;; skip if:
+   ;; field must have been modified
+   ;;
+   (yas--field-modified-p field)
+   ;; either:
    (or
-    ;;  1) is a nested field and it's been modified
+    ;;  1) it's a nested field
     ;;
-    (and (yas--field-parent-field field)
-         (yas--field-modified-p field))
+    (yas--field-parent-field field)
     ;;  2) ends just before the snippet end
     ;;
     (and (eq field (car (last (yas--snippet-fields snippet))))
