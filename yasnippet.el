@@ -3496,8 +3496,14 @@ The error should be ignored in `debug-ignored-errors'"
   (unless yas--inhibit-overlay-hooks
     (cond ((not (or after?
                     (yas--undo-in-progress)))
-           (setq yas--protection-violation (point))
-           (error "Exit the snippet first!")))))
+           (cond (t
+                  (let ((snippets (yas--snippets-at-point)))
+                    (yas--message 3 "Comitting snippets. Action would destroy a protection overlay.")
+                    (cl-loop for snippet in snippets
+                             do (yas--commit-snippet snippet))))
+                 (nil
+                  (setq yas--protection-violation (point))
+                  (error "Exit the snippet first!")))))))
 
 (add-to-list 'debug-ignored-errors "^Exit the snippet first!$")
 
