@@ -3438,17 +3438,10 @@ progress."
 ;; snippet outside the active field. Actual protection happens in
 ;; `yas--on-protection-overlay-modification'.
 ;;
-;; Currently this signals an error which inhibits the command. For
-;; commands that move point (like `kill-line'), point is restored in
-;; the `yas--post-command-handler' using a global
-;; `yas--protection-violation' variable.
-;;
-;; Alternatively, I've experimented with an implementation that
-;; commits the snippet before actually calling `this-command'
-;; interactively, and then signals an error, which is ignored. but
-;; blocks all other million modification hooks. This presented some
-;; problems with stacked expansion.
-;;
+;; As of github #537 this no longer inhibits the command by issuing an
+;; error: all the snippets at point, including nested snippets, are
+;; automatically commited and the current command can proceed.
+;; 
 (defun yas--make-move-field-protection-overlays (snippet field)
   "Place protection overlays surrounding SNIPPET's FIELD.
 
@@ -3481,29 +3474,17 @@ Move the overlays, or create them if they do not exit."
              ;; (overlay-put ov 'evaporate t)
              (overlay-put ov 'modification-hooks '(yas--on-protection-overlay-modification)))))))
 
-(defvar yas--protection-violation nil
-  "When non-nil, signals attempts to erroneously exit or modify the snippet.
-
-Functions in the `post-command-hook', for example
-`yas--post-command-handler' can check it and reset its value to
-nil.  The variables value is the point where the violation
-originated")
-
 (defun yas--on-protection-overlay-modification (_overlay after? _beg _end &optional _length)
   "Signals a snippet violation, then issues error.
 
 The error should be ignored in `debug-ignored-errors'"
-  (unless yas--inhibit-overlay-hooks
-    (cond ((not (or after?
-                    (yas--undo-in-progress)))
-           (cond (t
-                  (let ((snippets (yas--snippets-at-point)))
-                    (yas--message 3 "Comitting snippets. Action would destroy a protection overlay.")
-                    (cl-loop for snippet in snippets
-                             do (yas--commit-snippet snippet))))
-                 (nil
-                  (setq yas--protection-violation (point))
-                  (error "Exit the snippet first!")))))))
+  (unless (or yas--inhibit-overlay-hooks
+              after?
+              (yas--undo-in-progress))
+    (let ((snippets (yas--snippets-at-point)))
+      (yas--message 3 "Comitting snippets. Action would destroy a protection overlay.")
+      (cl-loop for snippet in snippets
+               do (yas--commit-snippet snippet)))))
 
 (add-to-list 'debug-ignored-errors "^Exit the snippet first!$")
 
@@ -4302,10 +4283,7 @@ When multiple expressions are found, only the last one counts."
 ;;
 (defun yas--post-command-handler ()
   "Handles various yasnippet conditions after each command."
-  (cond (yas--protection-violation
-         (goto-char yas--protection-violation)
-         (setq yas--protection-violation nil))
-        ((eq 'undo this-command)
+  (cond ((eq 'undo this-command)
          ;;
          ;; After undo revival the correct field is sometimes not
          ;; restored correctly, this condition handles that
