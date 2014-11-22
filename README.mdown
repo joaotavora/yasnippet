@@ -151,7 +151,7 @@ is another way to achieve good reproductability.
 
 Here's a
 [another example](https://github.com/capitaomorte/yasnippet/issues/318)
-of a bug report. It has everything needed for a sucessfull analysis
+of a bug report. It has everything needed for a successfull analysis
 and speedy resolution.
 
 Also, don't forget to state the Emacs version (use `M-x emacs-version`) and
