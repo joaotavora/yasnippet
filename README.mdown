@@ -112,7 +112,7 @@ should be added like this to `yas-snippet-dirs`:
 # Manual, issues etc
 
 Please refer to the comprehensive [documentation][docs] for full
-customization and support.  If you find a bug in the code or in the
+customisation and support.  If you find a bug in the code or in the
 documentation, please report it on [the GitHub issue tracker][issues].
 
 ## Important note regarding bug reporting
@@ -123,7 +123,7 @@ The most important thing when reporting bugs is making sure that we have
 a way to reproduce the problem exactly like it happened to you.
 
 To do this, we need to rule out interference from external factors
-like other Emacs extensions or your own customizations.
+like other Emacs extensions or your own customisations.
 
 Here's an example report that "sandboxes" an Emacs session just for 
 reproducing a bug.
@@ -147,11 +147,11 @@ I can't get yasnippet to load because frankinbogen!
 ```
 
 Using `emacs -Q` or temporarily moving your `.emacs` init file to the side 
-is another way to achieve good reproductability.
+is another way to achieve good reproducibility.
 
 Here's a
 [another example](https://github.com/capitaomorte/yasnippet/issues/318)
-of a bug report. It has everything needed for a sucessfull analysis
+of a bug report. It has everything needed for a successful analysis
 and speedy resolution.
 
 Also, don't forget to state the Emacs version (use `M-x emacs-version`) and
