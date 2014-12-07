@@ -3897,12 +3897,15 @@ Meant to be called in a narrowed buffer, does various passes"
   (let ((trouble-markers (remove-if-not #'(lambda (marker)
                                             (= marker (point)))
                                         snippet-markers)))
-    (save-restriction
-      (widen)
-      (condition-case _
-          (indent-according-to-mode)
-        (error (yas--message 3 "Warning: `yas--indent-according-to-mode' having problems running %s" indent-line-function)
-               nil)))
+    ;; org-mode indent-according-to-mode resets indents
+    ;; Workaround for issue #362
+    (unless (eq major-mode 'org-mode)
+      (save-restriction
+        (widen)
+        (condition-case _
+            (indent-according-to-mode)
+          (error (yas--message 3 "Warning: `yas--indent-according-to-mode' having problems running %s" indent-line-function)
+                 nil))))
     (mapc #'(lambda (marker)
               (set-marker marker (point)))
           trouble-markers)))
