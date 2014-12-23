@@ -1941,10 +1941,6 @@ foo\"bar\\! -> \"foo\\\"bar\\\\!\""
 
 ;;; Snippet compilation function
 
-(defun yas--initialize ()
-  "For backward compatibility, enable `yas-minor-mode' globally."
-  (yas-global-mode 1))
-
 (defun yas-compile-directory (top-level-dir)
   "Create .yas-compiled-snippets.el files under subdirs of TOP-LEVEL-DIR.
 
@@ -4458,6 +4454,10 @@ and return the directory.  Return nil if not found."
 
 ;;; Backward compatibility to yasnippet <= 0.7
 
+(defun yas-initialize ()
+  "For backward compatibility, enable `yas-minor-mode' globally."
+  (yas-global-mode 1))
+
 (defvar yas--backported-syms '(;; `defcustom's
                              ;;
                              yas-snippet-dirs
@@ -4523,6 +4523,7 @@ and return the directory.  Return nil if not found."
                              yas-exit-snippet
                              yas-exit-all-snippets
                              yas-skip-and-clear-or-delete-char
+                             yas-initialize
 
                              ;; symbols that I "exported" for use
                              ;; in snippets and hookage
