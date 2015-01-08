@@ -875,7 +875,9 @@ Honour `yas-dont-activate', which see."
 
 (defvar yas--font-lock-keywords
   (append '(("^#.*$" . font-lock-comment-face))
-          lisp-font-lock-keywords-2
+          (if (version< emacs-version "24.4")
+              lisp-font-lock-keywords-2
+            lisp-el-font-lock-keywords-2)
           '(("$\\([0-9]+\\)"
              (0 font-lock-keyword-face)
              (1 font-lock-string-face t))
