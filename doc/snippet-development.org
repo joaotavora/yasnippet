@@ -6,14 +6,18 @@
 
 ** Quickly finding snippets
 
-There are some ways you can quickly find a snippet file:
+There are some ways you can quickly find a snippet file or create a new one:
 
 -  =M-x yas-new-snippet=
 
-   Prompts you for a snippet name, then tries to guess a suitable
-   directory to store it, prompting you for creation if it does not
-   exist. Finally, places you in a new buffer set to =snippet-mode= so
-   you can write your snippet.
+   Creates a new buffer with a template for making a new snippet.
+   The buffer is in =snippet-mode= (see below). When you are done
+   editing the new snippet, use =C-c C-c= to save it. This will
+   prompt for a directory two steps: first, the snippet table
+   (with a default based on the major mode you started in), and then
+   then snippet collection directory (defaults to the first directory
+   in =yas-snippet-dirs=. (See [[file:snippet-organization.org][Organizing Snippets]]
+   for more detail on how snippets are organized.)
 
 -  =M-x yas-find-snippets=
 
