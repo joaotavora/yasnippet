@@ -34,7 +34,7 @@ Add your own snippets to `~/.emacs.d/snippets` by placing files there or invokin
 ## Install with `package-install`
 
 In a recent emacs `M-x list-packages` is the recommended way to list and install packages.
-[MELPA][melpa] keeps a very recent snapshot of YASnippet, see http://melpa.milkbox.net/#installing.
+[MELPA][melpa] keeps a very recent snapshot of YASnippet, see http://melpa.org/#installing.
 
 ## Install with el-get
 
