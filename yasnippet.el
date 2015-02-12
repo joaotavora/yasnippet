@@ -3514,7 +3514,7 @@ The error should be ignored in `debug-ignored-errors'"
   "Expand snippet CONTENT at current point.
 
 Text between START and END will be deleted before inserting
-template.  EXPAND-ENV is are let-style variable to value bindings
+template.  EXPAND-ENV is a list of (SYM VALUE) let-style dynamic bindings
 considered when expanding the snippet."
   (run-hooks 'yas-before-expand-snippet-hook)
 
