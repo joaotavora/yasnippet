@@ -526,10 +526,6 @@ snippet itself contains a condition that returns the symbol
 (defvar yas--menu-table (make-hash-table)
   "A hash table of MAJOR-MODE symbols to menu keymaps.")
 
-(defvar yas--known-modes
-  '(ruby-mode rst-mode markdown-mode)
-  "A list of mode which is well known but not part of Emacs.")
-
 (defvar yas--escaped-characters
   '(?\\ ?` ?\" ?' ?$ ?} ?{ ?\( ?\))
   "List of characters which *might* need to be escaped.")
@@ -1282,16 +1278,6 @@ Returns (TEMPLATES START END). This function respects
 
 
 ;;; Internal functions and macros:
-
-(defun yas--real-mode? (mode)
-  "Try to find out if MODE is a real mode.
-
-The MODE bound to a function (like `c-mode') is considered real
-mode.  Other well known mode like `ruby-mode' which is not part of
-Emacs might not bound to a function until it is loaded.  So
-yasnippet keeps a list of modes like this to help the judgment."
-  (or (fboundp mode)
-      (find mode yas--known-modes)))
 
 (defun yas--handle-error (err)
   "Handle error depending on value of `yas-good-grace'."
