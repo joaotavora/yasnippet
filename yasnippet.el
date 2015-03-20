@@ -1,6 +1,6 @@
 ;;; yasnippet.el --- Yet another snippet extension for Emacs.
 
-;; Copyright (C) 2008-2013 Free Software Foundation, Inc.
+;; Copyright (C) 2008-2013, 2015 Free Software Foundation, Inc.
 ;; Authors: pluskid <pluskid@gmail.com>,  João Távora <joaotavora@gmail.com>
 ;; Maintainer: João Távora <joaotavora@gmail.com>
 ;; Version: 0.8.1
@@ -912,7 +912,7 @@ Honour `yas-dont-activate', which see."
 
 ;;; Internal structs for template management
 
-(defstruct (yas--template (:constructor yas--make-blank-template))
+(defstruct (yas--template (:constructor yas--make-template))
   "A template for a snippet."
   key
   content
@@ -927,16 +927,6 @@ Honour `yas-dont-activate', which see."
   perm-group ;; as dictated by `yas-define-menu'
   table
   )
-
-(defun yas--populate-template (template &rest args)
-  "Helper function to populate TEMPLATE with properties."
-  (while args
-    (aset template
-          (position (intern (substring (symbol-name (car args)) 1))
-                    (mapcar #'car (get 'yas--template 'cl-struct-slots)))
-          (second args))
-    (setq args (cddr args)))
-  template)
 
 (defstruct (yas--table (:constructor yas--make-snippet-table (name)))
   "A table to store snippets for a particular mode.
@@ -1620,20 +1610,19 @@ Optional PROMPT sets the prompt to use."
          (uuid (or (ninth snippet)
                   name))
          (template (or (gethash uuid (yas--table-uuidhash snippet-table))
-                       (yas--make-blank-template))))
+                       (yas--make-template :uuid uuid
+                                           :table snippet-table))))
     ;; X) populate the template object
     ;;
-    (yas--populate-template template
-                           :table       snippet-table
-                           :key         key
-                           :content     (second snippet)
-                           :name        (or name key)
-                           :group       group
-                           :condition   condition
-                           :expand-env  (sixth snippet)
-                           :file        (seventh snippet)
-                           :keybinding  keybinding
-                           :uuid         uuid)
+    (setf (yas--template-key template)        key)
+    (setf (yas--template-content template)    (second snippet))
+    (setf (yas--template-name template)       (or name key))
+    (setf (yas--template-group template)      group)
+    (setf (yas--template-condition template)  condition)
+    (setf (yas--template-expand-env template) (sixth snippet))
+    (setf (yas--template-file template)       (seventh snippet))
+    (setf (yas--template-keybinding template) keybinding)
+
     ;; X) Update this template in the appropriate table. This step
     ;;    also will take care of adding the key indicators in the
     ;;    templates menu entry, if any
@@ -2071,11 +2060,10 @@ omitted from MODE's menu, even if they're manually loaded."
                         hash)
     (dolist (uuid omit-items)
       (let ((template (or (gethash uuid hash)
-                          (yas--populate-template (puthash uuid
-                                                           (yas--make-blank-template)
-                                                           hash)
-                                                  :table table
-                                                  :uuid uuid))))
+                          (puthash uuid
+                                   (yas--make-template :table table
+                                                       :uuid uuid)
+                                   hash))))
         (setf (yas--template-menu-binding-pair template) (cons nil :none))))))
 
 (defun yas--define-menu-1 (table menu-keymap menu uuidhash &optional group-list)
@@ -2083,12 +2071,12 @@ omitted from MODE's menu, even if they're manually loaded."
   (dolist (e (reverse menu))
     (cond ((eq (first e) 'yas-item)
            (let ((template (or (gethash (second e) uuidhash)
-                               (yas--populate-template (puthash (second e)
-                                                               (yas--make-blank-template)
-                                                               uuidhash)
-                                                      :table table
-                                                      :perm-group group-list
-                                                      :uuid (second e)))))
+                               (puthash (second e)
+                                        (yas--make-template
+                                         :table table
+                                         :perm-group group-list
+                                         :uuid (second e))
+                                        uuidhash))))
              (define-key menu-keymap (vector (gensym))
                (car (yas--template-menu-binding-pair-get-create template :stay)))))
           ((eq (first e) 'yas-submenu)
@@ -2607,12 +2595,11 @@ and `kill-buffer' instead."
          (yas--current-template
           (and parsed
                (fboundp test-mode)
-               (yas--populate-template (yas--make-blank-template)
-                                      :table       nil ;; no tables for ephemeral snippets
-                                      :key         (first parsed)
-                                      :content     (second parsed)
-                                      :name        (third parsed)
-                                      :expand-env  (sixth parsed)))))
+               (yas--make-template :table       nil ;; no tables for ephemeral snippets
+                                   :key         (first parsed)
+                                   :content     (second parsed)
+                                   :name        (third parsed)
+                                   :expand-env  (sixth parsed)))))
     (cond (yas--current-template
            (let ((buffer-name (format "*testing snippet: %s*" (yas--template-name yas--current-template))))
              (kill-buffer (get-buffer-create buffer-name))
