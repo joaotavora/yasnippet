@@ -3016,7 +3016,8 @@ through the field's start point"
    ;; the field numbered 0, just before the exit marker, should
    ;; never be skipped
    ;;
-   (not (zerop (yas--field-number field)))))
+   (not (and (yas--field-number field)
+             (zerop (yas--field-number field))))))
 
 (defun yas--snippets-at-point (&optional all-snippets)
   "Return a sorted list of snippets at point.

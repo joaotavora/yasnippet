@@ -112,6 +112,17 @@
     (ert-simulate-command `(yas-mock-insert "abc"))
     (should (string= (yas--buffer-contents) "abcabcabcabc"))))
 
+(ert-deftest delete-numberless-inner-snippet-issue-562 ()
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    (yas-expand-snippet "${3:${test}bla}$0${2:ble}")
+    (ert-simulate-command '(yas-next-field-or-maybe-expand))
+    (should (looking-at "testblable"))
+    (ert-simulate-command '(yas-next-field-or-maybe-expand))
+    (ert-simulate-command '(yas-skip-and-clear-or-delete-char))
+    (should (looking-at "ble"))
+    (should (null (yas--snippets-at-point)))))
+
 ;; (ert-deftest in-snippet-undo ()
 ;;   (with-temp-buffer
 ;;     (yas-minor-mode 1)
