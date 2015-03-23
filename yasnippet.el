@@ -3490,6 +3490,10 @@ The error should be ignored in `debug-ignored-errors'"
 Text between START and END will be deleted before inserting
 template.  EXPAND-ENV is a list of (SYM VALUE) let-style dynamic bindings
 considered when expanding the snippet."
+  (cl-assert (and yas-minor-mode
+                  (memq 'yas--post-command-handler post-command-hook))
+             nil
+             "[yas] `yas-expand-snippet' needs properly setup `yas-minor-mode'")
   (run-hooks 'yas-before-expand-snippet-hook)
 
   ;;
