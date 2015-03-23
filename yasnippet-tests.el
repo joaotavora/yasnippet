@@ -201,6 +201,7 @@
 
 (ert-deftest be-careful-when-escaping-in-yas-selected-text-2 ()
   (with-temp-buffer
+    (yas-minor-mode 1)
     (let ((yas-selected-text "He)}o world!"))
       (yas-expand-snippet "Look ma! ${1:`(yas-selected-text)`} OK?")
       (should (string= (yas--buffer-contents) "Look ma! He)}o world! OK?")))))
