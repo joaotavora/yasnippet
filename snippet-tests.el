@@ -312,3 +312,31 @@
   (should-error (snippet--canonicalize-form '(&mirror 1 (foo) (bar))))
   (should-error (snippet--canonicalize-form '(&field 1 (foo) (bar))))
   (should-error (snippet--canonicalize-form '(&eval (foo) (bar)))))
+
+
+;;; `snippet-defmacro' attempt
+;;;
+(snippet-defmacro macro-test (variable)
+  (let ((start "coiso"))
+    (insert "anything")
+    (&field 1 (insert "theformatvar")
+            (insert start))
+    (&mirror 1 (field-string)
+             (if (string-match "var" field-string)
+                 (insert start)
+               (insert variable)))
+    (&exit)
+    (&mirror 1 (field-string)
+             (if (string-match "var" field-string)
+                 (insert "ohohoh")))))
+
+
+
+
+;; (with-current-buffer (generate-new-buffer "*snippet-test*")
+;;   (display-buffer (current-buffer))
+;;   (printf))
+
+
+(provide 'snippet)
+

@@ -84,6 +84,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'eieio)
 
 
 ;;; the define-snippet macro and its helpers
@@ -171,8 +172,9 @@ Argument BODY is a list of forms as described in `define-snippet'."
                     append (pcase form
                              (`(&field ,name ,_expr (&parent ,parent))
                               `((,(snippet--make-field-sym name)
-                                 (snippet--make-field :parent ,parent
-                                                      :name ',name))))))
+                                 (make-instance 'snippet--field
+                                                :parent ,parent
+                                                :name ',name))))))
             (region-string (and (region-active-p)
                                 (buffer-substring-no-properties
                                  (region-beginning)
@@ -225,7 +227,7 @@ Argument BODY is a list of forms as described in `define-snippet'."
          (snippet--activate-snippet (list ,@all-objects))))))
 
 
-(cl-defmacro define-snippet (name (&rest properties) &rest snippet-forms)
+(cl-defmacro define-snippet (name (&rest _properties) &rest snippet-forms)
   "Define NAME as a snippet-inserting function.
 
 NAME's function definition is set to a function with no arguments
@@ -305,22 +307,26 @@ Argument FORMS is a list of forms as described in `define-snippet'."
 ;;; Snippet mechanics
 ;;;
 
-(cl-defstruct snippet--object
-  start end parent next prev (buffer (current-buffer)))
+(defclass snippet--object ()
+  ((start :initarg :start :accessor snippet--object-start)
+   (end :initarg :end :accessor snippet--object-end)
+   (parent :initarg :parent :reader snippet--object-parent)
+   (prev :initarg :prev :accessor snippet--object-prev)
+   (next :initarg :next :accessor snippet--object-next)
+   (buffer :initform (current-buffer) :reader snippet--object-buffer)))
 
-(cl-defstruct (snippet--field (:constructor snippet--make-field)
-                              (:include snippet--object))
-  name
-  (mirrors '())
-  (modified-p nil))
+(defclass snippet--field (snippet--object)
+  ((name :initarg :name :accessor snippet--field-name)
+   (modified-p :initform nil :accessor snippet--field-modified-p)
+   (mirrors :initform (list) :accessor snippet--field-mirrors))
+  :documentation "coiso")
 
-(cl-defstruct (snippet--mirror (:constructor snippet--make-mirror)
-                               (:include snippet--object))
-  source
-  (transform nil))
+(defclass snippet--mirror (snippet--object)
+  ((source :initarg :source :accessor snippet--mirror-source)
+   (transform :initarg :transform :accessor snippet--mirror-transform))
+  :documentation "coiso")
 
-(cl-defstruct (snippet--exit (:constructor snippet--make-exit)
-                             (:include snippet--object)))
+(defclass snippet--exit (snippet--object) ())
 
 (defun snippet--call-with-inserting-object (object prev fn)
   (when prev
@@ -363,16 +369,16 @@ Argument FORMS is a list of forms as described in `define-snippet'."
       (insert default))))
 
 (defun snippet--make-and-insert-mirror (parent prev source transform)
-  (let ((mirror (snippet--make-mirror
-                 :parent parent
-                 :prev prev
-                 :source source
-                 :transform (snippet--make-transform-lambda transform))))
+  (let ((mirror (make-instance 'snippet--mirror
+                               :parent parent
+                               :prev prev
+                               :source source
+                               :transform (snippet--make-transform-lambda transform))))
     (snippet--inserting-object mirror prev
       (pushnew mirror (snippet--field-mirrors source)))))
 
 (defun snippet--make-and-insert-exit (parent prev constant)
-  (let ((exit (snippet--make-exit :parent parent :prev prev)))
+  (let ((exit (make-instance 'snippet--exit :parent parent :prev prev)))
    (snippet--inserting-object exit prev
      (when constant
        (insert constant)))))
@@ -465,7 +471,7 @@ Argument FORMS is a list of forms as described in `define-snippet'."
            ;; leave just the newly inserted text.
            ;;
            (when (and (not (snippet--field-modified-p field))
-                      (= beg (snippet--field-start field))
+                      (= beg (snippet--object-start field))
                       (zerop pre-change-len))
              ;; At first glance, we could just delete the region between `end'
              ;; and the `field's end, but that wouldn't empty any child fields
@@ -512,7 +518,7 @@ Argument FORMS is a list of forms as described in `define-snippet'."
   "The active keymap while a live snippet is being navigated.")
 
 (defun snippet--field-skip-p (field)
-  (let ((parent (snippet--field-parent field)))
+  (let ((parent (snippet--object-parent field)))
     (and parent
          (snippet--object-empty-p field)
          (snippet--field-modified-p parent))))
@@ -666,7 +672,55 @@ Skips over nested fields if their parent has been modified."
                          (insert (snippet--describe-exit object) "\n")))))
     (display-buffer (current-buffer))))
 
-(provide 'snippet)
+
+
+;;; `snippet-defmacro' attempt
+;;;
+(cl-defmacro snippet-defmacro (name args &body body)
+  (declare (debug (&define name sexp def-body))
+           (indent defun))
+  `(defun ,name ,args
+     (let (;; (start (point-marker))
+           (fields (make-hash-table))
+           (mirrors (make-hash-table)))
+       (cl-macrolet ((&field (field-name &body field-forms)
+                             `(let ((fn (lambda () ,@field-forms))
+                                    (start (point-marker)))
+                                (funcall fn)
+                                (setf (gethash ,field-name
+                                               fields) 
+                                      (make-instance 'snippet--field :name ,field-name
+                                                     :start start
+                                                     :end (point-marker)))))
+                     (&mirror (field-name mirror-args &body mirror-forms)
+                              `(let ((fn (lambda ,mirror-args ,@mirror-forms))
+                                     (start (point-marker)))
+                                 (push (make-instance 'snippet--mirror :start start :end start
+                                                      :transform (lambda (&rest args)
+                                                                   (goto-char start)
+                                                                   (apply fn args)))
+                                       (gethash ,field-name mirrors))))
+                     (&exit ()))
+         ,@body
+         (maphash (lambda (field-name mirrors)
+                    (let ((field (gethash field-name fields)))
+                      (unless field
+                        (error "Snippet mirror references field \"%s\" which does not exist!"
+                               field-name))
+                      (mapc (lambda (mirror)
+                              (push mirror (snippet--field-mirrors field)))
+                            mirrors)))
+                  mirrors)
+         (maphash
+          (lambda (_name field)
+            (mapc (lambda (mirror)
+                    (funcall (snippet--mirror-transform mirror)
+                             (buffer-substring-no-properties (snippet--object-start field)
+                                                             (snippet--object-end field))))
+                  (snippet--field-mirrors field)))
+          fields)
+         nil))))
+
 
 ;; Local Variables:
 ;; coding: utf-8
