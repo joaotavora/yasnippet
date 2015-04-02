@@ -1,0 +1,24 @@
+language: emacs
+
+env:
+  - "EMACS=emacs23"
+  - "EMACS=emacs24"
+
+install:
+  - if [ "$EMACS" = "emacs23" ]; then
+        sudo apt-get -qq update &&
+        sudo apt-get -qq -f install &&
+        sudo apt-get -qq install emacs23-nox &&
+        curl -LO https://raw.githubusercontent.com/ohler/ert/c619b56c5bc6a866e33787489545b87d79973205/lisp/emacs-lisp/ert.el &&
+        curl -LO https://raw.githubusercontent.com/ohler/ert/c619b56c5bc6a866e33787489545b87d79973205/lisp/emacs-lisp/ert-x.el &&
+        curl -Lo cl-lib.el http://elpa.gnu.org/packages/cl-lib-0.5.el;
+    fi
+  - if [ "$EMACS" = "emacs24" ]; then
+        sudo add-apt-repository -y ppa:cassou/emacs &&
+        sudo apt-get -qq update &&
+        sudo apt-get -qq -f install &&
+        sudo apt-get -qq install emacs24-nox;
+    fi
+
+script:
+  - rake compile; rake tests

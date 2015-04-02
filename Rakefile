@@ -2,7 +2,10 @@
 
 require 'fileutils'
 
-$EMACS=ENV["EMACS"] || "emacs"
+$EMACS = ENV["EMACS"]
+if not $EMACS or $EMACS == 't'
+  $EMACS = "emacs"
+end
 
 def find_version
   File.read("yasnippet.el", :encoding => "UTF-8") =~ /;; Package-version: *([0-9.]+?) *$/
@@ -13,9 +16,8 @@ FileUtils.mkdir_p('pkg')
 
 desc "run tests in batch mode"
 task :tests do
-  batch_run_line = "(yas-batch-run-tests t)"
-  sh "#{$EMACS} -Q -L . -l yasnippet-tests.el -nw" +
-    " --batch --eval '#{batch_run_line}'"
+  sh "#{$EMACS} -Q -L . -l yasnippet-tests.el" +
+    " --batch -f ert-run-tests-batch-and-exit"
 end
 
 desc "create a release package"
@@ -67,10 +69,22 @@ namespace :doc do
       Dir.glob("doc/images/*").each do |file|
         FileUtils.cp file, 'doc/gh-pages/images'
       end
-      rev = `git rev-parse --verify HEAD`
+      Dir.glob("doc/stylesheets/*.css").each do |file|
+        FileUtils.cp file, 'doc/gh-pages/stylesheets'
+      end
+      curRev = `git rev-parse --verify HEAD`.chomp()
+      expRev = IO.read('doc/html-revision').chomp()
+      if curRev != expRev
+        raise ("The HTML rev: #{expRev},\n" +
+               "current  rev: #{curRev}!\n")
+      end
+      if !system "git diff-index --quiet HEAD"
+        system "git status --untracked-files=no"
+        raise "You have uncommitted changes!"
+      end
       Dir.chdir 'doc/gh-pages' do
         sh "git commit -a -m 'Automatic documentation update.\n\n" +
-          "From #{rev.chomp()}'"
+          "From #{curRev.chomp()}'"
         sh "git push"
       end
     end

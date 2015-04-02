@@ -2,14 +2,11 @@
 
 #+TITLE: Reference
 
-* Reference
-
 #+BEGIN_SRC emacs-lisp :exports results :results value raw
-(yas--document-symbols 2 `("Interactive functions" . ,#'interactive-form)
+(yas--document-symbols 1 `("Interactive functions" . ,#'interactive-form)
                          `("Customization variables" . ,#'(lambda (sym)
                                                             (and (boundp sym)
                                                                  (get sym 'standard-value))))
                          `("Useful functions" . ,#'fboundp)
                          `("Useful variables" . ,#'boundp))
 #+END_SRC
-  

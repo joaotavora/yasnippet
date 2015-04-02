@@ -53,7 +53,7 @@ When you use [[sym:yas-global-mode][=yas-global-mode=]] you can also selectively
 YASnippet in some buffers by setting the buffer-local variable
 [[sym:yas-dont-active][=yas-dont-active=]] in the buffer's mode hook.
 
-*** Fallback bahaviour
+*** Fallback behaviour
 
 [[sym:yas-fallback-behaviour][=yas-fallback-behaviour=]] is a customization variable bound to
 '=call-other-command= by default. If [[sym:yas-expand][=yas-expand=]] failed to find any

@@ -6,14 +6,18 @@
 
 ** Quickly finding snippets
 
-There are some ways you can quickly find a snippet file:
+There are some ways you can quickly find a snippet file or create a new one:
 
 -  =M-x yas-new-snippet=
 
-   Prompts you for a snippet name, then tries to guess a suitable
-   directory to store it, prompting you for creation if it does not
-   exist. Finally, places you in a new buffer set to =snippet-mode= so
-   you can write your snippet.
+   Creates a new buffer with a template for making a new snippet.
+   The buffer is in =snippet-mode= (see below). When you are done
+   editing the new snippet, use =C-c C-c= to save it. This will
+   prompt for a directory two steps: first, the snippet table
+   (with a default based on the major mode you started in), and then
+   then snippet collection directory (defaults to the first directory
+   in =yas-snippet-dirs=. (See [[file:snippet-organization.org][Organizing Snippets]]
+   for more detail on how snippets are organized.)
 
 -  =M-x yas-find-snippets=
 
@@ -169,12 +173,28 @@ This binding will be recorded in the keymap =html-mode-map=. To expand a
 paragraph tag newlines, just press =C-u C-c C-c C-m=. Omitting the =C-u=
 will expand the paragraph tag without newlines.
 
+** =# type:= =snippet= or =command=
+
+If the =type= directive is set to =command=, the body of the snippet
+is interpreted as lisp code to be evaluated when the snippet is
+triggered.
+
+If it's =snippet= (the default when there is no =type= directive), the
+snippet body will be parsed according to the [[Template Syntax]],
+described below.
+
+** =# uuid:= unique identifier
+
+This provides to a way to identify a snippet, independent of its name.
+Loading a second snippet file with the same uuid would replace the
+previous snippet.
+
 ** =# contributor:= snippet author
 
 This is optional and has no effect whatsoever on snippet functionality,
 but it looks nice.
 
-* Template syntax
+* <<Template syntax>>
 
 The syntax of the snippet template is simple but powerful, very similar
 to TextMate's.
@@ -182,14 +202,14 @@ to TextMate's.
 ** Plain Text
 
 Arbitrary text can be included as the content of a template. They are
-usually interpreted as plain text, except =$= and ==. You need to
-use \` to escape them: =\$= and =\=. The \` itself may also needed to be
+usually interpreted as plain text, except =$= and =`=. You need to
+use =\= to escape them: =\$= and =\`=. The =\= itself may also needed to be
 escaped as =\\= sometimes.
 
 ** Embedded Emacs-lisp code
 
 Emacs-Lisp code can be embedded inside the template, written inside
-back-quotes (==). The lisp forms are evaluated when the snippet is
+back-quotes (=`=). The lisp forms are evaluated when the snippet is
 being expanded. The evaluation is done in the same buffer as the
 snippet being expanded.
 
@@ -267,12 +287,13 @@ the field and others mirrors.
 
 ** Mirrors with <<transformations>>
 
-If the value of an =${n:=-construct starts with and contains =$(=, then
-it is interpreted as a mirror for field =n= with a transformation. The
-mirror's text content is calculated according to this transformation,
-which is Emacs-lisp code that gets evaluated in an environment where the
-variable =text= (or [[sym:yas-text][=yas-text=]]) is bound to the text content (string)
-contained in the field =n=.Here's an example for Objective-C:
+If the value of an =${n:=-construct starts with and contains =$(=,
+then it is interpreted as a mirror for field =n= with a
+transformation. The mirror's text content is calculated according to
+this transformation, which is Emacs-lisp code that gets evaluated in
+an environment where the variable [[sym:yas-text][=yas-text=]] is bound to the text
+content (string) contained in the field =n=. Here's an example for
+Objective-C:
 
 #+BEGIN_SRC snippet
   - (${1:id})${2:foo}
@@ -280,7 +301,7 @@ contained in the field =n=.Here's an example for Objective-C:
       return $2;
   }
 
-  - (void)set${2:$(capitalize text)}:($1)aValue
+  - (void)set${2:$(capitalize yas-text)}:($1)aValue
   {
       [$2 autorelease];
       $2 = [aValue retain];
@@ -288,12 +309,13 @@ contained in the field =n=.Here's an example for Objective-C:
   $0
 #+END_SRC
 
-Look at =${2:$(capitalize text)}=, it is a mirror with transformation
-instead of a field. The actual field is at the first line: =${2:foo}=.
-When you type text in =${2:foo}=, the transformation will be evaluated
-and the result will be placed there as the transformed text. So in this
-example, if you type "baz" in the field, the transformed text will be
-"Baz". This example is also available in the screencast.
+Look at =${2:$(capitalize yas-text)}=, it is a mirror with
+transformation instead of a field. The actual field is at the first
+line: =${2:foo}=. When you type text in =${2:foo}=, the transformation
+will be evaluated and the result will be placed there as the
+transformed text. So in this example, if you type "baz" in the field,
+the transformed text will be "Baz". This example is also available in
+the screencast.
 
 Another example is for =rst-mode=. In reStructuredText, the document
 title can be some text surrounded by "===" below and above. The "==="
@@ -316,9 +338,9 @@ is a valid title but
 is not. Here's an snippet for rst title:
 
 #+BEGIN_SRC snippet
-  ${1:$(make-string (string-width text) ?\=)}
+  ${1:$(make-string (string-width yas-text) ?\=)}
   ${1:Title}
-  ${1:$(make-string (string-width text) ?\=)}
+  ${1:$(make-string (string-width yas-text) ?\=)}
 
   $0
 #+END_SRC
