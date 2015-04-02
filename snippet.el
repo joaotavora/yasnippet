@@ -48,7 +48,7 @@
 ;; mechanism *might* become extensible to provide frontends such as yasnippet
 ;; the capability to conveniently implement said fanciness.
 ;;
-;; TODO: indentation
+;; TODO: auto-indentation of the inserted snippet
 ;;
 ;; TODO: undo, specifically snippet revival
 ;;
@@ -682,16 +682,20 @@ Skips over nested fields if their parent has been modified."
   `(defun ,name ,args
      (let (;; (start (point-marker))
            (fields (make-hash-table))
-           (mirrors (make-hash-table)))
+           (mirrors (make-hash-table))
+           (snippet--current-field))
        (cl-macrolet ((&field (field-name &body field-forms)
-                             `(let ((fn (lambda () ,@field-forms))
-                                    (start (point-marker)))
-                                (funcall fn)
-                                (setf (gethash ,field-name
-                                               fields) 
-                                      (make-instance 'snippet--field :name ,field-name
-                                                     :start start
-                                                     :end (point-marker)))))
+                       `(let* ((snippet--current-field
+                                (setf (gethash ',field-name fields)
+                                      (make-instance 'snippet--field
+                                                     :name ',field-name
+                                                     :parent snippet--current-field)))
+                               (fn (lambda () ,@field-forms)))
+                          (setf (snippet--object-start snippet--current-field)
+                                (point-marker))
+                          (funcall fn)
+                          (setf (snippet--object-end snippet--current-field)
+                                (point-marker))))
                      (&mirror (field-name mirror-args &body mirror-forms)
                               `(let ((fn (lambda ,mirror-args ,@mirror-forms))
                                      (start (point-marker)))
@@ -699,7 +703,7 @@ Skips over nested fields if their parent has been modified."
                                                       :transform (lambda (&rest args)
                                                                    (goto-char start)
                                                                    (apply fn args)))
-                                       (gethash ,field-name mirrors))))
+                                       (gethash ',field-name mirrors))))
                      (&exit ()))
          ,@body
          (maphash (lambda (field-name mirrors)
@@ -719,7 +723,14 @@ Skips over nested fields if their parent has been modified."
                                                              (snippet--object-end field))))
                   (snippet--field-mirrors field)))
           fields)
-         nil))))
+         fields))))
+
+(def-edebug-spec &mirror (sexp sexp &rest form))
+(def-edebug-spec &field (sexp &rest form))
+
+(put '&field 'lisp-indent-function 'defun)
+(put '&mirror 'lisp-indent-function 'defun)
+
 
 
 ;; Local Variables:
