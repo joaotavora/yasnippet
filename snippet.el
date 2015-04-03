@@ -34,6 +34,11 @@
 ;; textmate's). There are also `with-dynamic-snippet' and `with-static-snippet'
 ;; macros to use in your own defuns.
 ;;
+;; The snippet definitions defined with both macros `define-*-snippet' macros
+;; can be `edebug'ed and stepped through on snippet insertion and
+;; navigation. (TODO: for `define-dynamic-snippet', this works for forms in
+;; snippet fields, but fails for mirrors for some reason.)
+;;
 ;; Once inserted into a buffer, snippets are navigated using
 ;; `snippet-next-field' and `snippet-prev-field', bound to TAB and S-TAB by
 ;; default.
@@ -50,10 +55,6 @@
 ;; set of properties controlling snippet's indentation, custom keymapping and
 ;; other per-snippet characteristics affecting snippet.el's core functionality.
 ;; 
-;; TODO: `define-snippet' should be `edebug'ed and stepped through on snippet
-;; insertion *and* navigation. This works for forms in snippet fields, but fails
-;; for mirrors for some reason.
-;;
 ;; TODO: undo, specifically snippet revival
 ;;
 ;; TODO: more documentation
@@ -236,7 +237,7 @@ As `define-static-snippet' but doesn't define a function."
    ("&field" sexp &or ("&nested" &rest snippet-form) def-form)
    def-form))
 
-(defmacro define-static-snippet (name args &optional docstring &rest forms)
+(defmacro define-static-snippet (name _properties &optional docstring &rest forms)
   "Make a snippet-inserting function from FORMS.
 
 Each form in SNIPPET-FORMS, inserted at point in order, can be:
@@ -261,8 +262,8 @@ Each form in SNIPPET-FORMS, inserted at point in order, can be:
   while the snippet is alive.
 
 * A cons (&mirror FIELD-NAME MIRROR-TRANSFORM) defining a mirror
-  of the field named FIELD-NAME. MIRROR-TRANSFORM is optional and
-  is called after each command while the snippet is alive to
+  of the field named FIELD-NAME. MIRROR-TRANSFORM is an optional
+  form, called after each command while the snippet is alive to
   produce a string that becomes the mirror text.
 
 * A string literal or a lisp form CONSTANT evaluated at
@@ -294,12 +295,12 @@ considered to have returned a single whitespace.
 
 PROPERTIES is an even-numbered property list of (KEY VAL)
 pairs. Its meaning is not decided yet"
-  (declare ;; (debug (&define name sexp def-body))
+  (declare (debug (&define name sexp &rest snippet-form))
            (indent defun))
   (unless (stringp docstring)
     (push docstring forms)
     (setq docstring nil))
-  `(defun ,name ,args ,docstring
+  `(defun ,name () ,docstring
           (with-static-snippet ,@forms)))
 
 
