@@ -108,167 +108,150 @@
                           (&field last)
                           (&field 1)))))
 
-(defun snippet--insert-test-snippet (name &optional dynamic-p)
-  (let* ((assoc (assoc name snippet--test-snippets-alist))
-         (forms (if dynamic-p
-                    (caddr assoc)
-                  (cadr assoc))))
-    (unless forms
-      (error "No %s definition for %s" (if dynamic-p "dynamic" "static") name))
-    (cond (dynamic-p
-           (eval `(with-dynamic-snippet ,@forms)))
-          (t
-           (eval `(with-static-snippet ,@forms))))))
+(defun snippet--get-fixture (name &optional dynamic-p)
+  (let* ((assoc (assoc name snippet--test-snippets-alist)))
+    (if dynamic-p
+        (caddr assoc)
+      (cadr assoc))))
 
-(ert-deftest basic-expansion ()
-  (with-temp-buffer
-    (snippet--insert-test-snippet 'basic)
-    (should (equal (buffer-string) "foo bar foo"))
-    (should (equal (buffer-substring (overlay-start snippet--field-overlay)
-                                     (overlay-end snippet--field-overlay))
-                   "foo" ))))
+(defmacro snippet--define-expansion-test (name fixture-name _args &rest body)
+  (declare (indent 3))
+  `(progn
+     (ert-deftest ,(intern (concat (symbol-name name) "-static")) ()
+       (let ((fixture (snippet--get-fixture ',fixture-name nil)))
+         (if (not fixture)
+             (ert-skip "No fixture for static test")
+           (with-temp-buffer
+             (eval `(with-static-snippet ,@fixture))
+             ,@body))))
+     (ert-deftest ,(intern (concat (symbol-name name) "-dynamic")) ()
+       (let ((fixture (snippet--get-fixture ',fixture-name 'dynamic)))
+         (if (not fixture)
+             (ert-skip "No fixture for dynamic test")
+           (with-temp-buffer
+             (eval `(with-dynamic-snippet ,@fixture))
+           ,@body))))))
 
-(ert-deftest basic-clear-field ()
-  (with-temp-buffer
-    (snippet--insert-test-snippet 'basic)
-    (ert-simulate-command '((lambda () (interactive) (insert "baz"))))
-    (should (equal (buffer-string) "baz bar baz"))))
 
-(ert-deftest basic-delete-char-in-field ()
-  (with-temp-buffer
-    (snippet--insert-test-snippet 'basic)
-    (ert-simulate-command '(delete-forward-char 1))
-    (ert-simulate-command '((lambda () (interactive) (insert "b"))))
-    (should (equal (buffer-string) "boo bar boo"))))
+(snippet--define-expansion-test basic-expansion basic ()
+  (should (equal (buffer-string) "foo bar foo"))
+  (should (equal (buffer-substring (overlay-start snippet--field-overlay)
+                                   (overlay-end snippet--field-overlay))
+                 "foo" )))
 
-(ert-deftest contrived ()
-  (with-temp-buffer
-    (snippet--insert-test-snippet 'contrived)
-    (should (equal (buffer-string) ""))
-    (ert-simulate-command '((lambda () (interactive) (insert "foo"))))
-    (ert-simulate-command '(snippet-next-field))
-    (ert-simulate-command '((lambda () (interactive) (insert "bar"))))
-    (ert-simulate-command '(snippet-next-field))
-    (ert-simulate-command '((lambda () (interactive) (insert "baz"))))
-    (should (equal (buffer-string) "foobarbaz"))))
+(snippet--define-expansion-test basic-clear-field basic ()
+  (ert-simulate-command '((lambda () (interactive) (insert "baz"))))
+  (should (equal (buffer-string) "baz bar baz")))
 
-(ert-deftest contrived-2 ()
-  (with-temp-buffer
-    (snippet--insert-test-snippet 'contrived)
-    (should (equal (buffer-string) ""))
-    (ert-simulate-command '(snippet-next-field))
-    (ert-simulate-command '(snippet-next-field))
-    (ert-simulate-command '((lambda () (interactive) (insert "baz"))))
-    (ert-simulate-command '(snippet-prev-field))
-    (ert-simulate-command '((lambda () (interactive) (insert "bar"))))
-    (ert-simulate-command '(snippet-prev-field))
-    (ert-simulate-command '((lambda () (interactive) (insert "foo"))))
-    (should (equal (buffer-string) "foobarbaz"))))
+(snippet--define-expansion-test basic-delete-char-in-field basic ()
+  (ert-simulate-command '(delete-forward-char 1))
+  (ert-simulate-command '((lambda () (interactive) (insert "b"))))
+  (should (equal (buffer-string) "boo bar boo")))
 
-(ert-deftest nested-expansion ()
-  (with-temp-buffer
-    (snippet--insert-test-snippet 'nested)
-    (should (equal (buffer-string) "a nested field and its mirror: nested field"))
-    (ert-simulate-command '(snippet-next-field))
-    (ert-simulate-command '((lambda () (interactive) (insert "nicely"))))
-    (ert-simulate-command '(snippet-next-field))
-    (ert-simulate-command '((lambda () (interactive) (insert "nested field"))))
-    (should (equal (buffer-substring (overlay-start snippet--field-overlay)
-                                     (overlay-end snippet--field-overlay))
-                   "nested field" ))
-    (should (equal (buffer-string) "a nicely nested field and its mirror: nicely nested field"))))
+(snippet--define-expansion-test contrived contrived ()
+  (should (equal (buffer-string) ""))
+  (ert-simulate-command '((lambda () (interactive) (insert "foo"))))
+  (ert-simulate-command '(snippet-next-field))
+  (ert-simulate-command '((lambda () (interactive) (insert "bar"))))
+  (ert-simulate-command '(snippet-next-field))
+  (ert-simulate-command '((lambda () (interactive) (insert "baz"))))
+  (should (equal (buffer-string) "foobarbaz")))
 
-(ert-deftest nested-skip-fields ()
-  (with-temp-buffer
-    (snippet--insert-test-snippet 'nested)
-    (ert-simulate-command '((lambda () (interactive) (insert "foo"))))
-    (should (equal (buffer-string) "a foo and its mirror: foo"))
-    ;; this should exit the snippet now, since the two remaining
-    ;; fields should be skipped
-    (ert-simulate-command '(snippet-next-field))
-    (should (null (overlay-buffer snippet--field-overlay)))))
+(snippet--define-expansion-test contrived-2 contrived ()
+  (should (equal (buffer-string) ""))
+  (ert-simulate-command '(snippet-next-field))
+  (ert-simulate-command '(snippet-next-field))
+  (ert-simulate-command '((lambda () (interactive) (insert "baz"))))
+  (ert-simulate-command '(snippet-prev-field))
+  (ert-simulate-command '((lambda () (interactive) (insert "bar"))))
+  (ert-simulate-command '(snippet-prev-field))
+  (ert-simulate-command '((lambda () (interactive) (insert "foo"))))
+  (should (equal (buffer-string) "foobarbaz")))
 
-(ert-deftest mirror-of-nested-field ()
-  (with-temp-buffer
-    (snippet--insert-test-snippet 'mirror-of-nested-field)
-    (should (equal (buffer-string) "a nested field, nested mirroring: field"))
-    (ert-simulate-command '(snippet-next-field))
-    (ert-simulate-command '(snippet-next-field))
-    (ert-simulate-command '((lambda () (interactive) (insert "foo"))))
-    (should (equal (buffer-string) "a nested foo, nested mirroring: foo"))))
+(snippet--define-expansion-test nested-expansion nested ()
+  (should (equal (buffer-string) "a nested field and its mirror: nested field"))
+  (ert-simulate-command '(snippet-next-field))
+  (ert-simulate-command '((lambda () (interactive) (insert "nicely"))))
+  (ert-simulate-command '(snippet-next-field))
+  (ert-simulate-command '((lambda () (interactive) (insert "nested field"))))
+  (should (equal (buffer-substring (overlay-start snippet--field-overlay)
+                                   (overlay-end snippet--field-overlay))
+                 "nested field" ))
+  (should (equal (buffer-string) "a nicely nested field and its mirror: nicely nested field")))
 
-(ert-deftest more-nesting ()
-  (with-temp-buffer
-    (snippet--insert-test-snippet 'more-nesting)
-    (should (equal (buffer-string) "a 'rainniar' and a field: 'rainniar'"))
-    (ert-simulate-command '((lambda () (interactive) (insert "bar"))))
-    (should (equal (buffer-string) "a bar and a field: bar"))
-    (ert-simulate-command '(snippet-next-field))
-    (ert-simulate-command '((lambda () (interactive) (insert "baz"))))
-    (should (equal (buffer-string) "a barbaz bar"))
-    (ert-simulate-command '(snippet-prev-field))
-    (ert-simulate-command '((lambda () (interactive) (insert "foo"))))
-    (should (equal (buffer-string) "a foobarbaz foobar"))))
+(snippet--define-expansion-test nested-skip-fields nested ()
+  (ert-simulate-command '((lambda () (interactive) (insert "foo"))))
+  (should (equal (buffer-string) "a foo and its mirror: foo"))
+  ;; this should exit the snippet now, since the two remaining
+  ;; fields should be skipped
+  (ert-simulate-command '(snippet-next-field))
+  (should (null (overlay-buffer snippet--field-overlay))))
 
-(ert-deftest printf-expansion ()
-  (with-temp-buffer
-    (snippet--insert-test-snippet 'printf)
-    (should (equal (buffer-string) "printf (\"%s\",)"))))
+(snippet--define-expansion-test mirror-of-nested-field mirror-of-nested-field()
+  (should (equal (buffer-string) "a nested field, nested mirroring: field"))
+  (ert-simulate-command '(snippet-next-field))
+  (ert-simulate-command '(snippet-next-field))
+  (ert-simulate-command '((lambda () (interactive) (insert "foo"))))
+  (should (equal (buffer-string) "a nested foo, nested mirroring: foo")))
 
-(ert-deftest printf-mirrors ()
-  (with-temp-buffer
-    (snippet--insert-test-snippet 'printf)
-    (ert-simulate-command '(delete-forward-char 1))
-    (should (equal (buffer-string) "printf (\"s\")"))
-    (ert-simulate-command '((lambda () (interactive) (insert "%"))))
-    (should (equal (buffer-string) "printf (\"%s\",)"))))
+(snippet--define-expansion-test more-nesting more-nesting()
+  (should (equal (buffer-string) "a 'rainniar' and a field: 'rainniar'"))
+  (ert-simulate-command '((lambda () (interactive) (insert "bar"))))
+  (should (equal (buffer-string) "a bar and a field: bar"))
+  (ert-simulate-command '(snippet-next-field))
+  (ert-simulate-command '((lambda () (interactive) (insert "baz"))))
+  (should (equal (buffer-string) "a barbaz bar"))
+  (ert-simulate-command '(snippet-prev-field))
+  (ert-simulate-command '((lambda () (interactive) (insert "foo"))))
+  (should (equal (buffer-string) "a foobarbaz foobar")))
 
-(ert-deftest printf-mirrors-and-navigation ()
-  (with-temp-buffer
-    (snippet--insert-test-snippet 'printf)
-    (ert-simulate-command '(delete-forward-char 1))
-    (should (equal (buffer-string) "printf (\"s\")"))
-    (ert-simulate-command '((lambda () (interactive) (insert "%"))))
-    (should (equal (buffer-string) "printf (\"%s\",)"))
-    (ert-simulate-command '(snippet-next-field))
-    (ert-simulate-command '((lambda () (interactive) (insert "somevar"))))
-    (should (equal (buffer-string) "printf (\"%s\",somevar)"))))
+(snippet--define-expansion-test printf-expansion printf ()
+  (should (equal (buffer-string) "printf (\"%s\",)")))
 
-(ert-deftest printf-jump-to-second-field-right-away ()
-  (with-temp-buffer
-    (snippet--insert-test-snippet 'printf)
-    (ert-simulate-command '(snippet-next-field))
-    (ert-simulate-command '((lambda () (interactive) (insert "somevar"))))
-    (should (equal (buffer-string) "printf (\"%s\",somevar)"))))
+(snippet--define-expansion-test printf-mirrors printf ()
+  (ert-simulate-command '(delete-forward-char 1))
+  (should (equal (buffer-string) "printf (\"s\")"))
+  (ert-simulate-command '((lambda () (interactive) (insert "%"))))
+  (should (equal (buffer-string) "printf (\"%s\",)")))
 
-(ert-deftest sprintf-variation ()
-  (with-temp-buffer
-    (snippet--insert-test-snippet 'sprintf-maybe 'dynamic)
-    (should (equal (buffer-string) "printf (\"%s\",)"))
-    (ert-simulate-command '((lambda () (interactive) (insert "somestring"))))
-    (should (equal (buffer-string) "sprintf (somestring,\"%s\",)"))
-    (ert-simulate-command '(snippet-next-field))
-    (ert-simulate-command '(snippet-next-field))
-    (should (looking-back "sprintf (somestring,\"%s\","))
-    (ert-simulate-command '(snippet-prev-field))
-    (ert-simulate-command '((lambda () (interactive) (insert "bla"))))
-    (should (equal (buffer-string) "sprintf (somestring,\"bla\")"))
-    (should (looking-back "sprintf (somestring,\"bla"))
-    (ert-simulate-command '(snippet-next-field))
-    (should (looking-back "sprintf (somestring,\"bla\")"))))
+(snippet--define-expansion-test printf-mirrors-and-navigation printf ()
+  (ert-simulate-command '(delete-forward-char 1))
+  (should (equal (buffer-string) "printf (\"s\")"))
+  (ert-simulate-command '((lambda () (interactive) (insert "%"))))
+  (should (equal (buffer-string) "printf (\"%s\",)"))
+  (ert-simulate-command '(snippet-next-field))
+  (ert-simulate-command '((lambda () (interactive) (insert "somevar"))))
+  (should (equal (buffer-string) "printf (\"%s\",somevar)")))
 
-(ert-deftest constants-and-default-values ()
-  (with-temp-buffer
-    (snippet--insert-test-snippet 'emacs-version)
-    (should (equal (buffer-string)
-                   (concat emacs-version " "
-                           (upcase (emacs-version)) " "
-                           emacs-version)))
-    (ert-simulate-command '((lambda () (interactive) (insert "somestring"))))
-    (should (equal (buffer-string)
-                   (concat "somestring" " "
-                           (upcase (emacs-version)) " "
-                           "somestring")))))
+(snippet--define-expansion-test printf-jump-to-second-field-right-away printf ()
+  (ert-simulate-command '(snippet-next-field))
+  (ert-simulate-command '((lambda () (interactive) (insert "somevar"))))
+  (should (equal (buffer-string) "printf (\"%s\",somevar)")))
+
+(snippet--define-expansion-test sprintf-variation sprintf-maybe()
+  (should (equal (buffer-string) "printf (\"%s\",)"))
+  (ert-simulate-command '((lambda () (interactive) (insert "somestring"))))
+  (should (equal (buffer-string) "sprintf (somestring,\"%s\",)"))
+  (ert-simulate-command '(snippet-next-field))
+  (ert-simulate-command '(snippet-next-field))
+  (should (looking-back "sprintf (somestring,\"%s\","))
+  (ert-simulate-command '(snippet-prev-field))
+  (ert-simulate-command '((lambda () (interactive) (insert "bla"))))
+  (should (equal (buffer-string) "sprintf (somestring,\"bla\")"))
+  (should (looking-back "sprintf (somestring,\"bla"))
+  (ert-simulate-command '(snippet-next-field))
+  (should (looking-back "sprintf (somestring,\"bla\")")))
+
+(snippet--define-expansion-test constants-and-default-values emacs-version()
+  (should (equal (buffer-string)
+                 (concat emacs-version " "
+                         (upcase (emacs-version)) " "
+                         emacs-version)))
+  (ert-simulate-command '((lambda () (interactive) (insert "somestring"))))
+  (should (equal (buffer-string)
+                 (concat "somestring" " "
+                         (upcase (emacs-version)) " "
+                         "somestring"))))
 
 (ert-deftest wrap-selected-region ()
   ;; this test needs some work. testing with `region-active-p' is hard
@@ -350,6 +333,16 @@
   (should-error (snippet--canonicalize-form '(&mirror 1 (foo) (bar))))
   (should-error (snippet--canonicalize-form '(&field 1 (foo) (bar))))
   (should-error (snippet--canonicalize-form '(&eval (foo) (bar)))))
+
+
+;; pretty forms
+(cl-loop for sym in (list 'snippet--define-expansion-test)
+         for regexp = (format "(\\(%S\\)\\s +\\(\\(\\w\\|\\s_\\)+\\)"
+                              sym)
+         do (font-lock-add-keywords
+             'emacs-lisp-mode
+             `((,regexp (1 font-lock-keyword-face)
+                        (2 font-lock-variable-name-face)))))
 
 (provide 'snippet-tests)
 

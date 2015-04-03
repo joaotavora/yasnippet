@@ -237,7 +237,8 @@ As `define-static-snippet' but doesn't define a function."
    ("&field" sexp &or ("&nested" &rest snippet-form) def-form)
    def-form))
 
-(defmacro define-static-snippet (name _properties &optional docstring &rest forms)
+(defmacro define-static-snippet (name _properties &optional docstring
+                                      &rest snippet-forms)
   "Make a snippet-inserting function from FORMS.
 
 Each form in SNIPPET-FORMS, inserted at point in order, can be:
