@@ -65,15 +65,35 @@
                  (&mirror 1 (if (string-match "%" field-string) "\"," "\")"))
                  (&field 2)
                  (&mirror 1 (if (string-match "%" field-string) "\)" ""))))
-        (sprintf-maybe ((&mirror 0 (unless field-empty-p "s"))
-                        "printf ("
-                        (&field 0)
-                        (&mirror 0 (unless field-empty-p ","))
-                        "\""
-                        (&field 1 "%s")
-                        (&mirror 1 (if (string-match "%" field-string) "\"," "\")"))
-                        (&field 2)
-                        (&mirror 1 (if (string-match "%" field-string) "\)" ""))))
+        (sprintf-maybe
+         ;; static version
+         ;; 
+         ((&mirror 0 (unless field-empty-p "s"))
+          "printf ("
+          (&field 0)
+          (&mirror 0 (unless field-empty-p ","))
+          "\""
+          (&field 1 "%s")
+          (&mirror 1 (if (string-match "%" field-string) "\"," "\")"))
+          (&field 2)
+          (&mirror 1 (if (string-match "%" field-string) "\)" "")))
+         ;; dynamic version
+         ;; 
+         ((&mirror 0 (_field-string field-empty-p)
+            (unless field-empty-p "s"))
+          (insert "printf (")
+          (&field 0)
+          (&mirror 0 (_field-string field-empty-p)
+            (unless field-empty-p ","))
+          (insert "\"")
+          (&field 1 (insert "%s"))
+          (&mirror 1
+            (field-string _field-empty-p)
+            (if (string-match "%" field-string) "\"," "\")"))
+          (&field 2)
+          (&mirror 1
+            (field-string _field-empty-p)
+            (if (string-match "%" field-string) "\)" ""))))
         (emacs-version ((&field 1 emacs-version)
                         " " (upcase (emacs-version)) " "
                         (&mirror 1)))
@@ -88,8 +108,17 @@
                           (&field last)
                           (&field 1)))))
 
-(defun snippet--insert-test-snippet (name)
-  (funcall (make-snippet (cadr (assoc name snippet--test-snippets-alist)))))
+(defun snippet--insert-test-snippet (name &optional dynamic-p)
+  (let* ((assoc (assoc name snippet--test-snippets-alist))
+         (forms (if dynamic-p
+                    (caddr assoc)
+                  (cadr assoc))))
+    (unless forms
+      (error "No %s definition for %s" (if dynamic-p "dynamic" "static") name))
+    (cond (dynamic-p
+           (eval `(with-dynamic-snippet ,@forms)))
+          (t
+           (eval `(with-static-snippet ,@forms))))))
 
 (ert-deftest basic-expansion ()
   (with-temp-buffer
@@ -212,24 +241,21 @@
     (ert-simulate-command '((lambda () (interactive) (insert "somevar"))))
     (should (equal (buffer-string) "printf (\"%s\",somevar)"))))
 
-(defun snippet--test-sprintf-snippet ()
-  (should (equal (buffer-string) "printf (\"%s\",)"))
-  (ert-simulate-command '((lambda () (interactive) (insert "somestring"))))
-  (should (equal (buffer-string) "sprintf (somestring,\"%s\",)"))
-  (ert-simulate-command '(snippet-next-field))
-  (ert-simulate-command '(snippet-next-field))
-  (should (looking-back "sprintf (somestring,\"%s\","))
-  (ert-simulate-command '(snippet-prev-field))
-  (ert-simulate-command '((lambda () (interactive) (insert "bla"))))
-  (should (equal (buffer-string) "sprintf (somestring,\"bla\")"))
-  (should (looking-back "sprintf (somestring,\"bla"))
-  (ert-simulate-command '(snippet-next-field))
-  (should (looking-back "sprintf (somestring,\"bla\")")))
-
 (ert-deftest sprintf-variation ()
   (with-temp-buffer
-    (snippet--insert-test-snippet 'sprintf-maybe)
-    (snippet--test-sprintf-snippet)))
+    (snippet--insert-test-snippet 'sprintf-maybe 'dynamic)
+    (should (equal (buffer-string) "printf (\"%s\",)"))
+    (ert-simulate-command '((lambda () (interactive) (insert "somestring"))))
+    (should (equal (buffer-string) "sprintf (somestring,\"%s\",)"))
+    (ert-simulate-command '(snippet-next-field))
+    (ert-simulate-command '(snippet-next-field))
+    (should (looking-back "sprintf (somestring,\"%s\","))
+    (ert-simulate-command '(snippet-prev-field))
+    (ert-simulate-command '((lambda () (interactive) (insert "bla"))))
+    (should (equal (buffer-string) "sprintf (somestring,\"bla\")"))
+    (should (looking-back "sprintf (somestring,\"bla"))
+    (ert-simulate-command '(snippet-next-field))
+    (should (looking-back "sprintf (somestring,\"bla\")"))))
 
 (ert-deftest constants-and-default-values ()
   (with-temp-buffer
@@ -325,29 +351,5 @@
   (should-error (snippet--canonicalize-form '(&field 1 (foo) (bar))))
   (should-error (snippet--canonicalize-form '(&eval (foo) (bar)))))
 
-
-;;; `snippet-defmacro' attempt
-;;;
-(define-snippet snippet--sprintf ()
-  (&mirror 0 (_field-string field-empty-p)
-    (unless field-empty-p "s"))
-  (insert "printf (")
-  (&field 0)
-  (&mirror 0 (_field-string field-empty-p)
-    (unless field-empty-p ","))
-  (insert "\"")
-  (&field 1 (insert "%s"))
-  (&mirror 1
-    (field-string _field-empty-p)
-    (if (string-match "%" field-string) "\"," "\")"))
-  (&field 2)
-  (&mirror 1
-    (field-string _field-empty-p)
-    (if (string-match "%" field-string) "\)" "")))
-
-(ert-deftest sprintf-maybe-2 ()
-  (snippet--sprintf)
-  (snippet--test-sprintf-snippet))
-
-(provide 'snippet)
+(provide 'snippet-tests)
 

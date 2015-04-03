@@ -26,9 +26,13 @@
 ;; frontends with the bare minimum funcionality to define, insert, navigate and
 ;; undo snippets.
 ;;
-;; Snippets are defined via the `define-snippet' or `make-snippet'
-;; entrypoints. The snippet definition syntax is quite different (TODO: how so?)
-;; Both are as powerful as yasnippet's (inspired by textmate's).
+;; Snippets are defined via the `define-dynamic-snippet' or
+;; `define-static-snippet' entrypoints. The snippet definition syntax is quite
+;; different (TODO: how so?). Static snippets have better syntax checks at
+;; compile-time, but complex snippets may be easier to write as dynamic
+;; snippets. Both are as powerful as yasnippet's, in turn inspired by
+;; textmate's). There are also `with-dynamic-snippet' and `with-static-snippet'
+;; macros to use in your own defuns.
 ;;
 ;; Once inserted into a buffer, snippets are navigated using
 ;; `snippet-next-field' and `snippet-prev-field', bound to TAB and S-TAB by
@@ -87,7 +91,7 @@
 (require 'eieio)
 
 
-;;; the `make-snippet' function and its helpers
+;;; the `define-static-snippet' macro and its helpers
 ;;;
 (defvar snippet--sym-obarray (make-vector 100 nil))
 
@@ -162,10 +166,11 @@
                      (snippet--unfold-forms subforms
                                             (snippet--make-field-sym name))))))
 
-(defun snippet--define-body (body)
-  "Does the actual work for `make-snippet'."
+(defmacro with-static-snippet (&rest forms)
+  "Define and insert a snippet from FORMS.
+As `define-static-snippet' but doesn't define a function."
   (let ((unfolded (snippet--unfold-forms
-                   (mapcar #'snippet--canonicalize-form body)))
+                   (mapcar #'snippet--canonicalize-form forms)))
         all-objects exit-object)
     `(let* (,@(loop for form in unfolded
                     append (pcase form
@@ -231,7 +236,7 @@
    ("&field" sexp &or ("&nested" &rest snippet-form) def-form)
    def-form))
 
-(defun make-snippet (forms)
+(defmacro define-static-snippet (name args &optional docstring &rest forms)
   "Make a snippet-inserting function from FORMS.
 
 Each form in SNIPPET-FORMS, inserted at point in order, can be:
@@ -289,7 +294,86 @@ considered to have returned a single whitespace.
 
 PROPERTIES is an even-numbered property list of (KEY VAL)
 pairs. Its meaning is not decided yet"
-  `(lambda () ,(snippet--define-body forms)))
+  (declare ;; (debug (&define name sexp def-body))
+           (indent defun))
+  (unless (stringp docstring)
+    (push docstring forms)
+    (setq docstring nil))
+  `(defun ,name ,args ,docstring
+          (with-static-snippet ,@forms)))
+
+
+;;; The `define-dynamic-snippet' macro
+;;;
+(defmacro with-dynamic-snippet (&rest body)
+  `(let (;; (start (point-marker))
+         (snippet--fields (make-hash-table))
+         (snippet--mirrors (make-hash-table))
+         (snippet--current-field)
+         (snippet--prev-object)
+         (snippet--all-objects))
+     (cl-macrolet ((&field (field-name &body field-forms)
+                     `(let* ((field
+                              (setf (gethash ',field-name snippet--fields)
+                                    (make-instance 'snippet--field
+                                                   :name ',field-name
+                                                   :parent snippet--current-field)))
+                             (fn (lambda ()
+                                   (let ((snippet--current-field field))
+                                     ,@field-forms))))
+                        (snippet--inserting-object
+                          field snippet--prev-object
+                          (funcall fn))
+                        (setf snippet--prev-object field)
+                        (push field snippet--all-objects)))
+                   (&mirror (field-name mirror-args &body mirror-forms)
+                     (cond ((> (length mirror-args) 2)
+                            (error "At most two args in mirror transforms"))
+                           ((not (cadr mirror-args))
+                            (setcdr mirror-args '(_--snippet-ignored))))
+                     `(let* ((fn (lambda ,mirror-args ,@mirror-forms))
+                             (mirror (make-instance 'snippet--mirror
+                                                    :parent snippet--current-field
+                                                    :transform fn)))
+                        (push mirror (gethash ',field-name snippet--mirrors))
+                        (snippet--inserting-object mirror snippet--prev-object)
+                        (setf snippet--prev-object mirror)
+                        (push mirror snippet--all-objects)))
+                   (&exit ()
+                     `(let ((exit (make-instance 'snippet--exit
+                                                 :parent snippet--current-field)))
+                        (snippet--inserting-object exit snippet--prev-object)
+                        (setf snippet--prev-object exit)
+                        (push exit snippet--all-objects))))
+       ,@body
+       (maphash (lambda (field-name mirrors)
+                  (let ((field (gethash field-name snippet--fields)))
+                    (unless field
+                      (error "Snippet mirror references field \"%s\" which does not exist!"
+                             field-name))
+                    (mapc (lambda (mirror)
+                            (push mirror (snippet--field-mirrors field))
+                            (setf (snippet--mirror-source mirror) field))
+                          mirrors)))
+                snippet--mirrors)
+       (snippet--activate-snippet snippet--all-objects))))
+
+
+(defmacro define-dynamic-snippet (name args &optional docstring &rest body)
+  (declare (debug (&define name sexp def-body))
+           (indent defun))
+  (unless (stringp docstring)
+    (push docstring body)
+    (setq docstring nil))
+  `(defun ,name ,args ,docstring
+          (with-dynamic-snippet ,@body)))
+
+(def-edebug-spec &mirror (sexp sexp &rest form))
+(def-edebug-spec &field (sexp &rest form))
+
+(put '&field 'lisp-indent-function 'defun)
+(put '&mirror 'lisp-indent-function 'defun)
+(put '&exit 'lisp-indent-function 'defun)
 
 
 ;;; Snippet mechanics
@@ -663,74 +747,7 @@ Skips over nested fields if their parent has been modified."
     (display-buffer (current-buffer))))
 
 
-
-;;; The `define-snippet' macro
-;;;
-(defmacro define-snippet (name args &optional docstring &rest body)
-  (declare (debug (&define name sexp def-body))
-           (indent defun))
-  (unless (stringp docstring)
-    (push docstring body)
-    (setq docstring nil))
-  `(defun ,name ,args ,docstring
-     (let (;; (start (point-marker))
-           (snippet--fields (make-hash-table))
-           (snippet--mirrors (make-hash-table))
-           (snippet--current-field)
-           (snippet--prev-object)
-           (snippet--all-objects))
-       (cl-macrolet ((&field (field-name &body field-forms)
-                       `(let* ((field
-                                (setf (gethash ',field-name snippet--fields)
-                                      (make-instance 'snippet--field
-                                                     :name ',field-name
-                                                     :parent snippet--current-field)))
-                               (fn (lambda ()
-                                     (let ((snippet--current-field field))
-                                       ,@field-forms))))
-                          (snippet--inserting-object
-                            field snippet--prev-object
-                            (funcall fn))
-                          (setf snippet--prev-object field)
-                          (push field snippet--all-objects)))
-                     (&mirror (field-name mirror-args &body mirror-forms)
-                       (cond ((> (length mirror-args) 2)
-                              (error "At most two args in mirror transforms"))
-                             ((not (cadr mirror-args))
-                              (setcdr mirror-args '(_--snippet-ignored))))
-                       `(let* ((fn (lambda ,mirror-args ,@mirror-forms))
-                               (mirror (make-instance 'snippet--mirror
-                                                      :parent snippet--current-field
-                                                      :transform fn)))
-                          (push mirror (gethash ',field-name snippet--mirrors))
-                          (snippet--inserting-object mirror snippet--prev-object)
-                          (setf snippet--prev-object mirror)
-                          (push mirror snippet--all-objects)))
-                     (&exit ()
-                       `(let ((exit (make-instance 'snippet--exit
-                                                   :parent snippet--current-field)))
-                          (snippet--inserting-object exit snippet--prev-object)
-                          (setf snippet--prev-object exit)
-                          (push exit snippet--all-objects))))
-         ,@body
-         (maphash (lambda (field-name mirrors)
-                    (let ((field (gethash field-name snippet--fields)))
-                      (unless field
-                        (error "Snippet mirror references field \"%s\" which does not exist!"
-                               field-name))
-                      (mapc (lambda (mirror)
-                              (push mirror (snippet--field-mirrors field))
-                              (setf (snippet--mirror-source mirror) field))
-                            mirrors)))
-                  snippet--mirrors)
-         (snippet--activate-snippet snippet--all-objects)))))
-
-(def-edebug-spec &mirror (sexp sexp &rest form))
-(def-edebug-spec &field (sexp &rest form))
-
-(put '&field 'lisp-indent-function 'defun)
-(put '&mirror 'lisp-indent-function 'defun)
-(put '&exit 'lisp-indent-function 'defun)
+(provide 'snippet)
 
 ;; Local Variables:
 ;; coding: utf-8
