@@ -1,4 +1,4 @@
-;;; snippet-tests.el --- some basic tests for snippet.el
+;;; snippet-tests.el --- some basic tests for snippet.el -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2013
 
@@ -212,12 +212,24 @@
     (ert-simulate-command '((lambda () (interactive) (insert "somevar"))))
     (should (equal (buffer-string) "printf (\"%s\",somevar)"))))
 
+(defun snippet--test-sprintf-snippet ()
+  (should (equal (buffer-string) "printf (\"%s\",)"))
+  (ert-simulate-command '((lambda () (interactive) (insert "somestring"))))
+  (should (equal (buffer-string) "sprintf (somestring,\"%s\",)"))
+  (ert-simulate-command '(snippet-next-field))
+  (ert-simulate-command '(snippet-next-field))
+  (should (looking-back "sprintf (somestring,\"%s\","))
+  (ert-simulate-command '(snippet-prev-field))
+  (ert-simulate-command '((lambda () (interactive) (insert "bla"))))
+  (should (equal (buffer-string) "sprintf (somestring,\"bla\")"))
+  (should (looking-back "sprintf (somestring,\"bla"))
+  (ert-simulate-command '(snippet-next-field))
+  (should (looking-back "sprintf (somestring,\"bla\")")))
+
 (ert-deftest sprintf-variation ()
   (with-temp-buffer
     (snippet--insert-test-snippet 'sprintf-maybe)
-    (should (equal (buffer-string) "printf (\"%s\",)"))
-    (ert-simulate-command '((lambda () (interactive) (insert "somestring"))))
-    (should (equal (buffer-string) "sprintf (somestring,\"%s\",)"))))
+    (snippet--test-sprintf-snippet)))
 
 (ert-deftest constants-and-default-values ()
   (with-temp-buffer
@@ -316,27 +328,26 @@
 
 ;;; `snippet-defmacro' attempt
 ;;;
-(snippet-defmacro macro-test (variable)
-  (let ((start "coiso"))
-    (insert "anything")
-    (&field 1 (insert "theformatvar")
-            (insert start))
-    (&mirror 1 (field-string)
-             (if (string-match "var" field-string)
-                 (insert start)
-               (insert variable)))
-    (&exit)
-    (&mirror 1 (field-string)
-             (if (string-match "var" field-string)
-                 (insert "ohohoh")))))
+(snippet-defmacro snippet--sprintf ()
+  (&mirror 0 (_field-string field-empty-p)
+    (unless field-empty-p "s"))
+  (insert "printf (")
+  (&field 0)
+  (&mirror 0 (_field-string field-empty-p)
+    (unless field-empty-p ","))
+  (insert "\"")
+  (&field 1 (insert "%s"))
+  (&mirror 1
+    (field-string _field-empty-p)
+    (if (string-match "%" field-string) "\"," "\")"))
+  (&field 2)
+  (&mirror 1
+    (field-string _field-empty-p)
+    (if (string-match "%" field-string) "\)" "")))
 
-
-
-
-;; (with-current-buffer (generate-new-buffer "*snippet-test*")
-;;   (display-buffer (current-buffer))
-;;   (printf))
-
+(ert-deftest sprintf-maybe-2 ()
+  (snippet--sprintf)
+  (snippet--test-sprintf-snippet))
 
 (provide 'snippet)
 

@@ -201,8 +201,8 @@ Argument BODY is a list of forms as described in `define-snippet'."
                     `((,sym (snippet--make-and-insert-mirror
                              ,parent
                              ,prev-sym
-                             ,(snippet--make-field-sym name)
-                             ',transform))))
+                             ,(snippet--make-transform-lambda transform) 
+                             ,(snippet--make-field-sym name)))))
                    (`(&exit (&eval ,form) (&parent ,parent))
                     (when exit-object
                       (error "Too many &exit forms given"))
@@ -368,14 +368,15 @@ Argument FORMS is a list of forms as described in `define-snippet'."
     (when default
       (insert default))))
 
-(defun snippet--make-and-insert-mirror (parent prev source transform)
+(defun snippet--make-and-insert-mirror (parent prev transform &optional source)
   (let ((mirror (make-instance 'snippet--mirror
                                :parent parent
                                :prev prev
                                :source source
-                               :transform (snippet--make-transform-lambda transform))))
-    (snippet--inserting-object mirror prev
-      (pushnew mirror (snippet--field-mirrors source)))))
+                               :transform transform)))
+    (when source
+      (pushnew mirror (snippet--field-mirrors source)))
+    (snippet--inserting-object mirror prev)))
 
 (defun snippet--make-and-insert-exit (parent prev constant)
   (let ((exit (make-instance 'snippet--exit :parent parent :prev prev)))
@@ -437,11 +438,12 @@ Argument FORMS is a list of forms as described in `define-snippet'."
                    (snippet--object-end mirror))
     (save-excursion
       (goto-char (snippet--object-start mirror))
-      (let ((field-string (snippet--field-string (snippet--mirror-source mirror))))
-        (insert (or (funcall (snippet--mirror-transform mirror)
-                             field-string
-                             (string= "" field-string))
-                    ""))))))
+      (let* ((field-string (snippet--field-string (snippet--mirror-source mirror)))
+             (retval (funcall (snippet--mirror-transform mirror)
+                              field-string
+                              (string= "" field-string))))
+        (when (stringp retval)
+          (insert retval))))))
 
 (defvar snippet--field-overlay nil)
 
@@ -681,55 +683,63 @@ Skips over nested fields if their parent has been modified."
            (indent defun))
   `(defun ,name ,args
      (let (;; (start (point-marker))
-           (fields (make-hash-table))
-           (mirrors (make-hash-table))
-           (snippet--current-field))
+           (snippet--fields (make-hash-table))
+           (snippet--mirrors (make-hash-table))
+           (snippet--current-field)
+           (snippet--prev-object)
+           (snippet--all-objects))
        (cl-macrolet ((&field (field-name &body field-forms)
-                       `(let* ((snippet--current-field
-                                (setf (gethash ',field-name fields)
+                       `(let* ((field
+                                (setf (gethash ',field-name snippet--fields)
                                       (make-instance 'snippet--field
                                                      :name ',field-name
                                                      :parent snippet--current-field)))
-                               (fn (lambda () ,@field-forms)))
-                          (setf (snippet--object-start snippet--current-field)
-                                (point-marker))
-                          (funcall fn)
-                          (setf (snippet--object-end snippet--current-field)
-                                (point-marker))))
+                               (fn (lambda ()
+                                     (let ((snippet--current-field field))
+                                       ,@field-forms))))
+                          (snippet--inserting-object
+                            field snippet--prev-object
+                            (funcall fn))
+                          (setf snippet--prev-object field)
+                          (push field snippet--all-objects)))
                      (&mirror (field-name mirror-args &body mirror-forms)
-                              `(let ((fn (lambda ,mirror-args ,@mirror-forms))
-                                     (start (point-marker)))
-                                 (push (make-instance 'snippet--mirror :start start :end start
-                                                      :transform (lambda (&rest args)
-                                                                   (goto-char start)
-                                                                   (apply fn args)))
-                                       (gethash ',field-name mirrors))))
-                     (&exit ()))
+                       (cond ((> (length mirror-args) 2)
+                              (error "At most two args in mirror transforms"))
+                             ((not (cadr mirror-args))
+                              (setcdr mirror-args '(_--snippet-ignored))))
+                       `(let* ((fn (lambda ,mirror-args ,@mirror-forms))
+                               (mirror (make-instance 'snippet--mirror
+                                                      :parent snippet--current-field
+                                                      :transform fn)))
+                          (push mirror (gethash ',field-name snippet--mirrors))
+                          (snippet--inserting-object mirror snippet--prev-object)
+                          (setf snippet--prev-object mirror)
+                          (push mirror snippet--all-objects)))
+                     (&exit ()
+                       `(let ((exit (make-instance 'snippet--exit
+                                                   :parent snippet--current-field)))
+                          (snippet--inserting-object exit snippet--prev-object)
+                          (setf snippet--prev-object exit)
+                          (push exit snippet--all-objects))))
          ,@body
          (maphash (lambda (field-name mirrors)
-                    (let ((field (gethash field-name fields)))
+                    (let ((field (gethash field-name snippet--fields)))
                       (unless field
                         (error "Snippet mirror references field \"%s\" which does not exist!"
                                field-name))
                       (mapc (lambda (mirror)
-                              (push mirror (snippet--field-mirrors field)))
+                              (push mirror (snippet--field-mirrors field))
+                              (setf (snippet--mirror-source mirror) field))
                             mirrors)))
-                  mirrors)
-         (maphash
-          (lambda (_name field)
-            (mapc (lambda (mirror)
-                    (funcall (snippet--mirror-transform mirror)
-                             (buffer-substring-no-properties (snippet--object-start field)
-                                                             (snippet--object-end field))))
-                  (snippet--field-mirrors field)))
-          fields)
-         fields))))
+                  snippet--mirrors)
+         (snippet--activate-snippet snippet--all-objects)))))
 
 (def-edebug-spec &mirror (sexp sexp &rest form))
 (def-edebug-spec &field (sexp &rest form))
 
 (put '&field 'lisp-indent-function 'defun)
 (put '&mirror 'lisp-indent-function 'defun)
+(put '&exit 'lisp-indent-function 'defun)
 
 
 
