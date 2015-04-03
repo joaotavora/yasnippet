@@ -328,7 +328,7 @@
 
 ;;; `snippet-defmacro' attempt
 ;;;
-(snippet-defmacro snippet--sprintf ()
+(define-snippet snippet--sprintf ()
   (&mirror 0 (_field-string field-empty-p)
     (unless field-empty-p "s"))
   (insert "printf (")
