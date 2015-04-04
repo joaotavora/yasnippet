@@ -296,13 +296,13 @@ considered to have returned a single whitespace.
 
 PROPERTIES is an even-numbered property list of (KEY VAL)
 pairs. Its meaning is not decided yet"
-  (declare (debug (&define name sexp &rest snippet-form))
+  (declare (debug (&define name sexp &rest snippet-forms))
            (indent defun))
   (unless (stringp docstring)
-    (push docstring forms)
+    (push docstring snippet-forms)
     (setq docstring nil))
   `(defun ,name () ,docstring
-          (with-static-snippet ,@forms)))
+          (with-static-snippet ,@snippet-forms)))
 
 
 ;;; The `define-dynamic-snippet' macro
@@ -644,17 +644,20 @@ Skips over nested fields if their parent has been modified."
 ;; (setq snippet--debug nil)
 
 (defun snippet--activate-snippet (objects)
-  (let ((mirrors (cl-sort (cl-remove-if-not #'snippet--mirror-p objects)
-                          #'(lambda (p1 p2)
-                              (cond ((not p2) t)
-                                    ((not p1) nil)))
-                          :key #'snippet--object-parent))
-        (fields (cl-sort (cl-remove-if-not #'snippet--field-p objects)
-                         #'(lambda (n1 n2)
-                             (cond ((not (integerp n2)) t)
-                                   ((not (integerp n1)) nil)
-                                   (t (< n1 n2))))
-                         :key #'snippet--field-name))
+  (let ((mirrors (cl-sort
+                  (cl-copy-list
+                   (cl-remove-if-not #'snippet--mirror-p objects))
+                  #'(lambda (p1 p2)
+                      (cond ((not p2) t)
+                            ((not p1) nil)))
+                  :key #'snippet--object-parent))
+        (fields (cl-sort
+                 (cl-copy-list (cl-remove-if-not #'snippet--field-p objects))
+                 #'(lambda (n1 n2)
+                     (cond ((not (integerp n2)) t)
+                           ((not (integerp n1)) nil)
+                           (t (< n1 n2))))
+                 :key #'snippet--field-name))
         (exit (or
                (cl-find-if #'snippet--exit-p objects)
                (let ((marker (point-marker)))
@@ -702,50 +705,53 @@ Skips over nested fields if their parent has been modified."
 
 ;;; Debug helpers
 ;;;
-(defun snippet--describe-object (object)
+(cl-defmethod snippet--describe-object ((object snippet--object) &key _short)
   (with-current-buffer (snippet--object-buffer object)
-    (format "from %s to %s covering \"%s\""
+    (format "covering \"%s\"\n  from %s\n  to %s\n  next: %s\n  prev: %s\n  parent: %s"
+            (propertize (buffer-substring
+                         (snippet--object-start object)
+                         (snippet--object-end object))
+                        'face
+                        'highlight)
             (snippet--object-start object)
             (snippet--object-end object)
-            (buffer-substring-no-properties
-             (snippet--object-start object)
-             (snippet--object-end object)))))
+            (if (snippet--object-next object)
+                (snippet--describe-object (snippet--object-next object) :short t))
+            (if (snippet--object-prev object)
+                (snippet--describe-object (snippet--object-prev object) :short t))
+            (if (snippet--object-parent object)
+                (snippet--describe-object (snippet--object-parent object) :short t)))))
 
-(defun snippet--describe-field (field)
+(cl-defmethod snippet--describe-object ((field snippet--field) &key short)
   (let ((active-field
          (overlay-get snippet--field-overlay 'snippet--field)))
     (with-current-buffer (snippet--object-buffer field)
-      (format "field %s %s%s"
+      (format "%sfield %s %s"
+              (if (and (not short) (eq field active-field))
+                  (propertize "*active* " 'face 'snippet-field-face)
+                "")
               (snippet--field-name field)
-              (snippet--describe-object field)
-              (if (eq field active-field)
-                  " *active*"
-                "")))))
+              (if short "" (cl-call-next-method))))))
 
-(defun snippet--describe-mirror (mirror)
+(cl-defmethod snippet--describe-object ((mirror snippet--mirror) &key short)
   (with-current-buffer (snippet--object-buffer mirror)
     (format "mirror of %s %s"
             (snippet--field-name (snippet--mirror-source mirror))
-            (snippet--describe-object mirror))))
+            (if short "" (cl-call-next-method)))))
 
-(defun snippet--describe-exit (exit)
+(cl-defmethod snippet--describe-object ((exit snippet--exit) &key short)
   (with-current-buffer (snippet--object-buffer exit)
-    (format "exit %s" (snippet--describe-object exit))))
+    (format "exit %s" (if short "" (cl-call-next-method)))))
 
 (defun snippet--debug-snippet (field-overlay)
   (with-current-buffer (get-buffer-create "*snippet-debug*")
-    (let ((inhibit-read-only t))
+    (let ((inhibit-read-only t)
+          (sorted (cl-sort (cl-copy-list
+                            (overlay-get field-overlay 'snippet--objects)) #'<
+                            :key #'snippet--object-start)))
       (erase-buffer)
-      (cl-loop for object in
-               (cl-sort (cl-copy-list
-                         (overlay-get field-overlay 'snippet--objects)) #'<
-                         :key #'snippet--object-start)
-               do (cond ((snippet--field-p object)
-                         (insert (snippet--describe-field object) "\n"))
-                        ((snippet--mirror-p object)
-                         (insert (snippet--describe-mirror object) "\n"))
-                        ((snippet--exit-p object)
-                         (insert (snippet--describe-exit object) "\n")))))
+      (cl-loop for object in sorted
+               do (insert (snippet--describe-object object) "\n")))
     (display-buffer (current-buffer))))
 
 
