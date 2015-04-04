@@ -173,7 +173,9 @@ As `define-static-snippet' but doesn't define a function."
   (let ((unfolded (snippet--unfold-forms
                    (mapcar #'snippet--canonicalize-form forms)))
         mirrors-and-sources
-        all-objects exit-object)
+        all-objects)
+    (when (> (cl-count '&exit unfolded :key #'car) 1)
+      (error "Too many &exit forms given"))
     `(let* ((region-string (and (region-active-p)
                                 (buffer-substring-no-properties
                                  (region-beginning)
@@ -212,10 +214,7 @@ As `define-static-snippet' but doesn't define a function."
                            :prev ,prev-sym
                            :parent ,parent))))
                  (`(&exit (&eval ,form) (&parent ,parent))
-                  (when exit-object
-                    (error "Too many &exit forms given"))
-                  (setq sym (snippet--make-exit-sym)
-                        exit-object sym)
+                  (setq sym (snippet--make-exit-sym))
                   `((,sym (snippet--make-object
                            'snippet--exit
                            ,(and form
@@ -246,7 +245,7 @@ As `define-static-snippet' but doesn't define a function."
 
 (defmacro define-static-snippet (name _properties &optional docstring
                                       &rest snippet-forms)
-  "Make a snippet-inserting function from FORMS.
+  "Define NAME as a snippet-inserting function.
 
 Each form in SNIPPET-FORMS, inserted at point in order, can be:
 
@@ -274,7 +273,7 @@ Each form in SNIPPET-FORMS, inserted at point in order, can be:
   form, called after each command while the snippet is alive to
   produce a string that becomes the mirror text.
 
-* A string literal or a lisp form CONSTANT evaluated at
+* A string literal or a lisp form, call it CONSTANT, evaluated at
   snippet-insertion time and producing a string that is a part of
   the snippet but constant while the snippet is alive.
 
@@ -289,17 +288,17 @@ The forms CONSTANT, FIELD-DEFAULT, MIRROR-TRANSFORM,
 FIELD-TRANSFORM and EXIT-DEFAULT are evaluated with the variable
 `region-string' set to the text of the buffer selected at
 snippet-insertion time. If no region was selected the value of
-this variable is the empty string..
+this variable is the empty string.
 
 The forms MIRROR-TRANSFORM and FIELD-TRANSFORM are evaluated with
 the variable `field-string' set to the text contained in the
 corresponding field. If the field is empty, this variable is the
-empty string and the additional variable `field-empty-p' is t. If
-these forms return nil, they are considered to have returned the
-empty string.
+empty string and the additional variable `field-empty-p' is t.
 
 If the form CONSTANT returns nil or the empty string, it is
-considered to have returned a single whitespace.
+considered to have returned a single whitespace. If any other
+form returns nil, it is considered to have returned the empty
+string.
 
 PROPERTIES is an even-numbered property list of (KEY VAL)
 pairs. Its meaning is not decided yet"
