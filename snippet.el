@@ -772,8 +772,14 @@ Skips over nested fields if their parent has been modified."
     (let ((inhibit-read-only t)
           (sorted (cl-sort (cl-copy-list
                             (overlay-get field-overlay 'snippet--objects))
-                           #'<
-                           :key #'snippet--object-start)))
+                           #'(lambda (f1 f2)
+                               (let ((start1 (snippet--object-start f1))
+                                     (start2 (snippet--object-start f2)))
+                                 (if (< start1 start2)
+                                   t
+                                 (if (> start2 start1)
+                                     nil
+                                   (snippet--object-parent f2))))))))
       (erase-buffer)
       (cl-loop for object in sorted
                do (insert (snippet--describe-object object) "\n")))
