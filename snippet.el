@@ -421,14 +421,23 @@ pairs. Its meaning is not decided yet"
    (transform :initarg :transform :accessor snippet--mirror-transform))
   :documentation "coiso")
 
-(defclass snippet--exit (snippet--object) ())
+(defclass snippet--exit (snippet--field) ())
+
+(defun snippet--object-< (o1 o2)
+  (let ((start1 (snippet--object-start o1))
+        (start2 (snippet--object-start o2)))
+    (if (< start1 start2)
+        t
+      (if (> start2 start1)
+          nil
+        (snippet--object-parent o2)))))
 
 (defun snippet--make-object (class prev fn &rest initargs)
   (let ((object (apply #'make-instance class initargs)))
     (when prev
       (setf (snippet--object-prev object) prev)
-      (cl-assert (null (snippet--object-next prev)) nil
-                 "previous object already has another sucessor")
+      (when (snippet--object-next prev)
+        (error "previous object already has another sucessor"))
       (setf (snippet--object-next prev) object))
     (setf (snippet--object-start object)
           (let ((parent (snippet--object-parent object)))
@@ -500,8 +509,8 @@ pairs. Its meaning is not decided yet"
           (setq stay (append stay push)
                 push nil)
         (cl-rotatef stay push)))
-    (mapc #'(lambda (m) (set-marker-insertion-type m nil)) stay)
-    (mapc #'(lambda (m) (set-marker-insertion-type m t)) push)))
+    (mapc (lambda (m) (set-marker-insertion-type m nil)) stay)
+    (mapc (lambda (m) (set-marker-insertion-type m t)) push)))
 
 (defun snippet--call-with-current-object (object fn)
   (unwind-protect
@@ -512,7 +521,7 @@ pairs. Its meaning is not decided yet"
 
 (defmacro snippet--with-current-object (object &rest body)
   (declare (indent defun) (debug t))
-  `(snippet--call-with-current-object ,object #'(lambda () ,@body)))
+  `(snippet--call-with-current-object ,object (lambda () ,@body)))
 
 (defun snippet--update-mirror (mirror)
   (snippet--with-current-object mirror
@@ -625,10 +634,8 @@ PREV means move to the previous field."
         (snippet--move-to-field target)
       (let ((exit (overlay-get snippet--field-overlay
                                'snippet--exit)))
-        (goto-char (if (markerp exit)
-                       exit
-                       (snippet--object-start exit))))
-      (snippet-exit-snippet "moved to exit"))))
+        (snippet--move-to-field exit)
+        (overlay-put snippet--field-overlay 'snippet--exit-reason "exit")))))
 
 (defun snippet-prev-field ()
   "Move the the start of the previous field in the current snippet.
@@ -648,25 +655,33 @@ Skips over nested fields if their parent has been modified."
 ;; (setq snippet--debug nil)
 
 (defun snippet--activate-snippet (objects)
-  (let ((mirrors (cl-sort
+  (let* ((exit (or (cl-find-if #'snippet--exit-p objects)
+                   (progn (push (snippet--make-object
+                                 'snippet--exit
+                                 ;; the first in `objects' must have been the
+                                 ;; last inserted
+                                 (car objects)
+                                 nil
+                                 :parent nil
+                                 :name 'snippet--exit-field)
+                                objects)
+                          (car objects))))
+         (mirrors (cl-sort
+                   (cl-copy-list
+                    (cl-remove-if-not #'snippet--mirror-p objects))
+                   #'(lambda (p1 p2)
+                       (cond ((not p2) t)
+                             ((not p1) nil)))
+                   :key #'snippet--object-parent))
+         (fields (cl-sort
                   (cl-copy-list
-                   (cl-remove-if-not #'snippet--mirror-p objects))
-                  #'(lambda (p1 p2)
-                      (cond ((not p2) t)
-                            ((not p1) nil)))
-                  :key #'snippet--object-parent))
-        (fields (cl-sort
-                 (cl-copy-list (cl-remove-if-not #'snippet--field-p objects))
-                 #'(lambda (n1 n2)
-                     (cond ((not (integerp n2)) t)
-                           ((not (integerp n1)) nil)
-                           (t (< n1 n2))))
-                 :key #'snippet--field-name))
-        (exit (or
-               (cl-find-if #'snippet--exit-p objects)
-               (let ((marker (point-marker)))
-                 (prog1 marker
-                   (set-marker-insertion-type marker t))))))
+                   (cl-remove-if #'snippet--exit-p
+                                 (cl-remove-if-not #'snippet--field-p objects)))
+                  #'(lambda (n1 n2)
+                      (cond ((not (integerp n2)) t)
+                            ((not (integerp n1)) nil)
+                            (t (< n1 n2))))
+                  :key #'snippet--field-name)))
     (mapc #'snippet--update-mirror mirrors)
     (setq snippet--field-overlay
           (let ((overlay (make-overlay (point) (point) nil nil t)))
@@ -780,14 +795,7 @@ Skips over nested fields if their parent has been modified."
     (let ((inhibit-read-only t)
           (sorted (cl-sort (cl-copy-list
                             (overlay-get field-overlay 'snippet--objects))
-                           #'(lambda (f1 f2)
-                               (let ((start1 (snippet--object-start f1))
-                                     (start2 (snippet--object-start f2)))
-                                 (if (< start1 start2)
-                                   t
-                                 (if (> start2 start1)
-                                     nil
-                                   (snippet--object-parent f2))))))))
+                           #'snippet--object-<)))
       (erase-buffer)
       (cl-loop for object in sorted
                do (insert (snippet--describe-object object) "\n")))
