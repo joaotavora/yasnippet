@@ -315,18 +315,17 @@ pairs. Its meaning is not decided yet"
          (snippet--prev-object)
          (snippet--all-objects))
      (cl-macrolet ((&field (field-name &body field-forms)
-                     `(let* ((field
-                              (setf (gethash ',field-name snippet--fields)
-                                    (make-instance 'snippet--field
-                                                   :name ',field-name
-                                                   :parent snippet--current-field)))
-                             (fn (lambda ()
-                                   (let ((snippet--current-field field))
-                                     ,@field-forms))))
+                     `(let ((fn (lambda () ,@field-forms))
+                            (field
+                             (setf (gethash ',field-name snippet--fields)
+                                   (make-instance 'snippet--field
+                                                  :name ',field-name
+                                                  :parent snippet--current-field))))
                         (snippet--inserting-object
                           field snippet--prev-object
-                          (funcall fn))
-                        (setf snippet--prev-object field)
+                          (setf snippet--prev-object field)
+                          (let ((snippet--current-field field))
+                            (funcall fn)))
                         (push field snippet--all-objects)))
                    (&mirror (field-name mirror-args &body mirror-forms)
                      (cond ((> (length mirror-args) 2)
@@ -404,6 +403,7 @@ pairs. Its meaning is not decided yet"
 
 (defun snippet--call-with-inserting-object (object prev fn)
   (when prev
+    (setf (snippet--object-prev object) prev)
     (cl-assert (null (snippet--object-next prev)) nil
                "previous object already has another sucessor")
     (setf (snippet--object-next prev) object))
@@ -424,8 +424,11 @@ pairs. Its meaning is not decided yet"
                 (t
                  (point-marker)))))
   (funcall fn)
-  (setf (snippet--object-end object)
-        (point-marker))
+  ;; Only set the object's end if not set yet, i.e. when running its function
+  ;; some nested field might have set it already.
+  (unless (snippet--object-end object)
+    (setf (snippet--object-end object)
+          (point-marker)))
   (when (snippet--object-parent object)
     (setf (snippet--object-end
            (snippet--object-parent object))

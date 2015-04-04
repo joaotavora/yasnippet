@@ -197,7 +197,7 @@
   ;; this should exit the snippet now, since the two remaining
   ;; fields should be skipped
   (ert-simulate-command '(snippet-next-field))
-  (should (null (overlay-buffer snippet--field-overlay))))
+  (should (null snippet--field-overlay)))
 
 (snippet--define-expansion-test mirror-of-nested-field mirror-of-nested-field()
   (should (equal (buffer-string) "a nested field, nested mirroring: field"))
@@ -274,25 +274,23 @@
     (ert-simulate-command '((lambda () (interactive) (insert "bar"))))
     (set-mark (point))
     (goto-char (point-max))
-    (snippet--insert-test-snippet 'wrap-selected-region)
+    (eval `(with-static-snippet ,@(snippet--get-fixture 'wrap-selected-region)))
     (should (equal (buffer-string)
                    "foobarbazbar"))))
 
-(ert-deftest navigate-fields-and-exit ()
-  (with-temp-buffer
-    (snippet--insert-test-snippet 'navigate-fields)
-    (should (equal (buffer-string) "foo"))
-    (ert-simulate-command '((lambda () (interactive) (insert "quam"))))
-    (ert-simulate-command '(snippet-next-field))
-    (ert-simulate-command '((lambda () (interactive) (insert "bar"))))
-    (ert-simulate-command '(snippet-next-field))
-    (ert-simulate-command '((lambda () (interactive) (insert "baz"))))
-    (ert-simulate-command '(snippet-next-field))
-    (ert-simulate-command '((lambda () (interactive) (insert "quux"))))
-    (ert-simulate-command '(snippet-next-field))
-    (should (equal (buffer-string) "foobarbazquuxquam"))
-    (should (null (overlay-buffer snippet--field-overlay)))
-    (should (looking-at "barbazquuxquam"))))
+(snippet--define-expansion-test navigate-fields-and-exit navigate-fields()
+  (should (equal (buffer-string) "foo"))
+  (ert-simulate-command '((lambda () (interactive) (insert "quam"))))
+  (ert-simulate-command '(snippet-next-field))
+  (ert-simulate-command '((lambda () (interactive) (insert "bar"))))
+  (ert-simulate-command '(snippet-next-field))
+  (ert-simulate-command '((lambda () (interactive) (insert "baz"))))
+  (ert-simulate-command '(snippet-next-field))
+  (ert-simulate-command '((lambda () (interactive) (insert "quux"))))
+  (ert-simulate-command '(snippet-next-field))
+  (should (equal (buffer-string) "foobarbazquuxquam"))
+  (should (null snippet--field-overlay))
+  (should (looking-at "barbazquuxquam")))
 
 
 ;;; input validation
@@ -347,7 +345,8 @@
   (should-error (snippet--canonicalize-form '(&eval (foo) (bar)))))
 
 
-;; pretty forms
+;; misc
+;; 
 (cl-loop for sym in (list 'snippet--define-expansion-test)
          for regexp = (format "(\\(%S\\)\\s +\\(\\(\\w\\|\\s_\\)+\\)"
                               sym)
@@ -355,6 +354,14 @@
              'emacs-lisp-mode
              `((,regexp (1 font-lock-keyword-face)
                         (2 font-lock-variable-name-face)))))
+
+(defun snippet--test-fixture (fixture &optional dynamic)
+  (with-current-buffer (get-buffer-create "*snippet-test*")
+    (erase-buffer)
+    (switch-to-buffer (current-buffer))
+    (if dynamic
+        (eval `(with-dynamic-snippet ,@(snippet--get-fixture fixture 'dynamic-p)))
+      (eval `(with-static-snippet ,@(snippet--get-fixture fixture nil))))))
 
 (provide 'snippet-tests)
 
