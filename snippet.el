@@ -189,7 +189,6 @@ As `define-static-snippet' but doesn't define a function."
                   (setq sym (snippet--make-field-sym name))
                   `((,sym (snippet--make-object
                            'snippet--field
-                           ,prev-sym
                            ,(pcase expr
                               (`(&eval ,form)
                                `(lambda (_ignored)
@@ -197,6 +196,7 @@ As `define-static-snippet' but doesn't define a function."
                                    ,(snippet--make-lambda form)
                                    region-string))))
                            :name ',name
+                           :prev ,prev-sym
                            :parent ,parent))))
                  (`(&mirror ,name (&transform ,transform) (&parent ,parent))
                   (setq sym (snippet--make-mirror-sym
@@ -207,9 +207,9 @@ As `define-static-snippet' but doesn't define a function."
                    mirrors-and-sources)
                   `((,sym (snippet--make-object
                            'snippet--mirror
-                           ,prev-sym
                            nil
                            :transform ,(snippet--make-transform-lambda transform)
+                           :prev ,prev-sym
                            :parent ,parent))))
                  (`(&exit (&eval ,form) (&parent ,parent))
                   (when exit-object
@@ -218,10 +218,10 @@ As `define-static-snippet' but doesn't define a function."
                         exit-object sym)
                   `((,sym (snippet--make-object
                            'snippet--exit
-                           ,prev-sym
                            ,(and form
                                  `(funcall ,(snippet--make-lambda form)
                                            region-string))
+                           :prev ,prev-sym
                            :parent ,parent))))
                  (`(&eval ,form (&parent ,parent))
                   `((,(cl-gensym "constant-")
@@ -328,13 +328,13 @@ pairs. Its meaning is not decided yet"
                              (field
                               (snippet--make-object
                                'snippet--field
-                               snippet--prev-object
                                (lambda (fld)
                                  (setf snippet--prev-object fld)
                                  (let* ((snippet--current-field fld))
                                    (funcall fn)))
                                :name ',field-name
-                               :parent snippet--current-field)))
+                               :parent snippet--current-field
+                               :prev snippet--prev-object)))
                         (setf (gethash ',field-name snippet--fields)
                               field)
                         (push field snippet--all-objects)))
@@ -353,9 +353,9 @@ pairs. Its meaning is not decided yet"
                              (mirror
                               (snippet--make-object
                                'snippet--mirror
-                               snippet--prev-object
                                nil
                                :transform fn
+                               :prev snippet--prev-object
                                :parent snippet--current-field)))
                         (push mirror (gethash ',field-name snippet--mirrors))
                         (push mirror snippet--all-objects)
@@ -363,8 +363,8 @@ pairs. Its meaning is not decided yet"
                    (&exit ()
                      `(let ((exit (snippet--make-object
                                    'snippet--exit
-                                   snippet--prev-object
                                    nil
+                                   :prev snippet--prev-object
                                    :parent snippet--current-field)))
                         (setf snippet--prev-object exit)
                         (push exit snippet--all-objects))))
@@ -403,10 +403,12 @@ pairs. Its meaning is not decided yet"
 ;;;
 
 (defclass snippet--object ()
+  ;; keep the two initargable slots on top otherwise everything breaks.
+  ;; TODO: report this to Stefan or Eric
   ((parent :initarg :parent :reader snippet--object-parent)
+   (prev :initarg :prev :accessor snippet--object-prev)
    (start :accessor snippet--object-start)
    (end :accessor snippet--object-end)
-   (prev :accessor snippet--object-prev)
    (next :accessor snippet--object-next)
    (buffer :initform (current-buffer) :reader snippet--object-buffer)))
 
@@ -432,10 +434,10 @@ pairs. Its meaning is not decided yet"
           nil
         (snippet--object-parent o2)))))
 
-(defun snippet--make-object (class prev fn &rest initargs)
-  (let ((object (apply #'make-instance class initargs)))
+(defun snippet--make-object (class fn &rest initargs)
+  (let* ((object (apply #'make-instance class initargs))
+         (prev (snippet--object-prev object)))
     (when prev
-      (setf (snippet--object-prev object) prev)
       (when (snippet--object-next prev)
         (error "previous object already has another sucessor"))
       (setf (snippet--object-next prev) object))
@@ -658,10 +660,10 @@ Skips over nested fields if their parent has been modified."
   (let* ((exit (or (cl-find-if #'snippet--exit-p objects)
                    (progn (push (snippet--make-object
                                  'snippet--exit
+                                 nil
                                  ;; the first in `objects' must have been the
                                  ;; last inserted
-                                 (car objects)
-                                 nil
+                                 :prev (car objects)
                                  :parent nil
                                  :name 'snippet--exit-field)
                                 objects)
