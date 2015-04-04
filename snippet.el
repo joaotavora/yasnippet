@@ -187,16 +187,17 @@ As `define-static-snippet' but doesn't define a function."
                (pcase form
                  (`(&field ,name ,expr (&parent ,parent))
                   (setq sym (snippet--make-field-sym name))
-                  `((,sym (snippet--make-and-insert-field
-                           ',name
+                  `((,sym (snippet--make-object
+                           'snippet--field
                            ,prev-sym
-                           ,parent
                            ,(pcase expr
                               (`(&eval ,form)
                                `(lambda (_ignored)
                                   (funcall
                                    ,(snippet--make-lambda form)
-                                   region-string))))))))
+                                   region-string))))
+                           :name ',name
+                           :parent ,parent))))
                  (`(&mirror ,name (&transform ,transform) (&parent ,parent))
                   (setq sym (snippet--make-mirror-sym
                              (cl-incf mirror-idx) name))
@@ -204,21 +205,24 @@ As `define-static-snippet' but doesn't define a function."
                    (cons sym
                          (snippet--make-field-sym name))
                    mirrors-and-sources)
-                  `((,sym (snippet--make-and-insert-mirror
-                           ,parent
+                  `((,sym (snippet--make-object
+                           'snippet--mirror
                            ,prev-sym
-                           ,(snippet--make-transform-lambda transform)))))
+                           nil
+                           :transform ,(snippet--make-transform-lambda transform)
+                           :parent ,parent))))
                  (`(&exit (&eval ,form) (&parent ,parent))
                   (when exit-object
                     (error "Too many &exit forms given"))
                   (setq sym (snippet--make-exit-sym)
                         exit-object sym)
-                  `((,sym (snippet--make-and-insert-exit
-                           ,parent
+                  `((,sym (snippet--make-object
+                           'snippet--exit
                            ,prev-sym
                            ,(and form
                                  `(funcall ,(snippet--make-lambda form)
-                                           region-string))))))
+                                           region-string))
+                           :parent ,parent))))
                  (`(&eval ,form (&parent ,parent))
                   `((,(cl-gensym "constant-")
                      (snippet--insert-constant
@@ -322,14 +326,15 @@ pairs. Its meaning is not decided yet"
                        (setf field-name (make-symbol "_ignored")))
                      `(let* ((fn (lambda () ,@field-forms))
                              (field
-                              (snippet--make-and-insert-field
-                                     ',field-name
-                                     snippet--prev-object
-                                     snippet--current-field
-                                     (lambda (fld)
-                                       (setf snippet--prev-object fld)
-                                       (let* ((snippet--current-field fld))
-                                         (funcall fn))))))
+                              (snippet--make-object
+                               'snippet--field
+                               snippet--prev-object
+                               (lambda (fld)
+                                 (setf snippet--prev-object fld)
+                                 (let* ((snippet--current-field fld))
+                                   (funcall fn)))
+                               :name ',field-name
+                               :parent snippet--current-field)))
                         (setf (gethash ',field-name snippet--fields)
                               field)
                         (push field snippet--all-objects)))
@@ -346,17 +351,21 @@ pairs. Its meaning is not decided yet"
                                             collect (make-symbol "_ignored")))))
                      `(let* ((fn (lambda ,mirror-args ,@mirror-forms))
                              (mirror
-                              (snippet--make-and-insert-mirror
-                               snippet--current-field
+                              (snippet--make-object
+                               'snippet--mirror
                                snippet--prev-object
-                               fn)))
+                               nil
+                               :transform fn
+                               :parent snippet--current-field)))
                         (push mirror (gethash ',field-name snippet--mirrors))
                         (push mirror snippet--all-objects)
                         (setf snippet--prev-object mirror)))
                    (&exit ()
-                     `(let ((exit (make-instance 'snippet--exit
-                                                 :parent snippet--current-field)))
-                        (snippet--inserting-object exit snippet--prev-object)
+                     `(let ((exit (snippet--make-object
+                                   'snippet--exit
+                                   snippet--prev-object
+                                   nil
+                                   :parent snippet--current-field)))
                         (setf snippet--prev-object exit)
                         (push exit snippet--all-objects))))
        ,@body
@@ -394,11 +403,11 @@ pairs. Its meaning is not decided yet"
 ;;;
 
 (defclass snippet--object ()
-  ((start :initarg :start :accessor snippet--object-start)
-   (end :initarg :end :accessor snippet--object-end)
-   (parent :initarg :parent :reader snippet--object-parent)
-   (prev :initarg :prev :accessor snippet--object-prev)
-   (next :initarg :next :accessor snippet--object-next)
+  ((parent :initarg :parent :reader snippet--object-parent)
+   (start :accessor snippet--object-start)
+   (end :accessor snippet--object-end)
+   (prev :accessor snippet--object-prev)
+   (next :accessor snippet--object-next)
    (buffer :initform (current-buffer) :reader snippet--object-buffer)))
 
 (defclass snippet--field (snippet--object)
@@ -414,72 +423,48 @@ pairs. Its meaning is not decided yet"
 
 (defclass snippet--exit (snippet--object) ())
 
-(defun snippet--call-with-inserting-object (object prev fn)
-  (when prev
-    (setf (snippet--object-prev object) prev)
-    (cl-assert (null (snippet--object-next prev)) nil
-               "previous object already has another sucessor")
-    (setf (snippet--object-next prev) object))
-  (setf (snippet--object-start object)
-        (let ((parent (snippet--object-parent object)))
-          (cond ((and parent
-                      (= (point) (snippet--object-start parent)))
-                 (snippet--object-start parent))
-                ((and prev
-                      (snippet--object-parent prev)
-                      (= (point) (snippet--object-end
-                                  (snippet--object-parent prev))))
-                 (snippet--object-end
-                  (snippet--object-parent prev)))
-                ((and prev
-                      (snippet--object-end prev)
-                      (= (point) (snippet--object-end prev)))
-                 (snippet--object-end prev))
-                (t
-                 (point-marker)))))
-  (funcall fn)
-  ;; Don't set the object's end if its already set and matches point. i.e. when
-  ;; running its function some nested field might have set it already and, if
-  ;; point hasn't moved since, we need both end markers to be the same object.
-  (unless (and (snippet--object-end object)
-               (= (snippet--object-end object) (point)))
-    (setf (snippet--object-end object)
-          (point-marker)))
-  (when (snippet--object-parent object)
-    (setf (snippet--object-end
-           (snippet--object-parent object))
-          (snippet--object-end object)))
-  (snippet--open-object object 'close)
-  object)
-
-(defmacro snippet--inserting-object (object prev &rest body)
-  (declare (indent defun) (debug (sexp sexp &rest form)))
-  `(snippet--call-with-inserting-object ,object ,prev #'(lambda () ,@body)))
-
-(defun snippet--make-and-insert-field (name prev parent fn)
-  (let ((field (make-instance 'snippet--field
-                              :name name
-                              :parent parent)))
-    (snippet--inserting-object field prev
-      (when fn
-        (let ((retval (funcall fn field)))
-          (when (stringp retval)
-            (insert retval)))))))
-
-(defun snippet--make-and-insert-mirror (parent prev transform &optional source)
-  (let ((mirror (make-instance 'snippet--mirror
-                               :parent parent
-                               :source source
-                               :transform transform)))
-    (when source
-      (pushnew mirror (snippet--field-mirrors source)))
-    (snippet--inserting-object mirror prev)))
-
-(defun snippet--make-and-insert-exit (parent prev constant)
-  (let ((exit (make-instance 'snippet--exit :parent parent :prev prev)))
-   (snippet--inserting-object exit prev
-     (when constant
-       (insert constant)))))
+(defun snippet--make-object (class prev fn &rest initargs)
+  (let ((object (apply #'make-instance class initargs)))
+    (when prev
+      (setf (snippet--object-prev object) prev)
+      (cl-assert (null (snippet--object-next prev)) nil
+                 "previous object already has another sucessor")
+      (setf (snippet--object-next prev) object))
+    (setf (snippet--object-start object)
+          (let ((parent (snippet--object-parent object)))
+            (cond ((and parent
+                        (= (point) (snippet--object-start parent)))
+                   (snippet--object-start parent))
+                  ((and prev
+                        (snippet--object-parent prev)
+                        (= (point) (snippet--object-end
+                                    (snippet--object-parent prev))))
+                   (snippet--object-end
+                    (snippet--object-parent prev)))
+                  ((and prev
+                        (snippet--object-end prev)
+                        (= (point) (snippet--object-end prev)))
+                   (snippet--object-end prev))
+                  (t
+                   (point-marker)))))
+    (cond ((functionp fn)
+           (let ((retval (funcall fn object)))
+             (when (stringp retval) (insert retval))))
+          ((stringp fn)
+           (insert fn)))
+    ;; Don't set the object's end if its already set and matches point. i.e. when
+    ;; running its function some nested field might have set it already and, if
+    ;; point hasn't moved since, we need both end markers to be the same object.
+    (unless (and (snippet--object-end object)
+                 (= (snippet--object-end object) (point)))
+      (setf (snippet--object-end object)
+            (point-marker)))
+    (when (snippet--object-parent object)
+      (setf (snippet--object-end
+             (snippet--object-parent object))
+            (snippet--object-end object)))
+    (snippet--open-object object 'close)
+    object))
 
 (defun snippet--insert-constant (parent constant)
   (when constant
