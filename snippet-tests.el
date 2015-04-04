@@ -36,12 +36,24 @@
         (contrived ((&field 1)
                     (&field 2)
                     (&field 3)))
-        (nested ("a "
-                 (&field 1 (&nested (&field 2 "nested")
-                                    " "
-                                    (&field 3 "field")))
-                 " and its mirror: "
-                 (&mirror 1)))
+        (nested
+         ;; static
+         ;;
+         ("a "
+          (&field 1 (&nested (&field 2 "nested")
+                             " "
+                             (&field 3 "field")))
+          " and its mirror: "
+          (&mirror 1))
+         ;; dynamic
+         ((insert "a ")
+          (&field 1
+            (&field 2 (insert "nested"))
+            (insert " ")
+            (&field 3 (insert "field")))
+          (insert " and its mirror: ")
+          (&mirror 1 (s e)
+            (insert s))))
         (mirror-of-nested-field ("a "
                                  (&field 1 (&nested (&field 2 "nested")
                                                     " "
