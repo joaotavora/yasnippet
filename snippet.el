@@ -112,8 +112,8 @@
      ,transform-form))
 
 (defun snippet--make-lambda (eval-form)
-  `#'(lambda (region-string)
-       ,eval-form))
+  `(lambda (region-string)
+     ,eval-form))
 
 (defun snippet--canonicalize-form (form)
   (pcase form
@@ -172,64 +172,67 @@
 As `define-static-snippet' but doesn't define a function."
   (let ((unfolded (snippet--unfold-forms
                    (mapcar #'snippet--canonicalize-form forms)))
+        mirrors-and-sources
         all-objects exit-object)
-    `(let* (,@(loop for form in unfolded
-                    append (pcase form
-                             (`(&field ,name ,_expr (&parent ,parent))
-                              `((,(snippet--make-field-sym name)
-                                 (make-instance 'snippet--field
-                                                :parent ,parent
-                                                :name ',name))))))
-            (region-string (and (region-active-p)
+    `(let* ((region-string (and (region-active-p)
                                 (buffer-substring-no-properties
                                  (region-beginning)
-                                 (region-end)))))
-       (let* (,@(loop
-                 for form in unfolded
-                 with mirror-idx = 0
-                 with sym
-                 with prev-sym
-                 append
-                 (pcase form
-                   (`(&field ,name ,expr (&parent ,_parent))
-                    (setq sym (snippet--make-field-sym name))
-                    `((,sym (snippet--insert-field
-                             ,sym
-                             ,prev-sym
-                             ,(pcase expr
-                                (`(&eval ,form)
+                                 (region-end))))
+            ,@(loop
+               for form in unfolded
+               with mirror-idx = 0
+               with sym
+               with prev-sym
+               append
+               (pcase form
+                 (`(&field ,name ,expr (&parent ,parent))
+                  (setq sym (snippet--make-field-sym name))
+                  `((,sym (snippet--make-and-insert-field
+                           ',name
+                           ,prev-sym
+                           ,parent
+                           ,(pcase expr
+                              (`(&eval ,form)
+                               `(lambda ()
+                                  (funcall
+                                   ,(snippet--make-lambda form)
+                                   region-string))))))))
+                 (`(&mirror ,name (&transform ,transform) (&parent ,parent))
+                  (setq sym (snippet--make-mirror-sym
+                             (cl-incf mirror-idx) name))
+                  (push
+                   (cons sym
+                         (snippet--make-field-sym name))
+                   mirrors-and-sources)
+                  `((,sym (snippet--make-and-insert-mirror
+                           ,parent
+                           ,prev-sym
+                           ,(snippet--make-transform-lambda transform)))))
+                 (`(&exit (&eval ,form) (&parent ,parent))
+                  (when exit-object
+                    (error "Too many &exit forms given"))
+                  (setq sym (snippet--make-exit-sym)
+                        exit-object sym)
+                  `((,sym (snippet--make-and-insert-exit
+                           ,parent
+                           ,prev-sym
+                           ,(and form
                                  `(funcall ,(snippet--make-lambda form)
-                                           region-string)))))))
-                   (`(&mirror ,name (&transform ,transform) (&parent ,parent))
-                    (setq sym (snippet--make-mirror-sym
-                               (cl-incf mirror-idx) name))
-                    `((,sym (snippet--make-and-insert-mirror
-                             ,parent
-                             ,prev-sym
-                             ,(snippet--make-transform-lambda transform) 
-                             ,(snippet--make-field-sym name)))))
-                   (`(&exit (&eval ,form) (&parent ,parent))
-                    (when exit-object
-                      (error "Too many &exit forms given"))
-                    (setq sym (snippet--make-exit-sym)
-                          exit-object sym)
-                    `((,sym (snippet--make-and-insert-exit
-                             ,parent
-                             ,prev-sym
-                             ,(and form
-                                   `(funcall ,(snippet--make-lambda form)
-                                             region-string))))))
-                   (`(&eval ,form (&parent ,parent))
-                    `((,(cl-gensym "constant-")
-                       (snippet--insert-constant
-                        ,parent
-                        (funcall ,(snippet--make-lambda form)
-                                 region-string))))))
-                 when sym do
-                 (push sym all-objects)
-                 (setq prev-sym sym)
-                 (setq sym nil)))
-         (snippet--activate-snippet (list ,@all-objects))))))
+                                           region-string))))))
+                 (`(&eval ,form (&parent ,parent))
+                  `((,(cl-gensym "constant-")
+                     (snippet--insert-constant
+                      ,parent
+                      (funcall ,(snippet--make-lambda form)
+                               region-string))))))
+               when sym do
+               (push sym all-objects)
+               (setq prev-sym sym)
+               (setq sym nil)))
+       ,@(cl-loop for (mirror . source) in mirrors-and-sources
+                  collect `(setf (snippet--mirror-source ,mirror) ,source)
+                  collect `(push ,mirror (snippet--field-mirrors ,source)))
+       (snippet--activate-snippet (list ,@all-objects)))))
 
 (def-edebug-spec snippet-form
   (&or
@@ -435,7 +438,8 @@ pairs. Its meaning is not decided yet"
                  (point-marker)))))
   (funcall fn)
   ;; Don't set the object's end if its already set and matches point. i.e. when
-  ;; running its function some nested field might have set it already and 
+  ;; running its function some nested field might have set it already and, if
+  ;; point hasn't moved since, we need both end markers to be the same object.
   (unless (and (snippet--object-end object)
                (= (snippet--object-end object) (point)))
     (setf (snippet--object-end object)
@@ -451,15 +455,19 @@ pairs. Its meaning is not decided yet"
   (declare (indent defun) (debug (sexp sexp &rest form)))
   `(snippet--call-with-inserting-object ,object ,prev #'(lambda () ,@body)))
 
-(defun snippet--insert-field (field prev default)
-  (snippet--inserting-object field prev
-    (when default
-      (insert default))))
+(defun snippet--make-and-insert-field (name prev parent fn)
+  (let ((field (make-instance 'snippet--field
+                              :name name
+                              :parent parent)))
+    (snippet--inserting-object field prev
+      (when fn
+        (let ((retval (funcall fn)))
+          (when (stringp retval)
+            (insert retval)))))))
 
 (defun snippet--make-and-insert-mirror (parent prev transform &optional source)
   (let ((mirror (make-instance 'snippet--mirror
                                :parent parent
-                               :prev prev
                                :source source
                                :transform transform)))
     (when source
