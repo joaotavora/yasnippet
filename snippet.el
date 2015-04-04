@@ -193,7 +193,7 @@ As `define-static-snippet' but doesn't define a function."
                            ,parent
                            ,(pcase expr
                               (`(&eval ,form)
-                               `(lambda ()
+                               `(lambda (_ignored)
                                   (funcall
                                    ,(snippet--make-lambda form)
                                    region-string))))))))
@@ -320,18 +320,18 @@ pairs. Its meaning is not decided yet"
      (cl-macrolet ((&field (&optional (field-name nil field-name-provided-p) &body field-forms)
                      (unless field-name-provided-p
                        (setf field-name (make-symbol "_ignored")))
-                     `(let ((fn (lambda () ,@field-forms))
-                            (field
-                             (setf (gethash ',field-name snippet--fields)
-                                   (make-instance 'snippet--field
-                                                  :name ',field-name
-                                                  :parent snippet--current-field))))
-                        (snippet--inserting-object
-                          field snippet--prev-object
-                          (setf snippet--prev-object field)
-                          (let* ((snippet--current-field field)
-                                 (retval (funcall fn)))
-                            (when (stringp retval) (insert retval))))
+                     `(let* ((fn (lambda () ,@field-forms))
+                             (field
+                              (snippet--make-and-insert-field
+                                     ',field-name
+                                     snippet--prev-object
+                                     snippet--current-field
+                                     (lambda (fld)
+                                       (setf snippet--prev-object fld)
+                                       (let* ((snippet--current-field fld))
+                                         (funcall fn))))))
+                        (setf (gethash ',field-name snippet--fields)
+                              field)
                         (push field snippet--all-objects)))
                    (&mirror (field-name &optional (mirror-args nil mirror-args-provided-p) &body mirror-forms)
                      (cond ((not mirror-args-provided-p)
@@ -345,13 +345,14 @@ pairs. Its meaning is not decided yet"
                                             below 2
                                             collect (make-symbol "_ignored")))))
                      `(let* ((fn (lambda ,mirror-args ,@mirror-forms))
-                             (mirror (make-instance 'snippet--mirror
-                                                    :parent snippet--current-field
-                                                    :transform fn)))
+                             (mirror
+                              (snippet--make-and-insert-mirror
+                               snippet--current-field
+                               snippet--prev-object
+                               fn)))
                         (push mirror (gethash ',field-name snippet--mirrors))
-                        (snippet--inserting-object mirror snippet--prev-object)
-                        (setf snippet--prev-object mirror)
-                        (push mirror snippet--all-objects)))
+                        (push mirror snippet--all-objects)
+                        (setf snippet--prev-object mirror)))
                    (&exit ()
                      `(let ((exit (make-instance 'snippet--exit
                                                  :parent snippet--current-field)))
@@ -461,7 +462,7 @@ pairs. Its meaning is not decided yet"
                               :parent parent)))
     (snippet--inserting-object field prev
       (when fn
-        (let ((retval (funcall fn)))
+        (let ((retval (funcall fn field)))
           (when (stringp retval)
             (insert retval)))))))
 
