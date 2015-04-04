@@ -314,7 +314,9 @@ pairs. Its meaning is not decided yet"
          (snippet--current-field)
          (snippet--prev-object)
          (snippet--all-objects))
-     (cl-macrolet ((&field (field-name &body field-forms)
+     (cl-macrolet ((&field (&optional (field-name nil field-name-provided-p) &body field-forms)
+                     (unless field-name-provided-p
+                       (setf field-name (make-symbol "_ignored")))
                      `(let ((fn (lambda () ,@field-forms))
                             (field
                              (setf (gethash ',field-name snippet--fields)
@@ -324,14 +326,21 @@ pairs. Its meaning is not decided yet"
                         (snippet--inserting-object
                           field snippet--prev-object
                           (setf snippet--prev-object field)
-                          (let ((snippet--current-field field))
-                            (funcall fn)))
+                          (let* ((snippet--current-field field)
+                                 (retval (funcall fn)))
+                            (when (stringp retval) (insert retval))))
                         (push field snippet--all-objects)))
-                   (&mirror (field-name mirror-args &body mirror-forms)
-                     (cond ((> (length mirror-args) 2)
+                   (&mirror (field-name &optional (mirror-args nil mirror-args-provided-p) &body mirror-forms)
+                     (cond ((not mirror-args-provided-p)
+                            (setq mirror-args `(,(intern "field-string") ,(make-symbol "_ignored")))
+                            (setq mirror-forms `((insert ,(intern "field-string")))))
+                           ((> (length mirror-args) 2)
                             (error "At most two args in mirror transforms"))
-                           ((not (cadr mirror-args))
-                            (setcdr mirror-args '(_--snippet-ignored))))
+                           (t
+                            (nconc mirror-args
+                                   (cl-loop for i from (length mirror-args)
+                                            below 2
+                                            collect (make-symbol "_ignored")))))
                      `(let* ((fn (lambda ,mirror-args ,@mirror-forms))
                              (mirror (make-instance 'snippet--mirror
                                                     :parent snippet--current-field
@@ -369,7 +378,7 @@ pairs. Its meaning is not decided yet"
   `(defun ,name ,args ,docstring
           (with-dynamic-snippet ,@body)))
 
-(def-edebug-spec &mirror (sexp sexp &rest form))
+(def-edebug-spec &mirror (sexp &optional sexp &rest form))
 (def-edebug-spec &field (sexp &rest form))
 
 (put '&field 'lisp-indent-function 'defun)
@@ -419,14 +428,16 @@ pairs. Its meaning is not decided yet"
                  (snippet--object-end
                   (snippet--object-parent prev)))
                 ((and prev
+                      (snippet--object-end prev)
                       (= (point) (snippet--object-end prev)))
                  (snippet--object-end prev))
                 (t
                  (point-marker)))))
   (funcall fn)
-  ;; Only set the object's end if not set yet, i.e. when running its function
-  ;; some nested field might have set it already.
-  (unless (snippet--object-end object)
+  ;; Don't set the object's end if its already set and matches point. i.e. when
+  ;; running its function some nested field might have set it already and 
+  (unless (and (snippet--object-end object)
+               (= (snippet--object-end object) (point)))
     (setf (snippet--object-end object)
           (point-marker)))
   (when (snippet--object-parent object)

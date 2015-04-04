@@ -27,25 +27,37 @@
 (require 'snippet)
 (require 'ert)
 (require 'ert-x)
+(require 'cl-lib)
 
-(defvar snippet--test-snippets-alist nil)
-(setq snippet--test-snippets-alist
-      `((basic ((&field 1 "foo")
-                " bar "
-                (&mirror 1)))
-        (contrived ((&field 1)
-                    (&field 2)
-                    (&field 3)))
+(defvar snippet--fixtures nil
+  "An alist of (NAME . (STATIC-FIXTURE DYNAMIC-FIXTURE))")
+(setq snippet--fixtures
+      `((basic
+         ;; static version
+         ((&field 1 "foo")
+          " bar "
+          (&mirror 1))
+         ;; dynamic version
+         ((&field 1 "foo")
+          (insert " bar ")
+          (&mirror 1)))
+        (contrived
+         ;; static version
+         ((&field 1)
+          (&field 2)
+          (&field 3))
+         ;; dynamic version
+         ((cl-loop for i from 1 upto 3
+                   do (&field i))))
         (nested
-         ;; static
-         ;;
+         ;; static version
          ("a "
           (&field 1 (&nested (&field 2 "nested")
                              " "
                              (&field 3 "field")))
           " and its mirror: "
           (&mirror 1))
-         ;; dynamic
+         ;; dynamic version
          ((insert "a ")
           (&field 1
             (&field 2 (insert "nested"))
@@ -54,29 +66,65 @@
           (insert " and its mirror: ")
           (&mirror 1 (s e)
             (insert s))))
-        (mirror-of-nested-field ("a "
-                                 (&field 1 (&nested (&field 2 "nested")
-                                                    " "
-                                                    (&field 3 "field")))
-                                 (&mirror 3 (concat ", nested mirroring: "
-                                                    field-string))))
-        (more-nesting ("a "
-                       (&field 1 (&nested
-                                  "'"
-                                  (&field 2 "rain")
-                                  (&mirror 2 (apply #'string
-                                                    (reverse
-                                                     (string-to-list
-                                                      field-string))))
-                                  "'"))
-                       (&field 3 " and a field:")
-                       " "
-                       (&mirror 1)))
-        (printf ("printf (\""
-                 (&field 1 "%s")
-                 (&mirror 1 (if (string-match "%" field-string) "\"," "\")"))
-                 (&field 2)
-                 (&mirror 1 (if (string-match "%" field-string) "\)" ""))))
+        (mirror-of-nested-field
+         ;; static
+         ("a "
+          (&field 1 (&nested (&field 2 "nested")
+                             " "
+                             (&field 3 "field")))
+          (&mirror 3 (concat ", nested mirroring: "
+                             field-string)))
+         ;; dynamic
+         ((insert "a ")
+          (&field 1
+            (&field 2 (insert "nested"))
+            (insert " ")
+            (&field 3 (insert "field")))
+          (&mirror 3 (s)
+            (insert ", nested mirroring: " s))))
+        (more-nesting ; FIXME: horribly contrived, what is "rain"?
+         ;; static
+         ("a "
+          (&field 1 (&nested
+                     "'"
+                     (&field 2 "rain")
+                     (&mirror 2 (apply #'string
+                                       (reverse
+                                        (string-to-list
+                                         field-string))))
+                     "'"))
+          (&field 3 " and a field:")
+          " "
+          (&mirror 1))
+         ;; dynamic
+         ((insert "a ")
+          (&field 1
+            (insert "'")
+            (&field 2 "rain")
+            (&mirror 2 (s)
+              (apply #'string
+                     (reverse
+                      (string-to-list
+                       s))))
+            (insert "'"))
+          (&field 3 " and a field:")
+          (insert " ")
+          (&mirror 1)))
+        (printf
+         ;; static
+         ("printf (\""
+          (&field 1 "%s")
+          (&mirror 1 (if (string-match "%" field-string) "\"," "\")"))
+          (&field 2)
+          (&mirror 1 (if (string-match "%" field-string) "\)" "")))
+         ;; dynamic
+         ((insert "printf (\"")
+          (&field 1 "%s")
+          (&mirror 1 (f)
+            (if (string-match "%" f) "\"," "\")"))
+          (&field 2)
+          (&mirror 1 (f)
+            (if (string-match "%" f) "\)" ""))))
         (sprintf-maybe
          ;; static version
          ;; 
@@ -106,22 +154,37 @@
           (&mirror 1
             (field-string _field-empty-p)
             (if (string-match "%" field-string) "\)" ""))))
-        (emacs-version ((&field 1 emacs-version)
-                        " " (upcase (emacs-version)) " "
-                        (&mirror 1)))
+        (emacs-version
+         ;; static version
+         ((&field 1 emacs-version)
+          " " (upcase (emacs-version)) " "
+          (&mirror 1))
+         ;; dynamic version
+         ((&field 1 emacs-version)
+          (insert " " (upcase (emacs-version)) " ")
+          (&mirror 1)))
         (wrap-selected-region ("foo"
                                selected-text
                                "baz"
                                (&field 1 selected-text)))
-        (navigate-fields ("foo"
-                          &exit
-                          (&field 2)
-                          &field
-                          (&field last)
-                          (&field 1)))))
+        (navigate-fields
+         ;; static version
+         ("foo"
+          &exit
+          (&field 2)
+          &field
+          (&field last)
+          (&field 1))
+         ;; dynamic version
+         ((insert "foo")
+          (&exit)
+          (&field 2)
+          (&field)
+          (&field last)
+          (&field 1)))))
 
 (defun snippet--get-fixture (name &optional dynamic-p)
-  (let* ((assoc (assoc name snippet--test-snippets-alist)))
+  (let* ((assoc (assoc name snippet--fixtures)))
     (if dynamic-p
         (caddr assoc)
       (cadr assoc))))
