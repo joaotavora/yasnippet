@@ -59,11 +59,6 @@
 ;;
 ;; TODO: more documentation
 ;;
-;; TODO: "protection overlays" or some robust mechanism preventing the use from
-;;       inadvertenly destroying the snippet's structure and leaving its
-;;       incoherent carcass behind.  Alternatively, detect this and exit the
-;;       snippet beforehand.
-;;
 ;; TODO: primary field transformations: the (&transform ...) option to &field
 ;;       constructs.
 ;;
@@ -538,13 +533,24 @@ pairs. Its meaning is not decided yet"
           (insert retval))))))
 
 (defvar snippet--field-overlay nil)
+(defvar snippet--field-protection-overlays nil)
+(make-variable-buffer-local 'snippet--field-overlay)
+(make-variable-buffer-local 'snippet--field-protection-overlays)
+(put 'snippet--field-overlay 'permanent-local t)
+(put 'snippet--field-protection-overlays 'permanent-local t)
 
 (defun snippet--move-to-field (field)
-  (goto-char (snippet--object-start field))
-  (move-overlay snippet--field-overlay
-                (point)
-                (snippet--object-end field))
-  (overlay-put snippet--field-overlay 'snippet--field field))
+  (let ((start (snippet--object-start field))
+        (end (snippet--object-end field)))
+  (goto-char start)
+  (move-overlay snippet--field-overlay start end)
+  (move-overlay (car snippet--field-protection-overlays)
+                (max (point-min) (1- start))
+                start)
+  (move-overlay (cadr snippet--field-protection-overlays)
+                end
+                (min (point-max) (1+ end)))
+  (overlay-put snippet--field-overlay 'snippet--field field)))
 
 (defun snippet--update-field-mirrors (field)
   (mapc #'snippet--update-mirror (snippet--field-mirrors field))
@@ -559,7 +565,12 @@ pairs. Its meaning is not decided yet"
   ;;
   (let* ((field (overlay-get overlay 'snippet--field))
          (inhibit-modification-hooks t))
-    (cond (after?
+    (cond ((and after?
+                ;; Don't run if snippet is being exited
+                (not (snippet--exiting-p))
+                ;; Also don't run if in the middle of an undo
+                (not undo-in-progress))
+           
            ;; field clearing: if we're doing an insertion and the field hasn't
            ;; been modified yet, we're going to delete previous contents and
            ;; leave just the newly inserted text.
@@ -587,6 +598,11 @@ pairs. Its meaning is not decided yet"
           (t
            (snippet--open-object field)))))
 
+(defun snippet--field-protection-violated (_overlay after? _beg _end
+                                                   &optional _pre-change-len)
+  (unless (or after? undo-in-progress)
+    (snippet-exit "protection overlay violated")))
+
 (defun snippet--field-string (field)
   (let ((start (snippet--object-start field))
         (end (snippet--object-end field)))
@@ -601,6 +617,10 @@ pairs. Its meaning is not decided yet"
 
 (defface snippet-field-face
   '((t (:inherit 'region)))
+  "Face used to highlight the currently active field of a snippet")
+
+(defface snippet--protection-overlay-face
+  '((t (:background "tomato")))
   "Face used to highlight the currently active field of a snippet")
 
 (defvar snippet-field-keymap
@@ -636,7 +656,7 @@ PREV means move to the previous field."
       (let ((exit (overlay-get snippet--field-overlay
                                'snippet--exit)))
         (snippet--move-to-field exit)
-        (overlay-put snippet--field-overlay 'snippet--exit-reason "exit")))))
+        (snippet-exit "exit")))))
 
 (defun snippet-prev-field ()
   "Move the the start of the previous field in the current snippet.
@@ -645,8 +665,21 @@ Skips over nested fields if their parent has been modified."
   (interactive)
   (snippet-next-field t))
 
-(defun snippet-exit-snippet (&optional reason)
-  (overlay-put snippet--field-overlay 'snippet--exit-reason reason))
+(defun snippet-exit (&optional reason)
+  "Quit the currently active snippet."
+  (interactive (list "interactive quit"))
+  (cond (snippet--field-overlay
+         (overlay-put snippet--field-overlay 'snippet--exit-reason reason)
+         (unless (memq 'snippet--post-command-hook post-command-hook)
+           (display-warning 'snippet "Hook not present: forced snippet cleanup")
+           (snippet--cleanup reason)))
+        (t
+         (error "No active snippet"))))
+
+(defun snippet--exiting-p ()
+  
+  (overlay-get snippet--field-overlay 'snippet--exit-reason))
+
 
 
 ;;; Main
@@ -690,7 +723,7 @@ Skips over nested fields if their parent has been modified."
             (overlay-put overlay 'snippet--fields  fields)
             (overlay-put overlay 'snippet--exit    exit)
             (overlay-put overlay 'snippet--exit-reason nil)
-            (overlay-put overlay 'face '           snippet-field-face)
+            (overlay-put overlay 'face 'snippet-field-face)
             (overlay-put overlay
                          'modification-hooks
                          '(snippet--field-overlay-changed))
@@ -704,15 +737,34 @@ Skips over nested fields if their parent has been modified."
                          'keymap
                          snippet-field-keymap)
             overlay))
+    (setq snippet--field-protection-overlays
+          (list (make-overlay (point) (point) nil nil nil)
+                (make-overlay (point) (point) nil t nil)))
+    (mapc #'(lambda (ov)
+              (overlay-put ov
+                           'modification-hooks
+                           '(snippet--field-protection-violated))
+              (overlay-put ov
+                           'face (if snippet--debug
+                                     'snippet--protection-overlay-face)))
+          snippet--field-protection-overlays)
     (snippet-next-field)
     (add-hook 'post-command-hook 'snippet--post-command-hook 'append 'local)))
+
+(defun snippet--cleanup (reason)
+  (when snippet--field-overlay
+    (delete-overlay snippet--field-overlay)
+    (setq snippet--field-overlay nil))
+  (when snippet--field-protection-overlays
+    (mapc #'delete-overlay snippet--field-protection-overlays)
+    (setq snippet--field-protection-overlays nil))
+  (message "snippet exited (%s)" reason))
 
 (defun snippet--post-command-hook ()
   ;; TODO: exiting the snippet might someday run user-provided code, hence the
   ;; apparent overengineeredness
   ;; 
-  (let ((remove-self "unknown reason")
-        (exit-reason nil))
+  (let (remove-self exit-reason)
     (cond
      ((and snippet--field-overlay
            (not (overlay-buffer snippet--field-overlay)))
@@ -721,8 +773,7 @@ Skips over nested fields if their parent has been modified."
             exit-reason "overlay destroyed"))
      (snippet--field-overlay
       (setq exit-reason
-            (or (overlay-get snippet--field-overlay
-                             'snippet--exit-reason)
+            (or (snippet--exiting-p)
                 (and (or (< (point)
                             (overlay-start snippet--field-overlay))
                          (> (point)
@@ -741,13 +792,9 @@ Skips over nested fields if their parent has been modified."
         ;;
         (remove-hook 'post-command-hook 'snippet--post-command-hook))
       (remove-hook 'post-command-hook 'snippet--post-command-hook 'local))
-    (if (and snippet--debug snippet--field-overlay)
-        (snippet--debug-snippet snippet--field-overlay))
+    (if (and snippet--debug snippet--field-overlay) (snippet--debug-snippet))
     (when exit-reason
-      (when snippet--field-overlay
-        (delete-overlay snippet--field-overlay)
-        (setq snippet--field-overlay nil))
-      (message "snippet exited (%s)" exit-reason))))
+      (snippet--cleanup exit-reason))))
 
 
 ;;; Debug helpers
@@ -791,16 +838,21 @@ Skips over nested fields if their parent has been modified."
   (with-current-buffer (snippet--object-buffer exit)
     (format "exit %s" (if short "" (cl-call-next-method)))))
 
-(defun snippet--debug-snippet (field-overlay)
-  (with-current-buffer (get-buffer-create "*snippet-debug*")
-    (let ((inhibit-read-only t)
-          (sorted (cl-sort (cl-copy-list
-                            (overlay-get field-overlay 'snippet--objects))
-                           #'snippet--object-<)))
+(defun snippet--debug-snippet ()
+  (let ((inhibit-read-only t)
+        (sorted (cl-sort (cl-copy-list
+                          (overlay-get snippet--field-overlay
+                                       'snippet--objects))
+                         #'snippet--object-<))
+        (buffer (current-buffer)))
+    (with-current-buffer (get-buffer-create "*snippet-debug*")
       (erase-buffer)
       (cl-loop for object in sorted
-               do (insert (snippet--describe-object object) "\n")))
-    (display-buffer (current-buffer))))
+               do (insert
+                   (with-current-buffer buffer
+                     (snippet--describe-object object))
+                   "\n"))
+      (display-buffer (current-buffer)))))
 
 
 (provide 'snippet)
