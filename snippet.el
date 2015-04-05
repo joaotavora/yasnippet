@@ -48,8 +48,13 @@
 ;; mechanism *might* become extensible to provide frontends such as yasnippet
 ;; the capability to conveniently implement said fanciness.
 ;;
+;; TODO: primary field transformations: the (&transform ...) option to &field
+;;       constructs. In `define-dynamic-snippet', mirror forms should only be
+;;       evaluated for value. &exit should be generalized to also allow nested
+;;       fields.
+;;       
 ;; TODO: auto-indentation of the inserted snippet
-;; 
+;;
 ;; TODO: there should be somewhere a PROPERTIES argument, unimplemented at time
 ;; of writing, in the `define-snippet' macro which should probably understand a
 ;; set of properties controlling snippet's indentation, custom keymapping and
@@ -58,9 +63,6 @@
 ;; TODO: undo, specifically snippet revival
 ;;
 ;; TODO: more documentation
-;;
-;; TODO: primary field transformations: the (&transform ...) option to &field
-;;       constructs.
 ;;
 ;; TODO: (&exit ...) constructs with a default string should leave it marked and
 ;;       highlighted in the buffer on snippet-exit.  Yasnippet tried, but does
@@ -240,60 +242,71 @@ As `define-static-snippet' but doesn't define a function."
 
 (defmacro define-static-snippet (name _properties &optional docstring
                                       &rest snippet-forms)
-  "Define NAME as a snippet-inserting function.
+  "Define NAME as an interactive snippet-inserting function.
 
 Each form in SNIPPET-FORMS, inserted at point in order, can be:
 
-* A cons (&field FIELD-NAME FIELD-DEFAULT) definining a snippet
-  field. A snippet field can be navigated to using
+* A cons (&field [FIELD-NAME [FIELD-DEFAULT]]) definining a snippet
+  field. Snippet fields can be edited and be navigated to using
   `snippet-next-field' and `snippet-prev-field'. FIELD-NAME is
   optional and used for referring to the field in mirror
-  transforms. FIELD-DEFAULT is also optional and used for
-  producing a string that populates the field's default value at
-  snippet-insertion time.
+  transforms.
 
-  FIELD-DEFAULT can thus be a string literal, a lisp form
-  returning a string, or have the form (&nested SUB-FORM ...)
-  where each SUB-FORM is evaluated recursively according to the
-  rules of SNIPPET-FORMS.
+  FIELD-DEFAULT is optional and determines the field's starting
+  text. It can be any lisp form returning a string or have be a cons
+  (&transform FIELD-TRANSFORM) where FIELD-TRANSFORM is again a
+  lisp form returning a string. Choosing between these varieties
+  defines when and how these forms are evaluated. See below for
+  details.
 
-  FIELD-DEFAULT can additionally also be (&transform
-  FIELD-TRANSFORM) in which case the string value produced by
-  FIELD-TRANSFORM is used for populating not only the field's
-  default value, but also the field's value after each command
-  while the snippet is alive.
+  FIELD-DEFAULT can also be a cons (&nested SUB-FORMS) where each
+  form in SUB-FORMS is evaluated recursively according to the
+  rules of SNIPPET-FORMS, thus producing nested fields and
+  mirrors.
 
-* A cons (&mirror FIELD-NAME MIRROR-TRANSFORM) defining a mirror
+* A cons (&mirror FIELD-NAME [MIRROR-TRANSFORM]) defining a mirror
   of the field named FIELD-NAME. MIRROR-TRANSFORM is an optional
-  form, called after each command while the snippet is alive to
-  produce a string that becomes the mirror text.
+  form producing a string that becomes the mirror text. If it is
+  not provided the mirror's text always matches FIELD-NAME's.
 
-* A string literal or a lisp form, call it CONSTANT, evaluated at
-  snippet-insertion time and producing a string that is a part of
-  the snippet but constant while the snippet is alive.
+* Any lisp form producing a string, call it CONSTANT, that is a
+  part of the snippet but constant while the snippet is alive.
 
-* A form (&exit EXIT-DEFAULT), defining the point within the
-  snippet where point should be placed when the snippet is
-  exited. EXIT-DEFAULT is optional and is evaluated at
-  snippet-insertion time to produce a string that remains a
-  constant part of the snippet while it is alive, but is
-  automatically selected when the snippet is exited.
+* A cons (&exit [EXIT-DEFAULT]), defining a special field within
+  the snippet where point should be placed when the snippet is
+  exited normally. EXIT-DEFAULT has the same semantics as
+  FIELD-DEFAULT.
 
 The forms CONSTANT, FIELD-DEFAULT, MIRROR-TRANSFORM,
-FIELD-TRANSFORM and EXIT-DEFAULT are evaluated with the variable
-`region-string' set to the text of the buffer selected at
-snippet-insertion time. If no region was selected the value of
-this variable is the empty string.
+FIELD-TRANSFORM and EXIT-DEFAULT are all evaluated at
+snippet-insertion-time and with the variable `region-string' set
+to the text of the buffer selected at snippet-insertion time. If
+no region was active the value of this variable is the empty
+string.
 
-The forms MIRROR-TRANSFORM and FIELD-TRANSFORM are evaluated with
-the variable `field-string' set to the text contained in the
-corresponding field. If the field is empty, this variable is the
-empty string and the additional variable `field-empty-p' is t.
+The forms MIRROR-TRANSFORM and FIELD-TRANSFORM are additionally
+also evaluated each time the field is changed. Moreover,
+FIELD-TRANSFORM is also evaluated when the field is entered or
+left. These forms are evaluated with the following variables set:
+
+* `field-string' is set to the text contained in the field;
+* `field-left' is non-nil if the field is being left;
+* `field-entered' is non-nil if the field is being entered;
+* `field-modified-p' is non-nil if the field has ever been modified
+  since snippet creation
 
 If the form CONSTANT returns nil or the empty string, it is
-considered to have returned a single whitespace. If any other
-form returns nil, it is considered to have returned the empty
-string.
+considered to have returned a single whitespace.
+
+If FIELD-TRANSFORM returns a string, it replaces the fields text,
+either at snippet-insertion-time or when the field is being
+edited, entered or left. If FIELD-TRANSFORM returns nil at
+snippet-insertion-time, it is considered to have returned the
+empty string. If it returns nil on any other occasion, the field
+is left unchanged.
+
+If any other form returns nil, it is considered to have returned
+the empty string.
 
 PROPERTIES is an even-numbered property list of (KEY VAL)
 pairs. Its meaning is not decided yet"
@@ -303,6 +316,7 @@ pairs. Its meaning is not decided yet"
     (push docstring snippet-forms)
     (setq docstring nil))
   `(defun ,name () ,docstring
+          (interactive)
           (with-static-snippet ,@snippet-forms)))
 
 
@@ -377,13 +391,80 @@ pairs. Its meaning is not decided yet"
 
 
 (defmacro define-dynamic-snippet (name args &optional docstring &rest body)
+  "Define NAME as a snippet-inserting function.
+
+Inside BODY the following local macros are available to
+create snippet fields and mirrors:
+
+* (&field NAME [FIELD-BODY]) declares the start of a snippet
+  field at point. Snippet fields can be edited and be navigated
+  to using `snippet-next-field' and
+  `snippet-prev-field'. FIELD-BODY is a list of lisp forms which
+  are evaluted for both return value and side-effects: Any text
+  inserted becomes the field's starting text. If a string is
+  returned, it is also inserted at the end of the field. Since
+  FIELD-BODY is evaluated according to the rules of BODY, nested
+  mirrors and fields become possible. Alternatively, FIELD-BODY
+  can also be a single form, a cons (&transform
+  FIELD-TRANSFORM-ARGS FIELD-TRANSFORM). See below for details.
+
+* (&mirror FIELD-NAME [MIRROR-TRANSFORM-ARGS MIRROR-TRANSFORM])
+  declares the start of a mirror at point. If
+  MIRROR-TRANSFORM-ARGS and MIRROR-TRANSFORM are ommited the
+  mirror's text always matches FIELD-NAME'S. If provided,
+  MIRROR-TRANSFORM-ARGS is a list of 0 to 4 symbols that are
+  automatically bound to values extracted from the snippet field
+  FIELD-NAME and that can be used by the single form
+  MIRROR-TRANSFORM to produce the mirror's text. The values
+  passed in are, in order:
+
+  * a string containing the field's text;
+  * a boolean indicating if the field has just been entered;
+  * a boolean indicating if the field has just been left;
+  * a boolean indicating if the field has ever been modified since
+    insertion
+
+  MIRROR-TRANSFORM can also refer to any lexically available
+  symbols established in by other forms in BODY.
+
+* (&exit [EXIT-BODY]) declares a special field special within the
+  snippet where point should be placed when the snippet is exited
+  normally. EXIT-BODY has the same semantics as FIELD-BODY.
+
+Except for these special cases, forms in BODY are evaluated
+normally. If at least one snippet field was declared, a navigable
+snippet is inserted at the end.
+
+MIRROR-TRANSFORM is evaluated at snippet-insertion time and each
+time the corresponding field changes to produce the mirror's
+text. If it returns nil, it is considered to have returned the
+empty string.
+
+If FIELD-BODY has the form (&transform FIELD-TRANSFORM-ARGS
+FIELD-TRANSFORM), FIELD-TRANSFORM is passed the same parameters
+as MIRROR-TRANSFORM, except that at snippet-insertion time, the
+value of the first parameter to FIELD-TRANSFORM-ARGS is nil. At
+snippet-insertion time the field's starting text should be
+produced. If it returns nil, it is considered to have returned
+the empty string.
+
+FIELD-TRANSFORM is also called every time the field is edited or
+when it is entered or left. It may then return a string replacing
+the field's text or return nil to leave it unchanged. If the
+field is changed in this manner, any corresponding mirror's
+MIRROR-TRANSFORMS are also evaluated at the time."
   (declare (debug (&define name sexp def-body))
            (indent defun))
-  (unless (stringp docstring)
-    (push docstring body)
-    (setq docstring nil))
-  `(defun ,name ,args ,docstring
-          (with-dynamic-snippet ,@body)))
+  (let ((interactive nil))
+    (unless (stringp docstring)
+      (push docstring body)
+      (setq docstring nil))
+    (if (eq (car-safe (car body)) 'interactive)
+        (setq interactive (pop body)))
+    `(defun ,name ,args ,docstring
+            ,@(when interactive
+                `(,interactive))
+            (with-dynamic-snippet ,@body))))
 
 (def-edebug-spec &mirror (sexp &optional sexp &rest form))
 (def-edebug-spec &field (sexp &rest form))
