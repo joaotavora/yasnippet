@@ -41,18 +41,7 @@ In a recent emacs `M-x list-packages` is the recommended way to list and install
 ## Install with el-get
 
 El-get is a nice way to get the most recent version, too. See
-https://github.com/dimitri/el-get for instructions. Be sure to install the
-"master" branch since the 3.x series still use the old googlecode code, base.
-Consider using this "local" recipe.
-
-    (push '(:name yasnippet
-                  :website "https://github.com/capitaomorte/yasnippet.git"
-                  :description "YASnippet is a template system for Emacs."
-                  :type github
-                  :pkgname "capitaomorte/yasnippet"
-                  :features "yasnippet"
-                  :compile "yasnippet.el")
-          el-get-sources)
+https://github.com/dimitri/el-get for instructions.
 
 ## Use `yas-minor-mode` on a per-buffer basis
 
