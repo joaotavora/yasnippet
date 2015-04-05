@@ -8,12 +8,10 @@ templates. Bundled language templates include: C, C++, C#, Perl,
 Python, Ruby, SQL, LaTeX, HTML, CSS and more. The snippet syntax
 is inspired from [TextMate's][textmate-snippets] syntax, you can
 even [import](#import) most TextMate templates to
-YASnippet. Watch [a demo on YouTube][youtube-demo] or download a
-[higher resolution version][high-res-demo].
+YASnippet. Watch [a demo on YouTube][youtube-demo].
 
 [textmate-snippets]: http://manual.macromates.com/en/snippets
 [youtube-demo]: http://www.youtube.com/watch?v=ZCGmZK4V7Sg
-[high-res-demo]: http://yasnippet.googlecode.com/files/yas_demo.avi
 
 # Installation
 
