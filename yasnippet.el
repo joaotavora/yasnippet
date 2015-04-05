@@ -4434,6 +4434,7 @@ and return the directory.  Return nil if not found."
 
 (defun yas-initialize ()
   "For backward compatibility, enable `yas-minor-mode' globally."
+  (declare (obsolete "Use (yas-global-mode 1) instead." "0.8"))
   (yas-global-mode 1))
 
 (defvar yas--backported-syms '(;; `defcustom's
