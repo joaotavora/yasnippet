@@ -41,7 +41,7 @@
 ;;           stored.  Can also be a list of directories.  In that case,
 ;;           when used for bulk (re)loading of snippets (at startup or
 ;;           via `yas-reload-all'), directories appearing earlier in
-;;           the list shadow other dir's snippets.  Also, the first
+;;           the list override other dir's snippets.  Also, the first
 ;;           directory is taken as the default for storing the user's
 ;;           new snippets.
 ;;
@@ -165,7 +165,7 @@ Each element, a string or a symbol whose value is a string,
 designates a top-level directory where per-mode snippet
 directories can be found.
 
-Elements appearing earlier in the list shadow later elements'
+Elements appearing earlier in the list override later elements'
 snippets.
 
 The first directory is taken as the default for storing snippet's
@@ -4292,7 +4292,7 @@ When multiple expressions are found, only the last one counts."
                    (or (and fallback
                             (format "call command `%s'."
                                     (pp-to-string fallback)))
-                       "do nothing (`yas-expand' doesn't shadow\nanything).")))
+                       "do nothing (`yas-expand' doesn't override\nanything).")))
                 ((eq yas-fallback-behavior 'return-nil)
                  "do nothing.")
                 (t "defer to `yas-fallback-behavior' (which see)."))))

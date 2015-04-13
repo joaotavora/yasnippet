@@ -48,7 +48,7 @@
                                   '("~/Downloads/interesting-snippets")))
    #+end_src
 
-   Collections appearing earlier in the list shadow snippets with same names
+   Collections appearing earlier in the list override snippets with same names
    appearing in collections later in the list. [[sym:yas-new-snippet][=yas-new-snippet=]] always stores
    snippets in the first collection.
 
