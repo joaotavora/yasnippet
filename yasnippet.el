@@ -1702,10 +1702,10 @@ the current buffers contents."
 (defun yas--load-yas-setup-file (file)
   (if (not yas--creating-compiled-snippets)
       ;; Normal case.
-      (load file 'noerror)
+      (load file 'noerror (<= yas-verbosity 2))
     (let ((elfile (concat file ".el")))
       (when (file-exists-p elfile)
-        (insert ";;; .yas-setup.el support file if any:\n;;;\n")
+        (insert ";;; contents of the .yas-setup.el support file:\n;;;\n")
         (insert-file-contents elfile)
         (goto-char (point-max))))))
 
