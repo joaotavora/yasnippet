@@ -135,7 +135,7 @@
                   (princ yas--version (current-buffer)))))
        (proj-plist
         `(,@(when (fboundp 'org-html-publish-to-html)
-              '(:publishing-function 'org-html-publish-to-html))
+              '(:publishing-function org-html-publish-to-html))
           :base-directory ,dir :publishing-directory ,dir
           :html-preamble
           ,(with-temp-buffer
