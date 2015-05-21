@@ -182,19 +182,25 @@ created with `yas-new-snippet'. "
                          (equal old new))
                (yas-reload-all)))))
 
-(defun yas-snippet-dirs ()
-  "Return variable `yas-snippet-dirs' as list of strings."
+(defun yas-snippet-dirs (&optional silent)
+  "Return variable `yas-snippet-dirs' as list of strings.
+If SILENT is non-nil, don't issue warnings on inexistent or
+unreadable directories. "
   (cl-loop for e in (if (listp yas-snippet-dirs)
                         yas-snippet-dirs
                       (list yas-snippet-dirs))
-           collect
-           (cond ((stringp e) e)
-                 ((and (symbolp e)
-                       (boundp e)
-                       (stringp (symbol-value e)))
-                  (symbol-value e))
-                 (t
-                  (error "[yas] invalid element %s in `yas-snippet-dirs'" e)))))
+           for value = (cond ((stringp e) e)
+                             ((and (symbolp e)
+                                   (boundp e)
+                                   (stringp (symbol-value e)))
+                              (symbol-value e))
+                             (t
+                              (error "[yas] invalid element %s in `yas-snippet-dirs'" e)))
+           if (and (file-readable-p value)
+                   (file-directory-p value))
+           collect value
+           else if (not silent) 
+           do (yas--warning "%s is not a valid readable directory in `yas-snippet-dirs'" value)))
 
 (defvaralias 'yas/root-directory 'yas-snippet-dirs)
 
@@ -1317,8 +1323,8 @@ return an expression that when evaluated will issue an error."
                        (read-kbd-macro keybinding 'need-vector))))
           res)
       (error
-       (yas--message 3 "warning: keybinding \"%s\" invalid since %s."
-                keybinding (error-message-string err))
+       (yas--warning "keybinding \"%s\" invalid since %s."
+                     keybinding (error-message-string err))
        nil))))
 
 (defun yas--table-get-create (mode)
@@ -1765,8 +1771,9 @@ With prefix argument USE-JIT do jit-loading of snippets."
     ;; 
     (cl-loop for buffer in impatient-buffers
              do (with-current-buffer buffer (yas--load-pending-jits))))
-  (when interactive
-    (yas--message 3 "Loaded snippets from %s." top-level-dir)))
+  (if use-jit
+      (yas--message 3 "Prepared jit-loading of %s" directory)
+    (yas--message 3 "Loaded  %s" directory)))
 
 (defun yas--load-directory-1 (directory mode-sym)
   "Recursively load snippet templates from DIRECTORY."
@@ -1808,22 +1815,6 @@ With prefix argument USE-JIT do jit-loading of snippets."
     (dolist (subdir (yas--subdirs directory))
       (yas--load-directory-2 subdir
                             mode-sym))))
-
-(defun yas--load-snippet-dirs (&optional nojit)
-  "Reload the directories listed in `yas-snippet-dirs' or
-prompt the user to select one."
-  (let (errors)
-    (if yas-snippet-dirs
-        (dolist (directory (reverse (yas-snippet-dirs)))
-          (cond ((file-directory-p directory)
-                 (yas-load-directory directory (not nojit))
-                 (if nojit
-                     (yas--message 3 "Loaded %s" directory)
-                   (yas--message 3 "Prepared just-in-time loading for %s" directory)))
-                (t
-                 (push (yas--message 0 "Check your `yas-snippet-dirs': %s is not a directory" directory) errors))))
-      (call-interactively 'yas-load-directory))
-    errors))
 
 (defun yas-reload-all (&optional no-jit interactive)
   "Reload all snippets and rebuild the YASnippet menu.
@@ -1876,18 +1867,16 @@ prefix argument."
       ;;
       (setq yas--scheduled-jit-loads (make-hash-table))
 
-      ;; Reload the directories listed in `yas-snippet-dirs' or prompt
-      ;; the user to select one.
+      ;; Reload the directories listed in `yas-snippet-dirs'
       ;;
-      (setq errors (yas--load-snippet-dirs no-jit))
+      (mapc #'yas-load-directory (reverse (yas-snippet-dirs)))
       ;; Reload the direct keybindings
       ;;
       (yas-direct-keymaps-reload)
 
       (run-hooks 'yas-after-reload-hook)
       (yas--message 3 "Reloaded everything%s...%s."
-                   (if no-jit "" " (snippets will load just-in-time)")
-                   (if errors " (some errors, check *Messages*)" "")))))
+                   (if no-jit "" " (snippets will load just-in-time)")))))
 
 (defvar yas-after-reload-hook nil
   "Hooks run after `yas-reload-all'.")
@@ -2396,8 +2385,10 @@ Returns a list of elements (TABLE . DIRS) where TABLE is a
 where snippets of table might exist."
   (let ((main-dir (replace-regexp-in-string
                    "/+$" ""
-                   (or (first (or (yas-snippet-dirs)
-                                  (setq yas-snippet-dirs '("~/.emacs.d/snippets")))))))
+                   (or (first (yas-snippet-dirs 'silent))
+                       (progn
+                         (yas--warning "No valid `yas-snippet-dirs', using \"~/.emacs.d/snippets\"")
+                         "~/.emacs.d/snippets"))))
         (tables (or (and table
                          (list table))
                     (yas--get-snippet-tables))))
@@ -3875,7 +3866,7 @@ Meant to be called in a narrowed buffer, does various passes"
       (widen)
       (condition-case _
           (indent-according-to-mode)
-        (error (yas--message 3 "Warning: `yas--indent-according-to-mode' having problems running %s" indent-line-function)
+        (error (yas--warning "`yas--indent-according-to-mode' having problems running %s" indent-line-function)
                nil)))
     (mapc #'(lambda (marker)
               (set-marker marker (point)))
