@@ -1772,8 +1772,8 @@ With prefix argument USE-JIT do jit-loading of snippets."
     (cl-loop for buffer in impatient-buffers
              do (with-current-buffer buffer (yas--load-pending-jits))))
   (if use-jit
-      (yas--message 3 "Prepared jit-loading of %s" directory)
-    (yas--message 3 "Loaded  %s" directory)))
+      (yas--message 3 "Prepared jit-loading of %s" top-level-dir)
+    (yas--message 3 "Loaded  %s" top-level-dir)))
 
 (defun yas--load-directory-1 (directory mode-sym)
   "Recursively load snippet templates from DIRECTORY."
