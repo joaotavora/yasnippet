@@ -1875,7 +1875,7 @@ prefix argument."
       (yas-direct-keymaps-reload)
 
       (run-hooks 'yas-after-reload-hook)
-      (yas--message 3 "Reloaded everything%s...%s."
+      (yas--message 3 "Reloaded everything%s...."
                    (if no-jit "" " (snippets will load just-in-time)")))))
 
 (defvar yas-after-reload-hook nil
