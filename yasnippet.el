@@ -3065,11 +3065,13 @@ If there's none, exit the snippet."
     ;;
     (when (and active-field
                (yas--field-transform active-field))
-      (let* ((yas-moving-away-p t)
+      (let* ((inhibit-modification-hooks t)
+             (yas-moving-away-p t)
              (yas-text (yas--field-text-for-display active-field))
              (yas-modified-p (yas--field-modified-p active-field)))
         ;; primary field transform: exit call to field-transform
-        (yas--eval-lisp (yas--field-transform active-field))))
+        (yas-replace-field-contents active-field
+                                    (yas--eval-lisp (yas--field-transform active-field)))))
     ;; Now actually move...
     (cond ((and target-pos (>= target-pos (length live-fields)))
            (yas-exit-snippet snippet))
@@ -4239,18 +4241,21 @@ When multiple expressions are found, only the last one counts."
   (when (yas--field-transform field)
     (let ((transformed (and (not (eq (yas--field-number field) 0))
                             (yas--apply-transform field field))))
-      (when (and transformed
-                 (not (string= transformed (buffer-substring-no-properties (yas--field-start field)
-                                                                           (yas--field-end field)))))
-        (setf (yas--field-modified-p field) t)
-        (goto-char (yas--field-start field))
-        (yas--inhibit-overlay-hooks
-          (insert transformed)
-          (if (> (yas--field-end field) (point))
-              (delete-region (point) (yas--field-end field))
-            (set-marker (yas--field-end field) (point))
-            (yas--advance-start-maybe (yas--field-next field) (point)))
-          t)))))
+      (yas-replace-field-contents field transformed))))
+
+(defun yas-replace-field-contents (field contents)
+  (when (and contents
+             (not (string= contents (buffer-substring-no-properties
+                                     (yas--field-start field)
+                                     (yas--field-end field)))))
+  (setf (yas-field-modified-p field) t)
+  (goto-char (yas-field-start field))
+  (insert contents)
+  (if (> (yas-field-end field) (point))
+      (delete-region (point) (yas-field-end field))
+    (set-marker (yas-field-end field) (point))
+    (yas-advance-start-maybe (yas-field-next field) (point)))
+  t))
 
 
 ;;; Post-command hook:
