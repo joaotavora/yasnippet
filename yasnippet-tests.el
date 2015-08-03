@@ -433,6 +433,14 @@ TODO: correct this bug!"
           ("lisp-interaction-mode" ("sc" . "brother from another mother"))))
        ,@body))))
 
+(ert-deftest snippet-lookup ()
+  "Test `yas-lookup-snippet'."
+  (yas-with-some-interesting-snippet-dirs
+   (yas-reload-all 'no-jit)
+   (should (equal (yas-lookup-snippet "printf" 'c-mode) "printf($1);"))
+   (should (equal (yas-lookup-snippet "def" 'c-mode) "# define"))
+   (should-not (yas-lookup-snippet "no such snippet" nil 'noerror))
+   (should-not (yas-lookup-snippet "printf" 'emacs-lisp-mode 'noerror))))
 
 (ert-deftest basic-jit-loading ()
   "Test basic loading and expansion of snippets"
