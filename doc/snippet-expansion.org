@@ -102,9 +102,8 @@ prefer.
 
 ** Expanding from emacs-lisp code
 
-Sometimes you might want to expand a snippet directly from you own
-elisp code. You should call
-[[sym:yas-expand-snippet][=yas-expand-snippet=]] instead of
+Sometimes you might want to expand a snippet directly from your own
+elisp code. You should call [[sym:yas-expand-snippet][=yas-expand-snippet=]] instead of
 [[sym:yas-expand][=yas-expand=]] in this case.
 
 As with expanding from the menubar, the condition system and multiple
