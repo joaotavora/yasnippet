@@ -55,13 +55,12 @@ These customizations can also be found in the menu itself, under the
 
 The "Indenting" submenu contains options to control the values of
 [[sym:yas-indent-line][=yas-indent-line=]] and [[sym:yas-also-auto-indent-first-line][=yas-also-auto-indent-first-line=]]. See
-[[./snippet-development.org][Writing snippets]] .
+[[./snippet-development.org][Writing snippets]].
 
 * Prompting method
 
 The "Prompting method" submenu contains options to control the value of
-[[sym:yas-prompt-functions][=yas-prompt-functions=]]. See [[./snippet-expansion.org][Expanding
-snippets]] .
+[[sym:yas-prompt-functions][=yas-prompt-functions=]]. See [[./snippet-expansion.org][Expanding snippets]].
 
 * Misc
 

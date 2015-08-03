@@ -102,21 +102,23 @@ prefer.
 
 ** Expanding from emacs-lisp code
 
-Sometimes you might want to expand a snippet directly from you own
-elisp code. You should call
-[[sym:yas-expand-snippet][=yas-expand-snippet=]] instead of
-[[sym:yas-expand][=yas-expand=]] in this case.
+Sometimes you might want to expand a snippet directly from your own
+elisp code. You should call [[sym:yas-expand-snippet][=yas-expand-snippet=]] instead of
+[[sym:yas-expand][=yas-expand=]] in this case. [[sym:yas-expand-snippet][=yas-expand-snippet=]] takes a string in
+snippet template syntax, if you want to expand an existing snippet you
+can use [[sym:yas-lookup-snippet][=yas-lookup-snippet=]] to find its contents by name.
 
 As with expanding from the menubar, the condition system and multiple
-candidates doesn't affect expansion. In fact, expanding from the
-YASnippet menu has the same effect of evaluating the follow code:
+candidates doesn't affect expansion (the condition system does affect
+[[sym:yas-lookup-snippet][=yas-lookup-snippet=]] though). In fact, expanding from the YASnippet
+menu has the same effect of evaluating the follow code:
 
 #+BEGIN_SRC emacs-lisp
   (yas-expand-snippet template)
 #+END_SRC
 
-See the internal documentation on [[sym:yas-expand-snippet][=yas-expand-snippet=]] for more
-information.
+See the internal documentation on [[sym:yas-expand-snippet][=yas-expand-snippet=]] and
+[[sym:yas-lookup-snippet][=yas-lookup-snippet=]] for more information.
 
 * Controlling expansion
 

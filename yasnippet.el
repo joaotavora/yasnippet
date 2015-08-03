@@ -725,7 +725,7 @@ defined direct keybindings to the command
                      yas--direct-keymaps))
            yas--tables))
 
-(defun yas--modes-to-activate ()
+(defun yas--modes-to-activate (&optional mode)
   "Compute list of mode symbols that are active for `yas-expand'
 and friends."
   (let (dfs)
@@ -740,8 +740,10 @@ and friends."
                                       (not (memq neighbour explored))
                                       (symbolp neighbour))
                             append (funcall dfs neighbour explored)))))
-    (remove-duplicates (append yas--extra-modes
-                               (funcall dfs major-mode)))))
+    (remove-duplicates (if mode
+                           (funcall dfs mode)
+                         (append yas--extra-modes
+                                 (funcall dfs major-mode))))))
 
 (defvar yas-minor-mode-hook nil
   "Hook run when `yas-minor-mode' is turned on.")
@@ -1333,15 +1335,17 @@ return an expression that when evaluated will issue an error."
             yas--direct-keymaps))
     table))
 
-(defun yas--get-snippet-tables ()
-  "Get snippet tables for current buffer.
+(defun yas--get-snippet-tables (&optional mode)
+  "Get snippet tables for MODE.
+
+MODE defaults to the current buffer's `major-mode'.
 
 Return a list of `yas--table' objects.  The list of modes to
 consider is returned by `yas--modes-to-activate'"
   (remove nil
           (mapcar #'(lambda (name)
                       (gethash name yas--tables))
-                  (yas--modes-to-activate))))
+                  (yas--modes-to-activate mode))))
 
 (defun yas--menu-keymap-get-create (mode &optional parents)
   "Get or create the menu keymap for MODE and its PARENTS.
@@ -2304,6 +2308,24 @@ Honours `yas-choose-tables-first', `yas-choose-keys-first' and
                           tables)))
             (remove-duplicates (mapcan #'yas--table-templates tables)
                                :test #'equal))))
+
+(defun yas-lookup-snippet (name &optional mode noerror)
+  "Get the snippet content for the snippet NAME in MODE's tables.
+
+MODE defaults to the current buffer's `major-mode'.  If NOERROR
+is non-nil, then don't signal an error if there isn't any snippet
+called NAME.
+
+Honours `yas-buffer-local-condition'."
+  (let* ((yas-choose-tables-first nil)  ; avoid prompts
+         (yas-choose-keys-first nil)
+         (snippet (cl-find name (yas--all-templates
+                                 (yas--get-snippet-tables mode))
+                           :key #'yas--template-name :test #'string=)))
+    (cond
+     (snippet (yas--template-content snippet))
+     (noerror nil)
+     (t (error "No snippet named: %s" name)))))
 
 (defun yas-insert-snippet (&optional no-condition)
   "Choose a snippet to expand, pop-up a list of choices according
