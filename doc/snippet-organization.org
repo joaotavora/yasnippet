@@ -112,9 +112,24 @@
 
 ** TODO
 
-* TODO The =.yas-compiled-snippet.el= file
+* The =.yas-compiled-snippet.el= file
 
-** TODO
+   You may compile a top-level snippet directory with the
+   =yas-compile-directory= function, which will create a
+   =.yas-compiled-snippets.el= file under each mode subdirectory,
+   which contains definitions for all snippets in the subdirectory.
+   Compilation helps improve loading time.
+
+   Alternatively, you may compile all directories in the list
+   =yas-snippet-dirs= with the =yas-recompile-all= function.
+
+   *Caveat.* At the moment, when you try to use the
+   =yas-visit-snippet-file= function to edit a compiled snippet loaded
+   from a =.yas-compiled-snippets.el= file, the content of the snippet
+   will be opened in a buffer, but it might not be a verbatim copy of
+   your original snippet, and =yas-load-snippet-buffer-and-close=
+   won't offer to save to the original snippet file. See
+   [[https://github.com/capitaomorte/yasnippet/issues/597][#597]].
 
 * TODO The =.yas-skip= file
 
