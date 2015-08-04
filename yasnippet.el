@@ -1665,33 +1665,16 @@ file with the same uuid would replace the previous snippet.
 You can use `yas--parse-template' to return such lists based on
 the current buffers contents."
   (if yas--creating-compiled-snippets
-      (progn
+      (let ((print-length nil))
         (insert ";;; Snippet definitions:\n;;;\n")
-        (let ((literal-snippets (list))
-              (print-length nil))
-          (dolist (snippet snippets)
-            (let ((key                    (nth 0 snippet))
-                  (template-content       (nth 1 snippet))
-                  (name                   (nth 2 snippet))
-                  (condition              (nth 3 snippet))
-                  (group                  (nth 4 snippet))
-                  (expand-env             (nth 5 snippet))
-                  (file                   nil) ;; omit on purpose
-                  (binding                (nth 7 snippet))
-                  (uuid                   (nth 8 snippet)))
-              (push `(,key
-                      ,template-content
-                      ,name
-                      ,condition
-                      ,group
-                      ,expand-env
-                      ,file
-                      ,binding
-                      ,uuid)
-                    literal-snippets)))
-          (insert (pp-to-string
-                   `(yas-define-snippets ',mode ',literal-snippets)))
-          (insert "\n\n")))
+        (dolist (snippet snippets)
+          ;; We omit file because the snippet will be loaded from
+          ;; the compiled file instead, so deleting or changing
+          ;; the original won't have any effect.
+          (setcar (nthcdr 6 snippet) nil))
+        (insert (pp-to-string
+                 `(yas-define-snippets ',mode ',snippets)))
+        (insert "\n\n"))
     ;; Normal case.
     (let ((snippet-table (yas--table-get-create mode))
           (template nil))
@@ -2584,10 +2567,9 @@ and `kill-buffer' instead."
               ;;
               (not (yas--template-file yas--editing-template))
               (not (file-writable-p (yas--template-file yas--editing-template)))
-              (and (listp yas-snippet-dirs)
-                   (second yas-snippet-dirs)
-                   (not (string-match (expand-file-name (first yas-snippet-dirs))
-                                      (yas--template-file yas--editing-template)))))
+              (and (cdr-safe yas-snippet-dirs)
+                   (not (string-prefix-p (expand-file-name (car yas-snippet-dirs))
+                                         (yas--template-file yas--editing-template)))))
              (y-or-n-p (yas--format "Looks like a library or new snippet. Save to new file? ")))
     (let* ((option (first (yas--guess-snippet-directories (yas--template-table yas--editing-template))))
            (chosen (and option
