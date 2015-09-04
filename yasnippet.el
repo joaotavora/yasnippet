@@ -914,7 +914,27 @@ Honour `yas-dont-activate', which see."
 
 ;;; Internal structs for template management
 
-(defstruct (yas--template (:constructor yas--make-template))
+(cl-defstruct (yas--template
+               (:constructor yas--make-template)
+               ;; Handles `yas-define-snippets' format, plus the
+               ;; initial TABLE argument.
+               (:constructor
+                yas--define-snippets-2
+                (table
+                 key content
+                 &optional xname condition group
+                 expand-env file xkeybinding xuuid
+                 &aux
+                 (name (or xname
+                           (and file (file-name-directory file))
+                           key))
+                 (keybinding (yas--read-keybinding xkeybinding))
+                 (uuid (or xuuid name))
+                 (old (gethash uuid (yas--table-uuidhash table)))
+                 (menu-binding-pair
+                  (and old (yas--template-menu-binding-pair old)))
+                 (perm-group
+                  (and old (yas--template-perm-group old))))))
   "A template for a snippet."
   key
   content
@@ -1081,7 +1101,8 @@ keybinding)."
 (defun yas--update-template (table template)
   "Add or update TEMPLATE in TABLE.
 
-Also takes care of adding and updating to the associated menu."
+Also takes care of adding and updating to the associated menu.
+Return TEMPLATE."
   ;; Remove from table by uuid
   ;;
   (yas--remove-template-by-uuid table (yas--template-uuid template))
@@ -1090,7 +1111,8 @@ Also takes care of adding and updating to the associated menu."
   (yas--add-template table template)
   ;; Take care of the menu
   ;;
-  (yas--update-template-menu table template))
+  (yas--update-template-menu table template)
+  template)
 
 (defun yas--update-template-menu (table template)
   "Update every menu-related for TEMPLATE."
@@ -1600,42 +1622,10 @@ Optional PROMPT sets the prompt to use."
 
 (defun yas--define-snippets-1 (snippet snippet-table)
   "Helper for `yas-define-snippets'."
-  ;; X) Calculate some more defaults on the values returned by
-  ;; `yas--parse-template'.
-  ;;
-  (let* ((file (seventh snippet))
-         (key (car snippet))
-         (name (or (third snippet)
-                   (and file
-                        (file-name-directory file))))
-         (condition (fourth snippet))
-         (group (fifth snippet))
-         (keybinding (yas--read-keybinding (eighth snippet)))
-         (uuid (or (ninth snippet)
-                  name))
-         (template (or (gethash uuid (yas--table-uuidhash snippet-table))
-                       (yas--make-template :uuid uuid
-                                           :table snippet-table))))
-    ;; X) populate the template object
-    ;;
-    (setf (yas--template-key template)        key)
-    (setf (yas--template-content template)    (second snippet))
-    (setf (yas--template-name template)       (or name key))
-    (setf (yas--template-group template)      group)
-    (setf (yas--template-condition template)  condition)
-    (setf (yas--template-expand-env template) (sixth snippet))
-    (setf (yas--template-file template)       (seventh snippet))
-    (setf (yas--template-keybinding template) keybinding)
-
-    ;; X) Update this template in the appropriate table. This step
-    ;;    also will take care of adding the key indicators in the
-    ;;    templates menu entry, if any
-    ;;
-    (yas--update-template snippet-table template)
-    ;; X) Return the template
-    ;;
-    ;;
-    template))
+  ;; Update the appropriate table.  Also takes care of adding the
+  ;; key indicators in the templates menu entry, if any.
+  (yas--update-template
+   snippet-table (apply #'yas--define-snippets-2 snippet-table snippet)))
 
 (defun yas-define-snippets (mode snippets)
   "Define SNIPPETS for MODE.
