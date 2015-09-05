@@ -449,7 +449,7 @@ TODO: correct this bug!"
    (yas--basic-jit-loading-1)))
 
 (ert-deftest basic-jit-loading-with-compiled-snippets ()
-  "Test basic loading and expansion of snippets"
+  "Test basic loading and expansion of compiled snippets"
   (yas-with-some-interesting-snippet-dirs
    (yas-reload-all)
    (yas-recompile-all)
@@ -458,6 +458,20 @@ TODO: correct this bug!"
                                         (ert-fail "yas--load-directory-2 shouldn't be called when snippets have been compiled")))
      (yas-reload-all)
      (yas--basic-jit-loading-1))))
+
+(ert-deftest visiting-compiled-snippets ()
+  "Test snippet visiting for compiled snippets."
+  (yas-with-some-interesting-snippet-dirs
+   (yas-recompile-all)
+   (yas-reload-all 'no-jit) ; must be loaded for `yas-lookup-snippet' to work.
+   (yas--with-temporary-redefinitions ((find-file-noselect
+                                        (filename &rest _)
+                                        (throw 'yas-snippet-file filename)))
+     (should (string-suffix-p
+              "cc-mode/def"
+              (catch 'yas-snippet-file
+                (yas--visit-snippet-file-1
+                 (yas--lookup-snippet-1 "def" 'cc-mode))))))))
 
 (ert-deftest loading-with-cyclic-parenthood ()
   "Test loading when cyclic parenthood is setup."

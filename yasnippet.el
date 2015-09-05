@@ -2296,6 +2296,14 @@ Honours `yas-choose-tables-first', `yas-choose-keys-first' and
             (remove-duplicates (mapcan #'yas--table-templates tables)
                                :test #'equal))))
 
+(defun yas--lookup-snippet-1 (name mode)
+  "Get the snippet called NAME in MODE's tables."
+  (let ((yas-choose-tables-first nil)   ; avoid prompts
+        (yas-choose-keys-first nil))
+    (cl-find name (yas--all-templates
+                   (yas--get-snippet-tables mode))
+             :key #'yas--template-name :test #'string=)))
+
 (defun yas-lookup-snippet (name &optional mode noerror)
   "Get the snippet content for the snippet NAME in MODE's tables.
 
@@ -2304,11 +2312,7 @@ is non-nil, then don't signal an error if there isn't any snippet
 called NAME.
 
 Honours `yas-buffer-local-condition'."
-  (let* ((yas-choose-tables-first nil)  ; avoid prompts
-         (yas-choose-keys-first nil)
-         (snippet (cl-find name (yas--all-templates
-                                 (yas--get-snippet-tables mode))
-                           :key #'yas--template-name :test #'string=)))
+  (let ((snippet (yas--lookup-snippet-1 name mode)))
     (cond
      (snippet (yas--template-content snippet))
      (noerror nil)
