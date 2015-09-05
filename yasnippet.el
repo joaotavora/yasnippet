@@ -1660,11 +1660,13 @@ the current buffers contents."
       (let ((print-length nil))
         (insert ";;; Snippet definitions:\n;;;\n")
         (dolist (snippet snippets)
+          ;; Fill in missing elements with nil.
+          (setq snippet (append snippet (make-list (- 10 (length snippet)) nil)))
           ;; Move LOAD-FILE to SAVE-FILE because we will load from the
           ;; compiled file, not LOAD-FILE.
-          (let ((load-file-cell (nthcdr 6 snippet)))
-            (setcdr (last snippet) (list (car load-file-cell)))
-            (setcar (nthcdr 6 snippet) nil)))
+          (let ((load-file (nth 6 snippet)))
+            (setcar (nthcdr 6 snippet) nil)
+            (setcar (nthcdr 9 snippet) load-file)))
         (insert (pp-to-string
                  `(yas-define-snippets ',mode ',snippets)))
         (insert "\n\n"))
