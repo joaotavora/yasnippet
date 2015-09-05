@@ -836,6 +836,17 @@ add the snippets associated with the given mode."
   ;; FIXME: Why provide this default definition here?!?
   (defalias 'special-mode 'fundamental))
 
+(unless (fboundp 'string-suffix-p)
+  ;; introduced in Emacs 24.4
+  (defun string-suffix-p (suffix string &optional ignore-case)
+    "Return non-nil if SUFFIX is a suffix of STRING.
+If IGNORE-CASE is non-nil, the comparison is done without paying
+attention to case differences."
+    (let ((start-pos (- (length string) (length suffix))))
+      (and (>= start-pos 0)
+           (eq t (compare-strings suffix nil nil
+                                  string start-pos nil ignore-case))))))
+
 ;;; btw to test this in emacs22 mac osx:
 ;;; curl -L -O https://github.com/mirrors/emacs/raw/master/lisp/emacs-lisp/ert.el
 ;;; curl -L -O https://github.com/mirrors/emacs/raw/master/lisp/emacs-lisp/ert-x.el
