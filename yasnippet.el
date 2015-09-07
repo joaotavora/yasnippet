@@ -734,7 +734,6 @@ and friends."
                 (cons mode
                       (loop for neighbour
                             in (cl-list* (get mode 'derived-mode-parent)
-                                         (ignore-errors (symbol-function mode))
                                          (gethash mode yas--parents))
                             when (and neighbour
                                       (not (memq neighbour explored))
