@@ -926,8 +926,11 @@ Honour `yas-dont-activate', which see."
                  expand-env load-file xkeybinding xuuid save-file
                  &aux
                  (name (or xname
-                           (and load-file (file-name-directory load-file))
-                           (and save-file (file-name-directory save-file))
+                           ;; A little redundant: we always get a name
+                           ;; from `yas--parse-template' except when
+                           ;; there isn't a file.
+                           (and load-file (file-name-nondirectory load-file))
+                           (and save-file (file-name-nondirectory save-file))
                            key))
                  (keybinding (yas--read-keybinding xkeybinding))
                  (uuid (or xuuid name))
