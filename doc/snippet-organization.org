@@ -108,9 +108,10 @@
    Yet another way to create a nice snippet menu is to write into
    =.yas-make-groups= a menu definition. TODO
 
-* TODO The =.yas-setup.el= file
-
-** TODO
+* The =.yas-setup= file
+   Subdirectory could optionally contain a `.yes-setup', whose content will be evaluated as 
+   elisp when the directory is loaded. It is a good place to put configuration code for one
+   collection.
 
 * The =.yas-compiled-snippet.el= file
 
@@ -123,6 +124,5 @@
    Alternatively, you may compile all directories in the list
    =yas-snippet-dirs= with the =yas-recompile-all= function.
 
-* TODO The =.yas-skip= file
-
-** TODO
+* The =.yas-skip= file
+   Put .yas-skip file under the root would instruct yassnippet to skip loading that snippet table.
