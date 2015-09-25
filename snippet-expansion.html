@@ -1,63 +1,90 @@
-<?xml version="1.0" encoding="iso-8859-1"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Expanding snippets</title>
-<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
-<meta name="title" content="Expanding snippets"/>
-<meta name="generator" content="Org-mode"/>
-<meta name="generated" content="2014-10-01T21:16+0100"/>
-<meta name="author" content=""/>
-<meta name="description" content=""/>
-<meta name="keywords" content=""/>
+<!-- 2015-09-24 Thu 21:14 -->
+<meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta  name="generator" content="Org-mode" />
 <style type="text/css">
  <!--/*--><![CDATA[/*><!--*/
-  html { font-family: Times, serif; font-size: 12pt; }
   .title  { text-align: center; }
-  .todo   { color: red; }
+  .todo   { font-family: monospace; color: red; }
   .done   { color: green; }
-  .tag    { background-color: #add8e6; font-weight:normal }
-  .target { }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
   .timestamp { color: #bebebe; }
   .timestamp-kwd { color: #5f9ea0; }
-  .right  {margin-left:auto; margin-right:0px;  text-align:right;}
-  .left   {margin-left:0px;  margin-right:auto; text-align:left;}
-  .center {margin-left:auto; margin-right:auto; text-align:center;}
-  p.verse { margin-left: 3% }
+  .right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
   pre {
-	border: 1pt solid #AEBDCC;
-	background-color: #F3F5F7;
-	padding: 5pt;
-	font-family: courier, monospace;
-        font-size: 90%;
-        overflow:auto;
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
   }
-  table { border-collapse: collapse; }
-  td, th { vertical-align: top;  }
-  th.right  { text-align:center;  }
-  th.left   { text-align:center;   }
-  th.center { text-align:center; }
-  td.right  { text-align:right;  }
-  td.left   { text-align:left;   }
-  td.center { text-align:center; }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  pre.src-sh:before    { content: 'sh'; }
+  pre.src-bash:before  { content: 'sh'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-R:before     { content: 'R'; }
+  pre.src-perl:before  { content: 'Perl'; }
+  pre.src-java:before  { content: 'Java'; }
+  pre.src-sql:before   { content: 'SQL'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.right  { text-align: center;  }
+  th.left   { text-align: center;   }
+  th.center { text-align: center; }
+  td.right  { text-align: right;  }
+  td.left   { text-align: left;   }
+  td.center { text-align: center; }
   dt { font-weight: bold; }
-  div.figure { padding: 0.5em; }
-  div.figure p { text-align: center; }
-  div.inlinetask {
-    padding:10px;
-    border:2px solid gray;
-    margin:10px;
+  .footpara:nth-child(2) { display: inline; }
+  .footpara { display: block; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
     background: #ffffcc;
   }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
   textarea { overflow-x: auto; }
-  .linenr { font-size:smaller }
-  .code-highlighted {background-color:#ffff00;}
-  .org-info-js_info-navigation { border-style:none; }
-  #org-info-js_console-label { font-size:10px; font-weight:bold;
-                               white-space:nowrap; }
-  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
-                                 font-weight:bold; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
   /*]]>*/-->
 </style>
 <link rel="stylesheet" type="text/css" href="stylesheets/manual.css" />
@@ -107,11 +134,9 @@ for the JavaScript code in this tag.
  }
 /*]]>*///-->
 </script>
-
 </head>
 <body>
-
-<div id="preamble">
+<div id="preamble" class="status">
 <nav>
   <ul class="center">
     <li> <a href="index.html">Overview</a>
@@ -128,21 +153,9 @@ for the JavaScript code in this tag.
     <li> <a href="snippet-reference.html">Reference</a>
   </ul>
 </nav>
-
 </div>
-
 <div id="content">
 <h1 class="title">Expanding snippets</h1>
-
-
-<p>
-  This section describes how YASnippet chooses snippets for expansion at point.
-</p>
-<p>
-  Maybe, you'll want some snippets to be expanded in a particular
-  mode, or only under certain conditions, or be prompted using
-</p>
-
 <div id="table-of-contents">
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
@@ -178,104 +191,109 @@ for the JavaScript code in this tag.
 </ul>
 </div>
 </div>
-
-<div id="outline-container-1" class="outline-2">
-<h2 id="sec-1">Triggering expansion</h2>
-<div class="outline-text-2" id="text-1">
-
+<p>
+This section describes how YASnippet chooses snippets for expansion at point.
+</p>
 
 <p>
-   You can use YASnippet to expand snippets in different ways:
+Maybe, you'll want some snippets to be expanded in a particular
+mode, or only under certain conditions, or be prompted using
 </p>
-<ul>
+
+<div id="outline-container-sec-1" class="outline-2">
+<h2 id="sec-1">Triggering expansion</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+You can use YASnippet to expand snippets in different ways:
+</p>
+
+<ul class="org-ul">
 <li>When <a href="snippet-reference.html#yas-minor-mode"><code>yas-minor-mode</code></a> is active:
-<ul>
+<ul class="org-ul">
 <li>Type the snippet's <b>trigger key</b> then calling <a href="snippet-reference.html#yas-expand"><code>yas-expand</code></a>
        (bound to <code>TAB</code> by default).
-
 </li>
+
 <li>Use the snippet's <b>keybinding</b>.
-
 </li>
+
 <li>By expanding directly from the "YASnippet" menu in the menu-bar
-
 </li>
-<li>Using hippie-expand
 
+<li>Using hippie-expand
 </li>
 </ul>
-
 </li>
+
 <li>Call <a href="snippet-reference.html#yas-insert-snippet"><code>yas-insert-snippet</code></a> (use <code>M-x yas-insert-snippet=</code> or its
-     keybinding <code>C-c &amp; C-s</code>).
-
+keybinding <code>C-c &amp; C-s</code>).
 </li>
+
 <li>Use m2m's excellent auto-complete
-     TODO: example for this
-
+TODO: example for this
 </li>
+
 <li>Expanding from emacs-lisp code
 </li>
 </ul>
-
-
-
 </div>
 
-<div id="outline-container-1-1" class="outline-3">
+<div id="outline-container-sec-1-1" class="outline-3">
 <h3 id="sec-1-1">Trigger key</h3>
 <div class="outline-text-3" id="text-1-1">
-
-
 <p>
 <a href="snippet-reference.html#yas-expand"><code>yas-expand</code></a> tries to expand a <i>snippet abbrev</i> (also known as
 <i>snippet key</i>) before point.
 </p>
+
 <p>
 When <a href="snippet-reference.html#yas-minor-mode"><code>yas-minor-mode</code></a> is enabled, it binds <a href="snippet-reference.html#yas-expand"><code>yas-expand</code></a> to <code>TAB</code> and
 <code>&lt;tab&gt;</code> by default, however, you can freely set it to some other key:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">(define-key yas-minor-mode-map (kbd "&lt;tab&gt;") nil)
+<pre class="src src-emacs-lisp">(define-key yas-minor-mode-map (kbd "&lt;tab&gt;") nil)
 (define-key yas-minor-mode-map (kbd "TAB") nil)
 (define-key yas-minor-mode-map (kbd "&lt;the new key&gt;") 'yas-expand)
 </pre>
-
+</div>
 
 <p>
 To enable the YASnippet minor mode in all buffers globally use the
 command <a href="snippet-reference.html#yas-global-mode"><code>yas-global-mode</code></a>. This will enable a modeline indicator,
 <code>yas</code>:
 </p>
-<p>
-<img src="./images/minor-mode-indicator.png"  alt="./images/minor-mode-indicator.png" />
+
+
+<div class="figure">
+<p><img src="./images/minor-mode-indicator.png" alt="minor-mode-indicator.png" />
 </p>
+</div>
+
 <p>
 When you use <a href="snippet-reference.html#yas-global-mode"><code>yas-global-mode</code></a> you can also selectively disable
 YASnippet in some buffers by setting the buffer-local variable
 <a href="snippet-reference.html#yas-dont-active"><code>yas-dont-active</code></a> in the buffer's mode hook.
 </p>
-
 </div>
 
-<div id="outline-container-1-1-1" class="outline-4">
+<div id="outline-container-sec-1-1-1" class="outline-4">
 <h4 id="sec-1-1-1">Fallback behaviour</h4>
 <div class="outline-text-4" id="text-1-1-1">
-
-
 <p>
 <a href="snippet-reference.html#yas-fallback-behaviour"><code>yas-fallback-behaviour</code></a> is a customization variable bound to
 '<code>call-other-command</code> by default. If <a href="snippet-reference.html#yas-expand"><code>yas-expand</code></a> failed to find any
 suitable snippet to expand, it will disable the minor mode temporarily
 and find if there's any other command bound to the same key.
 </p>
+
 <p>
 If found, the command will be called. Usually this works very well
-&ndash;when there's a snippet, expand it, otherwise, call whatever command
+&#x2013;when there's a snippet, expand it, otherwise, call whatever command
 originally bind to the trigger key.
 </p>
+
 <p>
 However, you can change this behavior by customizing the
 <a href="snippet-reference.html#yas-fallback-behavior"><code>yas-fallback-behavior</code></a> variable. If you set this variable to
@@ -284,63 +302,53 @@ However, you can change this behavior by customizing the
 </p>
 </div>
 </div>
-
 </div>
 
-<div id="outline-container-1-2" class="outline-3">
+<div id="outline-container-sec-1-2" class="outline-3">
 <h3 id="sec-1-2">Insert at point</h3>
 <div class="outline-text-3" id="text-1-2">
-
-
 <p>
-The command <a href="#yas-insert-snippet"><code>yas-insert-snippet</code></a> lets you insert snippets at point
+The command <i><code>yas-insert-snippet</code></i> lets you insert snippets at point
 <i>for your current major mode</i>. It prompts you for the snippet key
 first, and then for a snippet template if more than one template
 exists for the same key.
 </p>
+
 <p>
 The list presented contains the snippets that can be inserted at point,
 according to the condition system. If you want to see all applicable
 snippets for the major mode, prefix this command with <code>C-u</code>.
 </p>
+
 <p>
 The prompting methods used are again controlled by
 <a href="snippet-reference.html#yas-prompt-functions"><code>yas-prompt-functions</code></a>.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-1-3" class="outline-3">
+<div id="outline-container-sec-1-3" class="outline-3">
 <h3 id="sec-1-3">Snippet keybinding</h3>
 <div class="outline-text-3" id="text-1-3">
-
-
 <p>
 See the section of the <code># binding:</code> directive in
 <a href="./snippet-development.html">Writing Snippets</a>.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-1-4" class="outline-3">
+<div id="outline-container-sec-1-4" class="outline-3">
 <h3 id="sec-1-4">Expanding from the menu</h3>
 <div class="outline-text-3" id="text-1-4">
-
-
 <p>
 See <a href="./snippet-menu.html">the YASnippet Menu</a>.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-1-5" class="outline-3">
+<div id="outline-container-sec-1-5" class="outline-3">
 <h3 id="sec-1-5">Expanding with <code>hippie-expand</code></h3>
 <div class="outline-text-3" id="text-1-5">
-
-
 <p>
 To integrate with <code>hippie-expand</code>, just put
 <a href="snippet-reference.html#yas-hippie-try-expand"><code>yas-hippie-try-expand</code></a> in
@@ -349,137 +357,130 @@ when placed at the top of the list, but it can be put anywhere you
 prefer.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-1-6" class="outline-3">
+<div id="outline-container-sec-1-6" class="outline-3">
 <h3 id="sec-1-6">Expanding from emacs-lisp code</h3>
 <div class="outline-text-3" id="text-1-6">
-
-
 <p>
-Sometimes you might want to expand a snippet directly from you own
-elisp code. You should call
-<a href="snippet-reference.html#yas-expand-snippet"><code>yas-expand-snippet</code></a> instead of
-<a href="snippet-reference.html#yas-expand"><code>yas-expand</code></a> in this case.
+Sometimes you might want to expand a snippet directly from your own
+elisp code. You should call <a href="snippet-reference.html#yas-expand-snippet"><code>yas-expand-snippet</code></a> instead of
+<a href="snippet-reference.html#yas-expand"><code>yas-expand</code></a> in this case. <a href="snippet-reference.html#yas-expand-snippet"><code>yas-expand-snippet</code></a> takes a string in
+snippet template syntax, if you want to expand an existing snippet you
+can use <a href="snippet-reference.html#yas-lookup-snippet"><code>yas-lookup-snippet</code></a> to find its contents by name.
 </p>
+
 <p>
 As with expanding from the menubar, the condition system and multiple
-candidates doesn't affect expansion. In fact, expanding from the
-YASnippet menu has the same effect of evaluating the follow code:
+candidates doesn't affect expansion (the condition system does affect
+<a href="snippet-reference.html#yas-lookup-snippet"><code>yas-lookup-snippet</code></a> though). In fact, expanding from the YASnippet
+menu has the same effect of evaluating the follow code:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">(yas-expand-snippet template)
+<pre class="src src-emacs-lisp">(yas-expand-snippet template)
 </pre>
-
+</div>
 
 <p>
-See the internal documentation on <a href="snippet-reference.html#yas-expand-snippet"><code>yas-expand-snippet</code></a> for more
-information.
+See the internal documentation on <a href="snippet-reference.html#yas-expand-snippet"><code>yas-expand-snippet</code></a> and
+<a href="snippet-reference.html#yas-lookup-snippet"><code>yas-lookup-snippet</code></a> for more information.
 </p>
 </div>
 </div>
-
 </div>
 
-<div id="outline-container-2" class="outline-2">
+<div id="outline-container-sec-2" class="outline-2">
 <h2 id="sec-2">Controlling expansion</h2>
 <div class="outline-text-2" id="text-2">
-
-
-
-</div>
-
-<div id="outline-container-2-1" class="outline-3">
+</div><div id="outline-container-sec-2-1" class="outline-3">
 <h3 id="sec-2-1">Eligible snippets</h3>
 <div class="outline-text-3" id="text-2-1">
-
-
 <p>
 YASnippet does quite a bit of filtering to find out which snippets are
 eligible for expanding at the current cursor position.
 </p>
+
 <p>
 In particular, the following things matter:
 </p>
-<ul>
+
+<ul class="org-ul">
 <li>Currently loaded snippets tables
 
 <p>
-   These are loaded from a directory hierarchy in your file system. See
-   <a href="./snippet-organization.html">Organizing Snippets</a>. They are named
-   after major modes like <code>html-mode</code>, <code>ruby-mode</code>, etc&hellip;
+These are loaded from a directory hierarchy in your file system. See
+<a href="./snippet-organization.html">Organizing Snippets</a>. They are named
+after major modes like <code>html-mode</code>, <code>ruby-mode</code>, etc&#x2026;
 </p>
 </li>
+
 <li>Major mode of the current buffer
 
 <p>
-   If the currrent major mode matches one of the loaded snippet tables,
-   then all that table's snippets are considered for expansion. Use
-   <code>M-x describe-variable RET major-mode RET</code> to find out which major
-   mode you are in currently.
+If the currrent major mode matches one of the loaded snippet tables,
+then all that table's snippets are considered for expansion. Use
+<code>M-x describe-variable RET major-mode RET</code> to find out which major
+mode you are in currently.
 </p>
 </li>
+
 <li>Parent tables
 
 <p>
-   Snippet tables defined as the parent of some other eligible table are
-   also considered. This works recursively, i.e. parents of parents of
-   eligible tables are also considered.
+Snippet tables defined as the parent of some other eligible table are
+also considered. This works recursively, i.e. parents of parents of
+eligible tables are also considered.
 </p>
 </li>
+
 <li>Buffer-local list of extra modes
 
 <p>
-   Use <a href="#yas-activate-extra-mode"><code>yas-activate-extra-mode</code></a> to
-   consider snippet tables whose name does not correspond to a major
-   mode. Typically, you call this from a minor mode hook, for example:
-</p></li>
+Use <i><code>yas-activate-extra-mode</code></i> to
+consider snippet tables whose name does not correspond to a major
+mode. Typically, you call this from a minor mode hook, for example:
+</p>
+</li>
 </ul>
 
+<div class="org-src-container">
 
-
-
-
-<pre class="example">;; When entering rinari-minor-mode, consider also the snippets in the
+<pre class="src src-emacs-lisp">;; When entering rinari-minor-mode, consider also the snippets in the
 ;; snippet table "rails-mode"
 (add-hook 'rinari-minor-mode-hook
-          #'(lambda ()
-              (yas-activate-extra-mode 'rails-mode)))
+	  #'(lambda ()
+	      (yas-activate-extra-mode 'rails-mode)))
 </pre>
+</div>
 
-
-<ul>
+<ul class="org-ul">
 <li>Buffer-local
-   <a href="snippet-reference.html#yas-buffer-local-condition"><code>yas-buffer-local-condition</code></a>
-   variable
+<a href="snippet-reference.html#yas-buffer-local-condition"><code>yas-buffer-local-condition</code></a>
+variable
 
 <p>
-   This variable provides finer grained control over what snippets can
-   be expanded in the current buffer. The default value won't let you
-   expand snippets inside comments or string literals for example. See
-   The condition system_ for more info.
-</p></li>
+This variable provides finer grained control over what snippets can
+be expanded in the current buffer. The default value won't let you
+expand snippets inside comments or string literals for example. See
+The condition system\_ for more info.
+</p>
+</li>
 </ul>
-
-
+</div>
 </div>
 
-</div>
-
-<div id="outline-container-2-2" class="outline-3">
+<div id="outline-container-sec-2-2" class="outline-3">
 <h3 id="sec-2-2">The condition system</h3>
 <div class="outline-text-3" id="text-2-2">
-
-
 <p>
 Consider this scenario: you are an old Emacs hacker. You like the
 abbrev-way and bind <a href="snippet-reference.html#yas-expand"><code>yas-expand</code></a> to <code>SPC</code>. However, you don't want
 <code>if</code> to be expanded as a snippet when you are typing in a comment
 block or a string (e.g. in <code>python-mode</code>).
 </p>
+
 <p>
 If you use the <code># condition :</code> directive (see
 <a href="./snippet-development.html">Writing Snippets</a>) you could just specify
@@ -489,154 +490,151 @@ snippets is just boring. So has a buffer local variable
 <a href="snippet-reference.html#yas-buffer-local-condition"><code>yas-buffer-local-condition</code></a>. You can set this variable to
 <code>(not (python-in-string/comment))</code> in <code>python-mode-hook</code>.
 </p>
+
 <p>
 Then, what if you really want some particular snippet to expand even
 inside a comment? Set <a href="snippet-reference.html#yas-buffer-local-condition"><code>yas-buffer-local-condition</code></a> like this
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">(add-hook 'python-mode-hook
-          (lambda ()
-            (setq yas-buffer-local-condition
-                  '(if (python-in-string/comment)
-                       '(require-snippet-condition . force-in-comment)
-                     t))))
+<pre class="src src-emacs-lisp">(add-hook 'python-mode-hook
+	  (lambda ()
+	    (setq yas-buffer-local-condition
+		  '(if (python-in-string/comment)
+		       '(require-snippet-condition . force-in-comment)
+		     t))))
 </pre>
-
+</div>
 
 <p>
-&hellip; and specify the condition for a snippet that you're going to expand
+&#x2026; and specify the condition for a snippet that you're going to expand
 in comment to be evaluated to the symbol <code>force-in-comment</code>. Then it can
 be expanded as you expected, while other snippets like <code>if</code> still can't
 expanded in comment.
 </p>
+
 <p>
 For the full set of possible conditions, see the documentation for
 <a href="snippet-reference.html#yas-buffer-local-condition"><code>yas-buffer-local-condition</code></a>.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-2-3" class="outline-3">
+<div id="outline-container-sec-2-3" class="outline-3">
 <h3 id="sec-2-3">Multiples snippet with the same key</h3>
 <div class="outline-text-3" id="text-2-3">
-
-
 <p>
-The rules outlined <a href="#sec-2-1">above</a> can return more than
+The rules outlined <i>above</i> can return more than
 one snippet to be expanded at point.
 </p>
+
 <p>
 When there are multiple candidates, YASnippet will let you select one.
 The UI for selecting multiple candidate can be customized through
 <a href="snippet-reference.html#yas-prompt-functions"><code>yas-prompt-functions</code></a> , which defines your preferred methods of being
 prompted for snippets.
 </p>
+
 <p>
 You can customize it with
 <code>M-x customize-variable RET yas-prompt-functions RET</code>. Alternatively you
 can put in your emacs-file:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">(setq yas-prompt-functions '(yas-x-prompt yas-dropdown-prompt))
+<pre class="src src-emacs-lisp">(setq yas-prompt-functions '(yas-x-prompt yas-dropdown-prompt))
 </pre>
-
+</div>
 
 <p>
 Currently there are some alternatives solution with YASnippet.
 </p>
-
 </div>
 
-<div id="outline-container-2-3-1" class="outline-4">
+<div id="outline-container-sec-2-3-1" class="outline-4">
 <h4 id="sec-2-3-1">Use the X window system</h4>
 <div class="outline-text-4" id="text-2-3-1">
 
-
-<p>
-<img src="./images/x-menu.png"  alt="./images/x-menu.png" />
+<div class="figure">
+<p><img src="./images/x-menu.png" alt="x-menu.png" />
 </p>
+</div>
+
 <p>
 The function <a href="snippet-reference.html#yas-x-prompt"><code>yas-x-prompt</code></a> can be used to show a popup menu for you to
 select. This menu will be part of you native window system widget, which
 means:
 </p>
-<ul>
+
+<ul class="org-ul">
 <li>It usually looks beautiful. E.g. when you compile Emacs with gtk
-   support, this menu will be rendered with your gtk theme.
+support, this menu will be rendered with your gtk theme.
 </li>
 <li>Your window system may or may not allow to you use <code>C-n</code>, <code>C-p</code> to
-   navigate this menu.
+navigate this menu.
 </li>
 <li>This function can't be used when in a terminal.
 </li>
 </ul>
-
-
+</div>
 </div>
 
-</div>
-
-<div id="outline-container-2-3-2" class="outline-4">
+<div id="outline-container-sec-2-3-2" class="outline-4">
 <h4 id="sec-2-3-2">Minibuffer prompting</h4>
 <div class="outline-text-4" id="text-2-3-2">
 
-
-<p>
-<img src="./images/ido-menu.png"  alt="./images/ido-menu.png" />
+<div class="figure">
+<p><img src="./images/ido-menu.png" alt="ido-menu.png" />
 </p>
+</div>
+
 <p>
 You can use functions <a href="snippet-reference.html#yas-completing-prompt"><code>yas-completing-prompt</code></a> for the classic emacs
 completion method or <a href="snippet-reference.html#yas-ido-prompt"><code>yas-ido-prompt</code></a> for a much nicer looking method.
 The best way is to try it. This works in a terminal.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-2-3-3" class="outline-4">
+<div id="outline-container-sec-2-3-3" class="outline-4">
 <h4 id="sec-2-3-3">Use <code>dropdown-menu.el</code></h4>
 <div class="outline-text-4" id="text-2-3-3">
 
-
-<p>
-<img src="./images/dropdown-menu.png"  alt="./images/dropdown-menu.png" />
+<div class="figure">
+<p><img src="./images/dropdown-menu.png" alt="dropdown-menu.png" />
 </p>
+</div>
+
 <p>
 The function <a href="snippet-reference.html#yas-dropdown-prompt"><code>yas-dropdown-prompt</code></a> can also be placed in the
 <a href="snippet-reference.html#yas-prompt-functions"><code>yas-prompt-functions</code></a> list.
 </p>
+
 <p>
 This works in both window system and terminal and is customizable, you
 can use <code>C-n</code>, <code>C-p</code> to navigate, <code>q</code> to quit and even press <code>6</code> as a
 shortcut to select the 6th candidate.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-2-3-4" class="outline-4">
+<div id="outline-container-sec-2-3-4" class="outline-4">
 <h4 id="sec-2-3-4">Roll your own</h4>
 <div class="outline-text-4" id="text-2-3-4">
-
-
 <p>
 See the documentation on variable <a href="snippet-reference.html#yas-prompt-functions"><code>yas-prompt-functions</code></a>
-</p></div>
-</div>
-</div>
-</div>
-</div>
-
-<div id="postamble">
-<hr><p class='creator'>Generated by <a href="http://orgmode.org">Org</a> version 7.9.3f with <a href="http://www.gnu.org/software/emacs/">Emacs</a> version 24 on 2014-10-01T21:16+0100 from 08b044e559cc350c6e7142d088ec2d4a82e378cb
 </p>
-<p class='xhtml-validation'><a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a></p>
-
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<hr><p class='creator'>Generated by <a href="http://www.gnu.org/software/emacs/">Emacs</a> 24.4.91.1 (<a href="http://orgmode.org">Org</a> mode 8.2.10) on  from 7703a55ac416a131dec45fa6a1e0ec1e31adf760
+</p>
+<p class='xhtml-validation'><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
 </html>

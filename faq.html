@@ -1,63 +1,90 @@
-<?xml version="1.0" encoding="iso-8859-1"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Frequently Asked Questions</title>
-<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
-<meta name="title" content="Frequently Asked Questions"/>
-<meta name="generator" content="Org-mode"/>
-<meta name="generated" content="2014-10-01T21:16+0100"/>
-<meta name="author" content=""/>
-<meta name="description" content=""/>
-<meta name="keywords" content=""/>
+<!-- 2015-09-24 Thu 21:15 -->
+<meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta  name="generator" content="Org-mode" />
 <style type="text/css">
  <!--/*--><![CDATA[/*><!--*/
-  html { font-family: Times, serif; font-size: 12pt; }
   .title  { text-align: center; }
-  .todo   { color: red; }
+  .todo   { font-family: monospace; color: red; }
   .done   { color: green; }
-  .tag    { background-color: #add8e6; font-weight:normal }
-  .target { }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
   .timestamp { color: #bebebe; }
   .timestamp-kwd { color: #5f9ea0; }
-  .right  {margin-left:auto; margin-right:0px;  text-align:right;}
-  .left   {margin-left:0px;  margin-right:auto; text-align:left;}
-  .center {margin-left:auto; margin-right:auto; text-align:center;}
-  p.verse { margin-left: 3% }
+  .right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
   pre {
-	border: 1pt solid #AEBDCC;
-	background-color: #F3F5F7;
-	padding: 5pt;
-	font-family: courier, monospace;
-        font-size: 90%;
-        overflow:auto;
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
   }
-  table { border-collapse: collapse; }
-  td, th { vertical-align: top;  }
-  th.right  { text-align:center;  }
-  th.left   { text-align:center;   }
-  th.center { text-align:center; }
-  td.right  { text-align:right;  }
-  td.left   { text-align:left;   }
-  td.center { text-align:center; }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  pre.src-sh:before    { content: 'sh'; }
+  pre.src-bash:before  { content: 'sh'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-R:before     { content: 'R'; }
+  pre.src-perl:before  { content: 'Perl'; }
+  pre.src-java:before  { content: 'Java'; }
+  pre.src-sql:before   { content: 'SQL'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.right  { text-align: center;  }
+  th.left   { text-align: center;   }
+  th.center { text-align: center; }
+  td.right  { text-align: right;  }
+  td.left   { text-align: left;   }
+  td.center { text-align: center; }
   dt { font-weight: bold; }
-  div.figure { padding: 0.5em; }
-  div.figure p { text-align: center; }
-  div.inlinetask {
-    padding:10px;
-    border:2px solid gray;
-    margin:10px;
+  .footpara:nth-child(2) { display: inline; }
+  .footpara { display: block; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
     background: #ffffcc;
   }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
   textarea { overflow-x: auto; }
-  .linenr { font-size:smaller }
-  .code-highlighted {background-color:#ffff00;}
-  .org-info-js_info-navigation { border-style:none; }
-  #org-info-js_console-label { font-size:10px; font-weight:bold;
-                               white-space:nowrap; }
-  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
-                                 font-weight:bold; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
   /*]]>*/-->
 </style>
 <link rel="stylesheet" type="text/css" href="stylesheets/manual.css" />
@@ -107,11 +134,9 @@ for the JavaScript code in this tag.
  }
 /*]]>*///-->
 </script>
-
 </head>
 <body>
-
-<div id="preamble">
+<div id="preamble" class="status">
 <nav>
   <ul class="center">
     <li> <a href="index.html">Overview</a>
@@ -128,14 +153,9 @@ for the JavaScript code in this tag.
     <li> <a href="snippet-reference.html">Reference</a>
   </ul>
 </nav>
-
 </div>
-
 <div id="content">
 <h1 class="title">Frequently Asked Questions</h1>
-
-
-
 <div id="table-of-contents">
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
@@ -150,31 +170,27 @@ for the JavaScript code in this tag.
 </div>
 </div>
 
-<div id="outline-container-1" class="outline-2">
+<div id="outline-container-sec-1" class="outline-2">
 <h2 id="sec-1">Why is there an extra newline?</h2>
 <div class="outline-text-2" id="text-1">
-
-
 <p>
 If you have a newline at the end of the snippet definition file, then
 YASnippet will add a newline when you expanding a snippet. Please don't
 add a newline at the end if you don't want it when you saving the
 snippet file.
 </p>
+
 <p>
 Note some editors will automatically add a newline for you. In Emacs, if
 you set <code>require-final-newline</code> to <code>t</code>, it will add the final newline
 for you automatically.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-2" class="outline-2">
+<div id="outline-container-sec-2" class="outline-2">
 <h2 id="sec-2">Why doesn't TAB expand a snippet?</h2>
 <div class="outline-text-2" id="text-2">
-
-
 <p>
 First check the mode line to see if there's <code>yas</code>. If not, then try
 <code>M-x yas-minor-mode</code> to manually turn on the minor mode and try to
@@ -182,25 +198,28 @@ expand the snippet again. If it works, then, you can add the following
 code to your <code>.emacs</code> <i>before</i> loading YASnippet:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">(add-hook 'the-major-mode-hook 'yas-minor-mode-on)
+<pre class="src src-emacs-lisp">(add-hook 'the-major-mode-hook 'yas-minor-mode-on)
 </pre>
-
+</div>
 
 <p>
 where <code>the-major-mode</code> is the major mode in which <a href="snippet-reference.html#yas-minor-mode"><code>yas-minor-mode</code></a> isn't
 enabled by default.
 </p>
+
 <p>
 From YASnippet 0.6 you can also use the command <code>M-x yas-global-mode</code> to
 turn on YASnippet automatically for <i>all</i> major modes.
 </p>
+
 <p>
 If <a href="snippet-reference.html#yas-minor-mode"><code>yas-minor-mode</code></a> is on but the snippet still not expanded. Then try
 to see what command is bound to the <code>TAB</code> key: press <code>C-h k</code> and then
 press <code>TAB</code>. Emacs will show you the result.
 </p>
+
 <p>
 You'll see a buffer prompted by Emacs saying that
 <code>TAB runs the command ...</code>. Alternatively, you might see
@@ -210,77 +229,77 @@ command other than <a href="snippet-reference.html#yas-expand"><code>yas-expand<
 following code to work around:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">(add-hook 'org-mode-hook
-          (let ((original-command (lookup-key org-mode-map [tab])))
-            `(lambda ()
-               (setq yas-fallback-behavior
-                     '(apply ,original-command))
-               (local-set-key [tab] 'yas-expand))))
+<pre class="src src-emacs-lisp">(add-hook 'org-mode-hook
+	  (let ((original-command (lookup-key org-mode-map [tab])))
+	    `(lambda ()
+	       (setq yas-fallback-behavior
+		     '(apply ,original-command))
+	       (local-set-key [tab] 'yas-expand))))
 </pre>
-
+</div>
 
 <p>
 replace <code>org-mode-hook</code> and <code>org-mode-map</code> with the major mode hook you
 are dealing with (Use <code>C-h m</code> to see what major mode you are in).
 </p>
+
 <p>
 As an alternative, you can also try
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">(defun yas-advise-indent-function (function-symbol)
+<pre class="src src-emacs-lisp">(defun yas-advise-indent-function (function-symbol)
   (eval `(defadvice ,function-symbol (around yas-try-expand-first activate)
-           ,(format
-             "Try to expand a snippet before point, then call `%s' as usual"
-             function-symbol)
-           (let ((yas-fallback-behavior nil))
-             (unless (and (interactive-p)
-                          (yas-expand))
-               ad-do-it)))))
+	   ,(format
+	     "Try to expand a snippet before point, then call `%s' as usual"
+	     function-symbol)
+	   (let ((yas-fallback-behavior nil))
+	     (unless (and (interactive-p)
+			  (yas-expand))
+	       ad-do-it)))))
 
 (yas-advise-indent-function 'ruby-indent-line)
 </pre>
-
+</div>
 
 <p>
 To <i>advise</i> the modes indentation function bound to TAB, (in this case
 <code>ruby-indent-line</code>) to first try to run <a href="snippet-reference.html#yas-expand"><code>yas-expand</code></a>.
 </p>
+
 <p>
 If the output of <code>C-h k RET &lt;tab&gt;</code> tells you that <code>&lt;tab&gt;</code> is indeed
 bound to <a href="snippet-reference.html#yas-expand"><code>yas-expand</code></a> but YASnippet still doesn't work, check your
 configuration and you may also ask for help on the <a href="http://groups.google.com/group/smart-snippet">discussion group</a>.
-See this particular <a href="http://code.google.com/p/yasnippet/issues/detail?id=93&amp;can=1">thread</a> for quite some solutions and alternatives.
+See this particular <a href="http://code.google.com/p/yasnippet/issues/detail?id=93&can=1">thread</a> for quite some solutions and alternatives.
 </p>
+
 <p>
 Don't forget to attach the information on what command is bound to TAB
 as well as the mode information (Can be obtained by <code>C-h m</code>).
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-3" class="outline-2">
+<div id="outline-container-sec-3" class="outline-2">
 <h2 id="sec-3">Why doesn't TAB navigation work with flyspell</h2>
 <div class="outline-text-2" id="text-3">
-
-
 <p>
 A workaround is to inhibit flyspell overlays while the snippet is
 active:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">(add-hook 'flyspell-incorrect-hook
-          #'(lambda (dummy1 dummy2 dymmy3)
-              (and yas-active-field-overlay
-                   (overlay-buffer yas-active-field-overlay))))
+<pre class="src src-emacs-lisp">(add-hook 'flyspell-incorrect-hook
+	  #'(lambda (dummy1 dummy2 dymmy3)
+	      (and yas-active-field-overlay
+		   (overlay-buffer yas-active-field-overlay))))
 </pre>
-
+</div>
 
 <p>
 This is apparently related to overlay priorities. For some reason, the
@@ -291,22 +310,19 @@ solve this problem, drop a line in the
 <a href="http://groups.google.com/group/smart-snippet">discussion group</a>.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-4" class="outline-2">
+<div id="outline-container-sec-4" class="outline-2">
 <h2 id="sec-4">How to I use alternative keys, i.e. not TAB?</h2>
 <div class="outline-text-2" id="text-4">
-
-
 <p>
 Edit the keymaps <a href="snippet-reference.html#yas-minor-mode-map"><code>yas-minor-mode-map</code></a> and
 <a href="snippet-reference.html#yas-keymap"><code>yas-keymap</code></a> as you would any other keymap:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">(define-key yas-minor-mode-map (kbd "&lt;tab&gt;") nil)
+<pre class="src src-emacs-lisp">(define-key yas-minor-mode-map (kbd "&lt;tab&gt;") nil)
 (define-key yas-minor-mode-map (kbd "TAB") nil)
 (define-key yas-minor-mode-map (kbd "&lt;the new key&gt;") 'yas-expand)
 
@@ -318,30 +334,26 @@ Edit the keymaps <a href="snippet-reference.html#yas-minor-mode-map"><code>yas-m
 (define-key yas-keymap (kbd "&lt;new-next-field-key&gt;") 'yas-next-field-or-maybe-expand)
 (define-key yas-keymap (kbd "&lt;new-prev-field-key&gt;") 'yas-prev)
 </pre>
-
-
+</div>
+</div>
 </div>
 
-</div>
-
-<div id="outline-container-5" class="outline-2">
+<div id="outline-container-sec-5" class="outline-2">
 <h2 id="sec-5">How do I turn off the minor mode where in some buffers?</h2>
 <div class="outline-text-2" id="text-5">
-
-
 <p>
 The best way, since version 0.6.1c, is to set the default value of the
 variable <a href="snippet-reference.html#yas-dont-activate"><code>yas-dont-activate</code></a> to a lambda function like so:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">(set-default 'yas-dont-activate
-             #'(lambda ()
-                 (and yas-root-directory
-                      (null (yas-get-snippet-tables)))))
+<pre class="src src-emacs-lisp">(set-default 'yas-dont-activate
+	     #'(lambda ()
+		 (and yas-root-directory
+		      (null (yas-get-snippet-tables)))))
 </pre>
-
+</div>
 
 <p>
 This is also the default value starting for that version. It skips the
@@ -349,28 +361,25 @@ minor mode in buffers where it is not applicable (no snippet tables),
 but only once you have setup your yas-root-directory.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-6" class="outline-2">
+<div id="outline-container-sec-6" class="outline-2">
 <h2 id="sec-6">How do I define an abbrev key containing characters not supported by the filesystem?</h2>
 <div class="outline-text-2" id="text-6">
-
-
-<ul>
+<ul class="org-ul">
 <li><b>Note</b>: This question applies if you're still defining snippets
-   whose key <i>is</i> the filename. This is behavior still provided by
-   version 0.6 for backward compatibilty, but is somewhat
-   deprecated&hellip;
+whose key <i>is</i> the filename. This is behavior still provided by
+version 0.6 for backward compatibilty, but is somewhat
+deprecated&#x2026;
 </li>
 </ul>
-
 
 <p>
 For example, you want to define a snippet by the key <code>&lt;</code> which is not a
 valid character for filename on Windows. This means you can't use the
 filename as a trigger key in this case.
 </p>
+
 <p>
 You should rather use the <code># key:</code> directive to specify the key of the
 defined snippet explicitly and name your snippet with an arbitrary valid
@@ -378,23 +387,21 @@ filename, <code>lt.YASnippet</code> for example, using <code>&lt;</code> for the
 directive:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example"># key: &lt;
+<pre class="src src-snippet"># key: &lt;
 # name: &lt;...&gt;&lt;/...&gt;
 # --
 &lt;${1:div}&gt;$0&lt;/$1&gt;
 </pre>
-
 </div>
 </div>
 </div>
-
-<div id="postamble">
-<hr><p class='creator'>Generated by <a href="http://orgmode.org">Org</a> version 7.9.3f with <a href="http://www.gnu.org/software/emacs/">Emacs</a> version 24 on 2014-10-01T21:16+0100 from 08b044e559cc350c6e7142d088ec2d4a82e378cb
+</div>
+<div id="postamble" class="status">
+<hr><p class='creator'>Generated by <a href="http://www.gnu.org/software/emacs/">Emacs</a> 24.4.91.1 (<a href="http://orgmode.org">Org</a> mode 8.2.10) on  from 7703a55ac416a131dec45fa6a1e0ec1e31adf760
 </p>
-<p class='xhtml-validation'><a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a></p>
-
+<p class='xhtml-validation'><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
 </html>

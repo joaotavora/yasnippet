@@ -1,63 +1,90 @@
-<?xml version="1.0" encoding="iso-8859-1"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>YASnippet menu</title>
-<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
-<meta name="title" content="YASnippet menu"/>
-<meta name="generator" content="Org-mode"/>
-<meta name="generated" content="2014-10-01T21:16+0100"/>
-<meta name="author" content=""/>
-<meta name="description" content=""/>
-<meta name="keywords" content=""/>
+<!-- 2015-09-24 Thu 21:14 -->
+<meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta  name="generator" content="Org-mode" />
 <style type="text/css">
  <!--/*--><![CDATA[/*><!--*/
-  html { font-family: Times, serif; font-size: 12pt; }
   .title  { text-align: center; }
-  .todo   { color: red; }
+  .todo   { font-family: monospace; color: red; }
   .done   { color: green; }
-  .tag    { background-color: #add8e6; font-weight:normal }
-  .target { }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
   .timestamp { color: #bebebe; }
   .timestamp-kwd { color: #5f9ea0; }
-  .right  {margin-left:auto; margin-right:0px;  text-align:right;}
-  .left   {margin-left:0px;  margin-right:auto; text-align:left;}
-  .center {margin-left:auto; margin-right:auto; text-align:center;}
-  p.verse { margin-left: 3% }
+  .right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
   pre {
-	border: 1pt solid #AEBDCC;
-	background-color: #F3F5F7;
-	padding: 5pt;
-	font-family: courier, monospace;
-        font-size: 90%;
-        overflow:auto;
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
   }
-  table { border-collapse: collapse; }
-  td, th { vertical-align: top;  }
-  th.right  { text-align:center;  }
-  th.left   { text-align:center;   }
-  th.center { text-align:center; }
-  td.right  { text-align:right;  }
-  td.left   { text-align:left;   }
-  td.center { text-align:center; }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  pre.src-sh:before    { content: 'sh'; }
+  pre.src-bash:before  { content: 'sh'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-R:before     { content: 'R'; }
+  pre.src-perl:before  { content: 'Perl'; }
+  pre.src-java:before  { content: 'Java'; }
+  pre.src-sql:before   { content: 'SQL'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.right  { text-align: center;  }
+  th.left   { text-align: center;   }
+  th.center { text-align: center; }
+  td.right  { text-align: right;  }
+  td.left   { text-align: left;   }
+  td.center { text-align: center; }
   dt { font-weight: bold; }
-  div.figure { padding: 0.5em; }
-  div.figure p { text-align: center; }
-  div.inlinetask {
-    padding:10px;
-    border:2px solid gray;
-    margin:10px;
+  .footpara:nth-child(2) { display: inline; }
+  .footpara { display: block; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
     background: #ffffcc;
   }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
   textarea { overflow-x: auto; }
-  .linenr { font-size:smaller }
-  .code-highlighted {background-color:#ffff00;}
-  .org-info-js_info-navigation { border-style:none; }
-  #org-info-js_console-label { font-size:10px; font-weight:bold;
-                               white-space:nowrap; }
-  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
-                                 font-weight:bold; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
   /*]]>*/-->
 </style>
 <link rel="stylesheet" type="text/css" href="stylesheets/manual.css" />
@@ -107,11 +134,9 @@ for the JavaScript code in this tag.
  }
 /*]]>*///-->
 </script>
-
 </head>
 <body>
-
-<div id="preamble">
+<div id="preamble" class="status">
 <nav>
   <ul class="center">
     <li> <a href="index.html">Overview</a>
@@ -128,40 +153,9 @@ for the JavaScript code in this tag.
     <li> <a href="snippet-reference.html">Reference</a>
   </ul>
 </nav>
-
 </div>
-
 <div id="content">
 <h1 class="title">YASnippet menu</h1>
-
-
-<p>
-When <a href="snippet-reference.html#yas-minor-mode"><code>yas-minor-mode</code></a> is active, YASnippet will setup a menu just after
-the "Buffers" menu in the menubar.
-</p>
-<p>
-In this menu, you can find
-</p>
-<ul>
-<li>The currently loaded snippet definitions, organized by major mode,
-   and optional grouping.
-
-</li>
-<li>A rundown of the most common commands, (followed by their
-   keybindings) including commands to load directories and reload all
-   snippet definitions.
-
-</li>
-<li>A series of submenus for customizing and exploring YASnippet
-   behavior.
-</li>
-</ul>
-
-
-<p>
-<img src="./images/menu-1.png"  alt="./images/menu-1.png" />
-</p>
-
 <div id="table-of-contents">
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
@@ -174,105 +168,125 @@ In this menu, you can find
 </ul>
 </div>
 </div>
+<p>
+When <a href="snippet-reference.html#yas-minor-mode"><code>yas-minor-mode</code></a> is active, YASnippet will setup a menu just after
+the "Buffers" menu in the menubar.
+</p>
 
-<div id="outline-container-1" class="outline-2">
+<p>
+In this menu, you can find
+</p>
+
+<ul class="org-ul">
+<li>The currently loaded snippet definitions, organized by major mode,
+and optional grouping.
+</li>
+
+<li>A rundown of the most common commands, (followed by their
+keybindings) including commands to load directories and reload all
+snippet definitions.
+</li>
+
+<li>A series of submenus for customizing and exploring YASnippet
+behavior.
+</li>
+</ul>
+
+
+<div class="figure">
+<p><img src="./images/menu-1.png" alt="menu-1.png" />
+</p>
+</div>
+
+<div id="outline-container-sec-1" class="outline-2">
 <h2 id="sec-1">Loading snippets from menu</h2>
 <div class="outline-text-2" id="text-1">
-
-
 <p>
-Invoking "Load snippets&hellip;" from the menu invokes <a href="snippet-reference.html#yas-load-directory"><code>yas-load-directory</code></a>
+Invoking "Load snippets&#x2026;" from the menu invokes <a href="snippet-reference.html#yas-load-directory"><code>yas-load-directory</code></a>
 and prompts you for a snippet directory hierarchy to load.
 </p>
+
 <p>
-Also useful is the "Reload everything" item to invoke <a href="#yas-reload-all"><code>yas-reload-all</code></a>
+Also useful is the "Reload everything" item to invoke <i><code>yas-reload-all</code></i>
 which uncondionally reloads all the snippets directories defined in
 <a href="snippet-reference.html#yas-snippet-dirs"><code>yas-snippet-dirs</code></a> and rebuilds the menus.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-2" class="outline-2">
+<div id="outline-container-sec-2" class="outline-2">
 <h2 id="sec-2">Snippet menu behavior</h2>
 <div class="outline-text-2" id="text-2">
-
-
 <p>
 YASnippet will list in this section all the loaded snippet definitions
 organized by snippet table name.
 </p>
+
 <p>
 You can use this section to explore currently loaded snippets. If you
 click on one of them, the default behavior is to expand it,
 unconditionally, inside the current buffer.
 </p>
+
 <p>
 You can however, customize variable <a href="snippet-reference.html#yas-visit-from-menu"><code>yas-visit-from-menu</code></a> to be <code>t</code>
 which will take you to the snippet definition file when you select it
 from the menu.
 </p>
+
 <p>
 If you want the menu show only snippet tables whose name corresponds to
 a "real" major mode. You do this by setting <a href="snippet-reference.html#yas-use-menu"><code>yas-use-menu</code></a> to
 '<code>real-modes</code>.
 </p>
+
 <p>
 Finally, to have the menu show only the tables for the currently active
 mode, set <a href="snippet-reference.html#yas-use-menu"><code>yas-use-menu</code></a> to <code>abbreviate</code>.
 </p>
+
 <p>
 These customizations can also be found in the menu itself, under the
 "Snippet menu behavior" submenu.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-3" class="outline-2">
+<div id="outline-container-sec-3" class="outline-2">
 <h2 id="sec-3">Controlling indenting</h2>
 <div class="outline-text-2" id="text-3">
-
-
 <p>
 The "Indenting" submenu contains options to control the values of
 <a href="snippet-reference.html#yas-indent-line"><code>yas-indent-line</code></a> and <a href="snippet-reference.html#yas-also-auto-indent-first-line"><code>yas-also-auto-indent-first-line</code></a>. See
-<a href="./snippet-development.html">Writing snippets</a> .
+<a href="./snippet-development.html">Writing snippets</a>.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-4" class="outline-2">
+<div id="outline-container-sec-4" class="outline-2">
 <h2 id="sec-4">Prompting method</h2>
 <div class="outline-text-2" id="text-4">
-
-
 <p>
 The "Prompting method" submenu contains options to control the value of
-<a href="snippet-reference.html#yas-prompt-functions"><code>yas-prompt-functions</code></a>. See <a href="./snippet-expansion.html">Expanding snippets</a> .
+<a href="snippet-reference.html#yas-prompt-functions"><code>yas-prompt-functions</code></a>. See <a href="./snippet-expansion.html">Expanding snippets</a>.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-5" class="outline-2">
+<div id="outline-container-sec-5" class="outline-2">
 <h2 id="sec-5">Misc</h2>
 <div class="outline-text-2" id="text-5">
-
-
 <p>
 The "Misc" submenu contains options to control the values of more
 variables.
-</p></div>
-</div>
-</div>
-
-<div id="postamble">
-<hr><p class='creator'>Generated by <a href="http://orgmode.org">Org</a> version 7.9.3f with <a href="http://www.gnu.org/software/emacs/">Emacs</a> version 24 on 2014-10-01T21:16+0100 from 08b044e559cc350c6e7142d088ec2d4a82e378cb
 </p>
-<p class='xhtml-validation'><a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a></p>
-
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<hr><p class='creator'>Generated by <a href="http://www.gnu.org/software/emacs/">Emacs</a> 24.4.91.1 (<a href="http://orgmode.org">Org</a> mode 8.2.10) on  from 7703a55ac416a131dec45fa6a1e0ec1e31adf760
+</p>
+<p class='xhtml-validation'><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
 </html>

@@ -1,63 +1,90 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Yet another snippet extension</title>
-<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
-<meta name="title" content="Yet another snippet extension"/>
-<meta name="generator" content="Org-mode"/>
-<meta name="generated" content="2014-10-01T21:16+0100"/>
-<meta name="author" content=""/>
-<meta name="description" content=""/>
-<meta name="keywords" content=""/>
+<!-- 2015-09-24 Thu 21:15 -->
+<meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta  name="generator" content="Org-mode" />
 <style type="text/css">
  <!--/*--><![CDATA[/*><!--*/
-  html { font-family: Times, serif; font-size: 12pt; }
   .title  { text-align: center; }
-  .todo   { color: red; }
+  .todo   { font-family: monospace; color: red; }
   .done   { color: green; }
-  .tag    { background-color: #add8e6; font-weight:normal }
-  .target { }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
   .timestamp { color: #bebebe; }
   .timestamp-kwd { color: #5f9ea0; }
-  .right  {margin-left:auto; margin-right:0px;  text-align:right;}
-  .left   {margin-left:0px;  margin-right:auto; text-align:left;}
-  .center {margin-left:auto; margin-right:auto; text-align:center;}
-  p.verse { margin-left: 3% }
+  .right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
   pre {
-	border: 1pt solid #AEBDCC;
-	background-color: #F3F5F7;
-	padding: 5pt;
-	font-family: courier, monospace;
-        font-size: 90%;
-        overflow:auto;
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
   }
-  table { border-collapse: collapse; }
-  td, th { vertical-align: top;  }
-  th.right  { text-align:center;  }
-  th.left   { text-align:center;   }
-  th.center { text-align:center; }
-  td.right  { text-align:right;  }
-  td.left   { text-align:left;   }
-  td.center { text-align:center; }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  pre.src-sh:before    { content: 'sh'; }
+  pre.src-bash:before  { content: 'sh'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-R:before     { content: 'R'; }
+  pre.src-perl:before  { content: 'Perl'; }
+  pre.src-java:before  { content: 'Java'; }
+  pre.src-sql:before   { content: 'SQL'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.right  { text-align: center;  }
+  th.left   { text-align: center;   }
+  th.center { text-align: center; }
+  td.right  { text-align: right;  }
+  td.left   { text-align: left;   }
+  td.center { text-align: center; }
   dt { font-weight: bold; }
-  div.figure { padding: 0.5em; }
-  div.figure p { text-align: center; }
-  div.inlinetask {
-    padding:10px;
-    border:2px solid gray;
-    margin:10px;
+  .footpara:nth-child(2) { display: inline; }
+  .footpara { display: block; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
     background: #ffffcc;
   }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
   textarea { overflow-x: auto; }
-  .linenr { font-size:smaller }
-  .code-highlighted {background-color:#ffff00;}
-  .org-info-js_info-navigation { border-style:none; }
-  #org-info-js_console-label { font-size:10px; font-weight:bold;
-                               white-space:nowrap; }
-  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
-                                 font-weight:bold; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
   /*]]>*/-->
 </style>
 <link rel="stylesheet" type="text/css" href="stylesheets/manual.css" />
@@ -107,11 +134,9 @@ for the JavaScript code in this tag.
  }
 /*]]>*///-->
 </script>
-
 </head>
 <body>
-
-<div id="preamble">
+<div id="preamble" class="status">
 <nav>
   <ul class="center">
     <li> <a href="index.html">Overview</a>
@@ -128,76 +153,78 @@ for the JavaScript code in this tag.
     <li> <a href="snippet-reference.html">Reference</a>
   </ul>
 </nav>
-
 </div>
-
 <div id="content">
 <h1 class="title">Yet another snippet extension</h1>
-
-<p>The YASnippet documentation has been split into separate parts:
+<p>
+The YASnippet documentation has been split into separate parts:
 </p>
-<ol>
+
+<ol class="org-ol">
 <li><a href="https://github.com/capitaomorte/yasnippet/blob/master/README.mdown">README</a>
 
 <p>
-   Contains an introduction, installation instructions and other important
-   notes.
+Contains an introduction, installation instructions and other important
+notes.
 </p>
 </li>
+
 <li><a href="snippet-organization.html">Organizing Snippets</a>
 
 <p>
-   Describes ways to organize your snippets in the hard disk.
+Describes ways to organize your snippets in the hard disk.
 </p>
 </li>
+
 <li><a href="snippet-expansion.html">Expanding Snippets</a>
 
 <p>
-   Describes how YASnippet chooses snippets for expansion at point.
+Describes how YASnippet chooses snippets for expansion at point.
 </p>
+
 <p>
-   Maybe, you'll want some snippets to be expanded in a particular mode,
-   or only under certain conditions, or be prompted using <code>ido</code>, etc&hellip;
+Maybe, you'll want some snippets to be expanded in a particular mode,
+or only under certain conditions, or be prompted using <code>ido</code>, etc&#x2026;
 </p>
 </li>
+
 <li><a href="snippet-development.html">Writing Snippets</a>
 
 <p>
-   Describes the YASnippet definition syntax, which is very close (but
-   not equivalent) to Textmate's. Includes a section about converting
-   TextMate snippets.
+Describes the YASnippet definition syntax, which is very close (but
+not equivalent) to Textmate's. Includes a section about converting
+TextMate snippets.
 </p>
 </li>
+
 <li><a href="snippet-menu.html">The YASnippet menu</a>
 
 <p>
-   Explains how to use the YASnippet menu to explore, learn and modify
-   snippets.
+Explains how to use the YASnippet menu to explore, learn and modify
+snippets.
 </p>
 </li>
+
 <li><a href="faq.html">Frequently asked questions</a>
 
 <p>
-   Answers to frequently asked questions.
+Answers to frequently asked questions.
 </p>
 </li>
+
 <li><a href="snippet-reference.html">YASnippet Symbol Reference</a>
 
 <p>
-   An automatically generated listing of all YASnippet commands,
-   (customization) variables, and functions.
-</p></li>
-</ol>
-
-
-
-</div>
-
-<div id="postamble">
-<hr><p class='creator'>Generated by <a href="http://orgmode.org">Org</a> version 7.9.3f with <a href="http://www.gnu.org/software/emacs/">Emacs</a> version 24 on 2014-10-01T21:16+0100 from 08b044e559cc350c6e7142d088ec2d4a82e378cb
+An automatically generated listing of all YASnippet commands,
+(customization) variables, and functions.
 </p>
-<p class='xhtml-validation'><a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a></p>
-
+</li>
+</ol>
+</div>
+<div id="postamble" class="status">
+<hr><p class='creator'>Generated by <a href="http://www.gnu.org/software/emacs/">Emacs</a> 24.4.91.1 (<a href="http://orgmode.org">Org</a> mode 8.2.10) on  from 7703a55ac416a131dec45fa6a1e0ec1e31adf760
+</p>
+<p class='xhtml-validation'><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
 </html>

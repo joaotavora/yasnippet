@@ -1,63 +1,90 @@
-<?xml version="1.0" encoding="iso-8859-1"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Writing snippets</title>
-<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
-<meta name="title" content="Writing snippets"/>
-<meta name="generator" content="Org-mode"/>
-<meta name="generated" content="2014-10-01T21:16+0100"/>
-<meta name="author" content=""/>
-<meta name="description" content=""/>
-<meta name="keywords" content=""/>
+<!-- 2015-09-24 Thu 21:15 -->
+<meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta  name="generator" content="Org-mode" />
 <style type="text/css">
  <!--/*--><![CDATA[/*><!--*/
-  html { font-family: Times, serif; font-size: 12pt; }
   .title  { text-align: center; }
-  .todo   { color: red; }
+  .todo   { font-family: monospace; color: red; }
   .done   { color: green; }
-  .tag    { background-color: #add8e6; font-weight:normal }
-  .target { }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
   .timestamp { color: #bebebe; }
   .timestamp-kwd { color: #5f9ea0; }
-  .right  {margin-left:auto; margin-right:0px;  text-align:right;}
-  .left   {margin-left:0px;  margin-right:auto; text-align:left;}
-  .center {margin-left:auto; margin-right:auto; text-align:center;}
-  p.verse { margin-left: 3% }
+  .right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
   pre {
-	border: 1pt solid #AEBDCC;
-	background-color: #F3F5F7;
-	padding: 5pt;
-	font-family: courier, monospace;
-        font-size: 90%;
-        overflow:auto;
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
   }
-  table { border-collapse: collapse; }
-  td, th { vertical-align: top;  }
-  th.right  { text-align:center;  }
-  th.left   { text-align:center;   }
-  th.center { text-align:center; }
-  td.right  { text-align:right;  }
-  td.left   { text-align:left;   }
-  td.center { text-align:center; }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  pre.src-sh:before    { content: 'sh'; }
+  pre.src-bash:before  { content: 'sh'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-R:before     { content: 'R'; }
+  pre.src-perl:before  { content: 'Perl'; }
+  pre.src-java:before  { content: 'Java'; }
+  pre.src-sql:before   { content: 'SQL'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.right  { text-align: center;  }
+  th.left   { text-align: center;   }
+  th.center { text-align: center; }
+  td.right  { text-align: right;  }
+  td.left   { text-align: left;   }
+  td.center { text-align: center; }
   dt { font-weight: bold; }
-  div.figure { padding: 0.5em; }
-  div.figure p { text-align: center; }
-  div.inlinetask {
-    padding:10px;
-    border:2px solid gray;
-    margin:10px;
+  .footpara:nth-child(2) { display: inline; }
+  .footpara { display: block; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
     background: #ffffcc;
   }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
   textarea { overflow-x: auto; }
-  .linenr { font-size:smaller }
-  .code-highlighted {background-color:#ffff00;}
-  .org-info-js_info-navigation { border-style:none; }
-  #org-info-js_console-label { font-size:10px; font-weight:bold;
-                               white-space:nowrap; }
-  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
-                                 font-weight:bold; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
   /*]]>*/-->
 </style>
 <link rel="stylesheet" type="text/css" href="stylesheets/manual.css" />
@@ -107,11 +134,9 @@ for the JavaScript code in this tag.
  }
 /*]]>*///-->
 </script>
-
 </head>
 <body>
-
-<div id="preamble">
+<div id="preamble" class="status">
 <nav>
   <ul class="center">
     <li> <a href="index.html">Overview</a>
@@ -128,14 +153,9 @@ for the JavaScript code in this tag.
     <li> <a href="snippet-reference.html">Reference</a>
   </ul>
 </nav>
-
 </div>
-
 <div id="content">
 <h1 class="title">Writing snippets</h1>
-
-
-
 <div id="table-of-contents">
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
@@ -159,14 +179,14 @@ for the JavaScript code in this tag.
 <li><a href="#sec-2-9"><code># contributor:</code> snippet author</a></li>
 </ul>
 </li>
-<li><a href="#sec-3">Template syntax</a>
+<li><a href="#sec-3"></a>
 <ul>
 <li><a href="#sec-3-1">Plain Text</a></li>
 <li><a href="#sec-3-2">Embedded Emacs-lisp code</a></li>
 <li><a href="#sec-3-3">Tab stop fields</a></li>
 <li><a href="#sec-3-4">Placeholder fields</a></li>
-<li><a href="#sec-3-5">Mirrors</a></li>
-<li><a href="#sec-3-6">Mirrors with transformations</a></li>
+<li><a href="#sec-3-5"></a></li>
+<li><a href="#sec-3-6">Mirrors with </a></li>
 <li><a href="#sec-3-7">Fields with transformations</a></li>
 <li><a href="#sec-3-8">Choosing fields value from a list and other tricks</a></li>
 <li><a href="#sec-3-9">Nested placeholder fields</a></li>
@@ -176,90 +196,90 @@ for the JavaScript code in this tag.
 </div>
 </div>
 
-<div id="outline-container-1" class="outline-2">
+<div id="outline-container-sec-1" class="outline-2">
 <h2 id="sec-1">Snippet development</h2>
 <div class="outline-text-2" id="text-1">
-
-
-
-</div>
-
-<div id="outline-container-1-1" class="outline-3">
+</div><div id="outline-container-sec-1-1" class="outline-3">
 <h3 id="sec-1-1">Quickly finding snippets</h3>
 <div class="outline-text-3" id="text-1-1">
-
-
 <p>
-There are some ways you can quickly find a snippet file:
+There are some ways you can quickly find a snippet file or create a new one:
 </p>
-<ul>
+
+<ul class="org-ul">
 <li><code>M-x yas-new-snippet</code>
 
 <p>
-   Prompts you for a snippet name, then tries to guess a suitable
-   directory to store it, prompting you for creation if it does not
-   exist. Finally, places you in a new buffer set to <code>snippet-mode</code> so
-   you can write your snippet.
+Creates a new buffer with a template for making a new snippet.
+The buffer is in <code>snippet-mode</code> (see below). When you are done
+editing the new snippet, use <code>C-c C-c</code> to save it. This will
+prompt for a directory two steps: first, the snippet table
+(with a default based on the major mode you started in), and then
+then snippet collection directory (defaults to the first directory
+in <code>yas-snippet-dirs</code>. (See <a href="snippet-organization.html">Organizing Snippets</a>
+for more detail on how snippets are organized.)
 </p>
 </li>
+
 <li><code>M-x yas-find-snippets</code>
 
 <p>
-   Lets you find the snippet file in the directory the snippet was
-   loaded from (if it exists) like <code>find-file-other-window</code>. The
-   directory searching logic is similar to <code>M-x yas-new-snippet</code>.
+Lets you find the snippet file in the directory the snippet was
+loaded from (if it exists) like <code>find-file-other-window</code>. The
+directory searching logic is similar to <code>M-x yas-new-snippet</code>.
 </p>
 </li>
+
 <li><code>M-x yas-visit-snippet-file</code>
 
 <p>
-   Prompts you for possible snippet expansions like
-   <a href="snippet-reference.html#yas-insert-snippet"><code>yas-insert-snippet</code></a>, but instead of expanding it, takes you directly
-   to the snippet definition's file, if it exists.
-</p></li>
+Prompts you for possible snippet expansions like
+<a href="snippet-reference.html#yas-insert-snippet"><code>yas-insert-snippet</code></a>, but instead of expanding it, takes you directly
+to the snippet definition's file, if it exists.
+</p>
+</li>
 </ul>
-
 
 <p>
 Once you find this file it will be set to <code>snippet-mode</code> (see ahead) and
 you can start editing your snippet.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-1-2" class="outline-3">
+<div id="outline-container-sec-1-2" class="outline-3">
 <h3 id="sec-1-2">Using the <code>snippet-mode</code> major mode</h3>
 <div class="outline-text-3" id="text-1-2">
-
-
 <p>
 There is a major mode <code>snippet-mode</code> to edit snippets. You can set the
 buffer to this mode with <code>M-x snippet-mode</code>. It provides reasonably
 useful syntax highlighting.
 </p>
+
 <p>
 Two commands are defined in this mode:
 </p>
-<ul>
+
+<ul class="org-ul">
 <li><code>M-x yas-load-snippet-buffer</code>
 
 <p>
-     When editing a snippet, this loads the snippet into the correct
-     mode and menu. Bound to <code>C-c C-c</code> by default while in
-     <code>snippet-mode</code>.
+When editing a snippet, this loads the snippet into the correct
+mode and menu. Bound to <code>C-c C-c</code> by default while in
+<code>snippet-mode</code>.
 </p>
 </li>
+
 <li><code>M-x yas-tryout-snippet</code>
 
 <p>
-     When editing a snippet, this opens a new empty buffer, sets it to
-     the appropriate major mode and inserts the snippet there, so you
-     can see what it looks like. This is bound to <code>C-c C-t</code> while in
-     <code>snippet-mode</code>.
-</p></li>
+When editing a snippet, this opens a new empty buffer, sets it to
+the appropriate major mode and inserts the snippet there, so you
+can see what it looks like. This is bound to <code>C-c C-t</code> while in
+<code>snippet-mode</code>.
+</p>
+</li>
 </ul>
-
 
 <p>
 There are also <i>snippets for writing snippets</i>: <code>vars</code>, <code>$f</code> and <code>$m</code>
@@ -267,18 +287,16 @@ There are also <i>snippets for writing snippets</i>: <code>vars</code>, <code>$f
 </p>
 </div>
 </div>
-
 </div>
 
-<div id="outline-container-2" class="outline-2">
+<div id="outline-container-sec-2" class="outline-2">
 <h2 id="sec-2">File content</h2>
 <div class="outline-text-2" id="text-2">
-
-
 <p>
 A file defining a snippet generally contains the template to be
 expanded.
 </p>
+
 <p>
 Optionally, if the file contains a line of <code># --</code>, the lines above it
 count as comments, some of which can be <i>directives</i> (or meta data).
@@ -286,30 +304,28 @@ Snippet directives look like <code># property: value</code> and tweak certain
 snippets properties described below. If no <code># --</code> is found, the whole
 file is considered the snippet template.
 </p>
+
 <p>
 Here's a typical example:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example"># contributor: pluskid &lt;pluskid@gmail.com&gt;
+<pre class="src src-snippet"># contributor: pluskid &lt;pluskid@gmail.com&gt;
 # name: __...__
 # --
 __${init}__
 </pre>
-
+</div>
 
 <p>
 Here's a list of currently supported directives:
 </p>
-
 </div>
 
-<div id="outline-container-2-1" class="outline-3">
+<div id="outline-container-sec-2-1" class="outline-3">
 <h3 id="sec-2-1"><code># key:</code> snippet abbrev</h3>
 <div class="outline-text-3" id="text-2-1">
-
-
 <p>
 This is the probably the most important directive, it's the
 abbreviation you type to expand a snippet just before hitting the key
@@ -317,55 +333,49 @@ that runs <a href="snippet-reference.html#yas-expand"><code>yas-expand</code></a
 the snippet will not be expandable through the trigger mechanism.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-2-2" class="outline-3">
+<div id="outline-container-sec-2-2" class="outline-3">
 <h3 id="sec-2-2"><code># name:</code> snippet name</h3>
 <div class="outline-text-3" id="text-2-2">
-
-
 <p>
 This is a one-line description of the snippet. It will be displayed in
-the menu. It's a good idea to select a descriptive name for a snippet --
+the menu. It's a good idea to select a descriptive name for a snippet &#x2013;
 especially distinguishable among similar snippets.
 </p>
+
 <p>
 If you omit this name it will default to the file name the snippet was
 loaded from.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-2-3" class="outline-3">
+<div id="outline-container-sec-2-3" class="outline-3">
 <h3 id="sec-2-3"><code># condition:</code> snippet condition</h3>
 <div class="outline-text-3" id="text-2-3">
-
-
 <p>
 This is a piece of Emacs-lisp code. If a snippet has a condition, then
 it will only be expanded when the condition code evaluate to some
 non-nil value.
 </p>
+
 <p>
 See also <a href="snippet-reference.html#yas-buffer-local-condition"><code>yas-buffer-local-condition</code></a> in
 <a href="./snippet-expansion.html">Expanding snippets</a>
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-2-4" class="outline-3">
+<div id="outline-container-sec-2-4" class="outline-3">
 <h3 id="sec-2-4"><code># group:</code> snippet menu grouping</h3>
 <div class="outline-text-3" id="text-2-4">
-
-
 <p>
 When expanding/visiting snippets from the menu-bar menu, snippets for a
 given mode can be grouped into sub-menus . This is useful if one has too
 many snippets for a mode which will make the menu too long.
 </p>
+
 <p>
 The <code># group:</code> property only affect menu construction (See
 <a href="./snippet-menu.html">the YASnippet menu</a>) and the same effect can be
@@ -373,6 +383,7 @@ achieved by grouping snippets into sub-directories and using the
 <code>.yas-make-groups</code> special file (for this see
 <a href="./snippet-organization.html">Organizing Snippets</a>
 </p>
+
 <p>
 Refer to the bundled snippets for <code>ruby-mode</code> for examples on the
 <code># group:</code> directive. Group can also be nested, e.g.
@@ -380,22 +391,22 @@ Refer to the bundled snippets for <code>ruby-mode</code> for examples on the
 group which is under the <code>control structure</code> group.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-2-5" class="outline-3">
+<div id="outline-container-sec-2-5" class="outline-3">
 <h3 id="sec-2-5"><code># expand-env:</code> expand environment</h3>
 <div class="outline-text-3" id="text-2-5">
-
-
 <p>
-This is another piece of Emacs-lisp code in the form of a <code>let</code> <i>varlist form</i>, i.e. a list of lists assigning values to variables. It can be
+This is another piece of Emacs-lisp code in the form of a <code>let</code> <i>varlist
+form</i>, i.e. a list of lists assigning values to variables. It can be
 used to override variable values while the snippet is being expanded.
 </p>
+
 <p>
 Interesting variables to override are <a href="snippet-reference.html#yas-wrap-around-region"><code>yas-wrap-around-region</code></a> and
 <a href="snippet-reference.html#yas-indent-line"><code>yas-indent-line</code></a> (see <a href="./snippet-expansion.html">Expanding Snippets</a>).
 </p>
+
 <p>
 As an example, you might normally have <a href="snippet-reference.html#yas-indent-line"><code>yas-indent-line</code></a> set to '<code>auto</code>
 and <a href="snippet-reference.html#yas-wrap-around-region"><code>yas-wrap-around-region</code></a> set to <code>t</code>, but for this particularly
@@ -403,52 +414,49 @@ brilliant piece of ASCII art these values would mess up your hard work.
 You can then use:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example"># name: ASCII home
+<pre class="src src-snippet"># name: ASCII home
 # expand-env: ((yas-indent-line 'fixed) (yas-wrap-around-region 'nil))
 # --
-                welcome to my
-            X      humble
-           / \      home,
-          /   \      $0
-         /     \
-        /-------\
-        |       |
-        |  +-+  |
-        |  | |  |
-        +--+-+--+
+		welcome to my
+	    X      humble
+	   / \      home,
+	  /   \      $0
+	 /     \
+	/-------\
+	|       |
+	|  +-+  |
+	|  | |  |
+	+--+-+--+
 </pre>
-
-
+</div>
+</div>
 </div>
 
-</div>
-
-<div id="outline-container-2-6" class="outline-3">
+<div id="outline-container-sec-2-6" class="outline-3">
 <h3 id="sec-2-6"><code># binding:</code> direct keybinding</h3>
 <div class="outline-text-3" id="text-2-6">
-
-
 <p>
 You can use this directive to expand a snippet directly from a normal
 Emacs keybinding. The keybinding will be registered in the Emacs keymap
 named after the major mode the snippet is active for.
 </p>
+
 <p>
 Additionally a variable <a href="snippet-reference.html#yas-prefix"><code>yas-prefix</code></a> is set to to the prefix argument
 you normally use for a command. This allows for small variations on the
 same snippet, for example in this "html-mode" snippet.
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example"># name: &lt;p&gt;...&lt;/p&gt;
+<pre class="src src-snippet"># name: &lt;p&gt;...&lt;/p&gt;
 # binding: C-c C-c C-m
 # --
 &lt;p&gt;`(when yas-prefix "\n")`$0`(when yas-prefix "\n")`&lt;/p&gt;
 </pre>
-
+</div>
 
 <p>
 This binding will be recorded in the keymap <code>html-mode-map</code>. To expand a
@@ -456,73 +464,59 @@ paragraph tag newlines, just press <code>C-u C-c C-c C-m</code>. Omitting the <c
 will expand the paragraph tag without newlines.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-2-7" class="outline-3">
+<div id="outline-container-sec-2-7" class="outline-3">
 <h3 id="sec-2-7"><code># type:</code> <code>snippet</code> or <code>command</code></h3>
 <div class="outline-text-3" id="text-2-7">
-
-
 <p>
 If the <code>type</code> directive is set to <code>command</code>, the body of the snippet
 is interpreted as lisp code to be evaluated when the snippet is
 triggered.
 </p>
+
 <p>
 If it's <code>snippet</code> (the default when there is no <code>type</code> directive), the
-snippet body will be parsed according to the <a href="#sec-3">Template Syntax</a>,
+snippet body will be parsed according to the <i>Template Syntax</i>,
 described below.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-2-8" class="outline-3">
+<div id="outline-container-sec-2-8" class="outline-3">
 <h3 id="sec-2-8"><code># uuid:</code> unique identifier</h3>
 <div class="outline-text-3" id="text-2-8">
-
-
 <p>
 This provides to a way to identify a snippet, independent of its name.
 Loading a second snippet file with the same uuid would replace the
 previous snippet.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-2-9" class="outline-3">
+<div id="outline-container-sec-2-9" class="outline-3">
 <h3 id="sec-2-9"><code># contributor:</code> snippet author</h3>
 <div class="outline-text-3" id="text-2-9">
-
-
 <p>
 This is optional and has no effect whatsoever on snippet functionality,
 but it looks nice.
 </p>
 </div>
 </div>
-
 </div>
 
-<div id="outline-container-3" class="outline-2">
-<h2 id="sec-3"><span class="target">Template syntax</span></h2>
+<div id="outline-container-sec-3" class="outline-2">
+<h2 id="sec-3"><a id="Template-syntax" name="Template-syntax"></a></h2>
 <div class="outline-text-2" id="text-3">
-
-
 <p>
 The syntax of the snippet template is simple but powerful, very similar
 to TextMate's.
 </p>
-
 </div>
 
-<div id="outline-container-3-1" class="outline-3">
+<div id="outline-container-sec-3-1" class="outline-3">
 <h3 id="sec-3-1">Plain Text</h3>
 <div class="outline-text-3" id="text-3-1">
-
-
 <p>
 Arbitrary text can be included as the content of a template. They are
 usually interpreted as plain text, except <code>$</code> and <code>`</code>. You need to
@@ -530,35 +524,33 @@ use <code>\</code> to escape them: <code>\$</code> and <code>\`</code>. The <cod
 escaped as <code>\\</code> sometimes.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-3-2" class="outline-3">
+<div id="outline-container-sec-3-2" class="outline-3">
 <h3 id="sec-3-2">Embedded Emacs-lisp code</h3>
 <div class="outline-text-3" id="text-3-2">
-
-
 <p>
 Emacs-Lisp code can be embedded inside the template, written inside
 back-quotes (<code>`</code>). The lisp forms are evaluated when the snippet is
 being expanded. The evaluation is done in the same buffer as the
 snippet being expanded.
 </p>
+
 <p>
 Here's an example for c-mode` to calculate the header file guard
 dynamically:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">#ifndef ${1:_`(upcase (file-name-nondirectory (file-name-sans-extension (buffer-file-name))))`_H_}
+<pre class="src src-snippet">#ifndef ${1:_`(upcase (file-name-nondirectory (file-name-sans-extension (buffer-file-name))))`_H_}
 #define $1
 
 $0
 
 #endif /* $1 */
 </pre>
-
+</div>
 
 <p>
 From version 0.6, snippets expansions are run with some special
@@ -566,13 +558,13 @@ Emacs-lisp variables bound. One of this is <a href="snippet-reference.html#yas-s
 therefore define a snippet like:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">for ($1;$2;$3) {
+<pre class="src src-snippet">for ($1;$2;$3) {
   `yas-selected-text`$0
 }
 </pre>
-
+</div>
 
 <p>
 to "wrap" the selected region inside your recently inserted snippet.
@@ -580,14 +572,11 @@ Alternatively, you can also customize the variable
 <a href="snippet-reference.html#yas-wrap-around-region"><code>yas-wrap-around-region</code></a> to <code>t</code> which will do this automatically.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-3-3" class="outline-3">
+<div id="outline-container-sec-3-3" class="outline-3">
 <h3 id="sec-3-3">Tab stop fields</h3>
 <div class="outline-text-3" id="text-3-3">
-
-
 <p>
 Tab stops are fields that you can navigate back and forth by <code>TAB</code> and
 <code>S-TAB</code>. They are written by <code>$</code> followed with a number. <code>$0</code> has the
@@ -595,81 +584,72 @@ special meaning of the <i>exit point</i> of a snippet. That is the last place
 to go when you've traveled all the fields. Here's a typical example:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">&lt;div$1&gt;
+<pre class="src src-snippet">&lt;div$1&gt;
     $0
 &lt;/div&gt;
 </pre>
-
 </div>
-
 </div>
-
-<div id="outline-container-3-4" class="outline-3">
+</div>
+<div id="outline-container-sec-3-4" class="outline-3">
 <h3 id="sec-3-4">Placeholder fields</h3>
 <div class="outline-text-3" id="text-3-4">
-
-
 <p>
-Tab stops can have default values &ndash; a.k.a placeholders. The syntax is
+Tab stops can have default values &#x2013; a.k.a placeholders. The syntax is
 like this:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">${N:default value}
+<pre class="src src-snippet">${N:default value}
 </pre>
-
+</div>
 
 <p>
 They acts as the default value for a tab stop. But when you firstly
 type at a tab stop, the default value will be replaced by your typing.
-The number can be omitted if you don't want to create <a href="#sec-3-5">mirrors</a> or
-<a href="#sec-3-6">transformations</a> for this field.
+The number can be omitted if you don't want to create <i>mirrors</i> or
+<a href="#transformations">3.6</a> for this field.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-3-5" class="outline-3">
-<h3 id="sec-3-5"><span class="target">Mirrors</span></h3>
+<div id="outline-container-sec-3-5" class="outline-3">
+<h3 id="sec-3-5"><a id="Mirrors" name="Mirrors"></a></h3>
 <div class="outline-text-3" id="text-3-5">
-
-
 <p>
 We refer the tab stops with placeholders as a <i>field</i>. A field can have
 mirrors. Its mirrors will get updated when you change the text of a
 field. Here's an example:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">\begin{${1:enumerate}}
+<pre class="src src-snippet">\begin{${1:enumerate}}
     $0
 \end{$1}
 </pre>
-
+</div>
 
 <p>
 When you type "document" at <code>${1:enumerate}</code>, the word "document" will
 also be inserted at <code>\end{$1}</code>. The best explanation is to see the
 screencast(<a href="http://www.youtube.com/watch?v=vOj7btx3ATg">YouTube</a> or <a href="http://yasnippet.googlecode.com/files/yasnippet.avi">avi video</a>).
 </p>
+
 <p>
 The tab stops with the same number to the field act as its mirrors. If
 none of the tab stops has an initial value, the first one is selected as
 the field and others mirrors.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-3-6" class="outline-3">
-<h3 id="sec-3-6">Mirrors with <span class="target">transformations</span></h3>
+<div id="outline-container-sec-3-6" class="outline-3">
+<h3 id="sec-3-6">Mirrors with <a id="transformations" name="transformations"></a></h3>
 <div class="outline-text-3" id="text-3-6">
-
-
 <p>
 If the value of an <code>${n:</code>-construct starts with and contains <code>$(</code>,
 then it is interpreted as a mirror for field <code>n</code> with a
@@ -680,9 +660,9 @@ content (string) contained in the field <code>n</code>. Here's an example for
 Objective-C:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">- (${1:id})${2:foo}
+<pre class="src src-snippet">- (${1:id})${2:foo}
 {
     return $2;
 }
@@ -694,7 +674,7 @@ Objective-C:
 }
 $0
 </pre>
-
+</div>
 
 <p>
 Look at <code>${2:$(capitalize yas-text)}</code>, it is a mirror with
@@ -705,85 +685,84 @@ transformed text. So in this example, if you type "baz" in the field,
 the transformed text will be "Baz". This example is also available in
 the screencast.
 </p>
+
 <p>
 Another example is for <code>rst-mode</code>. In reStructuredText, the document
-title can be some text surrounded by "===" below and above. The "==="
+title can be some text surrounded by "<code>=</code>" below and above. The "<code>=</code>"
 should be at least as long as the text. So
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">=====
+<pre class="src src-rst">=====
 Title
 =====
 </pre>
-
+</div>
 
 <p>
 is a valid title but
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">===
+<pre class="src src-rst">===
 Title
 ===
 </pre>
-
+</div>
 
 <p>
 is not. Here's an snippet for rst title:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">${1:$(make-string (string-width yas-text) ?\=)}
+<pre class="src src-snippet">${1:$(make-string (string-width yas-text) ?\=)}
 ${1:Title}
 ${1:$(make-string (string-width yas-text) ?\=)}
 
 $0
 </pre>
-
-
+</div>
+</div>
 </div>
 
-</div>
-
-<div id="outline-container-3-7" class="outline-3">
+<div id="outline-container-sec-3-7" class="outline-3">
 <h3 id="sec-3-7">Fields with transformations</h3>
 <div class="outline-text-3" id="text-3-7">
-
-
 <p>
 From version 0.6 on, you can also have lisp transformation inside
 fields. These work mostly mirror transformations but are evaluated when
 you first enter the field, after each change you make to the field and
 also just before you exit the field.
 </p>
+
 <p>
 The syntax is also a tiny bit different, so that the parser can
 distinguish between fields and mirrors. In the following example
 </p>
-<pre class="example">
- #define "${1:mydefine$(upcase yas-text)}"
-</pre>
 
+<pre class="example">
+#define "${1:mydefine$(upcase yas-text)}"
+</pre>
 
 <p>
 <code>mydefine</code> gets automatically upcased to <code>MYDEFINE</code> once you enter the
 field. As you type text, it gets filtered through the transformation
 every time.
 </p>
+
 <p>
 Note that to tell this kind of expression from a mirror with a
 transformation, YASnippet needs extra text between the <code>:</code> and the
 transformation's <code>$</code>. If you don't want this extra-text, you can use two
 <code>$</code>'s instead.
 </p>
-<pre class="example">
- #define "${1:$$(upcase yas-text)}"
-</pre>
 
+<pre class="example">
+#define "${1:$$(upcase yas-text)}"
+</pre>
 
 <p>
 Please note that as soon as a transformation takes place, it changes the
@@ -792,14 +771,11 @@ value of the field and sets it its internal modification state to
 does not take place. This is by design.
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-3-8" class="outline-3">
+<div id="outline-container-sec-3-8" class="outline-3">
 <h3 id="sec-3-8">Choosing fields value from a list and other tricks</h3>
 <div class="outline-text-3" id="text-3-8">
-
-
 <p>
 As mentioned, the field transformation is invoked just after you enter
 the field, and with some useful variables bound, notably
@@ -807,80 +783,79 @@ the field, and with some useful variables bound, notably
 can place a transformation in the primary field that lets you select
 default values for it.
 </p>
+
 <p>
 The <a href="snippet-reference.html#yas-choose-value"><code>yas-choose-value</code></a> does this work for you. For example:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">&lt;div align="${2:$$(yas-choose-value '("right" "center" "left"))}"&gt;
+<pre class="src src-snippet">&lt;div align="${2:$$(yas-choose-value '("right" "center" "left"))}"&gt;
   $0
 &lt;/div&gt;
 </pre>
-
+</div>
 
 <p>
 See the definition of <a href="snippet-reference.html#yas-choose-value"><code>yas-choose-value</code></a> to see how it was written using
 the two variables.
 </p>
+
 <p>
 Here's another use, for LaTeX-mode, which calls reftex-label just as you
 enter snippet field 2. This one makes use of <a href="snippet-reference.html#yas-modified-p"><code>yas-modified-p</code></a> directly.
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">\section{${1:"Titel der Tour"}}%
+<pre class="src src-snippet">\section{${1:"Titel der Tour"}}%
 \index{$1}%
 \label{{2:"waiting for reftex-label call..."$(unless yas-modified-p (reftex-label nil 'dont-
 insert))}}%
 </pre>
-
+</div>
 
 <p>
 The function <a href="snippet-reference.html#yas-verify-value"><code>yas-verify-value</code></a> has another neat trick, and makes use
 of <a href="snippet-reference.html#yas-moving-away-p"><code>yas-moving-away-p</code></a>. Try it and see! Also, check out this <a href="http://groups.google.com/group/smart-snippet/browse_thread/thread/282a90a118e1b662">thread</a>
 </p>
 </div>
-
 </div>
 
-<div id="outline-container-3-9" class="outline-3">
+<div id="outline-container-sec-3-9" class="outline-3">
 <h3 id="sec-3-9">Nested placeholder fields</h3>
 <div class="outline-text-3" id="text-3-9">
-
-
 <p>
 From version 0.6 on, you can also have nested placeholders of the type:
 </p>
 
+<div class="org-src-container">
 
-
-<pre class="example">&lt;div${1: id="${2:some_id}"}&gt;$0&lt;/div&gt;
+<pre class="src src-snippet">&lt;div${1: id="${2:some_id}"}&gt;$0&lt;/div&gt;
 </pre>
-
+</div>
 
 <p>
 This allows you to choose if you want to give this <code>div</code> an <code>id</code>
 attribute. If you tab forward after expanding it will let you change
-"some_id" to whatever you like. Alternatively, you can just press <code>C-d</code>
+"some\<sub>id</sub>" to whatever you like. Alternatively, you can just press <code>C-d</code>
 (which executes <a href="snippet-reference.html#yas-skip-and-clear-or-delete-char"><code>yas-skip-and-clear-or-delete-char</code></a>) and go straight to
 the exit marker.
 </p>
+
 <p>
 By the way, <code>C-d</code> will only clear the field if you cursor is at the
 beginning of the field <i>and</i> it hasn't been changed yet. Otherwise, it
 performs the normal Emacs <code>delete-char</code> command.
-</p></div>
-</div>
-</div>
-</div>
-
-<div id="postamble">
-<hr><p class='creator'>Generated by <a href="http://orgmode.org">Org</a> version 7.9.3f with <a href="http://www.gnu.org/software/emacs/">Emacs</a> version 24 on 2014-10-01T21:16+0100 from 08b044e559cc350c6e7142d088ec2d4a82e378cb
 </p>
-<p class='xhtml-validation'><a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a></p>
-
+</div>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<hr><p class='creator'>Generated by <a href="http://www.gnu.org/software/emacs/">Emacs</a> 24.4.91.1 (<a href="http://orgmode.org">Org</a> mode 8.2.10) on  from 7703a55ac416a131dec45fa6a1e0ec1e31adf760
+</p>
+<p class='xhtml-validation'><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
 </html>
