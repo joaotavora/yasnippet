@@ -123,6 +123,9 @@
    Alternatively, you may compile all directories in the list
    =yas-snippet-dirs= with the =yas-recompile-all= function.
 
-* TODO The =.yas-skip= file
+* The =.yas-skip= file
+
+  A =.yas-skip= file in a mode's snippet subdirectory tells YASnippet
+  not to load snippets from there.
 
 ** TODO
