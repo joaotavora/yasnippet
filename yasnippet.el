@@ -1272,7 +1272,8 @@ Returns (TEMPLATES START END). This function respects
                            'again)
                  (setq methods (cdr methods))))
               (t
-               (yas--warning "Warning invalid element %s in `yas-key-syntaxes'" method)))
+               (setq methods (cdr methods))
+               (yas--warning "Invalid element `%s' in `yas-key-syntaxes'" method)))
         (let ((possible-key (buffer-substring-no-properties (point) original)))
           (save-excursion
             (goto-char original)
