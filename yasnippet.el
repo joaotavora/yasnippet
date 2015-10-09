@@ -742,8 +742,7 @@ and friends."
                             append (funcall dfs neighbour explored)))))
     (remove-duplicates (if mode
                            (funcall dfs mode)
-                         (append yas--extra-modes
-                                 (funcall dfs major-mode))))))
+                         (apply #'append (mapcar dfs (cons major-mode yas--extra-modes)))))))
 
 (defvar yas-minor-mode-hook nil
   "Hook run when `yas-minor-mode' is turned on.")
