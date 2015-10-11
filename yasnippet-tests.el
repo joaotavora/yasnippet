@@ -491,15 +491,40 @@ TODO: correct this bug!"
                           yet-another-c-mode
                           and-also-this-one
                           and-that-one
-                          ;; prog-mode doesn't exit in emacs 24.3
+                          ;; prog-mode doesn't exist in emacs 24.3
                           ,@(if (fboundp 'prog-mode)
                                 '(prog-mode))
                           emacs-lisp-mode
                           lisp-interaction-mode))
               (observed (yas--modes-to-activate)))
-         (should (null (cl-set-exclusive-or expected observed)))
-         (should (= (length expected)
-                    (length observed))))))))
+         (should (equal (sort expected #'string<) (sort observed #'string<))))))))
+
+(ert-deftest extra-modes-parenthood ()
+  "Test activation of parents of `yas--extra-modes'."
+  (yas-saving-variables
+   (yas-with-snippet-dirs '((".emacs.d/snippets"
+                             ("c-mode"
+                              (".yas-parents" . "cc-mode"))
+                             ("cc-mode"
+                              (".yas-parents" . "yet-another-c-mode and-that-one"))
+                             ("yet-another-c-mode"
+                              (".yas-parents" . "c-mode and-also-this-one lisp-interaction-mode"))))
+     (yas-reload-all)
+     (with-temp-buffer
+       (let* ((_ (yas-activate-extra-mode 'c-mode))
+              (expected `(,major-mode
+                          c-mode
+                          cc-mode
+                          yet-another-c-mode
+                          and-also-this-one
+                          and-that-one
+                          ;; prog-mode doesn't exist in emacs 24.3
+                          ,@(if (fboundp 'prog-mode)
+                                '(prog-mode))
+                          emacs-lisp-mode
+                          lisp-interaction-mode))
+              (observed (yas--modes-to-activate)))
+         (should (equal (sort expected #'string<) (sort observed #'string<))))))))
 
 (ert-deftest issue-492-and-494 ()
   (defalias 'yas--phony-c-mode 'c-mode)
