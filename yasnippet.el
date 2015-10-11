@@ -728,22 +728,22 @@ defined direct keybindings to the command
 (defun yas--modes-to-activate (&optional mode)
   "Compute list of mode symbols that are active for `yas-expand'
 and friends."
-  (let (dfs)
-    (setq dfs (lambda (mode &optional explored)
-                (push mode explored)
-                (cons mode
-                      (loop for neighbour
-                            in (cl-list* (get mode 'derived-mode-parent)
-                                         (ignore-errors (symbol-function mode))
-                                         (gethash mode yas--parents))
-                            when (and neighbour
-                                      (not (memq neighbour explored))
-                                      (symbolp neighbour))
-                            append (funcall dfs neighbour explored)))))
-    (remove-duplicates (if mode
-                           (funcall dfs mode)
-                         (append yas--extra-modes
-                                 (funcall dfs major-mode))))))
+  (let (dfs explored)
+    (setq dfs (lambda (mode)
+                (unless (memq mode explored)
+                  (push mode explored)
+                  (loop for neighbour
+                        in (cl-list* (get mode 'derived-mode-parent)
+                                     (ignore-errors (symbol-function mode))
+                                     (gethash mode yas--parents))
+                        when (and neighbour
+                                  (not (memq neighbour explored))
+                                  (symbolp neighbour))
+                        do (funcall dfs neighbour)))))
+    (if mode
+        (funcall dfs mode)
+      (mapcar dfs (cons major-mode yas--extra-modes)))
+    explored))
 
 (defvar yas-minor-mode-hook nil
   "Hook run when `yas-minor-mode' is turned on.")
