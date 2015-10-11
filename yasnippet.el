@@ -741,10 +741,9 @@ and friends."
                                   (symbolp neighbour))
                         do (funcall dfs neighbour)))))
     (if mode
-        (progn (funcall dfs mode)
-               explored)
-      (funcall dfs major-mode)
-      (append yas--extra-modes explored))))
+        (funcall dfs mode)
+      (mapcar dfs (cons major-mode yas--extra-modes)))
+    explored))
 
 (defvar yas-minor-mode-hook nil
   "Hook run when `yas-minor-mode' is turned on.")
