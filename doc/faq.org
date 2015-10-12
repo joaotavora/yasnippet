@@ -4,14 +4,14 @@
 
 * Why is there an extra newline?
 
-If you have a newline at the end of the snippet definition file, then
-YASnippet will add a newline when you expanding a snippet. Please don't
-add a newline at the end if you don't want it when you saving the
-snippet file.
+If there is a newline at the end of a snippet definition file,
+YASnippet will add a newline when expanding that snippet. When editing
+or saving a snippet file, please be careful not to accidentally add a
+terminal newline.
 
-Note some editors will automatically add a newline for you. In Emacs, if
-you set =require-final-newline= to =t=, it will add the final newline
-for you automatically.
+Note that some editors will automatically add a newline for you. In
+Emacs, if you set =require-final-newline= to =t=, it will add the
+final newline automatically.
 
 * Why doesn't TAB expand a snippet?
 
@@ -27,8 +27,8 @@ code to your =.emacs= /before/ loading YASnippet:
 where =the-major-mode= is the major mode in which [[sym:yas-minor-mode][=yas-minor-mode=]] isn't
 enabled by default.
 
-From YASnippet 0.6 you can also use the command =M-x yas-global-mode= to
-turn on YASnippet automatically for /all/ major modes.
+The command =M-x yas-global-mode= turns YASnippet on automatically for
+/all/ major modes.
 
 If [[sym:yas-minor-mode][=yas-minor-mode=]] is on but the snippet still not expanded. Then try
 to see what command is bound to the =TAB= key: press =C-h k= and then
