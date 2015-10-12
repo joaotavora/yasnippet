@@ -4049,9 +4049,8 @@ When multiple expressions are found, only the last one counts."
                                    ;; after the ":", this will be
                                    ;; caught as a mirror with
                                    ;; transform later.
-                                   (not (save-match-data
-                                          (eq (string-match "$[ \t\n]*("
-                                                            (match-string-no-properties 2)) 0)))
+                                   (not (string-match-p "\\`\\$[ \t\n]*("
+                                                        (match-string-no-properties 2)))
                                    ;; allow ${0: some exit text}
                                    ;; (not (and number (zerop number)))
                                    (yas--make-field number
