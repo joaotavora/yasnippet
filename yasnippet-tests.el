@@ -1,4 +1,4 @@
-;;; yasnippet-tests.el --- some yasnippet tests
+;;; yasnippet-tests.el --- some yasnippet tests -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2012  João Távora
 
@@ -328,7 +328,10 @@ TODO: correct this bug!"
 
 ;; See issue #497. To understand this test, follow the example of the
 ;; `yas-key-syntaxes' docstring.
-;; 
+;;
+(defvar yas--barbaz)
+(defvar yas--foobarbaz)
+
 (ert-deftest complicated-yas-key-syntaxes ()
   (with-temp-buffer
     (yas-saving-variables
@@ -893,7 +896,6 @@ attention to case differences."
 (provide 'yasnippet-tests)
 ;; Local Variables:
 ;; indent-tabs-mode: nil
-;; lexical-binding: t
 ;; byte-compile-warnings: (not cl-functions)
 ;; End:
 ;;; yasnippet-tests.el ends here
