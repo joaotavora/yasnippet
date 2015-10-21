@@ -1576,6 +1576,9 @@ Optional PROMPT sets the prompt to use."
 (defun yas-x-prompt (prompt choices &optional display-fn)
   "Display choices in a x-window prompt."
   (when (and window-system choices)
+    ;; Let window position be recalculated to ensure that
+    ;; `posn-at-point' returns non-nil.
+    (redisplay)
     (or
      (x-popup-menu
       (if (fboundp 'posn-at-point)
