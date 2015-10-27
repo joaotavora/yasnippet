@@ -2454,6 +2454,7 @@ where snippets of table might exist."
               ;; create the .yas-parents file here...
               candidate)))))
 
+(defvar yas-original-buffer nil)
 (defun yas-new-snippet (&optional no-template)
   "Pops a new buffer for writing a snippet.
 
@@ -2462,6 +2463,7 @@ NO-TEMPLATE is non-nil."
   (interactive "P")
   (let ((guessed-directories (yas--guess-snippet-directories)))
 
+    (setq yas-original-buffer (current-buffer))
     (switch-to-buffer "*new snippet*")
     (erase-buffer)
     (kill-all-local-variables)
@@ -2470,8 +2472,18 @@ NO-TEMPLATE is non-nil."
     (set (make-local-variable 'yas--guessed-modes) (mapcar #'(lambda (d)
                                                               (yas--table-mode (car d)))
                                                           guessed-directories))
-    (if (and (not no-template) yas-new-snippet-default)
-        (yas-expand-snippet yas-new-snippet-default))))
+    (when (and (not no-template) yas-new-snippet-default)
+      (save-excursion (insert (yas-snippet-from-region)))
+      (yas-expand-snippet yas-new-snippet-default))))
+
+(defun yas-snippet-from-region ()
+  "Initial snippet content from region."
+  (or (with-current-buffer yas-original-buffer
+        (if (region-active-p)
+            (replace-regexp-in-string
+             "[\\$]" "\\\\\\&"
+             (buffer-substring-no-properties (region-beginning) (region-end)))))
+      ""))
 
 (defun yas--compute-major-mode-and-parents (file)
   "Given FILE, find the nearest snippet directory for a given mode.
