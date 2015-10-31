@@ -497,6 +497,7 @@ TODO: correct this bug!"
                           emacs-lisp-mode
                           lisp-interaction-mode))
               (observed (yas--modes-to-activate)))
+         (should (equal major-mode (car observed)))
          (should (equal (sort expected #'string<) (sort observed #'string<))))))))
 
 (ert-deftest extra-modes-parenthood ()
@@ -505,26 +506,29 @@ TODO: correct this bug!"
    (yas-with-snippet-dirs '((".emacs.d/snippets"
                              ("c-mode"
                               (".yas-parents" . "cc-mode"))
-                             ("cc-mode"
-                              (".yas-parents" . "yet-another-c-mode and-that-one"))
                              ("yet-another-c-mode"
                               (".yas-parents" . "c-mode and-also-this-one lisp-interaction-mode"))))
      (yas-reload-all)
      (with-temp-buffer
-       (let* ((_ (yas-activate-extra-mode 'c-mode))
-              (expected `(,major-mode
-                          c-mode
-                          cc-mode
-                          yet-another-c-mode
-                          and-also-this-one
-                          and-that-one
-                          ;; prog-mode doesn't exist in emacs 24.3
-                          ,@(if (fboundp 'prog-mode)
-                                '(prog-mode))
-                          emacs-lisp-mode
-                          lisp-interaction-mode))
+       (yas-activate-extra-mode 'c-mode)
+       (yas-activate-extra-mode 'yet-another-c-mode)
+       (yas-activate-extra-mode 'and-that-one)
+       (let* ((expected-first `(and-that-one
+                                yet-another-c-mode
+                                c-mode
+                                ,major-mode))
+              (expected-rest `(cc-mode
+                               ;; prog-mode doesn't exist in emacs 24.3
+                               ,@(if (fboundp 'prog-mode)
+                                     '(prog-mode))
+                               emacs-lisp-mode
+                               and-also-this-one
+                               lisp-interaction-mode))
               (observed (yas--modes-to-activate)))
-         (should (equal (sort expected #'string<) (sort observed #'string<))))))))
+         (should (equal expected-first
+                        (cl-subseq observed 0 (length expected-first))))
+         (should (equal (sort expected-rest #'string<)
+                        (sort (cl-subseq observed (length expected-first)) #'string<))))))))
 
 (ert-deftest issue-492-and-494 ()
   (defalias 'yas--phony-c-mode 'c-mode)
