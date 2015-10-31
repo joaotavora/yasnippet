@@ -1779,9 +1779,9 @@ With prefix argument USE-JIT do jit-loading of snippets."
                           (current-time-string)))))
     ;; Normal case.
     (unless (file-exists-p (concat directory "/" ".yas-skip"))
-      (if (and (progn (yas--message 2 "Loading compiled snippets from %s" directory) t)
-               (load (expand-file-name ".yas-compiled-snippets" directory) 'noerror (<= yas-verbosity 3)))
-          (yas--message 2 "Loading snippet files from %s" directory)
+      (unless (and (load (expand-file-name ".yas-compiled-snippets" directory) 'noerror (<= yas-verbosity 3))
+                   (progn (yas--message 2 "Loaded compiled snippets from %s" directory) t))
+        (yas--message 2 "Loading snippet files from %s" directory)
         (yas--load-directory-2 directory mode-sym)))))
 
 (defun yas--load-directory-2 (directory mode-sym)
