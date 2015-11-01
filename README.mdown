@@ -43,10 +43,12 @@ https://github.com/dimitri/el-get for instructions.
 
 ## Use `yas-minor-mode` on a per-buffer basis
 
-To use YASnippet as a non-global minor mode, replace `(yas-global-mode 1)` with
-`(yas-reload-all)` to load the snippet tables. Then add a call to
-`(yas-minor-mode)` to the major-modes where you to enable YASnippet.
+To use YASnippet as a non-global minor mode, don't call
+`yas-global-mode`; instead call `yas-reload-all` to load the snippet
+tables and then call `yas-minor-mode` from the hooks of major-modes
+where you want YASnippet enabled.
 
+    (yas-reload-all)
     (add-hook 'prog-mode-hook #'yas-minor-mode)
 
 # Where are the snippets?
