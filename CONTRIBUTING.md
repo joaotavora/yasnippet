@@ -23,5 +23,7 @@ there is no separate Changelog file.
 
     * foo.el (a-function): Terse summary of per-function changes.
 
+For trivial changes, a message consisting of just the changelog entry
+(the `* foo.el ...` part) is fine.
 
 [bugnote]: https://github.com/capitaomorte/yasnippet#important-note-regarding-bug-reporting
