@@ -1448,7 +1448,7 @@ Here's a list of currently recognized directives:
                                                      (point-max)))
                (setq bound (point))
                (goto-char (point-min))
-               (while (re-search-forward "^# *\\([^ ]+?\\) *: *\\(.*\\)$" bound t)
+               (while (re-search-forward "^# *\\([^ ]+?\\) *: *\\(.*?\\)[[:space:]]*$" bound t)
                  (when (string= "uuid" (match-string-no-properties 1))
                    (setq uuid (match-string-no-properties 2)))
                  (when (string= "type" (match-string-no-properties 1))
