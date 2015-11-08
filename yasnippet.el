@@ -1750,8 +1750,8 @@ With prefix argument USE-JIT do jit-loading of snippets."
             (funcall fun)))
         ;; Look for buffers that are already in `mode-sym', and so
         ;; need the new snippets immediately...
-        ;; 
-        (when use-jit 
+        ;;
+        (when use-jit
           (cl-loop for buffer in (buffer-list)
                    do (with-current-buffer buffer
                         (when (eq major-mode mode-sym)
@@ -1759,7 +1759,7 @@ With prefix argument USE-JIT do jit-loading of snippets."
                           (push buffer impatient-buffers)))))))
     ;; ...after TOP-LEVEL-DIR has been completely loaded, call
     ;; `yas--load-pending-jits' in these impatient buffers.
-    ;; 
+    ;;
     (cl-loop for buffer in impatient-buffers
              do (with-current-buffer buffer (yas--load-pending-jits))))
   (when interactive
@@ -2225,7 +2225,7 @@ Common gateway for `yas-expand-from-trigger-key' and
                 ;; loops when other extensions use mechanisms similar
                 ;; to `yas--keybinding-beyond-yasnippet'. (github #525
                 ;; and #526)
-                ;; 
+                ;;
                 (yas-minor-mode nil)
                 (beyond-yasnippet (yas--keybinding-beyond-yasnippet)))
            (yas--message 4 "Falling back to %s"  beyond-yasnippet)
@@ -3429,7 +3429,7 @@ progress."
 ;; As of github #537 this no longer inhibits the command by issuing an
 ;; error: all the snippets at point, including nested snippets, are
 ;; automatically commited and the current command can proceed.
-;; 
+;;
 (defun yas--make-move-field-protection-overlays (snippet field)
   "Place protection overlays surrounding SNIPPET's FIELD.
 
