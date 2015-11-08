@@ -328,7 +328,7 @@ TODO: correct this bug!"
 
 ;; See issue #497. To understand this test, follow the example of the
 ;; `yas-key-syntaxes' docstring.
-;; 
+;;
 (ert-deftest complicated-yas-key-syntaxes ()
   (with-temp-buffer
     (yas-saving-variables
@@ -736,7 +736,7 @@ TODO: be meaner"
           (should (not (eq (key-binding (yas--read-keybinding "TAB")) 'yas-expand)))
           (should (eq (key-binding (yas--read-keybinding "SPC")) 'yas-expand))))
     ;; FIXME: actually should restore to whatever saved values where there.
-    ;; 
+    ;;
     (define-key yas-minor-mode-map [tab] 'yas-expand)
     (define-key yas-minor-mode-map (kbd "TAB") 'yas-expand)
     (define-key yas-minor-mode-map (kbd "SPC") nil)))
