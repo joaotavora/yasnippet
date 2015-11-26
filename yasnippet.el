@@ -157,7 +157,7 @@
         (concat (file-name-directory load-file-name) "snippets")))
 
 (defcustom yas-snippet-dirs (remove nil
-                                    (list "~/.emacs.d/snippets"
+                                    (list (concat user-emacs-directory "snippets")
                                           'yas-installed-snippets-dir))
   "List of top-level snippet directories.
 
@@ -2416,7 +2416,7 @@ where snippets of table might exist."
   (let ((main-dir (replace-regexp-in-string
                    "/+$" ""
                    (or (first (or (yas-snippet-dirs)
-                                  (setq yas-snippet-dirs '("~/.emacs.d/snippets")))))))
+                                  (setq yas-snippet-dirs '((concat user-emacs-directory "snippets"))))))))
         (tables (or (and table
                          (list table))
                     (yas--get-snippet-tables))))
