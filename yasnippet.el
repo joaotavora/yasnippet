@@ -2233,7 +2233,7 @@ Common gateway for `yas-expand-from-trigger-key' and
                 (beyond-yasnippet (yas--keybinding-beyond-yasnippet)))
            (yas--message 4 "Falling back to %s"  beyond-yasnippet)
            (assert (or (null beyond-yasnippet) (commandp beyond-yasnippet)))
-           (setq this-original-command beyond-yasnippet)
+           (setq this-command beyond-yasnippet)
            (when beyond-yasnippet
              (call-interactively beyond-yasnippet))))
         ((and (listp yas-fallback-behavior)
