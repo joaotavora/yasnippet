@@ -3044,11 +3044,11 @@ through the field's start point"
 
 The most recently-inserted snippets are returned first."
   (sort
-   (remove nil (remove-duplicates (mapcar #'(lambda (ov)
-                                              (overlay-get ov 'yas--snippet))
-                                          (if all-snippets
-                                              (overlays-in (point-min) (point-max))
-                                            (nconc (overlays-at (point)) (overlays-at (1- (point))))))))
+   (delq nil (delete-dups
+              (mapcar (lambda (ov) (overlay-get ov 'yas--snippet))
+                      (if all-snippets (overlays-in (point-min) (point-max))
+                        (nconc (overlays-at (point))
+                               (overlays-at (1- (point))))))))
    #'(lambda (s1 s2)
        (<= (yas--snippet-id s2) (yas--snippet-id s1)))))
 
