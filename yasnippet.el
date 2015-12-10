@@ -3151,12 +3151,6 @@ Also create some protection overlays"
 (defvar yas--inhibit-overlay-hooks nil
   "Bind this temporarily to non-nil to prevent running `yas--on-*-modification'.")
 
-(defmacro yas--inhibit-overlay-hooks (&rest body)
-  "Run BODY with `yas--inhibit-overlay-hooks' set to t."
-  (declare (indent 0))
-  `(let ((yas--inhibit-overlay-hooks t))
-     ,@body))
-
 (defvar yas-snippet-beg nil "Beginning position of the last snippet committed.")
 (defvar yas-snippet-end nil "End position of the last snippet committed.")
 
@@ -3176,7 +3170,7 @@ This renders the snippet as ordinary text."
       (setq yas-snippet-end (overlay-end control-overlay))
       (delete-overlay control-overlay))
 
-    (yas--inhibit-overlay-hooks
+    (let ((yas--inhibit-overlay-hooks t))
       (when yas--active-field-overlay
         (delete-overlay yas--active-field-overlay))
       (when yas--field-protection-overlays
@@ -3436,7 +3430,7 @@ Move the overlays, or create them if they do not exit."
     ;;
     (when (< (buffer-size) end)
       (save-excursion
-        (yas--inhibit-overlay-hooks
+        (let ((yas--inhibit-overlay-hooks t))
           (goto-char (point-max))
           (newline))))
     ;; go on to normal overlay creation/moving
@@ -3552,7 +3546,7 @@ considered when expanding the snippet."
              ;; them mostly to make the undo information
              ;;
              (setq yas--start-column (current-column))
-             (yas--inhibit-overlay-hooks
+             (let ((yas--inhibit-overlay-hooks t))
                (setq snippet
                      (if expand-env
                          (eval `(let* ,expand-env
@@ -4234,7 +4228,7 @@ When multiple expressions are found, only the last one counts."
                (not (string= reflection (buffer-substring-no-properties (yas--mirror-start mirror)
                                                                         (yas--mirror-end mirror)))))
       (goto-char (yas--mirror-start mirror))
-      (yas--inhibit-overlay-hooks
+      (let ((yas--inhibit-overlay-hooks t))
         (insert reflection))
       (if (> (yas--mirror-end mirror) (point))
           (delete-region (point) (yas--mirror-end mirror))
@@ -4253,7 +4247,7 @@ When multiple expressions are found, only the last one counts."
                                                                            (yas--field-end field)))))
         (setf (yas--field-modified-p field) t)
         (goto-char (yas--field-start field))
-        (yas--inhibit-overlay-hooks
+        (let ((yas--inhibit-overlay-hooks t))
           (insert transformed)
           (if (> (yas--field-end field) (point))
               (delete-region (point) (yas--field-end field))
