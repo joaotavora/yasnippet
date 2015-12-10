@@ -1390,16 +1390,6 @@ them all in `yas--menu-table'"
                     :visible (yas--show-menu-p ',mode)))
     menu-keymap))
 
-
-(defmacro yas--called-interactively-p (&optional kind)
-  "A backward-compatible version of `called-interactively-p'.
-
-Optional KIND is as documented at `called-interactively-p'
-in GNU Emacs 24.1 or higher."
-  (if (string< emacs-version "24.1")
-      '(called-interactively-p)
-    `(called-interactively-p ,kind)))
-
 
 ;;; Template-related and snippet loading functions
 
