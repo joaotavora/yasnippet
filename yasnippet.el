@@ -346,11 +346,14 @@ Any other non-nil value, every submenu is listed."
   :group 'yasnippet)
 
 (defcustom yas-wrap-around-region nil
-  "If non-nil, snippet expansion wraps around selected region.
+  "What to insert for snippet's $0 field.
 
-The wrapping occurs just before the snippet's exit marker.  This
-can be overridden on a per-snippet basis."
-  :type 'boolean
+If set to a character, insert contents of corresponding register.
+If non-nil insert region contents."
+  :type '(choice (character :tag "Insert from register")
+                 (const t :tag "Insert region contents")
+                 (const nil :tag "Don't insert anything")
+                 (const cua)) ; backwards compat
   :group 'yasnippet)
 
 (defcustom yas-good-grace t
@@ -4127,14 +4130,14 @@ When multiple expressions are found, only the last one counts."
                    (yas--make-exit (yas--make-marker (match-end 0))))
              (save-excursion
                (goto-char (match-beginning 0))
-               (when yas-wrap-around-region
-                 (cond (yas-selected-text
-                        (insert yas-selected-text))
-                       ((and (eq yas-wrap-around-region 'cua)
-                             cua-mode
-                             (get-register ?0))
-                        (insert (prog1 (get-register ?0)
-                                  (set-register ?0 nil))))))
+               (when (eq yas-wrap-around-region 'cua)
+                 (setq yas-wrap-around-region ?0))
+               (cond ((and yas-wrap-around-region yas-selected-text)
+                      (insert yas-selected-text))
+                     ((and (characterp yas-wrap-around-region)
+                           (get-register yas-wrap-around-region))
+                      (insert (prog1 (get-register yas-wrap-around-region)
+                                (set-register yas-wrap-around-region nil)))))
                (push (cons (point) (yas--exit-marker (yas--snippet-exit snippet)))
                      yas--dollar-regions)))
             (t
