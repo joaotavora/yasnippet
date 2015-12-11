@@ -2351,7 +2351,6 @@ visited file in `snippet-mode'."
   (interactive)
   (let* ((yas-buffer-local-condition 'always)
          (templates (yas--all-templates (yas--get-snippet-tables)))
-         (yas-prompt-functions '(yas-ido-prompt yas-completing-prompt))
          (template (and templates
                         (or (yas--prompt-for-template templates
                                                      "Choose a snippet template to edit: ")
