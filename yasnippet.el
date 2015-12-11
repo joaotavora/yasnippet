@@ -216,7 +216,7 @@ If nil, don't use any snippet."
 (defcustom yas-prompt-functions '(yas-x-prompt
                                   yas-dropdown-prompt
                                   yas-completing-prompt
-                                  yas-ido-prompt
+                                  yas-maybe-ido-prompt
                                   yas-no-prompt)
   "Functions to prompt for keys, templates, etc interactively.
 
@@ -1585,11 +1585,13 @@ Optional PROMPT sets the prompt to use."
                             (if display-fn (mapcar display-fn choices) choices)))))
      (keyboard-quit))))
 
+(defun yas-maybe-ido-prompt (prompt choices &optional display-fn)
+  (when (bound-and-true-p ido-mode)
+    (yas-ido-prompt prompt choices display-fn)))
+
 (defun yas-ido-prompt (prompt choices &optional display-fn)
-  (when (and (fboundp 'ido-completing-read)
-	     (or (>= emacs-major-version 24)
-		 ido-mode))
-    (yas-completing-prompt prompt choices display-fn #'ido-completing-read)))
+  (require 'ido)
+  (yas-completing-prompt prompt choices display-fn #'ido-completing-read))
 
 (defun yas-dropdown-prompt (_prompt choices &optional display-fn)
   (when (fboundp 'dropdown-list)
