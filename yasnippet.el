@@ -462,10 +462,10 @@ Attention: These hooks are not run when exiting nested/stacked snippet expansion
   "Hooks to run just before expanding a snippet.")
 
 (defvar yas-buffer-local-condition
-  '(if (and (or (fourth (syntax-ppss))
-                (fifth (syntax-ppss)))
-	    this-command
-            (eq this-command 'yas-expand-from-trigger-key))
+  '(if (and (let ((ppss (syntax-ppss)))
+              (or (nth 3 ppss) (nth 4 ppss)))
+            (memq this-command '(yas-expand yas-expand-from-trigger-key
+                                            yas-expand-from-keymap)))
        '(require-snippet-condition . force-in-comment)
      t)
   "Snippet expanding condition.
