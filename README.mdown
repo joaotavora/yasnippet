@@ -63,8 +63,8 @@ download "git submodules" and find two subdirs under the main tree.
 
 1. `snippets/`
 
-    Points to [yasnippet-snippets][yasnippet-snippets] the snippet
-    collection of [AndreaCrotti](https://github.com/AndreaCrotti).
+    Points to [yasnippet-snippets] the snippet collection of
+    [AndreaCrotti](https://github.com/AndreaCrotti).
 
     The default configuraiton already points to this dir, so to use
     them, just make sure the submodule really was downloaded
@@ -72,8 +72,8 @@ download "git submodules" and find two subdirs under the main tree.
 
 2. `yasmate/`
 
-    Points to a github repo of the [yasmate][yasmate] tool, which is
-    dedicated to converting textmate bundles into yasnippet snippets.
+    Points to a github repo of the [yasmate] tool, which is dedicated
+    to converting textmate bundles into yasnippet snippets.
 
     To use these snippets you have to run the tool first, so
     [see its doc][yasmate]), and then point the `yas-snippet-dirs`
@@ -81,6 +81,11 @@ download "git submodules" and find two subdirs under the main tree.
 
     If you have a working ruby environment, you can probably get lucky
     directly with `rake convert-bundles`.
+
+3.  [textmate-to-yas.el]
+
+    This is another textmate bundle converting tool using Elisp
+    instead of Ruby.
 
 Naturally, you can point `yas-snippet-dirs` to good snippet collections out
 there. If you have created snippets for a mode, or multiple modes,
@@ -162,4 +167,5 @@ Finally, thank you very much for using YASnippet!
 [forum]: http://groups.google.com/group/smart-snippet
 [melpa]: http://melpa.milkbox.net/
 [yasmate]: http://github.com/capitaomorte/yasmate
+[textmate-to-yas.el]: https://github.com/mattfidler/textmate-to-yas.el
 [yasnippet-snippets]: http://github.com/AndreaCrotti/yasnippet-snippets
