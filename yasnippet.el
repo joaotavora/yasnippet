@@ -3399,11 +3399,8 @@ progress."
                (yas--field-update-display field))
              (yas--update-mirrors snippet))
             (field
-             (when (and (not after?)
-                        (not (yas--field-modified-p field))
-                        (eq (point) (if (markerp (yas--field-start field))
-                                        (marker-position (yas--field-start field))
-                                      (yas--field-start field))))
+             (when (and (not (yas--field-modified-p field))
+                        (= (point) (yas--field-start field)))
                (yas--skip-and-clear field))
              (setf (yas--field-modified-p field) t))))))
 
