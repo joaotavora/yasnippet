@@ -53,7 +53,7 @@
     (yas-expand-snippet "${1:brother} from another $1")
     (should (string= (yas--buffer-contents)
                      "brother from another brother"))
-    (ert-simulate-command `(yas-mock-insert "bla"))
+    (yas-mock-insert "bla")
     (should (string= (yas--buffer-contents)
                      "bla from another bla"))))
 
@@ -63,7 +63,7 @@
     (yas-expand-snippet "${1:brother} from another ${1:$(upcase yas-text)}")
     (should (string= (yas--buffer-contents)
                      "brother from another BROTHER"))
-    (ert-simulate-command `(yas-mock-insert "bla"))
+    (yas-mock-insert "bla")
     (should (string= (yas--buffer-contents)
                      "bla from another BLA"))))
 
@@ -73,7 +73,7 @@
     (let ((snippet "${1:$$(upcase yas-text)}${1:$(concat \"bar\" yas-text)}"))
       (yas-expand-snippet snippet)
       (should (string= (yas--buffer-contents) "bar"))
-      (ert-simulate-command `(yas-mock-insert "foo"))
+      (yas-mock-insert "foo")
       (should (string= (yas--buffer-contents) "FOObarFOO")))))
 
 (ert-deftest nested-placeholders-kill-superfield ()
@@ -82,7 +82,7 @@
     (yas-expand-snippet "brother from ${2:another ${3:mother}}!")
     (should (string= (yas--buffer-contents)
                      "brother from another mother!"))
-    (ert-simulate-command `(yas-mock-insert "bla"))
+    (yas-mock-insert "bla")
     (should (string= (yas--buffer-contents)
                      "brother from bla!"))))
 
@@ -91,7 +91,7 @@
     (yas-minor-mode 1)
     (yas-expand-snippet "brother from ${2:another ${3:mother}}!")
     (ert-simulate-command '(yas-next-field-or-maybe-expand))
-    (ert-simulate-command `(yas-mock-insert "bla"))
+    (yas-mock-insert "bla")
     (should (string= (yas--buffer-contents)
                      "brother from another bla!"))))
 
@@ -101,7 +101,7 @@
     (yas-expand-snippet "<%= f.submit \"${1:Submit}\"${2:$(and (yas-text) \", :disable_with => '\")}${2:$1ing...}${2:$(and (yas-text) \"'\")} %>")
     (should (string= (yas--buffer-contents)
                      "<%= f.submit \"Submit\", :disable_with => 'Submiting...' %>"))
-    (ert-simulate-command `(yas-mock-insert "Send"))
+    (yas-mock-insert "Send")
     (should (string= (yas--buffer-contents)
                      "<%= f.submit \"Send\", :disable_with => 'Sending...' %>"))))
 
@@ -109,7 +109,7 @@
   (with-temp-buffer
     (yas-minor-mode 1)
     (yas-expand-snippet "${1:FOOOOOOO}${2:$1}${3:$2}${4:$3}")
-    (ert-simulate-command `(yas-mock-insert "abc"))
+    (yas-mock-insert "abc")
     (should (string= (yas--buffer-contents) "abcabcabcabc"))))
 
 (ert-deftest delete-numberless-inner-snippet-issue-562 ()
@@ -137,7 +137,7 @@
 ;;     (yas-minor-mode 1)
 ;;     (yas-expand-snippet "brother from ${2:another ${3:mother}}!")
 ;;     (ert-simulate-command '(yas-next-field-or-maybe-expand))
-;;     (ert-simulate-command `(yas-mock-insert "bla"))
+;;     (yas-mock-insert "bla")
 ;;     (ert-simulate-command '(undo))
 ;;     (should (string= (yas--buffer-contents)
 ;;                      "brother from another mother!"))))
@@ -222,7 +222,7 @@
           (snippet "if ${1:condition}\n`yas-selected-text`\nelse\n$3\nend"))
       (yas-expand-snippet snippet)
       (yas-next-field)
-      (ert-simulate-command `(yas-mock-insert "bbb"))
+      (yas-mock-insert "bbb")
       (should (string= (yas--buffer-contents) "if condition\naaa\nelse\nbbb\nend")))))
 
 (defmacro yas--with-font-locked-temp-buffer (&rest body)
@@ -314,9 +314,9 @@
                                 \"fail\")}"))
       (yas-expand-snippet snippet)
       (should (string= (yas--buffer-contents) "fail"))
-      (ert-simulate-command `(yas-mock-insert "foobaaar"))
+      (yas-mock-insert "foobaaar")
       (should (string= (yas--buffer-contents) "foobaaarfail"))
-      (ert-simulate-command `(yas-mock-insert "baz"))
+      (yas-mock-insert "baz")
       (should (string= (yas--buffer-contents) "foobaaarbazok")))))
 
 
@@ -810,10 +810,9 @@ add the snippets associated with the given mode."
                         (yas--buffer-contents))))))
 
 (defun yas-mock-insert (string)
-  (interactive)
-  (do ((i 0 (1+ i)))
-      ((= i (length string)))
-    (insert (aref string i))))
+  (dotimes (i (length string))
+    (let ((last-command-event (aref string i)))
+      (ert-simulate-command '(self-insert-command 1)))))
 
 (defun yas-make-file-or-dirs (ass)
   (let ((file-or-dir-name (car ass))
