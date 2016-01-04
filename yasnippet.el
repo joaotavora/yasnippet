@@ -3385,7 +3385,14 @@ Move the overlay, or create it if it does not exit."
     (overlay-put yas--active-field-overlay 'insert-behind-hooks
                  '(yas--on-field-overlay-modification))))
 
-(defun yas--on-field-overlay-modification (overlay after? _beg _end &optional _length)
+(defun yas--skip-and-clear-field-p (field _beg _end &optional _length)
+  "Tell if newly modified FIELD should be cleared and skipped.
+BEG, END and LENGTH like overlay modification hooks."
+  (and (eq this-command 'self-insert-command)
+       (not (yas--field-modified-p field))
+       (= (point) (yas--field-start field))))
+
+(defun yas--on-field-overlay-modification (overlay after? beg end &optional length)
   "Clears the field and updates mirrors, conditionally.
 
 Only clears the field if it hasn't been modified and point is at
@@ -3401,9 +3408,7 @@ field start.  This hook does nothing if an undo is in progress."
                (yas--field-update-display field))
              (yas--update-mirrors snippet))
             (field
-             (when (and (eq this-command 'self-insert-command)
-                        (not (yas--field-modified-p field))
-                        (= (point) (yas--field-start field)))
+             (when (yas--skip-and-clear-field-p field beg end)
                (yas--skip-and-clear field))
              (setf (yas--field-modified-p field) t))))))
 
