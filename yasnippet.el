@@ -1,8 +1,8 @@
 ;;; yasnippet.el --- Yet another snippet extension for Emacs.
 
 ;; Copyright (C) 2008-2013, 2015 Free Software Foundation, Inc.
-;; Authors: pluskid <pluskid@gmail.com>,  João Távora <joaotavora@gmail.com>
-;; Maintainer: João Távora <joaotavora@gmail.com>
+;; Authors: pluskid <pluskid@gmail.com>,  João Távora <joaotavora@gmail.com>, Noam Postavsky <npostavs@gmail.com>
+;; Maintainer: Noam Postavsky <npostavs@gmail.com>
 ;; Version: 0.8.1
 ;; Package-version: 0.8.0
 ;; X-URL: http://github.com/capitaomorte/yasnippet
@@ -1940,7 +1940,7 @@ This works by stubbing a few functions, then calling
   (interactive)
   (message (concat "yasnippet (version "
                    yas--version
-                   ") -- pluskid <pluskid@gmail.com>/joaotavora <joaotavora@gmail.com>")))
+                   ") -- pluskid/joaotavora/npostavs")))
 
 
 ;;; Apropos snippet menu:
