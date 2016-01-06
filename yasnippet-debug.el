@@ -45,7 +45,7 @@
                      (yas--snippet-id snippet)
                      (overlay-start (yas--snippet-control-overlay snippet))
                      (overlay-end (yas--snippet-control-overlay snippet))))
-      (princ (format "\tactive field: %d from %s to %s covering \"%s\"\n"
+      (princ (format "\tactive field: %s from %s to %s covering \"%s\"\n"
                      (yas--field-number (yas--snippet-active-field snippet))
                      (marker-position (yas--field-start (yas--snippet-active-field snippet)))
                      (marker-position (yas--field-end (yas--snippet-active-field snippet)))
@@ -55,7 +55,7 @@
                        (yas--exit-marker (yas--snippet-exit snippet))
                        (yas--exit-next (yas--snippet-exit snippet)))))
       (dolist (field (yas--snippet-fields snippet))
-        (princ (format "\tfield: %d from %s to %s covering \"%s\" next: %s%s\n"
+        (princ (format "\tfield: %s from %s to %s covering \"%s\" next: %s%s\n"
                        (yas--field-number field)
                        (marker-position (yas--field-start field))
                        (marker-position (yas--field-end field))
@@ -76,14 +76,15 @@
                    (point-max)))
     (unless (eq buffer-undo-list t)
       (princ (format "Undpolist has %s elements. First 10 elements follow:\n" (length buffer-undo-list)))
-      (let ((first-ten (subseq buffer-undo-list 0 19)))
+      (let ((first-ten (subseq buffer-undo-list 0 (min 19
+                                                       (length buffer-undo-list)))))
         (dolist (undo-elem first-ten)
           (princ (format "%2s:  %s\n" (position undo-elem first-ten) (truncate-string-to-width (format "%s" undo-elem) 70))))))))
 
 (defun yas--debug-format-fom-concise (fom)
   (when fom
     (cond ((yas--field-p fom)
-           (format "field %d from %d to %d"
+           (format "field %s from %d to %d"
                    (yas--field-number fom)
                    (marker-position (yas--field-start fom))
                    (marker-position (yas--field-end fom))))
