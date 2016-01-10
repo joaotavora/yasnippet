@@ -160,20 +160,17 @@
     (ert-simulate-command '(yas-prev-field))
     (should (looking-at "brother"))))
 
-(ert-deftest dont-clear-on-yank-issue-515 ()
-  "A yank shouldn't clear and unmodified field." ; or should it? -- jt
+(ert-deftest do-clear-on-yank-issue-515 ()
+  "A yank should clear an unmodified field."
   (with-temp-buffer
     (yas-minor-mode 1)
     (yas-expand-snippet "my ${1:kid brother} from another ${2:mother}")
-
-    (yas-mock-yank "little")
-    (yas-mock-insert " ")
-
+    (yas-mock-yank "little sibling")
     (should (string= (yas--buffer-contents)
-                     "my little kid brother from another mother"))
+                     "my little sibling from another mother"))
     (ert-simulate-command '(yas-next-field))
     (ert-simulate-command '(yas-prev-field))
-    (should (looking-at "little kid brother"))))
+    (should (looking-at "little sibling"))))
 
 
 ;;; Snippet expansion and character escaping

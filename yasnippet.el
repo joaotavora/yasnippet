@@ -3388,9 +3388,17 @@ Move the overlay, or create it if it does not exit."
 (defun yas--skip-and-clear-field-p (field _beg _end &optional _length)
   "Tell if newly modified FIELD should be cleared and skipped.
 BEG, END and LENGTH like overlay modification hooks."
-  (and (eq this-command 'self-insert-command)
-       (not (yas--field-modified-p field))
-       (= (point) (yas--field-start field))))
+  (and (not (yas--field-modified-p field))
+       (= (point) (yas--field-start field))
+       (require 'delsel)
+       ;; `yank' sets `this-command' to t during execution.
+       (let ((clearp (get (if (commandp this-command) this-command
+                            this-original-command)
+                          'delete-selection)))
+         (when (and (not (memq clearp '(yank supersede kill)))
+                    (functionp clearp))
+           (setq clearp (funcall clearp)))
+         clearp)))
 
 (defun yas--on-field-overlay-modification (overlay after? beg end &optional length)
   "Clears the field and updates mirrors, conditionally.
