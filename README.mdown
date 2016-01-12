@@ -128,7 +128,7 @@ $ git clone https://github.com/capitaomorte/yasnippet.git yasnippet-bug
 $ cd yasnippet-bug
 $ git log -1 --oneline
 6053db0 Closes #527: Unbreak case where yas-fallback-behaviour is a list
-$ HOME=$PWD emacs -L  # This "sandboxes" your emacs, melpa configuration, etc
+$ HOME=$PWD emacs -L . # This "sandboxes" your emacs, melpa configuration, etc
 
 (require 'yasnippet)
 (yas-global-mode 1)
