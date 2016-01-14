@@ -128,14 +128,14 @@ $ git clone https://github.com/capitaomorte/yasnippet.git yasnippet-bug
 $ cd yasnippet-bug
 $ git log -1 --oneline
 6053db0 Closes #527: Unbreak case where yas-fallback-behaviour is a list
-$ HOME=$PWD emacs -L  # This "sandboxes" your emacs, melpa configuration, etc
+$ HOME=$PWD emacs -L . # This "sandboxes" your emacs, melpa configuration, etc
 
 (require 'yasnippet)
 (yas-global-mode 1)
 
-When I open a foo-mode file I can't expand foo-mode snippets! 
+When I open a foo-mode file I don't see foo-mode under the "YASnippet" menu!
 OR
-I can't get yasnippet to load because frankinbogen!
+When loading yasnippet I see "Error: failed to frobnicate"!
 ```
 
 Using `emacs -Q` or temporarily moving your `.emacs` init file to the side 
