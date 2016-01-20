@@ -1806,6 +1806,8 @@ With prefix argument USE-JIT do jit-loading of snippets."
 prompt the user to select one."
   (let (errors)
     (if yas-snippet-dirs
+        (when (member yas--default-user-snippets-dir yas-snippet-dirs)
+          (make-directory yas--default-user-snippets-dir t))
         (dolist (directory (reverse (yas-snippet-dirs)))
           (cond ((file-directory-p directory)
                  (yas-load-directory directory (not nojit))
