@@ -1,5 +1,7 @@
 language: generic
 sudo: false
+git:
+  submodules: false
 
 env:
   - "EMACS_VERSION=24.5"
@@ -9,6 +11,7 @@ install:
   - tar -xaf emacs-bin-${EMACS_VERSION}.tar.gz -C /
   # Configure $PATH: Emacs installed to /tmp/emacs
   - export PATH=/tmp/emacs/bin:${PATH}
+  - emacs --version
 
 script:
   - rake compile; rake tests
