@@ -3063,6 +3063,13 @@ Otherwise delegate to `yas-next-field'."
             (yas-next-field))))
     (yas-next-field)))
 
+(defun yas-next-field-will-exit-p (&optional arg)
+  "Return non-nil if (yas-next-field ARG) would exit the current snippet."
+  (let ((snippet (car (yas--snippets-at-point)))
+        (active (overlay-get yas--active-field-overlay 'yas--field)))
+    (when snippet
+      (not (yas--find-next-field arg snippet active)))))
+
 (defun yas--find-next-field (n snippet active)
   "Return the Nth field after the ACTIVE one in SNIPPET."
   (let ((live-fields (cl-remove-if
