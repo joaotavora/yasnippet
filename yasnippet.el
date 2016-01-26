@@ -3063,38 +3063,36 @@ Otherwise delegate to `yas-next-field'."
             (yas-next-field))))
     (yas-next-field)))
 
+(defun yas--find-next-field (n snippet active)
+  "Return the Nth field after the ACTIVE one in SNIPPET."
+  (let ((live-fields (cl-remove-if
+                      (lambda (field)
+                        (and (not (eq field active))
+                             (yas--field-probably-deleted-p snippet field)))
+                      (yas--snippet-fields snippet))))
+    (if (>= n 0) (nth n (memq active live-fields))
+      (car (last (memq active (reverse live-fields)) (- n))))))
+
 (defun yas-next-field (&optional arg)
   "Navigate to the ARGth next field.
 
 If there's none, exit the snippet."
   (interactive)
-  (let* ((arg (or arg
-                  1))
-         (snippet (first (yas--snippets-at-point)))
+  (unless arg (setq arg 1))
+  (let* ((snippet (car (yas--snippets-at-point)))
          (active-field (overlay-get yas--active-field-overlay 'yas--field))
-         (live-fields (remove-if #'(lambda (field)
-                                     (and (not (eq field active-field))
-                                          (yas--field-probably-deleted-p snippet field)))
-                                 (yas--snippet-fields snippet)))
-         (active-field-pos (position active-field live-fields))
-         (target-pos (and active-field-pos (+ arg active-field-pos)))
-         (target-field (and target-pos (nth target-pos live-fields))))
-    ;; First check if we're moving out of a field with a transform
-    ;;
-    (when (and active-field
-               (yas--field-transform active-field))
+         (target-field (yas--find-next-field arg snippet active-field)))
+    ;; First check if we're moving out of a field with a transform.
+    (when (and active-field (yas--field-transform active-field))
       (let* ((yas-moving-away-p t)
              (yas-text (yas--field-text-for-display active-field))
              (yas-modified-p (yas--field-modified-p active-field)))
         ;; primary field transform: exit call to field-transform
         (yas--eval-lisp (yas--field-transform active-field))))
     ;; Now actually move...
-    (cond ((and target-pos (>= target-pos (length live-fields)))
-           (yas-exit-snippet snippet))
-          (target-field
-           (yas--move-to-field snippet target-field))
-          (t
-           nil))))
+    (if target-field
+        (yas--move-to-field snippet target-field)
+      (yas-exit-snippet snippet))))
 
 (defun yas--place-overlays (snippet field)
   "Correctly place overlays for SNIPPET's FIELD."
