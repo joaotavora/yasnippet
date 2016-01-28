@@ -1,6 +1,6 @@
-;;; yasnippet-tests.el --- some yasnippet tests
+;;; yasnippet-tests.el --- some yasnippet tests  -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012  João Távora
+;; Copyright (C) 2012, 2013, 2014, 2015  Free Software Foundation, Inc.
 
 ;; Author: João Távora <joaot@siscog.pt>
 ;; Keywords: emulations, convenience
@@ -27,6 +27,7 @@
 (require 'yasnippet)
 (require 'ert)
 (require 'ert-x)
+(require 'cl)
 
 
 ;;; Snippet mechanics
@@ -275,6 +276,15 @@
              (and (buffer-name ,temp-buffer)
                   (kill-buffer ,temp-buffer))))))))
 
+(defmacro yas-saving-variables (&rest body)
+  `(yas-call-with-saving-variables #'(lambda () ,@body)))
+
+(defmacro yas-with-snippet-dirs (dirs &rest body)
+  (declare (indent defun))
+  `(yas-call-with-snippet-dirs ,dirs
+                               #'(lambda ()
+                                   ,@body)))
+
 (ert-deftest example-for-issue-474 ()
   (yas--with-font-locked-temp-buffer
     (c-mode)
@@ -364,6 +374,9 @@ TODO: correct this bug!"
     (should (string= (yas--buffer-contents)
                      "brother from another mother") ;; no newline should be here!
             )))
+
+(defvar yas--barbaz)
+(defvar yas--foobarbaz)
 
 ;; See issue #497. To understand this test, follow the example of the
 ;; `yas-key-syntaxes' docstring.
@@ -569,8 +582,9 @@ TODO: correct this bug!"
          (should (equal (sort expected-rest #'string<)
                         (sort (cl-subseq observed (length expected-first)) #'string<))))))))
 
+(defalias 'yas--phony-c-mode 'c-mode)
+
 (ert-deftest issue-492-and-494 ()
-  (defalias 'yas--phony-c-mode 'c-mode)
   (define-derived-mode yas--test-mode yas--phony-c-mode "Just a test mode")
   (yas-with-snippet-dirs '((".emacs.d/snippets"
                             ("yas--test-mode")))
@@ -587,9 +601,10 @@ TODO: correct this bug!"
                              (should (= (length expected)
                                         (length observed)))))))
 
+(define-derived-mode yas--test-mode c-mode "Just a test mode")
+(define-derived-mode yas--another-test-mode c-mode "Another test mode")
+
 (ert-deftest issue-504-tricky-jit ()
-  (define-derived-mode yas--test-mode c-mode "Just a test mode")
-  (define-derived-mode yas--another-test-mode c-mode "Another test mode")
   (yas-with-snippet-dirs
    '((".emacs.d/snippets"
       ("yas--another-test-mode"
@@ -880,10 +895,6 @@ add the snippets associated with the given mode."
             for saved in saved-values
             do (set var saved)))))
 
-(defmacro yas-saving-variables (&rest body)
-  `(yas-call-with-saving-variables #'(lambda () ,@body)))
-
-
 (defun yas-call-with-snippet-dirs (dirs fn)
   (let* ((default-directory (make-temp-file "yasnippet-fixture" t))
          (yas-snippet-dirs (mapcar #'car dirs)))
@@ -894,12 +905,6 @@ add the snippets associated with the given mode."
             (funcall fn))
         (when (>= emacs-major-version 24)
           (delete-directory default-directory 'recursive))))))
-
-(defmacro yas-with-snippet-dirs (dirs &rest body)
-  (declare (indent defun))
-  `(yas-call-with-snippet-dirs ,dirs
-                               #'(lambda ()
-                                   ,@body)))
 
 ;;; Older emacsen
 ;;;
@@ -939,7 +944,6 @@ attention to case differences."
 (provide 'yasnippet-tests)
 ;; Local Variables:
 ;; indent-tabs-mode: nil
-;; lexical-binding: t
 ;; byte-compile-warnings: (not cl-functions)
 ;; End:
 ;;; yasnippet-tests.el ends here

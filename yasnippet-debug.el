@@ -1,6 +1,6 @@
 ;;; yasnippet-debug.el --- debug functions for yasnippet
 
-;; Copyright (C) 2010  João Távora
+;; Copyright (C) 2010, 2013, 2014  Free Software Foundation, Inc.
 
 ;; Author: João Távora
 ;; Keywords: emulations, convenience
@@ -25,6 +25,7 @@
 ;;; Code:
 
 (require 'yasnippet)
+(require 'cl)
 
 (defun yas-debug-snippet-vars ()
   "Debug snippets, fields, mirrors and the `buffer-undo-list'."
