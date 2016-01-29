@@ -213,8 +213,7 @@ If nil, don't use any snippet."
   :type 'string
   :group 'yasnippet)
 
-(defcustom yas-prompt-functions '(yas-x-prompt
-                                  yas-dropdown-prompt
+(defcustom yas-prompt-functions '(yas-dropdown-prompt
                                   yas-completing-prompt
                                   yas-maybe-ido-prompt
                                   yas-no-prompt)
