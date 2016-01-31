@@ -202,10 +202,9 @@ created with `yas-new-snippet'. "
 (defvaralias 'yas/root-directory 'yas-snippet-dirs)
 
 (defcustom yas-new-snippet-default "\
-# -*- mode: snippet; require-final-newline: nil -*-
+# -*- mode: snippet -*-
 # name: $1
-# key: ${2:${1:$(yas--key-from-desc yas-text)}}${3:
-# binding: ${4:direct-keybinding}}
+# key: ${2:${1:$(yas--key-from-desc yas-text)}}
 # --
 $0"
   "Default snippet to use when creating a new snippet.
