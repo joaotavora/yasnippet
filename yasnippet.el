@@ -3390,9 +3390,9 @@ BEG, END and LENGTH like overlay modification hooks."
        (= (point) (yas--field-start field))
        (require 'delsel)
        ;; `yank' sets `this-command' to t during execution.
-       (let ((clearp (get (if (commandp this-command) this-command
-                            this-original-command)
-                          'delete-selection)))
+       (let* ((command (if (commandp this-command) this-command
+                         this-original-command))
+              (clearp (if (symbolp command) (get command 'delete-selection))))
          (when (and (not (memq clearp '(yank supersede kill)))
                     (functionp clearp))
            (setq clearp (funcall clearp)))
