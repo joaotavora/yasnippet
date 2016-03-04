@@ -3869,8 +3869,9 @@ Meant to be called in a narrowed buffer, does various passes"
     (goto-char parse-start)
     (yas--indent snippet)))
 
-(defun yas--indent-according-to-mode (snippet-markers)
-  "Indent current line according to mode, preserving SNIPPET-MARKERS."
+(defun yas--indent-region (from to snippet)
+  "Indent the lines between FROM and TO with `indent-according-to-mode'.
+The SNIPPET's markers are preserved."
   ;;; Apropos indenting problems....
   ;;
   ;; `indent-according-to-mode' uses whatever `indent-line-function'
@@ -3883,54 +3884,50 @@ Meant to be called in a narrowed buffer, does various passes"
   ;; `front-advance' property set to nil.
   ;;
   ;; This is why I have these `trouble-markers', they are the ones at
-  ;; they are the ones at the first non-whitespace char at the line
-  ;; (i.e. at `yas--real-line-beginning'. After indentation takes place
-  ;; we should be at the correct to restore them to. All other
-  ;; non-trouble-markers have been *pushed* and don't need special
-  ;; attention.
-  ;;
-  (goto-char (yas--real-line-beginning))
-  (let ((trouble-markers (remove-if-not #'(lambda (marker)
-                                            (= marker (point)))
-                                        snippet-markers)))
-    (save-restriction
-      (widen)
-      (condition-case _
-          (indent-according-to-mode)
-        (error (yas--message 3 "Warning: `yas--indent-according-to-mode' having problems running %s" indent-line-function)
-               nil)))
-    (mapc #'(lambda (marker)
-              (set-marker marker (point)))
-          trouble-markers)))
+  ;; the first non-whitespace char at the line.  After indentation
+  ;; takes place we should be at the correct to restore them.  All
+  ;; other non-trouble-markers should have been *pushed* and don't
+  ;; need special attention.
+  (let* ((snippet-markers (yas--collect-snippet-markers snippet))
+         (to (set-marker (make-marker) to)))
+    (save-excursion
+      (goto-char from)
+      (save-restriction
+        (widen)
+        (cl-loop do
+                 (back-to-indentation)
+                 (let ((trouble-markers ; The markers at (point).
+                        (cl-remove (point) snippet-markers :test #'/=)))
+                   (unwind-protect
+                       (indent-according-to-mode)
+                     (dolist (marker trouble-markers)
+                       (set-marker marker (point)))))
+                 while (and (zerop (forward-line 1))
+                            (< (point) to)))))))
 
 (defvar yas--indent-original-column nil)
 (defun yas--indent (snippet)
-  (let ((snippet-markers (yas--collect-snippet-markers snippet)))
-    ;; Look for those $>
-    (save-excursion
-      (while (re-search-forward "$>" nil t)
-        (delete-region (match-beginning 0) (match-end 0))
-        (when (not (eq yas-indent-line 'auto))
-          (yas--indent-according-to-mode snippet-markers))))
-    ;; Now do stuff for 'fixed and 'auto
-    (save-excursion
-      (cond ((eq yas-indent-line 'fixed)
-             (while (and (zerop (forward-line))
-                         (zerop (current-column)))
-               (indent-to-column yas--indent-original-column)))
-            ((eq yas-indent-line 'auto)
-             (let ((end (set-marker (make-marker) (point-max)))
-                   (indent-first-line-p yas-also-auto-indent-first-line))
-               (while (and (zerop (if indent-first-line-p
-                                      (prog1
-                                          (forward-line 0)
-                                        (setq indent-first-line-p nil))
-                                    (forward-line 1)))
-                           (not (eobp))
-                           (<= (point) end))
-                 (yas--indent-according-to-mode snippet-markers))))
-            (t
-             nil)))))
+  ;; Look for those `$>'.
+  (save-excursion
+    (while (re-search-forward "$>" nil t)
+      (delete-region (match-beginning 0) (match-end 0))
+      (unless (eq yas-indent-line 'auto)
+        (yas--indent-region (line-beginning-position)
+                            (line-end-position)
+                            snippet))))
+  ;; Now do stuff for `fixed' and `auto'.
+  (save-excursion
+    (cond ((eq yas-indent-line 'fixed)
+           (while (and (zerop (forward-line))
+                       (zerop (current-column)))
+             (indent-to-column yas--indent-original-column)))
+          ((eq yas-indent-line 'auto)
+           (let ((end (set-marker (make-marker) (point-max))))
+             (unless yas-also-auto-indent-first-line
+               (forward-line 1))
+             (yas--indent-region (line-beginning-position)
+                                 (point-max)
+                                 snippet))))))
 
 (defun yas--collect-snippet-markers (snippet)
   "Make a list of all the markers used by SNIPPET."
@@ -3946,15 +3943,6 @@ Meant to be called in a narrowed buffer, does various passes"
                  (marker-buffer (yas--exit-marker snippet-exit)))
         (push (yas--exit-marker snippet-exit) markers)))
     markers))
-
-(defun yas--real-line-beginning ()
-  (let ((c (char-after (line-beginning-position)))
-        (n (line-beginning-position)))
-    (while (or (eql c ?\ )
-               (eql c ?\t))
-      (cl-incf n)
-      (setq c (char-after n)))
-    n))
 
 (defun yas--escape-string (escaped)
   (concat "YASESCAPE" (format "%d" escaped) "PROTECTGUARD"))
@@ -4200,43 +4188,42 @@ When multiple expressions are found, only the last one counts."
   (save-restriction
     (widen)
     (save-excursion
-     (dolist (field-and-mirror
-              (sort
-               ;; make a list of ((F1 . M1) (F1 . M2) (F2 . M3) (F2 . M4) ...)
-               ;; where F is the field that M is mirroring
-               ;;
-               (cl-mapcan #'(lambda (field)
-                              (mapcar #'(lambda (mirror)
-                                          (cons field mirror))
-                                      (yas--field-mirrors field)))
-                          (yas--snippet-fields snippet))
-               ;; then sort this list so that entries with mirrors with parent
-               ;; fields appear before. This was important for fixing #290, and
-               ;; luckily also handles the case where a mirror in a field causes
-               ;; another mirror to need reupdating
-               ;;
-               #'(lambda (field-and-mirror1 field-and-mirror2)
-                   (> (yas--calculate-mirror-depth (cdr field-and-mirror1))
-                      (yas--calculate-mirror-depth (cdr field-and-mirror2))))))
-       (let* ((field (car field-and-mirror))
-              (mirror (cdr field-and-mirror))
-              (parent-field (yas--mirror-parent-field mirror)))
-         ;; before updating a mirror with a parent-field, maybe advance
-         ;; its start (#290)
-         ;;
-         (when parent-field
-           (yas--advance-start-maybe mirror (yas--fom-start parent-field)))
-         ;; update this mirror
-         ;;
-         (yas--mirror-update-display mirror field)
-         ;; `yas--place-overlays' is needed if the active field and
-         ;; protected overlays have been changed because of insertions
-         ;; in `yas--mirror-update-display'
-         ;;
-         (when (eq field (yas--snippet-active-field snippet))
-           (yas--place-overlays snippet field)))))))
+      (dolist (field-and-mirror
+               (sort
+                ;; make a list of ((F1 . M1) (F1 . M2) (F2 . M3) (F2 . M4) ...)
+                ;; where F is the field that M is mirroring
+                ;;
+                (cl-mapcan #'(lambda (field)
+                               (mapcar #'(lambda (mirror)
+                                           (cons field mirror))
+                                       (yas--field-mirrors field)))
+                           (yas--snippet-fields snippet))
+                ;; then sort this list so that entries with mirrors with parent
+                ;; fields appear before. This was important for fixing #290, and
+                ;; luckily also handles the case where a mirror in a field causes
+                ;; another mirror to need reupdating
+                ;;
+                #'(lambda (field-and-mirror1 field-and-mirror2)
+                    (> (yas--calculate-mirror-depth (cdr field-and-mirror1))
+                       (yas--calculate-mirror-depth (cdr field-and-mirror2))))))
+        (let* ((field (car field-and-mirror))
+               (mirror (cdr field-and-mirror))
+               (parent-field (yas--mirror-parent-field mirror)))
+          ;; before updating a mirror with a parent-field, maybe advance
+          ;; its start (#290)
+          ;;
+          (when parent-field
+            (yas--advance-start-maybe mirror (yas--fom-start parent-field)))
+          ;; update this mirror
+          ;;
+          (yas--mirror-update-display mirror field snippet)
+          ;; `yas--place-overlays' is needed since the active field and
+          ;; protected overlays might have been changed because of insertions
+          ;; in `yas--mirror-update-display'.
+          (let ((active-field (yas--snippet-active-field snippet)))
+            (when active-field (yas--place-overlays snippet active-field))))))))
 
-(defun yas--mirror-update-display (mirror field)
+(defun yas--mirror-update-display (mirror field snippet)
   "Update MIRROR according to FIELD (and mirror transform)."
 
   (let* ((mirror-parent-field (yas--mirror-parent-field mirror))
@@ -4255,7 +4242,11 @@ When multiple expressions are found, only the last one counts."
         (set-marker (yas--mirror-end mirror) (point))
         (yas--advance-start-maybe (yas--mirror-next mirror) (point))
         ;; super-special advance
-        (yas--advance-end-of-parents-maybe mirror-parent-field (point))))))
+        (yas--advance-end-of-parents-maybe mirror-parent-field (point)))
+      (let ((yas--inhibit-overlay-hooks t))
+        (yas--indent-region (yas--mirror-start mirror)
+                            (yas--mirror-end mirror)
+                            snippet)))))
 
 (defun yas--field-update-display (field)
   "Much like `yas--mirror-update-display', but for fields."
