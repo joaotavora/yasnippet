@@ -1,0 +1,216 @@
+Yasnippet NEWS -- history of user-visible changes.
+
+Copyright (C) 2016 Free Software Foundation, Inc.
+See the end of the file for license conditions.
+
+
+* 0.9.1 (est. March 2016)
+
+** Changes and New Features
+
+*** Noam Postavsky is now the official yasnippet maintainer.
+
+*** `yas-visit-snippet-file' now works for compiled snippets (see Github #597).
+
+*** New function `yas-lookup-snippet' (see Github #595, #596).
+
+*** .emacs.d/snippets directory is now created automatically.
+If that value is present in `yas-snippet-dirs' (see Github #648).
+
+*** Default value for `yas-snippet-dirs' now uses `user-emacs-directory'
+instead of hardcoding "~/emacs.d" (see Github #632).
+
+*** `yas-visit-snippet-file' no longer overrides `yas-prompt-functions',
+see Github #576.
+
+*** The defaults for prompting have changed.
+`yas-x-prompt' is no longer present in the default value of
+`yas-prompt-functions'.
+
+The new function `yas-maybe-ido-prompt' (which performs ido prompting
+if `ido-mode' is enabled) replaces `yas-ido-prompt' (which always
+performs ido prompting).  Previously the behaviour was dependent on
+the Emacs version being used.
+
+*** The default value of `yas-buffer-local-condition' now works for `yas-insert-snippet' too.
+See Github #305.
+
+*** The default value of `yas-new-snippet-default' no longer inserts `require-final-newline: nil'.
+It was redundant, since `mode: snippet' already accomplishes the same.
+`binding: ${4:direct-keybinding}}' is also removed, as it is hardly
+ever wanted.
+
+*** Snippet fields are only cleared by commands with `delete-selection' property,
+See Github #515, #644.
+
+*** `yas-initialize' (and backward compat alias `yas/initialize') are restored,
+but marked obsolete, use (yas-global-mode +1) instead.  See Github
+#546, #569.
+
+*** `yas-key-syntaxes' is much more powerful and accepts functions.
+Enables use cases when discovering keys based on buffer syntax is not
+good enough.  See issue #497.
+
+*** Documentation rewritten in org-mode and updated.
+A tremendous effort by Noam Postavsky.  Hopefully easier to maintain
+and navigate.  Available at <http://capitaomorte.github.io/yasnippet>.
+
+*** Snippets are now maintained in their own repo.
+Snippets live in Andrea Crotti's
+<https://github.com/andreacrotti/yasnippet-snippets>.  See README.md
+for more details.
+
+*** Textmate snippet importer moved to separate `yasmate' repo.
+URL is <https://github.com/capitaomorte/yasmate>.  See README.md for
+more details.
+
+*** `yas-snippet-dirs' now allows symbols as aliases to directories.
+The added level of indirection should allow more esoteric
+configurations (see Github #495).
+
+*** `yas-reload-all' can now jit-load when called interactively.
+
+*** New `yas-after-reload-hook' run after `yas-reload-all'.
+See <https://github.com/pezra/rspec-mode/pull/75> for the discussion
+leading up to this change.
+
+*** New functions `yas-activate-extra-mode' and `yas-deactivate-extra-mode'.
+These are preferable to setting `yas-extra-modes' directly in the mode
+hook (see issue #420 for more information).
+
+*** New variable `yas-new-snippet-default'.
+The default snippet suggested on `yas-new-snippet' can now be
+customized.
+
+** Fixed bugs
+
+*** `yas-expand' now sets `this-command' when falling back to another command.
+Previously it was setting `this-original-command', which does not
+match the documented semantics.  See Github #587.
+
+*** Github #537: Be lenient to extensions operating on snippet fields.
+
+*** Github #619: Parents of extra modes are now activated too.
+
+*** Github #549: `yas-verbosity' is now applied to `load' calls too.
+
+*** Github #607; avoid obscure Emacs bug triggered by overlays in *Messages* buffer.
+It was triggered by yasnippet+flycheck+highlight-parentheses.  See
+also <http://debbugs.gnu.org/cgi/bugreport.cgi?bug=21824>
+
+*** Github #617; fix x prompt when snippet inserts many lines.
+
+*** Github #618; avoid breakage if `scan-sexp' modifies match data.
+Which it does in Emacs 25.
+
+*** Github #562: Deleting inner numberless snippet caused an error.
+
+*** Github #418, #536: Fix navigation to zero-length fields at snippet end.
+
+*** Github #527, #525 and #526: Attempt to prevent "fallback loops"
+when interactiing with other extensions that use similar fallback
+mechanisms.
+
+
+* 0.8.0 (August 2012)
+
+** Changes and New Features
+
+*** All YASnippet symbols now prefixed with `yas-'.  Keep old `yas/' versions as aliases.
+
+*** Yasnippet is now Free Software Foundation's copyright.
+
+*** `yas-dont-activate' can be a list of functions.
+
+*** Snippets are loaded just-in-time .
+Thanks to Matthew Fidler for a lot of input with the implementation.
+
+*** yasnippet-bundle.el is no longer available.
+Use `yas-compile-directory' instead if you need the speed advantage.
+
+*** New functions `yas-compile-directory' and `yas-recompile-all'.
+This feature is still undocumented.  Generate a
+.yas-compiled-snippets.el file in the directory passed where snippets
+are compiled into emacs-lisp code.
+
+*** New `yas-verbosity' variable.
+
+*** Interactively calling `yas-exit-snippet' exits most recently inserted snippet.
+
+*** Using filenames as snippet triggers is deprecated.
+
+*** Default value of `yas-show-menu-p' is `abbreviate'.
+
+*** `yas-visit-snippet' ignores `yas-prompt-functions'.
+
+*** `yas-buffer-local-condition' restricted to trigger-key expansions by default.
+
+*** `yas-load-snippet-buffer' (`C-c C-c') in `snippet-mode' has been much improved.
+
+*** New variable `yas-expand-only-for-last-commands', thanks Erik Postma.
+
+*** New variable `yas-extra-modes' aliases old `yas/mode-symbol'.
+
+*** New `yas-describe-tables' command.
+
+*** New `yas-define-condition-cache' macro.
+This defines an optimised function for placing in a `# condition:'
+directive that will run at most once per snippet-expansion attempt.
+
+*** Mirrors can occur inside fields.
+
+*** New `# type: command' directive.
+This feature is still largely undocumented.
+
+*** A hidden .yas-setup.el is loaded if found in a snippet directory.
+
+*** `yas-wrap-around-region' can now also be `cua' (undocumented feature).
+
+*** Make menu groups automatically using new .yas-make-groups file.
+
+*** Per-snippet keybindings using `# keybinding:' directive.
+
+*** More friendly `yas-expand-snippet' calling convention.
+This breaks backward compatibility.
+
+*** The `# env:' directive is now `# expand-env:'.
+
+*** Setup multiple parent modes using new .yas-parents file.
+
+** Fixed bugs
+
+*** Github #281: jit-load snippets in the correct order.
+
+*** Github #245: primary field transformations work inside nested fields.
+
+*** Github #242: stop using the deprecated `assoc' library.
+
+*** Github #233: show direct snippet keybindings in the menu.
+
+*** Github #194, Googlecode 192: Compatibility with `fci-mode'.
+
+*** Github #147, Googlecode 145: Snippets comments were getting inserted.
+
+*** Github #141, Googlecode 139: searching buffer in embedded elisp works slightly better.
+Issue is still open for analysis, though
+
+*** Github #95, Googlecode 193: no more stack overflow in org-mode.
+
+
+----------------------------------------------------------------------
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at
+your option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+
+Local variables:
+coding: utf-8
+mode: outline
+paragraph-separate: "[ 	]*$"
+end:

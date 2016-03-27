@@ -3,8 +3,7 @@
 ;; Copyright (C) 2008-2013, 2015 Free Software Foundation, Inc.
 ;; Authors: pluskid <pluskid@gmail.com>,  João Távora <joaotavora@gmail.com>, Noam Postavsky <npostavs@gmail.com>
 ;; Maintainer: Noam Postavsky <npostavs@gmail.com>
-;; Version: 0.8.1
-;; Package-version: 0.8.0
+;; Version: 0.9.1
 ;; X-URL: http://github.com/capitaomorte/yasnippet
 ;; Keywords: convenience, emulation
 ;; URL: http://github.com/capitaomorte/yasnippet
@@ -522,7 +521,7 @@ snippet itself contains a condition that returns the symbol
 
 ;;; Internal variables
 
-(defvar yas--version "0.8.0beta")
+(defvar yas--version "0.9.1")
 
 (defvar yas--menu-table (make-hash-table)
   "A hash table of MAJOR-MODE symbols to menu keymaps.")
@@ -688,7 +687,7 @@ snippet itself contains a condition that returns the symbol
 
 This variable probably makes more sense as buffer-local, so
 ensure your use `make-local-variable' when you set it.")
-(define-obsolete-variable-alias 'yas-extra-modes 'yas--extra-modes "0.8.1")
+(define-obsolete-variable-alias 'yas-extra-modes 'yas--extra-modes "0.9.1")
 
 (defvar yas--tables (make-hash-table)
   "A hash table of mode symbols to `yas--table' objects.")
