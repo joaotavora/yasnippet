@@ -2672,7 +2672,8 @@ and `kill-buffer' instead."
                  (setq continue (and choose (y-or-n-p "Show also non-active tables? ")))))
              (yas--create-snippet-xrefs)
              (help-mode)
-             (setq-local show-trailing-whitespace nil)
+             (when (boundp 'show-trailing-whitespace)
+               (setq show-trailing-whitespace nil))
              (goto-char 1))
             (t
              (insert "\n\nYASnippet tables by NAMEHASH: \n")
