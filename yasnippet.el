@@ -2731,19 +2731,17 @@ and `kill-buffer' instead."
                                         "(a)")))
                   (key-description-string (key-description (yas--template-keybinding p)))
                   (template-key-padding (if (string= key-description-string "") nil ? )))
-             (insert group " ")
-             (insert condition-string " ")
-             (insert name
-                     (if (string-match "\\.\\.\\.$" name)
-                         "'"
-                       " ")
-                     " ")
-             (insert (truncate-string-to-width (or (yas--template-key p) "")
+             (insert group " "
+                     condition-string " "
+                     name (if (string-match "\\.\\.\\.$" name)
+                              "'" " ")
+                     " "
+                     (truncate-string-to-width (or (yas--template-key p) "")
                                                15 0 template-key-padding "...")
-                     (if template-key-padding (byte-to-string template-key-padding) ""))
-             (insert (truncate-string-to-width key-description-string
-                                               15 0 nil "..."))
-             (insert "\n"))))
+                     (or template-key-padding "")
+                     (truncate-string-to-width key-description-string
+                                               15 0 nil "...")
+                     "\n"))))
      groups-hash)))
 
 
