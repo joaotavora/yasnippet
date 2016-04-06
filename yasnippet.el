@@ -1,12 +1,15 @@
 ;;; yasnippet.el --- Yet another snippet extension for Emacs.
 
-;; Copyright (C) 2008-2013, 2015 Free Software Foundation, Inc.
-;; Authors: pluskid <pluskid@gmail.com>,  João Távora <joaotavora@gmail.com>, Noam Postavsky <npostavs@gmail.com>
+;; Copyright (C) 2008-2016 Free Software Foundation, Inc.
+;; Authors: pluskid <pluskid@gmail.com>,
+;;          João Távora <joaotavora@gmail.com>,
+;;          Noam Postavsky <npostavs@gmail.com>
 ;; Maintainer: Noam Postavsky <npostavs@gmail.com>
 ;; Version: 0.9.1
 ;; X-URL: http://github.com/capitaomorte/yasnippet
 ;; Keywords: convenience, emulation
 ;; URL: http://github.com/capitaomorte/yasnippet
+;; Package-Requires: ((cl-lib "0.5"))
 ;; EmacsWiki: YaSnippetMode
 
 ;; This program is free software: you can redistribute it and/or modify
@@ -153,10 +156,10 @@
 (defvar yas-installed-snippets-dir nil)
 (setq yas-installed-snippets-dir
       (when load-file-name
-        (concat (file-name-directory load-file-name) "snippets")))
+        (expand-file-name "snippets" (file-name-directory load-file-name))))
 
 (defconst yas--default-user-snippets-dir
-  (concat user-emacs-directory "snippets"))
+  (expand-file-name "snippets" user-emacs-directory))
 
 (defcustom yas-snippet-dirs (remove nil
                                     (list yas--default-user-snippets-dir
@@ -172,6 +175,7 @@ snippets.
 
 The first directory is taken as the default for storing snippet's
 created with `yas-new-snippet'. "
+  ;; FIXME: Why use type `string' rather than `directory'?
   :type '(choice (string :tag "Single directory (string)")
                  (repeat :args (string) :tag "List of directories (strings)"))
   :group 'yasnippet
@@ -507,7 +511,7 @@ snippets returning the symbol 'force-in-comment in their
 conditions.
 
  (add-hook 'python-mode-hook
-           '(lambda ()
+           (lambda ()
               (setq yas-buffer-local-condition
                     '(if (python-in-string/comment)
                          '(require-snippet-condition . force-in-comment)
@@ -726,22 +730,24 @@ defined direct keybindings to the command
            yas--tables))
 
 (defun yas--modes-to-activate (&optional mode)
-  "Compute list of mode symbols that are active for `yas-expand'
-and friends."
+  "Compute list of mode symbols that are active for `yas-expand' and friends."
+  (defvar yas--dfs)        ;We rely on dynbind.  We could use `letrec' instead!
   (let* ((explored (if mode (list mode) ; Building up list in reverse.
                      (cons major-mode (reverse yas--extra-modes))))
-         (dfs
+         (yas--dfs
           (lambda (mode)
             (cl-loop for neighbour
                      in (cl-list* (get mode 'derived-mode-parent)
+                                  ;; FIXME: `ignore-errors' can be dropped here
+                                  ;; in Emacs≥24.3.
                                   (ignore-errors (symbol-function mode))
                                   (gethash mode yas--parents))
                      when (and neighbour
                                (not (memq neighbour explored))
                                (symbolp neighbour))
                      do (push neighbour explored)
-                     (funcall dfs neighbour)))))
-    (mapcar dfs explored)
+                     (funcall yas--dfs neighbour)))))
+    (mapc yas--dfs explored)
     (nreverse explored)))
 
 (defvar yas-minor-mode-hook nil
@@ -773,8 +779,8 @@ Key bindings:
          ;;
          ;; Also install the post-command-hook.
          ;;
-         (add-hook 'emulation-mode-map-alists 'yas--direct-keymaps)
-         (add-hook 'post-command-hook 'yas--post-command-handler nil t)
+         (cl-pushnew 'yas--direct-keymaps emulation-mode-map-alists)
+         (add-hook 'post-command-hook #'yas--post-command-handler nil t)
          ;; Set the `yas--direct-%s' vars for direct keymap expansion
          ;;
          (dolist (mode (yas--modes-to-activate))
@@ -787,8 +793,9 @@ Key bindings:
         (t
          ;; Uninstall the direct keymaps and the post-command hook
          ;;
-         (remove-hook 'post-command-hook 'yas--post-command-handler t)
-         (remove-hook 'emulation-mode-map-alists 'yas--direct-keymaps))))
+         (remove-hook 'post-command-hook #'yas--post-command-handler t)
+         (setq emulation-mode-map-alists
+               (remove 'yas--direct-keymaps emulation-mode-map-alists)))))
 
 (defun yas-activate-extra-mode (mode)
   "Activates the snippets for the given `mode' in the buffer.
@@ -865,22 +872,28 @@ Honour `yas-dont-activate', which see."
   "Run `yas-reload-all' when `yas-global-mode' is on."
   (when yas-global-mode (yas-reload-all)))
 
-(add-hook 'yas-global-mode-hook 'yas--global-mode-reload-with-jit-maybe)
+(add-hook 'yas-global-mode-hook #'yas--global-mode-reload-with-jit-maybe)
 
 
 ;;; Major mode stuff
 
 (defvar yas--font-lock-keywords
   (append '(("^#.*$" . font-lock-comment-face))
-          lisp-font-lock-keywords-2
+          (with-temp-buffer
+            (emacs-lisp-mode)
+            (font-lock-set-defaults)
+            (if (eq t (car-safe font-lock-keywords))
+                ;; They're "compiled", so extract the source.
+                (cadr font-lock-keywords)
+              font-lock-keywords))
           '(("$\\([0-9]+\\)"
              (0 font-lock-keyword-face)
              (1 font-lock-string-face t))
             ("${\\([0-9]+\\):?"
              (0 font-lock-keyword-face)
              (1 font-lock-warning-face t))
-            ("${" . font-lock-keyword-face)
-            ("$[0-9]+?" . font-lock-preprocessor-face)
+            ("${" . font-lock-keyword-face)            ;FIXME: Redundant?
+            ("$[0-9]+?" . font-lock-preprocessor-face) ;FIXME: Redundant?
             ("\\(\\$(\\)" 1 font-lock-preprocessor-face)
             ("}"
              (0 font-lock-keyword-face)))))
@@ -1473,10 +1486,7 @@ Here's a list of currently recognized directives:
   (let* ((dominating-dir (locate-dominating-file file
                                                  ".yas-make-groups"))
          (extra-path (and dominating-dir
-                          (replace-regexp-in-string (concat "^"
-                                                            (expand-file-name dominating-dir))
-                                                    ""
-                                                    (expand-file-name file))))
+                          (file-relative-name file dominating-dir)))
          (extra-dir (and extra-path
                          (file-name-directory extra-path)))
          (group (and extra-dir
@@ -1487,17 +1497,17 @@ Here's a list of currently recognized directives:
 
 (defun yas--subdirs (directory &optional filep)
   "Return subdirs or files of DIRECTORY according to FILEP."
-  (remove-if (lambda (file)
-               (or (string-match "^\\."
-                                 (file-name-nondirectory file))
-                   (string-match "^#.*#$"
-                                 (file-name-nondirectory file))
-                   (string-match "~$"
-                                 (file-name-nondirectory file))
-                   (if filep
-                       (file-directory-p file)
-                     (not (file-directory-p file)))))
-             (directory-files directory t)))
+  (cl-remove-if (lambda (file)
+                  (or (string-match "\\`\\."
+                                    (file-name-nondirectory file))
+                      (string-match "\\`#.*#\\'"
+                                    (file-name-nondirectory file))
+                      (string-match "~\\'"
+                                    (file-name-nondirectory file))
+                      (if filep
+                          (file-directory-p file)
+                        (not (file-directory-p file)))))
+                (directory-files directory t)))
 
 (defun yas--make-menu-binding (template)
   (let ((mode (yas--table-mode (yas--template-table template))))
@@ -1769,7 +1779,7 @@ With prefix argument USE-JIT do jit-loading of snippets."
           (insert (format ";;; Do not edit! File generated at %s\n"
                           (current-time-string)))))
     ;; Normal case.
-    (unless (file-exists-p (concat directory "/" ".yas-skip"))
+    (unless (file-exists-p (expand-file-name ".yas-skip" directory))
       (unless (and (load (expand-file-name ".yas-compiled-snippets" directory) 'noerror (<= yas-verbosity 3))
                    (progn (yas--message 2 "Loaded compiled snippets from %s" directory) t))
         (yas--message 2 "Loading snippet files from %s" directory)
@@ -1944,7 +1954,7 @@ This works by stubbing a few functions, then calling
 
 ;;; Apropos snippet menu:
 ;;
-;; The snippet menu keymaps are store by mode in hash table called
+;; The snippet menu keymaps are stored by mode in hash table called
 ;; `yas--menu-table'. They are linked to the main menu in
 ;; `yas--menu-keymap-get-create' and are initially created empty,
 ;; reflecting the table hierarchy.
@@ -1966,9 +1976,9 @@ This works by stubbing a few functions, then calling
 ;;   duplicate entries. The `yas--template' objects are created in
 ;;   `yas-define-menu', holding nothing but the menu entry,
 ;;   represented by a pair of ((menu-item NAME :keys KEYS) TYPE) and
-;;   stored in `yas--template-menu-binding-pair'. The (menu-item ...)
+;;   stored in `yas--template-menu-binding-pair'.  The (menu-item ...)
 ;;   part is then stored in the menu keymap itself which make the item
-;;   appear to the user. These limitations could probably be revised.
+;;   appear to the user.  These limitations could probably be revised.
 ;;
 ;; * The `yas--template-perm-group' slot is only used in
 ;;   `yas-describe-tables'.
@@ -2157,9 +2167,9 @@ object satisfying `yas--field-p' to restrict the expansion to."
                                     (yas--templates-for-key-at-point))
                                 (yas--templates-for-key-at-point))))
     (if templates-and-pos
-        (yas--expand-or-prompt-for-template (first templates-and-pos)
-                                            (second templates-and-pos)
-                                            (third templates-and-pos))
+        (yas--expand-or-prompt-for-template (nth 0 templates-and-pos)
+                                            (nth 1 templates-and-pos)
+                                            (nth 2 templates-and-pos))
       (yas--fallback))))
 
 (defun yas-expand-from-keymap ()
@@ -2406,10 +2416,8 @@ tables (or optional TABLE).
 Returns a list of elements (TABLE . DIRS) where TABLE is a
 `yas--table' object and DIRS is a list of all possible directories
 where snippets of table might exist."
-  (let ((main-dir (replace-regexp-in-string
-                   "/+$" ""
-                   (or (first (or (yas-snippet-dirs)
-                                  (setq yas-snippet-dirs (list yas--default-user-snippets-dir)))))))
+  (let ((main-dir (or (cl-first (or (yas-snippet-dirs)
+                                    (setq yas-snippet-dirs (list yas--default-user-snippets-dir))))))
         (tables (or (and table
                          (list table))
                     (yas--get-snippet-tables))))
@@ -2422,7 +2430,7 @@ where snippets of table might exist."
     (mapcar #'(lambda (table)
                 (cons table
                       (mapcar #'(lambda (subdir)
-                                  (concat main-dir "/" subdir))
+                                  (expand-file-name subdir main-dir))
                               (yas--guess-snippet-directories-1 table))))
             tables)))
 
@@ -2584,9 +2592,10 @@ and `kill-buffer' instead."
         (when chosen
           (let ((default-file-name (or (and file (file-name-nondirectory file))
                                        (yas--template-name yas--editing-template))))
-            (write-file (concat chosen "/"
-                                (read-from-minibuffer (format "File name to create in %s? " chosen)
-                                                      default-file-name)))
+            (write-file (expand-file-name ;; FIXME: Why not read-file-name?
+                         (read-from-minibuffer (format "File name to create in %s? " chosen)
+                                               default-file-name)
+                         chosen))
             (setf (yas--template-load-file yas--editing-template) buffer-file-name))))))
   (when buffer-file-name
     (save-buffer)
@@ -2606,10 +2615,10 @@ and `kill-buffer' instead."
           (and parsed
                (fboundp test-mode)
                (yas--make-template :table       nil ;; no tables for ephemeral snippets
-                                   :key         (first parsed)
-                                   :content     (second parsed)
-                                   :name        (third parsed)
-                                   :expand-env  (sixth parsed)))))
+                                   :key         (nth 0 parsed)
+                                   :content     (nth 1 parsed)
+                                   :name        (nth 2 parsed)
+                                   :expand-env  (nth 5 parsed)))))
     (cond (yas--current-template
            (let ((buffer-name (format "*testing snippet: %s*" (yas--template-name yas--current-template))))
              (kill-buffer (get-buffer-create buffer-name))
@@ -3398,7 +3407,7 @@ BEG, END and LENGTH like overlay modification hooks."
            (setq clearp (funcall clearp)))
          clearp)))
 
-(defun yas--on-field-overlay-modification (overlay after? beg end &optional length)
+(defun yas--on-field-overlay-modification (overlay after? beg end &optional _length)
   "Clears the field and updates mirrors, conditionally.
 
 Only clears the field if it hasn't been modified and point is at
@@ -4192,23 +4201,24 @@ When multiple expressions are found, only the last one counts."
 (defun yas--update-mirrors (snippet)
   "Update all the mirrors of SNIPPET."
   (save-excursion
-    (dolist (field-and-mirror (sort
-                               ;; make a list of ((F1 . M1) (F1 . M2) (F2 . M3) (F2 . M4) ...)
-                               ;; where F is the field that M is mirroring
-                               ;;
-                               (mapcan #'(lambda (field)
-                                           (mapcar #'(lambda (mirror)
-                                                       (cons field mirror))
-                                                   (yas--field-mirrors field)))
-                                       (yas--snippet-fields snippet))
-                               ;; then sort this list so that entries with mirrors with parent
-                               ;; fields appear before. This was important for fixing #290, and
-                               ;; luckily also handles the case where a mirror in a field causes
-                               ;; another mirror to need reupdating
-                               ;;
-                               #'(lambda (field-and-mirror1 field-and-mirror2)
-                                   (> (yas--calculate-mirror-depth (cdr field-and-mirror1))
-                                      (yas--calculate-mirror-depth (cdr field-and-mirror2))))))
+    (dolist (field-and-mirror
+             (sort
+              ;; make a list of ((F1 . M1) (F1 . M2) (F2 . M3) (F2 . M4) ...)
+              ;; where F is the field that M is mirroring
+              ;;
+              (cl-mapcan #'(lambda (field)
+                             (mapcar #'(lambda (mirror)
+                                         (cons field mirror))
+                                     (yas--field-mirrors field)))
+                         (yas--snippet-fields snippet))
+              ;; then sort this list so that entries with mirrors with parent
+              ;; fields appear before. This was important for fixing #290, and
+              ;; luckily also handles the case where a mirror in a field causes
+              ;; another mirror to need reupdating
+              ;;
+              #'(lambda (field-and-mirror1 field-and-mirror2)
+                  (> (yas--calculate-mirror-depth (cdr field-and-mirror1))
+                     (yas--calculate-mirror-depth (cdr field-and-mirror2))))))
       (let* ((field (car field-and-mirror))
              (mirror (cdr field-and-mirror))
              (parent-field (yas--mirror-parent-field mirror)))
@@ -4320,7 +4330,7 @@ object satisfying `yas--field-p' to restrict the expansion to.")))
      '(yas--expand-from-keymap-doc t))
 (defun yas--expand-from-keymap-doc (context)
   "A doc synthesizer for `yas--expand-from-keymap-doc'."
-  (add-hook 'temp-buffer-show-hook 'yas--snippet-description-finish-runonce)
+  (add-hook 'temp-buffer-show-hook #'yas--snippet-description-finish-runonce)
   (concat "Expand/run snippets from keymaps, possibly falling back to original binding.\n"
           (when (and context (eq this-command 'describe-key))
             (let* ((vec (this-single-command-keys))
@@ -4355,7 +4365,8 @@ object satisfying `yas--field-p' to restrict the expansion to.")))
 (defun yas--snippet-description-finish-runonce ()
   "Final adjustments for the help buffer when snippets are concerned."
   (yas--create-snippet-xrefs)
-  (remove-hook 'temp-buffer-show-hook 'yas--snippet-description-finish-runonce))
+  (remove-hook 'temp-buffer-show-hook
+               #'yas--snippet-description-finish-runonce))
 
 (defun yas--create-snippet-xrefs ()
   (save-excursion
@@ -4562,7 +4573,7 @@ and return the directory.  Return nil if not found."
 They are mapped to \"yas/*\" variants.")
 
 (dolist (sym yas--backported-syms)
-  (let ((backported (intern (replace-regexp-in-string "^yas-" "yas/" (symbol-name sym)))))
+  (let ((backported (intern (replace-regexp-in-string "\\`yas-" "yas/" (symbol-name sym)))))
     (when (boundp sym)
       (make-obsolete-variable backported sym "yasnippet 0.8")
       (defvaralias backported sym))
@@ -4577,7 +4588,7 @@ They are mapped to \"yas/*\" variants.")
                                   (not (get atom 'byte-obsolete-variable)))
                              (and (fboundp atom)
                                   (not (get atom 'byte-obsolete-info))))
-                         (string-match-p "^yas-[^-]" (symbol-name atom)))
+                         (string-match-p "\\`yas-[^-]" (symbol-name atom)))
                     (push atom exported))))
     exported)
   "Exported yasnippet symbols.
