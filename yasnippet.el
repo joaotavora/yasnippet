@@ -175,9 +175,9 @@ snippets.
 
 The first directory is taken as the default for storing snippet's
 created with `yas-new-snippet'. "
-  ;; FIXME: Why use type `string' rather than `directory'?
-  :type '(choice (string :tag "Single directory (string)")
-                 (repeat :args (string) :tag "List of directories (strings)"))
+  :type '(choice (directory :tag "Single directory")
+                 (repeat :tag "List of directories"
+                         (choice (directory) (variable))))
   :group 'yasnippet
   :require 'yasnippet
   :set #'(lambda (symbol new)
@@ -738,9 +738,9 @@ defined direct keybindings to the command
           (lambda (mode)
             (cl-loop for neighbour
                      in (cl-list* (get mode 'derived-mode-parent)
-                                  ;; FIXME: `ignore-errors' can be dropped here
-                                  ;; in Emacs≥24.3.
-                                  (ignore-errors (symbol-function mode))
+                                  ;; NOTE: `fboundp' check is redundant
+                                  ;; since Emacs 24.4.
+                                  (and (fboundp mode) (symbol-function mode))
                                   (gethash mode yas--parents))
                      when (and neighbour
                                (not (memq neighbour explored))
@@ -892,8 +892,6 @@ Honour `yas-dont-activate', which see."
             ("${\\([0-9]+\\):?"
              (0 font-lock-keyword-face)
              (1 font-lock-warning-face t))
-            ("${" . font-lock-keyword-face)            ;FIXME: Redundant?
-            ("$[0-9]+?" . font-lock-preprocessor-face) ;FIXME: Redundant?
             ("\\(\\$(\\)" 1 font-lock-preprocessor-face)
             ("}"
              (0 font-lock-keyword-face)))))
@@ -2416,11 +2414,11 @@ tables (or optional TABLE).
 Returns a list of elements (TABLE . DIRS) where TABLE is a
 `yas--table' object and DIRS is a list of all possible directories
 where snippets of table might exist."
-  (let ((main-dir (or (cl-first (or (yas-snippet-dirs)
-                                    (setq yas-snippet-dirs (list yas--default-user-snippets-dir))))))
-        (tables (or (and table
-                         (list table))
-                    (yas--get-snippet-tables))))
+  (let ((main-dir (car (or (yas-snippet-dirs)
+                           (setq yas-snippet-dirs
+                                 (list yas--default-user-snippets-dir)))))
+        (tables (if table (list table)
+                  (yas--get-snippet-tables))))
     ;; HACK! the snippet table created here is actually registered!
     ;;
     (unless (or table (gethash major-mode yas--tables))
@@ -2592,9 +2590,9 @@ and `kill-buffer' instead."
         (when chosen
           (let ((default-file-name (or (and file (file-name-nondirectory file))
                                        (yas--template-name yas--editing-template))))
-            (write-file (expand-file-name ;; FIXME: Why not read-file-name?
-                         (read-from-minibuffer (format "File name to create in %s? " chosen)
-                                               default-file-name)
+            (write-file (expand-file-name
+                         (read-file-name (format "File name to create in %s? " chosen)
+                                         chosen default-file-name)
                          chosen))
             (setf (yas--template-load-file yas--editing-template) buffer-file-name))))))
   (when buffer-file-name
