@@ -753,50 +753,6 @@ defined direct keybindings to the command
 (defvar yas-minor-mode-hook nil
   "Hook run when `yas-minor-mode' is turned on.")
 
-;;;###autoload
-(define-minor-mode yas-minor-mode
-  "Toggle YASnippet mode.
-
-When YASnippet mode is enabled, `yas-expand', normally bound to
-the TAB key, expands snippets of code depending on the major
-mode.
-
-With no argument, this command toggles the mode.
-positive prefix argument turns on the mode.
-Negative prefix argument turns off the mode.
-
-Key bindings:
-\\{yas-minor-mode-map}"
-  nil
-  ;; The indicator for the mode line.
-  " yas"
-  :group 'yasnippet
-  (cond (yas-minor-mode
-         ;; Install the direct keymaps in `emulation-mode-map-alists'
-         ;; (we use `add-hook' even though it's not technically a hook,
-         ;; but it works). Then define variables named after modes to
-         ;; index `yas--direct-keymaps'.
-         ;;
-         ;; Also install the post-command-hook.
-         ;;
-         (cl-pushnew 'yas--direct-keymaps emulation-mode-map-alists)
-         (add-hook 'post-command-hook #'yas--post-command-handler nil t)
-         ;; Set the `yas--direct-%s' vars for direct keymap expansion
-         ;;
-         (dolist (mode (yas--modes-to-activate))
-           (let ((name (intern (format "yas--direct-%s" mode))))
-             (set-default name nil)
-             (set (make-local-variable name) t)))
-         ;; Perform JIT loads
-         ;;
-         (yas--load-pending-jits))
-        (t
-         ;; Uninstall the direct keymaps and the post-command hook
-         ;;
-         (remove-hook 'post-command-hook #'yas--post-command-handler t)
-         (setq emulation-mode-map-alists
-               (remove 'yas--direct-keymaps emulation-mode-map-alists)))))
-
 (defun yas-activate-extra-mode (mode)
   "Activates the snippets for the given `mode' in the buffer.
 
@@ -849,43 +805,21 @@ mode's hook.")
   (with-no-warnings
     (make-variable-buffer-local 'yas-dont-activate)))
 
-
-(defun yas-minor-mode-on ()
-  "Turn on YASnippet minor mode.
-
-Honour `yas-dont-activate', which see."
-  (interactive)
-  ;; Check `yas-dont-activate'
-  (unless (cond ((functionp yas-dont-activate)
-                 (funcall yas-dont-activate))
-                ((consp yas-dont-activate)
-                 (some #'funcall yas-dont-activate))
-                (yas-dont-activate))
-    (yas-minor-mode 1)))
-
-;;;###autoload
-(define-globalized-minor-mode yas-global-mode yas-minor-mode yas-minor-mode-on
-  :group 'yasnippet
-  :require 'yasnippet)
-
-(defun yas--global-mode-reload-with-jit-maybe ()
-  "Run `yas-reload-all' when `yas-global-mode' is on."
-  (when yas-global-mode (yas-reload-all)))
-
-(add-hook 'yas-global-mode-hook #'yas--global-mode-reload-with-jit-maybe)
-
 
 ;;; Major mode stuff
 
 (defvar yas--font-lock-keywords
   (append '(("^#.*$" . font-lock-comment-face))
           (with-temp-buffer
-            (emacs-lisp-mode)
-            (font-lock-set-defaults)
-            (if (eq t (car-safe font-lock-keywords))
-                ;; They're "compiled", so extract the source.
-                (cadr font-lock-keywords)
-              font-lock-keywords))
+            ;; avoid infinite loop while loading yasnippet by clearing hooks
+            (let (emacs-lisp-mode-hook
+                  prog-mode-hook)
+              (emacs-lisp-mode)
+              (font-lock-set-defaults)
+              (if (eq t (car-safe font-lock-keywords))
+                  ;; They're "compiled", so extract the source.
+                  (cadr font-lock-keywords)
+                font-lock-keywords)))
           '(("$\\([0-9]+\\)"
              (0 font-lock-keyword-face)
              (1 font-lock-string-face t))
@@ -2623,7 +2557,7 @@ and `kill-buffer' instead."
              (switch-to-buffer (get-buffer-create buffer-name))
              (setq buffer-undo-list nil)
              (condition-case nil (funcall test-mode) (error nil))
-	     (yas-minor-mode 1)
+             (yas-minor-mode 1)
              (setq buffer-read-only nil)
              (yas-expand-snippet (yas--template-content yas--current-template)
                                  (point-min)
@@ -4594,6 +4528,77 @@ They are mapped to \"yas/*\" variants.")
 i.e. the ones with \"yas-\" single dash prefix. I will try to
 keep them in future yasnippet versions and other elisp libraries
 can more or less safely rely upon them.")
+
+
+;;; Minor mode
+
+;;;###autoload
+(define-minor-mode yas-minor-mode
+  "Toggle YASnippet mode.
+
+When YASnippet mode is enabled, `yas-expand', normally bound to
+the TAB key, expands snippets of code depending on the major
+mode.
+
+With no argument, this command toggles the mode.
+positive prefix argument turns on the mode.
+Negative prefix argument turns off the mode.
+
+Key bindings:
+\\{yas-minor-mode-map}"
+  nil
+  ;; The indicator for the mode line.
+  " yas"
+  :group 'yasnippet
+  (cond (yas-minor-mode
+         ;; Install the direct keymaps in `emulation-mode-map-alists'
+         ;; (we use `add-hook' even though it's not technically a hook,
+         ;; but it works). Then define variables named after modes to
+         ;; index `yas--direct-keymaps'.
+         ;;
+         ;; Also install the post-command-hook.
+         ;;
+         (cl-pushnew 'yas--direct-keymaps emulation-mode-map-alists)
+         (add-hook 'post-command-hook #'yas--post-command-handler nil t)
+         ;; Set the `yas--direct-%s' vars for direct keymap expansion
+         ;;
+         (dolist (mode (yas--modes-to-activate))
+           (let ((name (intern (format "yas--direct-%s" mode))))
+             (set-default name nil)
+             (set (make-local-variable name) t)))
+         ;; Perform JIT loads
+         ;;
+         (yas--load-pending-jits))
+        (t
+         ;; Uninstall the direct keymaps and the post-command hook
+         ;;
+         (remove-hook 'post-command-hook #'yas--post-command-handler t)
+         (setq emulation-mode-map-alists
+               (remove 'yas--direct-keymaps emulation-mode-map-alists)))))
+
+(defun yas-minor-mode-on ()
+  "Turn on YASnippet minor mode.
+
+Honour `yas-dont-activate', which see."
+  (interactive)
+  ;; Check `yas-dont-activate'
+  (unless (cond ((functionp yas-dont-activate)
+                 (funcall yas-dont-activate))
+                ((consp yas-dont-activate)
+                 (some #'funcall yas-dont-activate))
+                (yas-dont-activate))
+    (yas-minor-mode 1)))
+
+;;;###autoload
+(define-globalized-minor-mode yas-global-mode yas-minor-mode yas-minor-mode-on
+  :group 'yasnippet
+  :require 'yasnippet)
+
+(defun yas--global-mode-reload-with-jit-maybe ()
+  "Run `yas-reload-all' when `yas-global-mode' is on."
+  (when yas-global-mode (yas-reload-all)))
+
+(add-hook 'yas-global-mode-hook #'yas--global-mode-reload-with-jit-maybe)
 
 
 (provide 'yasnippet)
