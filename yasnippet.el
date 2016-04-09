@@ -4375,8 +4375,8 @@ object satisfying `yas--field-p' to restrict the expansion to.")))
                                          'yasnippet)))
         (when template
           (help-xref-button 1 'help-snippet-def template)
-          (kill-region (match-end 1) (match-end 0))
-          (kill-region (match-beginning 0) (match-beginning 1)))))))
+          (delete-region (match-end 1) (match-end 0))
+          (delete-region (match-beginning 0) (match-beginning 1)))))))
 
 ;;; Utils
 
