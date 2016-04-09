@@ -913,6 +913,7 @@ Honour `yas-dont-activate', which see."
   "The keymap used when `snippet-mode' is active.")
 
 
+;;;###autoload
 (define-derived-mode snippet-mode text-mode "Snippet"
   "A mode for editing yasnippets"
   (setq font-lock-defaults '(yas--font-lock-keywords))
