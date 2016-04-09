@@ -880,7 +880,7 @@ Honour `yas-dont-activate', which see."
 (defvar yas--font-lock-keywords
   (append '(("^#.*$" . font-lock-comment-face))
           (with-temp-buffer
-            (emacs-lisp-mode)
+            (ignore-errors (emacs-lisp-mode))
             (font-lock-set-defaults)
             (if (eq t (car-safe font-lock-keywords))
                 ;; They're "compiled", so extract the source.
