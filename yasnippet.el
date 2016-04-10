@@ -827,21 +827,20 @@ activate snippets associated with that mode."
        (remove mode
                yas--extra-modes)))
 
-(defvar yas-dont-activate '(minibufferp)
-  "If non-nil don't let `yas-global-mode' affect some buffers.
+(define-obsolete-variable-alias 'yas-dont-activate
+  'yas-dont-activate-functions "0.9.2")
+(defvar yas-dont-activate-functions (list #'minibufferp)
+  "Special hook to control which buffers `yas-global-mode' affects.
+Functions are called with no argument, and should return non-nil to prevent
+`yas-global-mode' from enabling yasnippet in this buffer.
 
-If a function of zero arguments, then its result is used.
-
-If a list of functions, then all functions must return nil to
-activate yas for this buffer.
-
-In Emacsen <= 23, this variable is buffer-local.  Because
+In Emacsen < 24, this variable is buffer-local.  Because
 `yas-minor-mode-on' is called by `yas-global-mode' after
 executing the buffer's major mode hook, setting this variable
 there is an effective way to define exceptions to the \"global\"
 activation behaviour.
 
-In Emacsen > 23, only the global value is used.  To define
+In Emacsen >= 24, only the global value is used.  To define
 per-mode exceptions to the \"global\" activation behaviour, call
 `yas-minor-mode' with a negative argument directily in the major
 mode's hook.")
@@ -853,14 +852,14 @@ mode's hook.")
 (defun yas-minor-mode-on ()
   "Turn on YASnippet minor mode.
 
-Honour `yas-dont-activate', which see."
+Honour `yas-dont-activate-functions', which see."
   (interactive)
-  ;; Check `yas-dont-activate'
-  (unless (cond ((functionp yas-dont-activate)
-                 (funcall yas-dont-activate))
-                ((consp yas-dont-activate)
-                 (some #'funcall yas-dont-activate))
-                (yas-dont-activate))
+  (unless (or
+           ;; The old behavior used for Emacs<24 was to set
+           ;; `yas-dont-activate-functions' to t buffer-locally.
+           (not (or (listp yas-dont-activate-functions)
+                    (functionp yas-dont-activate-functions)))
+           (run-hook-with-args-until-success 'yas-dont-activate-functions))
     (yas-minor-mode 1)))
 
 ;;;###autoload
