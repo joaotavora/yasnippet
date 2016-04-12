@@ -3467,17 +3467,23 @@ Move the overlays, or create them if they do not exit."
              ;; (overlay-put ov 'evaporate t)
              (overlay-put ov 'modification-hooks '(yas--on-protection-overlay-modification)))))))
 
-(defun yas--on-protection-overlay-modification (_overlay after? _beg _end &optional _length)
+(defvar yas--buffer-pre-modification)
+
+(defun yas--on-protection-overlay-modification (_overlay after? beg end &optional _length)
   "Signals a snippet violation, then issues error.
 
 The error should be ignored in `debug-ignored-errors'"
   (unless (or yas--inhibit-overlay-hooks
-              after?
               (yas--undo-in-progress))
-    (let ((snippets (yas--snippets-at-point)))
-      (yas--message 3 "Comitting snippets. Action would destroy a protection overlay.")
-      (cl-loop for snippet in snippets
-               do (yas--commit-snippet snippet)))))
+    (if after?
+        (unless (string= yas--buffer-pre-modification
+                         (buffer-substring-no-properties beg end))
+         (let ((snippets (yas--snippets-at-point)))
+           (yas--message 3 "Comitting snippets. Action would destroy a protection overlay.")
+           (cl-loop for snippet in snippets
+                    do (yas--commit-snippet snippet))))
+      (setq-local yas--buffer-pre-modification
+                  (buffer-substring-no-properties beg end)))))
 
 (add-to-list 'debug-ignored-errors "^Exit the snippet first!$")
 
