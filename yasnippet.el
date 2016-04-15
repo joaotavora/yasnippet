@@ -3471,7 +3471,7 @@ Move the overlays, or create them if they do not exit."
   "Commit the snippet if the protection overlay is being killed."
   (unless (or yas--inhibit-overlay-hooks
               (not after?)
-              (/= length (- end beg)) ; deletion or insertion
+              (= length (- end beg)) ; deletion or insertion
               (yas--undo-in-progress))
     (let ((snippets (yas--snippets-at-point)))
       (yas--message 3 "Comitting snippets. Action would destroy a protection overlay.")
