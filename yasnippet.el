@@ -3467,12 +3467,11 @@ Move the overlays, or create them if they do not exit."
              ;; (overlay-put ov 'evaporate t)
              (overlay-put ov 'modification-hooks '(yas--on-protection-overlay-modification)))))))
 
-(defun yas--on-protection-overlay-modification (_overlay after? _beg _end &optional _length)
-  "Signals a snippet violation, then issues error.
-
-The error should be ignored in `debug-ignored-errors'"
+(defun yas--on-protection-overlay-modification (_overlay after? beg end &optional length)
+  "Commit the snippet if the protection overlay is being killed."
   (unless (or yas--inhibit-overlay-hooks
-              after?
+              (not after?)
+              (= length (- end beg)) ; deletion or insertion
               (yas--undo-in-progress))
     (let ((snippets (yas--snippets-at-point)))
       (yas--message 3 "Comitting snippets. Action would destroy a protection overlay.")
