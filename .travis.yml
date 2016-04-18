@@ -4,7 +4,10 @@ git:
   submodules: false
 
 env:
-  - "EMACS_VERSION=24.5"
+  - EMACS_VERSION=23.4
+  - EMACS_VERSION=24.3
+  - EMACS_VERSION=24.5
+  - EMACS_VERSION=25-prerelease
 
 install:
   - curl -LO https://github.com/npostavs/emacs-travis/releases/download/bins/emacs-bin-${EMACS_VERSION}.tar.gz
