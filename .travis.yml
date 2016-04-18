@@ -17,4 +17,5 @@ install:
   - emacs --version
 
 script:
-  - rake compile; rake tests
+  - rake compile
+  - rake tests

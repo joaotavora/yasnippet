@@ -94,7 +94,8 @@ end
 desc "Compile yasnippet.el into yasnippet.elc"
 
 rule '.elc' => '.el' do |t|
-  sh "#{$EMACS} --batch -L . --eval \"(byte-compile-file \\\"#{t.source}\\\")\""
+  sh "#{$EMACS} --batch -L . --eval \"(setq byte-compile-error-on-warn t)\"" +
+     " -f batch-byte-compile #{t.source}"
 end
 task :compile => FileList["yasnippet.el"].ext('elc')
 
