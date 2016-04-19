@@ -14,6 +14,13 @@ install:
   - tar -xaf emacs-bin-${EMACS_VERSION}.tar.gz -C /
   # Configure $PATH: Emacs installed to /tmp/emacs
   - export PATH=/tmp/emacs/bin:${PATH}
+  - if ! emacs -Q --batch --eval "(require 'cl-lib)" ; then
+        curl -Lo cl-lib.el http://elpa.gnu.org/packages/cl-lib-0.5.el ;
+    fi
+  - if ! emacs -Q --batch --eval "(require 'ert)" ; then
+        curl -LO https://raw.githubusercontent.com/ohler/ert/c619b56c5bc6a866e33787489545b87d79973205/lisp/emacs-lisp/ert.el &&
+        curl -LO https://raw.githubusercontent.com/ohler/ert/c619b56c5bc6a866e33787489545b87d79973205/lisp/emacs-lisp/ert-x.el ;
+    fi
   - emacs --version
 
 script:
