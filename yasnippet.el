@@ -3348,15 +3348,17 @@ Otherwise deletes a character normally by calling `delete-char'."
           (t
            (call-interactively 'delete-char)))))
 
-(defun yas--skip-and-clear (field)
-  "Deletes the region of FIELD and sets it's modified state to t."
+(defun yas--skip-and-clear (field &optional from)
+  "Deletes the region of FIELD and sets it's modified state to t.
+If given, FROM indicates position to start at instead of FIELD's beginning."
   ;; Just before skipping-and-clearing the field, mark its children
   ;; fields as modified, too. If the children have mirrors-in-fields
   ;; this prevents them from updating erroneously (we're skipping and
   ;; deleting!).
   ;;
   (yas--mark-this-and-children-modified field)
-  (delete-region (yas--field-start field) (yas--field-end field)))
+  (unless (= (yas--field-start field) (yas--field-end field))
+    (delete-region (or from (yas--field-start field)) (yas--field-end field))))
 
 (defun yas--mark-this-and-children-modified (field)
   (setf (yas--field-modified-p field) t)
@@ -3390,40 +3392,33 @@ Move the overlay, or create it if it does not exit."
     (overlay-put yas--active-field-overlay 'insert-behind-hooks
                  '(yas--on-field-overlay-modification))))
 
-(defun yas--skip-and-clear-field-p (field _beg _end &optional _length)
+(defun yas--skip-and-clear-field-p (field beg _end length)
   "Tell if newly modified FIELD should be cleared and skipped.
 BEG, END and LENGTH like overlay modification hooks."
-  (and (not (yas--field-modified-p field))
-       (= (point) (yas--field-start field))
-       (require 'delsel)
-       ;; `yank' sets `this-command' to t during execution.
-       (let* ((command (if (commandp this-command) this-command
-                         this-original-command))
-              (clearp (if (symbolp command) (get command 'delete-selection))))
-         (when (and (not (memq clearp '(yank supersede kill)))
-                    (functionp clearp))
-           (setq clearp (funcall clearp)))
-         clearp)))
+  (and (= length 0) ; A 0 pre-change length indicates insertion.
+       (= beg (yas--field-start field)) ; Insertion at field start?
+       (not (yas--field-modified-p field))))
 
-(defun yas--on-field-overlay-modification (overlay after? beg end &optional _length)
+(defun yas--on-field-overlay-modification (overlay after? beg end &optional length)
   "Clears the field and updates mirrors, conditionally.
 
 Only clears the field if it hasn't been modified and point is at
 field start.  This hook does nothing if an undo is in progress."
-  (unless (or yas--inhibit-overlay-hooks
+  (unless (or (not after?)
+              yas--inhibit-overlay-hooks
               (not (overlayp yas--active-field-overlay)) ; Avoid Emacs bug #21824.
               (yas--undo-in-progress))
-    (let* ((field (overlay-get overlay 'yas--field))
+    (let* ((inhibit-modification-hooks t)
+           (field (overlay-get overlay 'yas--field))
            (snippet (overlay-get yas--active-field-overlay 'yas--snippet)))
-      (cond (after?
-             (yas--advance-end-maybe field (overlay-end overlay))
-             (save-excursion
-               (yas--field-update-display field))
-             (yas--update-mirrors snippet))
-            (field
-             (when (yas--skip-and-clear-field-p field beg end)
-               (yas--skip-and-clear field))
-             (setf (yas--field-modified-p field) t))))))
+      (when (yas--skip-and-clear-field-p field beg end length)
+        ;; We delete text starting from the END of insertion.
+        (yas--skip-and-clear field end))
+      (setf (yas--field-modified-p field) t)
+      (yas--advance-end-maybe field (overlay-end overlay))
+      (save-excursion
+        (yas--field-update-display field))
+      (yas--update-mirrors snippet))))
 
 ;;; Apropos protection overlays:
 ;;
