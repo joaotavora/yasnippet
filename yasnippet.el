@@ -3392,11 +3392,11 @@ Move the overlay, or create it if it does not exit."
     (overlay-put yas--active-field-overlay 'insert-behind-hooks
                  '(yas--on-field-overlay-modification))))
 
-(defun yas--skip-and-clear-field-p (prechange-point field _beg _end length)
+(defun yas--skip-and-clear-field-p (field beg _end length)
   "Tell if newly modified FIELD should be cleared and skipped.
 BEG, END and LENGTH like overlay modification hooks."
   (and (not (yas--field-modified-p field))
-       (= prechange-point (yas--field-start field))
+       (= beg (yas--field-start field))
        (= length 0))) ; A 0 pre-change length indicates insertion.
 
 (defun yas--on-field-overlay-modification (overlay after? beg end &optional length)
@@ -3404,23 +3404,20 @@ BEG, END and LENGTH like overlay modification hooks."
 
 Only clears the field if it hasn't been modified and point is at
 field start.  This hook does nothing if an undo is in progress."
-  (unless (or yas--inhibit-overlay-hooks
+  (unless (or (not after?)
+              yas--inhibit-overlay-hooks
               (not (overlayp yas--active-field-overlay)) ; Avoid Emacs bug #21824.
               (yas--undo-in-progress))
     (let* ((inhibit-modification-hooks t)
            (field (overlay-get overlay 'yas--field))
            (snippet (overlay-get yas--active-field-overlay 'yas--snippet)))
-      (if (not after?)
-          (overlay-put overlay 'yas--prechange-point (point))
-        (when (yas--skip-and-clear-field-p
-               (overlay-get overlay 'yas--prechange-point)
-               field beg end length)
-          (yas--skip-and-clear field end))
-        (setf (yas--field-modified-p field) t)
-        (yas--advance-end-maybe field (overlay-end overlay))
-        (save-excursion
-          (yas--field-update-display field))
-        (yas--update-mirrors snippet)))))
+      (when (yas--skip-and-clear-field-p field beg end length)
+        (yas--skip-and-clear field end))
+      (setf (yas--field-modified-p field) t)
+      (yas--advance-end-maybe field (overlay-end overlay))
+      (save-excursion
+        (yas--field-update-display field))
+      (yas--update-mirrors snippet))))
 
 ;;; Apropos protection overlays:
 ;;
