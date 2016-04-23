@@ -3395,9 +3395,9 @@ Move the overlay, or create it if it does not exit."
 (defun yas--skip-and-clear-field-p (field beg _end length)
   "Tell if newly modified FIELD should be cleared and skipped.
 BEG, END and LENGTH like overlay modification hooks."
-  (and (not (yas--field-modified-p field))
-       (= beg (yas--field-start field))
-       (= length 0))) ; A 0 pre-change length indicates insertion.
+  (and (= length 0) ; A 0 pre-change length indicates insertion.
+       (= beg (yas--field-start field)) ; Insertion at field start?
+       (not (yas--field-modified-p field))))
 
 (defun yas--on-field-overlay-modification (overlay after? beg end &optional length)
   "Clears the field and updates mirrors, conditionally.
@@ -3412,6 +3412,7 @@ field start.  This hook does nothing if an undo is in progress."
            (field (overlay-get overlay 'yas--field))
            (snippet (overlay-get yas--active-field-overlay 'yas--snippet)))
       (when (yas--skip-and-clear-field-p field beg end length)
+        ;; We delete text starting from the END of insertion.
         (yas--skip-and-clear field end))
       (setf (yas--field-modified-p field) t)
       (yas--advance-end-maybe field (overlay-end overlay))
