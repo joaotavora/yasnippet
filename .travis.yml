@@ -1,24 +1,28 @@
-language: emacs
+language: generic
+sudo: false
+git:
+  submodules: false
 
 env:
-  - "EMACS=emacs23"
-  - "EMACS=emacs24"
+  - EMACS_VERSION=23.4
+  - EMACS_VERSION=24.3
+  - EMACS_VERSION=24.5
+  - EMACS_VERSION=25-prerelease
 
 install:
-  - if [ "$EMACS" = "emacs23" ]; then
-        sudo apt-get -qq update &&
-        sudo apt-get -qq -f install &&
-        sudo apt-get -qq install emacs23-nox &&
+  - curl -LO https://github.com/npostavs/emacs-travis/releases/download/bins/emacs-bin-${EMACS_VERSION}.tar.gz
+  - tar -xaf emacs-bin-${EMACS_VERSION}.tar.gz -C /
+  # Configure $PATH: Emacs installed to /tmp/emacs
+  - export PATH=/tmp/emacs/bin:${PATH}
+  - if ! emacs -Q --batch --eval "(require 'cl-lib)" ; then
+        curl -Lo cl-lib.el http://elpa.gnu.org/packages/cl-lib-0.5.el ;
+    fi
+  - if ! emacs -Q --batch --eval "(require 'ert)" ; then
         curl -LO https://raw.githubusercontent.com/ohler/ert/c619b56c5bc6a866e33787489545b87d79973205/lisp/emacs-lisp/ert.el &&
-        curl -LO https://raw.githubusercontent.com/ohler/ert/c619b56c5bc6a866e33787489545b87d79973205/lisp/emacs-lisp/ert-x.el &&
-        curl -Lo cl-lib.el http://elpa.gnu.org/packages/cl-lib-0.5.el;
+        curl -LO https://raw.githubusercontent.com/ohler/ert/c619b56c5bc6a866e33787489545b87d79973205/lisp/emacs-lisp/ert-x.el ;
     fi
-  - if [ "$EMACS" = "emacs24" ]; then
-        sudo add-apt-repository -y ppa:cassou/emacs &&
-        sudo apt-get -qq update &&
-        sudo apt-get -qq -f install &&
-        sudo apt-get -qq install emacs24-nox;
-    fi
+  - emacs --version
 
 script:
-  - rake compile; rake tests
+  - rake compile
+  - rake tests
