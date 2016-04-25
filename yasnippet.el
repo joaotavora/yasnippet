@@ -1362,7 +1362,7 @@ return an expression that when evaluated will issue an error."
                        (read-kbd-macro keybinding 'need-vector))))
           res)
       (error
-       (yas--message 3 "warning: keybinding \"%s\" invalid since %s."
+       (yas--message 2 "warning: keybinding \"%s\" invalid since %s."
                 keybinding (error-message-string err))
        nil))))
 
@@ -1697,14 +1697,14 @@ the current buffers contents."
   (or (yas--template-load-file template)
       (let ((file (yas--template-save-file template)))
         (when file
-          (yas--message 2 "%s has no load file, use save file, %s, instead."
+          (yas--message 3 "%s has no load file, using save file, %s, instead."
                         (yas--template-name template) file))
         file)))
 
 (defun yas--load-yas-setup-file (file)
   (if (not yas--creating-compiled-snippets)
       ;; Normal case.
-      (load file 'noerror (<= yas-verbosity 2))
+      (load file 'noerror (<= yas-verbosity 4))
     (let ((elfile (concat file ".el")))
       (when (file-exists-p elfile)
         (insert ";;; contents of the .yas-setup.el support file:\n;;;\n")
@@ -1760,7 +1760,7 @@ With prefix argument USE-JIT do jit-loading of snippets."
           (cl-loop for buffer in (buffer-list)
                    do (with-current-buffer buffer
                         (when (eq major-mode mode-sym)
-                          (yas--message 3 "Discovered there was already %s in %s" buffer mode-sym)
+                          (yas--message 4 "Discovered there was already %s in %s" buffer mode-sym)
                           (push buffer impatient-buffers)))))))
     ;; ...after TOP-LEVEL-DIR has been completely loaded, call
     ;; `yas--load-pending-jits' in these impatient buffers.
@@ -1784,8 +1784,8 @@ With prefix argument USE-JIT do jit-loading of snippets."
     ;; Normal case.
     (unless (file-exists-p (expand-file-name ".yas-skip" directory))
       (unless (and (load (expand-file-name ".yas-compiled-snippets" directory) 'noerror (<= yas-verbosity 3))
-                   (progn (yas--message 2 "Loaded compiled snippets from %s" directory) t))
-        (yas--message 2 "Loading snippet files from %s" directory)
+                   (progn (yas--message 4 "Loaded compiled snippets from %s" directory) t))
+        (yas--message 4 "Loading snippet files from %s" directory)
         (yas--load-directory-2 directory mode-sym)))))
 
 (defun yas--load-directory-2 (directory mode-sym)
@@ -1823,8 +1823,8 @@ prompt the user to select one."
         (cond ((file-directory-p directory)
                (yas-load-directory directory (not nojit))
                (if nojit
-                   (yas--message 3 "Loaded %s" directory)
-                 (yas--message 3 "Prepared just-in-time loading for %s" directory)))
+                   (yas--message 4 "Loaded %s" directory)
+                 (yas--message 4 "Prepared just-in-time loading for %s" directory)))
               (t
                (push (yas--message 0 "Check your `yas-snippet-dirs': %s is not a directory" directory) errors)))))
     errors))
@@ -1889,9 +1889,9 @@ prefix argument."
       (yas-direct-keymaps-reload)
 
       (run-hooks 'yas-after-reload-hook)
-      (yas--message 3 "Reloaded everything%s...%s."
-                   (if no-jit "" " (snippets will load just-in-time)")
-                   (if errors " (some errors, check *Messages*)" "")))))
+      (yas--message (if errors 2 3) "Reloaded everything%s...%s."
+                    (if no-jit "" " (snippets will load just-in-time)")
+                    (if errors " (some errors, check *Messages*)" "")))))
 
 (defvar yas-after-reload-hook nil
   "Hooks run after `yas-reload-all'.")
@@ -1901,7 +1901,7 @@ prefix argument."
     (let ((funs (reverse (gethash mode yas--scheduled-jit-loads))))
       ;; must reverse to maintain coherence with `yas-snippet-dirs'
       (dolist (fun funs)
-        (yas--message  3 "Loading for `%s', just-in-time: %s!" mode fun)
+        (yas--message 4 "Loading for `%s', just-in-time: %s!" mode fun)
         (funcall fun))
       (remhash mode yas--scheduled-jit-loads))))
 
@@ -2096,7 +2096,7 @@ omitted from MODE's menu, even if they're manually loaded."
            (define-key menu-keymap (vector (gensym))
              '(menu-item "----")))
           (t
-           (yas--message 3 "Don't know anything about menu entry %s" (first e))))))
+           (yas--message 1 "Don't know anything about menu entry %s" (first e))))))
 
 (defun yas--define (mode key template &optional name condition group)
   "Define a snippet.  Expanding KEY into TEMPLATE.
@@ -2359,7 +2359,7 @@ by condition."
                             (car where)
                             (cdr where)
                             (yas--template-expand-env yas--current-template))
-      (yas--message 3 "No snippets can be inserted here!"))))
+      (yas--message 1 "No snippets can be inserted here!"))))
 
 (defun yas-visit-snippet-file ()
   "Choose a snippet to edit, selection like `yas-insert-snippet'.
@@ -2642,7 +2642,7 @@ and `kill-buffer' instead."
                         (require 'yasnippet-debug nil t))
                (add-hook 'post-command-hook 'yas-debug-snippet-vars nil t))))
           (t
-           (yas--message 3 "Cannot test snippet for unknown major mode")))))
+           (yas--message 1 "Cannot test snippet for unknown major mode")))))
 
 (defun yas-active-keys ()
   "Return all active trigger keys for current buffer and point."
@@ -3225,7 +3225,7 @@ This renders the snippet as ordinary text."
   (condition-case error
       (run-hooks hook-var)
     (error
-     (yas--message 3 "%s error: %s" hook-var (error-message-string error)))))
+     (yas--message 2 "%s error: %s" hook-var (error-message-string error)))))
 
 
 (defun yas--check-commit-snippet ()
@@ -3483,7 +3483,7 @@ Move the overlays, or create them if they do not exit."
               (= length (- end beg)) ; deletion or insertion
               (yas--undo-in-progress))
     (let ((snippets (yas--snippets-at-point)))
-      (yas--message 3 "Comitting snippets. Action would destroy a protection overlay.")
+      (yas--message 2 "Committing snippets. Action would destroy a protection overlay.")
       (cl-loop for snippet in snippets
                do (yas--commit-snippet snippet)))))
 
@@ -3619,7 +3619,7 @@ considered when expanding the snippet."
              (when first-field
                (sit-for 0) ;; fix issue 125
                (yas--move-to-field snippet first-field)))
-           (yas--message 3 "snippet expanded.")
+           (yas--message 4 "snippet expanded.")
            t))))
 
 (defun yas--take-care-of-redo (_beg _end snippet)
@@ -4384,7 +4384,7 @@ object satisfying `yas--field-p' to restrict the expansion to.")))
 
 ;;; Utils
 
-(defvar yas-verbosity 4
+(defvar yas-verbosity 3
   "Log level for `yas--message' 4 means trace most anything, 0 means nothing.")
 
 (defun yas--message (level message &rest args)
