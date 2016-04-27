@@ -29,7 +29,7 @@
 
    - Expanding from emacs-lisp code
 
-** Trigger key
+** <<Trigger key>>
 
 [[sym:yas-expand][=yas-expand=]] tries to expand a /snippet abbrev/ (also known as
 /snippet key/) before point.
@@ -90,6 +90,10 @@ snippet.  The variable [[sym:yas-wrap-around-region][=yas-wrap-around-region=]] 
 the region contents into the =$0= placeholder of a snippet expanded by
 [[#yas-insert-snippet][=yas-insert-snippet=]].  Setting it to a character value (e.g. =?0=)
 will insert the contents of corresponding register.
+
+Note a setting of t is disabled when expanding via [[trigger key]] since
+it's too awkward to highlight the relevant text while maneuvering
+point in front of the trigger key.
 
 Older (versions 0.9.1 and below) of Yasnippet, supported a setting of
 =cua= that is equivalent to =?0= but only worked with =cua-mode=

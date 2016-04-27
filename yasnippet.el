@@ -2160,7 +2160,12 @@ Optional argument FIELD is for non-interactive use and is an
 object satisfying `yas--field-p' to restrict the expansion to."
   (interactive)
   (setq yas--condition-cache-timestamp (current-time))
-  (let (templates-and-pos)
+  (let ((templates-and-pos nil)
+        ;; Disable region wrapping for trigger key expansion: it's too
+        ;; awkward to have point after the trigger while managing the
+        ;; region contents anyway.
+        (yas-wrap-around-region (if (eq yas-wrap-around-region t) nil
+                                  yas-wrap-around-region)))
     (unless (and yas-expand-only-for-last-commands
                  (not (member last-command yas-expand-only-for-last-commands)))
       (setq templates-and-pos (if field
