@@ -108,9 +108,11 @@
    Yet another way to create a nice snippet menu is to write into
    =.yas-make-groups= a menu definition. TODO
 
-* TODO The =.yas-setup.el= file
+* The =.yas-setup.el= file
 
-** TODO
+  If there is file named =.yas-setup.el= in a mode's snippet
+  subdirectory, it is loaded along with the snippets.  Utility
+  functions used by the snippets can be put here.
 
 * The =.yas-compiled-snippet.el= file
 
@@ -127,5 +129,3 @@
 
   A =.yas-skip= file in a mode's snippet subdirectory tells YASnippet
   not to load snippets from there.
-
-** TODO
