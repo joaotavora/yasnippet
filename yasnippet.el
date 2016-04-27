@@ -3862,7 +3862,22 @@ Meant to be called in a narrowed buffer, does various passes"
     (yas--calculate-adjacencies snippet)
     ;; Delete $-constructs
     ;;
-    (save-restriction (widen) (yas--delete-regions yas--dollar-regions))
+    (save-restriction
+      (widen)
+      (yas--delete-regions yas--dollar-regions))
+    ;; Make sure to do this insertion *after* deleting the dollar
+    ;; regions, otherwise we invalidate the calculated positions of
+    ;; all the fields following $0.
+    (let ((exit (yas--snippet-exit snippet)))
+      (goto-char (if exit (yas--exit-marker exit) (point-max))))
+    (when (eq yas-wrap-around-region 'cua)
+      (setq yas-wrap-around-region ?0))
+    (cond ((and yas-wrap-around-region yas-selected-text)
+           (insert yas-selected-text))
+          ((and (characterp yas-wrap-around-region)
+                (get-register yas-wrap-around-region))
+           (insert (prog1 (get-register yas-wrap-around-region)
+                     (set-register yas-wrap-around-region nil)))))
     ;; restore backquoted expression values
     ;;
     (yas--restore-backquotes)
@@ -4131,21 +4146,10 @@ When multiple expressions are found, only the last one counts."
   (while (re-search-forward yas--simple-mirror-regexp nil t)
     (let ((number (string-to-number (match-string-no-properties 1))))
       (cond ((zerop number)
-
              (setf (yas--snippet-exit snippet)
                    (yas--make-exit (yas--make-marker (match-end 0))))
-             (save-excursion
-               (goto-char (match-beginning 0))
-               (when (eq yas-wrap-around-region 'cua)
-                 (setq yas-wrap-around-region ?0))
-               (cond ((and yas-wrap-around-region yas-selected-text)
-                      (insert yas-selected-text))
-                     ((and (characterp yas-wrap-around-region)
-                           (get-register yas-wrap-around-region))
-                      (insert (prog1 (get-register yas-wrap-around-region)
-                                (set-register yas-wrap-around-region nil)))))
-               (push (cons (point) (yas--exit-marker (yas--snippet-exit snippet)))
-                     yas--dollar-regions)))
+             (push (cons (match-beginning 0) (yas--exit-marker (yas--snippet-exit snippet)))
+                   yas--dollar-regions))
             (t
              (let ((field (yas--snippet-find-field snippet number)))
                (if field
