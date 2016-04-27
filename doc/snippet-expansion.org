@@ -83,6 +83,19 @@ snippets for the major mode, prefix this command with =C-u=.
 The prompting methods used are again controlled by
 [[sym:yas-prompt-functions][=yas-prompt-functions=]].
 
+*** Inserting region or register contents into snippet
+
+It's often useful to inject already written text in the middle of a
+snippet.  The variable [[sym:yas-wrap-around-region][=yas-wrap-around-region=]] when to t substitute
+the region contents into the =$0= placeholder of a snippet expanded by
+[[#yas-insert-snippet][=yas-insert-snippet=]].  Setting it to a character value (e.g. =?0=)
+will insert the contents of corresponding register.
+
+Older (versions 0.9.1 and below) of Yasnippet, supported a setting of
+=cua= that is equivalent to =?0= but only worked with =cua-mode=
+turned on.  This setting is still supported for backwards
+compatibility, but is now entirely equivalent to =?0=.
+
 ** Snippet keybinding
 
 See the section of the =# binding:= directive in

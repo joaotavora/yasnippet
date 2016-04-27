@@ -349,7 +349,9 @@ Any other non-nil value, every submenu is listed."
   "What to insert for snippet's $0 field.
 
 If set to a character, insert contents of corresponding register.
-If non-nil insert region contents."
+If non-nil insert region contents.  This can be overridden on a
+per-snippet basis.  A value of `cua' is considered equivalent to
+`?0' for backwards compatibility."
   :type '(choice (character :tag "Insert from register")
                  (const t :tag "Insert region contents")
                  (const nil :tag "Don't insert anything")
