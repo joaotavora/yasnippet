@@ -2170,9 +2170,13 @@ object satisfying `yas--field-p' to restrict the expansion to."
                                     (yas--templates-for-key-at-point))
                                 (yas--templates-for-key-at-point))))
     (if templates-and-pos
-        (yas--expand-or-prompt-for-template (nth 0 templates-and-pos)
-                                            (nth 1 templates-and-pos)
-                                            (nth 2 templates-and-pos))
+        (yas--expand-or-prompt-for-template
+         (nth 0 templates-and-pos)
+         ;; Delete snippet key and active region when expanding.
+         (min (if (use-region-p) (region-beginning) most-positive-fixnum)
+              (nth 1 templates-and-pos))
+         (max (if (use-region-p) (region-end) most-negative-fixnum)
+              (nth 2 templates-and-pos)))
       (yas--fallback))))
 
 (defun yas-expand-from-keymap ()
