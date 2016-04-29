@@ -4192,42 +4192,44 @@ When multiple expressions are found, only the last one counts."
 
 (defun yas--update-mirrors (snippet)
   "Update all the mirrors of SNIPPET."
-  (save-excursion
-    (dolist (field-and-mirror
-             (sort
-              ;; make a list of ((F1 . M1) (F1 . M2) (F2 . M3) (F2 . M4) ...)
-              ;; where F is the field that M is mirroring
-              ;;
-              (cl-mapcan #'(lambda (field)
-                             (mapcar #'(lambda (mirror)
-                                         (cons field mirror))
-                                     (yas--field-mirrors field)))
-                         (yas--snippet-fields snippet))
-              ;; then sort this list so that entries with mirrors with parent
-              ;; fields appear before. This was important for fixing #290, and
-              ;; luckily also handles the case where a mirror in a field causes
-              ;; another mirror to need reupdating
-              ;;
-              #'(lambda (field-and-mirror1 field-and-mirror2)
-                  (> (yas--calculate-mirror-depth (cdr field-and-mirror1))
-                     (yas--calculate-mirror-depth (cdr field-and-mirror2))))))
-      (let* ((field (car field-and-mirror))
-             (mirror (cdr field-and-mirror))
-             (parent-field (yas--mirror-parent-field mirror)))
-        ;; before updating a mirror with a parent-field, maybe advance
-        ;; its start (#290)
-        ;;
-        (when parent-field
-          (yas--advance-start-maybe mirror (yas--fom-start parent-field)))
-        ;; update this mirror
-        ;;
-        (yas--mirror-update-display mirror field)
-        ;; `yas--place-overlays' is needed if the active field and
-        ;; protected overlays have been changed because of insertions
-        ;; in `yas--mirror-update-display'
-        ;;
-        (when (eq field (yas--snippet-active-field snippet))
-          (yas--place-overlays snippet field))))))
+  (save-restriction
+    (widen)
+    (save-excursion
+     (dolist (field-and-mirror
+              (sort
+               ;; make a list of ((F1 . M1) (F1 . M2) (F2 . M3) (F2 . M4) ...)
+               ;; where F is the field that M is mirroring
+               ;;
+               (cl-mapcan #'(lambda (field)
+                              (mapcar #'(lambda (mirror)
+                                          (cons field mirror))
+                                      (yas--field-mirrors field)))
+                          (yas--snippet-fields snippet))
+               ;; then sort this list so that entries with mirrors with parent
+               ;; fields appear before. This was important for fixing #290, and
+               ;; luckily also handles the case where a mirror in a field causes
+               ;; another mirror to need reupdating
+               ;;
+               #'(lambda (field-and-mirror1 field-and-mirror2)
+                   (> (yas--calculate-mirror-depth (cdr field-and-mirror1))
+                      (yas--calculate-mirror-depth (cdr field-and-mirror2))))))
+       (let* ((field (car field-and-mirror))
+              (mirror (cdr field-and-mirror))
+              (parent-field (yas--mirror-parent-field mirror)))
+         ;; before updating a mirror with a parent-field, maybe advance
+         ;; its start (#290)
+         ;;
+         (when parent-field
+           (yas--advance-start-maybe mirror (yas--fom-start parent-field)))
+         ;; update this mirror
+         ;;
+         (yas--mirror-update-display mirror field)
+         ;; `yas--place-overlays' is needed if the active field and
+         ;; protected overlays have been changed because of insertions
+         ;; in `yas--mirror-update-display'
+         ;;
+         (when (eq field (yas--snippet-active-field snippet))
+           (yas--place-overlays snippet field)))))))
 
 (defun yas--mirror-update-display (mirror field)
   "Update MIRROR according to FIELD (and mirror transform)."

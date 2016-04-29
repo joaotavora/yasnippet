@@ -68,6 +68,26 @@
     (should (string= (yas--buffer-contents)
                      "bla from another BLA"))))
 
+(ert-deftest mirror-with-transformation-and-autofill ()
+  "Test interaction of autofill with mirror transforms"
+  (let ((words "one two three four five")
+        filled-words)
+    (with-temp-buffer
+      (c-mode)      ; In `c-mode' filling comments works by narrowing.
+      (yas-minor-mode +1)
+      (setq fill-column 10)
+      (auto-fill-mode +1)
+      (yas-expand-snippet "/* $0\n */")
+      (yas-mock-insert words)
+      (setq filled-words (delete-and-extract-region (point-min) (point-max)))
+      (yas-expand-snippet "/* $1\n */\n$2$2")
+      (should (string= (yas--buffer-contents)
+                       "/* \n */\n"))
+      (yas-mock-insert words)
+      (should (string= (yas--buffer-contents)
+                       (concat filled-words "\n"))))))
+
+
 (ert-deftest primary-field-transformation ()
   (with-temp-buffer
     (yas-minor-mode 1)
