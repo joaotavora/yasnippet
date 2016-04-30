@@ -200,9 +200,13 @@
     (set (make-local-variable 'yas-indent-line) 'auto)
     (set (make-local-variable 'yas-also-auto-indent-first-line) t)
     (yas-expand-snippet "def ${1:method}${2:(${3:args})}\n$0\nend")
+    ;; Note that empty line is not indented.
+    (should (string= "def method(args)
+
+end" (buffer-string)))
     (cl-loop repeat 3 do (ert-simulate-command '(yas-next-field)))
     (yas-mock-insert (make-string (random 5) ?\ )) ; purposedly mess up indentation
-    (yas-expand-snippet "class << ${self}\n$0\nend")
+    (yas-expand-snippet "class << ${self}\n  $0\nend")
     (ert-simulate-command '(yas-next-field))
     (should (string= "def method(args)
   class << self

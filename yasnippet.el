@@ -3918,7 +3918,8 @@ The SNIPPET's markers are preserved."
       (goto-char from)
       (save-restriction
         (widen)
-        (cl-loop do
+        ;; Indent each non-empty line.
+        (cl-loop if (/= (line-beginning-position) (line-end-position)) do
                  (back-to-indentation)
                  (let ((trouble-markers ; The markers at (point).
                         (cl-remove (point) snippet-markers :test #'/=)))
