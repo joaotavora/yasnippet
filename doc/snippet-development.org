@@ -194,7 +194,7 @@ previous snippet.
 This is optional and has no effect whatsoever on snippet functionality,
 but it looks nice.
 
-* <<Template syntax>>
+* Template Syntax
 
 The syntax of the snippet template is simple but powerful, very similar
 to TextMate's.
@@ -262,10 +262,10 @@ like this:
 
 They acts as the default value for a tab stop. But when you firstly
 type at a tab stop, the default value will be replaced by your typing.
-The number can be omitted if you don't want to create [[mirrors]] or
-[[transformations]] for this field.
+The number can be omitted if you don't want to create [[mirrors-fields][mirrors]] or
+[[mirror-transformations][transformations]] for this field.
 
-** <<Mirrors>>
+** Mirrors <<mirrors-fields>>
 
 We refer the tab stops with placeholders as a /field/. A field can have
 mirrors. Its mirrors will get updated when you change the text of a
@@ -285,7 +285,7 @@ The tab stops with the same number to the field act as its mirrors. If
 none of the tab stops has an initial value, the first one is selected as
 the field and others mirrors.
 
-** Mirrors with <<transformations>>
+** Mirrors with transformations <<mirror-transformations>>
 
 If the value of an =${n:=-construct starts with and contains =$(=,
 then it is interpreted as a mirror for field =n= with a
