@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Frequently Asked Questions</title>
-<!-- 2015-09-24 Thu 21:15 -->
+<!-- 2016-04-30 Sat 22:37 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="generator" content="Org-mode" />
 <style type="text/css">
@@ -232,11 +232,11 @@ following code to work around:
 <div class="org-src-container">
 
 <pre class="src src-emacs-lisp">(add-hook 'org-mode-hook
-	  (let ((original-command (lookup-key org-mode-map [tab])))
-	    `(lambda ()
-	       (setq yas-fallback-behavior
-		     '(apply ,original-command))
-	       (local-set-key [tab] 'yas-expand))))
+          (<span class="org-keyword">let</span> ((original-command (lookup-key org-mode-map [tab])))
+            `(<span class="org-keyword">lambda</span> ()
+               (setq yas-fallback-behavior
+                     '(apply ,original-command))
+               (local-set-key [tab] 'yas-expand))))
 </pre>
 </div>
 
@@ -251,15 +251,15 @@ As an alternative, you can also try
 
 <div class="org-src-container">
 
-<pre class="src src-emacs-lisp">(defun yas-advise-indent-function (function-symbol)
-  (eval `(defadvice ,function-symbol (around yas-try-expand-first activate)
-	   ,(format
-	     "Try to expand a snippet before point, then call `%s' as usual"
-	     function-symbol)
-	   (let ((yas-fallback-behavior nil))
-	     (unless (and (interactive-p)
-			  (yas-expand))
-	       ad-do-it)))))
+<pre class="src src-emacs-lisp">(<span class="org-keyword">defun</span> <span class="org-function-name">yas-advise-indent-function</span> (function-symbol)
+  (eval `(<span class="org-keyword">defadvice</span> ,function-symbol (around yas-try-expand-first activate)
+           ,(format
+             <span class="org-string">"Try to expand a snippet before point, then call `</span><span class="org-string"><span class="org-constant">%s</span></span><span class="org-string">' as usual"</span>
+             function-symbol)
+           (<span class="org-keyword">let</span> ((yas-fallback-behavior nil))
+             (<span class="org-keyword">unless</span> (and (interactive-p)
+                          (yas-expand))
+               ad-do-it)))))
 
 (yas-advise-indent-function 'ruby-indent-line)
 </pre>
@@ -295,9 +295,9 @@ active:
 <div class="org-src-container">
 
 <pre class="src src-emacs-lisp">(add-hook 'flyspell-incorrect-hook
-	  #'(lambda (dummy1 dummy2 dymmy3)
-	      (and yas-active-field-overlay
-		   (overlay-buffer yas-active-field-overlay))))
+          #'(<span class="org-keyword">lambda</span> (dummy1 dummy2 dymmy3)
+              (and yas-active-field-overlay
+                   (overlay-buffer yas-active-field-overlay))))
 </pre>
 </div>
 
@@ -322,17 +322,17 @@ Edit the keymaps <a href="snippet-reference.html#yas-minor-mode-map"><code>yas-m
 
 <div class="org-src-container">
 
-<pre class="src src-emacs-lisp">(define-key yas-minor-mode-map (kbd "&lt;tab&gt;") nil)
-(define-key yas-minor-mode-map (kbd "TAB") nil)
-(define-key yas-minor-mode-map (kbd "&lt;the new key&gt;") 'yas-expand)
+<pre class="src src-emacs-lisp">(define-key yas-minor-mode-map (kbd <span class="org-string">"&lt;tab&gt;"</span>) nil)
+(define-key yas-minor-mode-map (kbd <span class="org-string">"TAB"</span>) nil)
+(define-key yas-minor-mode-map (kbd <span class="org-string">"&lt;the new key&gt;"</span>) 'yas-expand)
 
-;;keys for navigation
+<span class="org-comment-delimiter">;;</span><span class="org-comment">keys for navigation</span>
 (define-key yas-keymap [(tab)]       nil)
-(define-key yas-keymap (kbd "TAB")   nil)
+(define-key yas-keymap (kbd <span class="org-string">"TAB"</span>)   nil)
 (define-key yas-keymap [(shift tab)] nil)
 (define-key yas-keymap [backtab]     nil)
-(define-key yas-keymap (kbd "&lt;new-next-field-key&gt;") 'yas-next-field-or-maybe-expand)
-(define-key yas-keymap (kbd "&lt;new-prev-field-key&gt;") 'yas-prev)
+(define-key yas-keymap (kbd <span class="org-string">"&lt;new-next-field-key&gt;"</span>) 'yas-next-field-or-maybe-expand)
+(define-key yas-keymap (kbd <span class="org-string">"&lt;new-prev-field-key&gt;"</span>) 'yas-prev)
 </pre>
 </div>
 </div>
@@ -349,9 +349,9 @@ variable <a href="snippet-reference.html#yas-dont-activate"><code>yas-dont-activ
 <div class="org-src-container">
 
 <pre class="src src-emacs-lisp">(set-default 'yas-dont-activate
-	     #'(lambda ()
-		 (and yas-root-directory
-		      (null (yas-get-snippet-tables)))))
+             #'(<span class="org-keyword">lambda</span> ()
+                 (and yas-root-directory
+                      (null (yas-get-snippet-tables)))))
 </pre>
 </div>
 
@@ -389,17 +389,17 @@ directive:
 
 <div class="org-src-container">
 
-<pre class="src src-snippet"># key: &lt;
-# name: &lt;...&gt;&lt;/...&gt;
-# --
-&lt;${1:div}&gt;$0&lt;/$1&gt;
+<pre class="src src-snippet"><span class="org-comment"># key: &lt;</span>
+<span class="org-comment"># name: &lt;...&gt;&lt;/...&gt;</span>
+<span class="org-comment"># --</span>
+&lt;<span class="org-keyword">${</span><span class="org-warning">1</span><span class="org-keyword">:</span>div<span class="org-keyword">}</span>&gt;<span class="org-keyword">$</span><span class="org-string">0</span>&lt;/<span class="org-keyword">$</span><span class="org-string">1</span>&gt;
 </pre>
 </div>
 </div>
 </div>
 </div>
 <div id="postamble" class="status">
-<hr><p class='creator'>Generated by <a href="http://www.gnu.org/software/emacs/">Emacs</a> 24.4.91.1 (<a href="http://orgmode.org">Org</a> mode 8.2.10) on  from 7703a55ac416a131dec45fa6a1e0ec1e31adf760
+<hr><p class='creator'>Generated by <a href="http://www.gnu.org/software/emacs/">Emacs</a> 24.5.1 (<a href="http://orgmode.org">Org</a> mode 8.2.10) on  from df229b9ab8db87fe5a1133365fdc299a65f9be86
 </p>
 <p class='xhtml-validation'><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>

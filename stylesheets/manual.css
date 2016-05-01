@@ -24,3 +24,36 @@ code {
     margin-left: 5%;
     margin-right: 10%;
 }
+
+/* Styles for htmlize.el fontification.  */
+
+.org-comment        { color: #005000; }    /* font-lock-comment-face */
+.org-keyword        { font-weight: bold; } /* font-lock-keyword-face */
+.org-string         { color: #8b0000; }    /* font-lock-string-face */
+.org-warning        { color: #ff8c00;
+                      font-weight: bold; } /* warning */
+.org-warning-1      { color: #ff0000;
+                      font-weight: bold; } /* font-lock-warning-face */
+.org-preprocessor   { color: #483d8b; }    /* font-lock-preprocessor-face */
+.org-constant       { color: #008b8b; }    /* font-lock-constant-face */
+.org-function-name  { color: #0000ff; }    /* font-lock-function-name-face */
+.org-type           { color: #228b22; }    /* font-lock-type-face */
+.org-variable-name  { color: #a0522d; }    /* font-lock-variable-name-face */
+
+.org-rst-adornment  { color: #a020f0; }            /* rst-adornment */
+.org-rst-block      { color: #a020f0; }            /* rst-block */
+.org-rst-comment    { color: #b22222; }            /* rst-comment */
+.org-rst-definition { color: #0000ff; }            /* rst-definition */
+.org-rst-directive  { color: #483d8b; }            /* rst-directive */
+.org-rst-emphasis1  { font-style: italic; }        /* rst-emphasis1 */
+.org-rst-emphasis2  { font-weight: bold; }         /* rst-emphasis2 */
+.org-rst-external   { color: #228b22; }            /* rst-external */
+.org-rst-level-1    { background-color: #d9d9d9; } /* rst-level-1 */
+.org-rst-level-2    { background-color: #c7c7c7; } /* rst-level-2 */
+.org-rst-level-3    { background-color: #b5b5b5; } /* rst-level-3 */
+.org-rst-level-4    { background-color: #a3a3a3; } /* rst-level-4 */
+.org-rst-level-5    { background-color: #919191; } /* rst-level-5 */
+.org-rst-level-6    { background-color: #7f7f7f; } /* rst-level-6 */
+.org-rst-literal    { color: #8b2252; }            /* rst-literal */
+.org-rst-reference  { color: #a0522d; }            /* rst-reference */
+.org-rst-transition { color: #a020f0; }            /* rst-transition */
