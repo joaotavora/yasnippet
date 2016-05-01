@@ -1,0 +1,7 @@
+Only use ido completion if ido-mode is enabled
+
+In Emacs 23, ido-completing-read behaves poorly if ido-mode is not
+enabled.
+
+* yasnippet.el (yas/ido-prompt): In Emacs 23, check if ido-mode is
+non-nil.
