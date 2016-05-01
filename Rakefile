@@ -45,8 +45,12 @@ task :release => [:package, 'doc:archive'] do
 end
 
 desc "Generate document"
-task :doc do
-  sh "#{$EMACS} -Q -L . --batch -l doc/yas-doc-helper.el" +
+task :doc, [:htmlize] do |t, args|
+  load_path = '-L .'
+  if args[:htmlize]
+    load_path += " -L #{args[:htmlize]}"
+  end
+  sh "#{$EMACS} -Q #{load_path} --batch -l doc/yas-doc-helper.el" +
     " -f yas--generate-html-batch"
 end
 

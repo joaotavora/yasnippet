@@ -155,7 +155,8 @@
   (let ((org-publish-use-timestamps-flag nil)
         (org-export-copy-to-kill-ring nil)
         (org-confirm-babel-evaluate nil)
-        (make-backup-files nil))
+        (make-backup-files nil)
+        (org-html-htmlize-output-type 'css))
     (org-publish "yasnippet" 'force)))
 
 
