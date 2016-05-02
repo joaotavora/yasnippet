@@ -422,3 +422,9 @@ the exit marker.
 By the way, =C-d= will only clear the field if you cursor is at the
 beginning of the field /and/ it hasn't been changed yet. Otherwise, it
 performs the normal Emacs =delete-char= command.
+
+** Indentation markers
+
+If [[sym:yas-indent-line][=yas-indent-line=]] is *not* set to '=auto=, it's still possible to
+indent specific lines by adding an indentation marker, =$>=, somewhere
+on the line.
