@@ -215,6 +215,19 @@ end" (buffer-string)))
 end" (buffer-string)))
     (should (= 4 (current-column)))))
 
+(ert-deftest indentation-markers ()
+  "Test a snippet with indentation markers (`$<')."
+  (with-temp-buffer
+    (ruby-mode)
+    (yas-minor-mode 1)
+    (set (make-local-variable 'yas-indent-line) nil)
+    (yas-expand-snippet "def ${1:method}${2:(${3:args})}\n$>Indent\nNo indent\\$>\nend")
+    (should (string= "def method(args)
+  Indent
+No indent$>
+end" (buffer-string)))))
+
+
 (ert-deftest navigate-a-snippet-with-multiline-mirrors-issue-665 ()
   "In issue 665, a multi-line mirror is attempted.
 

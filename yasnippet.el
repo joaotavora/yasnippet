@@ -3826,6 +3826,9 @@ cons cells to this var.")
 backquoted Lisp expressions should be inserted at the end of
 expansion.")
 
+(defvar yas--indent-markers nil
+  "List of markers for manual indentation.")
+
 (defun yas--snippet-parse-create (snippet)
   "Parse a recently inserted snippet template, creating all
 necessary fields, mirrors and exit points.
@@ -3845,6 +3848,9 @@ Meant to be called in a narrowed buffer, does various passes"
     ;; protect escaped characters
     ;;
     (yas--protect-escapes)
+    ;; Parse indent markers: `$>'.
+    (goto-char parse-start)
+    (yas--indent-parse-create snippet)
     ;; parse fields with {}
     ;;
     (goto-char parse-start)
@@ -3932,14 +3938,17 @@ The SNIPPET's markers are preserved."
 
 (defvar yas--indent-original-column nil)
 (defun yas--indent (snippet)
-  ;; Look for those `$>'.
+  ;; Indent lines that had indent markers (`$>') on them.
   (save-excursion
-    (while (re-search-forward "$>" nil t)
-      (delete-region (match-beginning 0) (match-end 0))
+    (dolist (marker yas--indent-markers)
       (unless (eq yas-indent-line 'auto)
+        (goto-char marker)
         (yas--indent-region (line-beginning-position)
                             (line-end-position)
-                            snippet))))
+                            snippet))
+      ;; Finished with this marker.
+      (set-marker marker nil))
+    (setq yas--indent-markers nil))
   ;; Now do stuff for `fixed' and `auto'.
   (save-excursion
     (cond ((eq yas-indent-line 'fixed)
@@ -4044,6 +4053,16 @@ with their evaluated value into `yas--backquote-markers-and-strings'."
   (let ((marker (set-marker (make-marker) pos)))
     (set-marker-insertion-type marker nil)
     marker))
+
+(defun yas--indent-parse-create (snippet)
+  "Parse the \"$>\" indentation markers in SNIPPET."
+  (setq yas--indent-markers ())
+  (while (search-forward "$>" nil t)
+    (delete-region (match-beginning 0) (match-end 0))
+    ;; Mark the beginning of the line.
+    (push (yas--make-marker (line-beginning-position))
+          yas--indent-markers))
+  (setq yas--indent-markers (nreverse yas--indent-markers)))
 
 (defun yas--field-parse-create (snippet &optional parent-field)
   "Parse most field expressions in SNIPPET, except for the simple one \"$n\".
