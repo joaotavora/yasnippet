@@ -8,52 +8,48 @@
 
 There are some ways you can quickly find a snippet file or create a new one:
 
--  =M-x yas-new-snippet=
+-  =M-x yas-new-snippet=, key bindind: =C-c & C-n=
 
-   Creates a new buffer with a template for making a new snippet.
-   The buffer is in =snippet-mode= (see below). When you are done
-   editing the new snippet, use =C-c C-c= to save it. This will
-   prompt for a directory two steps: first, the snippet table
-   (with a default based on the major mode you started in), and then
-   then snippet collection directory (defaults to the first directory
-   in =yas-snippet-dirs=. (See [[file:snippet-organization.org][Organizing Snippets]]
-   for more detail on how snippets are organized.)
+   Creates a new buffer with a template for making a new snippet.  The
+   buffer is in =snippet-mode= (see [[snippet-mode][below]]).  When you are done editing
+   the new snippet, use [[yas-load-snippet-buffer-and-close][=C-c C-c=]] to save it.
 
--  =M-x yas-find-snippets=
-
-   Lets you find the snippet file in the directory the snippet was
-   loaded from (if it exists) like =find-file-other-window=. The
-   directory searching logic is similar to =M-x yas-new-snippet=.
-
--  =M-x yas-visit-snippet-file=
+-  =M-x yas-visit-snippet-file=, key binding: =C-c & C-v=
 
    Prompts you for possible snippet expansions like
    [[sym:yas-insert-snippet][=yas-insert-snippet=]], but instead of expanding it, takes you directly
    to the snippet definition's file, if it exists.
 
-Once you find this file it will be set to =snippet-mode= (see ahead) and
-you can start editing your snippet.
+Once you find this file it will be set to =snippet-mode= (see [[snippet-mode][ahead]])
+and you can start editing your snippet.
 
-** Using the =snippet-mode= major mode
+** Using the =snippet-mode= major mode <<snippet-mode>>
 
 There is a major mode =snippet-mode= to edit snippets. You can set the
 buffer to this mode with =M-x snippet-mode=. It provides reasonably
 useful syntax highlighting.
 
-Two commands are defined in this mode:
+Three commands are defined in this mode:
 
--  =M-x yas-load-snippet-buffer=
+-  =M-x yas-load-snippet-buffer=, key binding: =C-c C-l=
 
-     When editing a snippet, this loads the snippet into the correct
-     mode and menu. Bound to =C-c C-c= by default while in
-     =snippet-mode=.
+   Prompts for a snippet table (with a default based on snippet's
+   major mode) and loads the snippet currently being edited.
 
--  =M-x yas-tryout-snippet=
+-  =M-x yas-load-snippet-buffer-and-close=, key binding: =C-c C-c=
+   <<yas-load-snippet-buffer-and-close>>
 
-     When editing a snippet, this opens a new empty buffer, sets it to
-     the appropriate major mode and inserts the snippet there, so you
-     can see what it looks like. This is bound to =C-c C-t= while in
-     =snippet-mode=.
+   Like =yas-load-snippet-buffer=, but also saves the snippet and
+   calls =quit-window=.  The destination is decided based on the
+   chosen snippet table and snippet collection directly (defaulting to
+   the first directory in =yas-snippet-dirs= (see [[file:snippet-organization.org][Organizing Snippets]]
+   for more detail on how snippets are organized).
+
+-  =M-x yas-tryout-snippet=, key binding: =C-c C-t=
+
+   When editing a snippet, this opens a new empty buffer, sets it to
+   the appropriate major mode and inserts the snippet there, so you
+   can see what it looks like.
 
 There are also /snippets for writing snippets/: =vars=, =$f= and =$m=
 :-).

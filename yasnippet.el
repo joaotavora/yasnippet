@@ -2542,10 +2542,8 @@ neither do the elements of PARENTS."
 
 (defun yas-load-snippet-buffer (table &optional interactive)
   "Parse and load current buffer's snippet definition into TABLE.
-
-TABLE is a symbol naming a passed to `yas--table-get-create'.
-
-When called interactively, prompt for the table name."
+TABLE is a symbol name passed to `yas--table-get-create'.  When
+called interactively, prompt for the table name."
   (interactive (list (yas--read-table) t))
   (cond
    ;;  We have `yas--editing-template', this buffer's content comes from a
@@ -2570,11 +2568,10 @@ When called interactively, prompt for the table name."
                   (yas--table-name (yas--template-table yas--editing-template)))))
 
 (defun yas-load-snippet-buffer-and-close (table &optional kill)
-  "Load the snippet with `yas-load-snippet-buffer', possibly
-  save, then `quit-window' if saved.
-
-If the snippet is new, ask the user whether (and where) to save
-it. If the snippet already has a file, just save it.
+  "Load and save the snippet, then `quit-window' if saved.
+Loading is performed by `yas-load-snippet-buffer'.  If the
+snippet is new, ask the user whether (and where) to save it.  If
+the snippet already has a file, just save it.
 
 The prefix argument KILL is passed to `quit-window'.
 
