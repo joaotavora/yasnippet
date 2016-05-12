@@ -3566,14 +3566,21 @@ considered when expanding the snippet."
              ;; them mostly to make the undo information
              ;;
              (setq yas--start-column (current-column))
-             (let ((yas--inhibit-overlay-hooks t))
+             (let ((yas--inhibit-overlay-hooks t)
+                   ;; Avoid major-mode's syntax propertizing function,
+                   ;; since we mess with the syntax-table and also
+                   ;; insert things that are not valid in the
+                   ;; major-mode language syntax anyway.
+                   (syntax-propertize-function nil))
                (setq snippet
                      (if expand-env
                          (eval `(let* ,expand-env
                                   (insert content)
                                   (yas--snippet-create start (point))))
                        (insert content)
-                       (yas--snippet-create start (point))))))
+                       (yas--snippet-create start (point)))))
+             ;; Invalidate any syntax-propertizing done while `syntax-propertize-function' was nil
+             (syntax-ppss-flush-cache start))
 
            ;; stacked-expansion: This checks for stacked expansion, save the
            ;; `yas--previous-active-field' and advance its boundary.
