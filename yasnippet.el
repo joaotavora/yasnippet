@@ -2966,7 +2966,6 @@ If there is a transform but it returns nil, return the empty
 string iff EMPTY-ON-NIL-P is true."
   (let* ((yas-text (yas--field-text-for-display field))
          (yas-modified-p (yas--field-modified-p field))
-         (yas-moving-away-p nil)
          (transform (if (yas--mirror-p field-or-mirror)
                         (yas--mirror-transform field-or-mirror)
                       (yas--field-transform field-or-mirror)))
@@ -3095,13 +3094,11 @@ If there's none, exit the snippet."
   (let* ((snippet (car (yas--snippets-at-point)))
          (active-field (overlay-get yas--active-field-overlay 'yas--field))
          (target-field (yas--find-next-field arg snippet active-field)))
-    ;; First check if we're moving out of a field with a transform.
-    (when (and active-field (yas--field-transform active-field))
-      (let* ((yas-moving-away-p t)
-             (yas-text (yas--field-text-for-display active-field))
-             (yas-modified-p (yas--field-modified-p active-field)))
-        ;; primary field transform: exit call to field-transform
-        (yas--eval-lisp (yas--field-transform active-field))))
+    ;; Apply transform to active field.
+    (when active-field
+      (let ((yas-moving-away-p t))
+        (when (yas--field-update-display active-field)
+          (yas--update-mirrors snippet))))
     ;; Now actually move...
     (if target-field
         (yas--move-to-field snippet target-field)
