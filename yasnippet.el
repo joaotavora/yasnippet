@@ -2609,7 +2609,7 @@ Don't use this function from a Lisp program, call
   "Like `yas-load-snippet-buffer-and-save' but also `quit-window' after.
 The prefix argument KILL is passed to `quit-window'."
   (interactive (list (yas--read-table) current-prefix-arg))
-  (yas-load-snippet-buffer-and-save)
+  (yas-load-snippet-buffer-and-save table)
   (quit-window kill))
 
 (defun yas-tryout-snippet (&optional debug)
