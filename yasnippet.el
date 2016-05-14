@@ -386,6 +386,11 @@ the trigger key itself."
   :type '(repeat function)
   :group 'yasnippet)
 
+(defcustom yas-backport-obsolete-alias t
+  "If non-nil backport function and variables from old version of yasnippet."
+  :type 'boolean
+  :group 'yasnippet)
+
 ;; Only two faces, and one of them shouldn't even be used...
 ;;
 (defface yas-field-highlight-face
@@ -4598,14 +4603,15 @@ and return the directory.  Return nil if not found."
 
 They are mapped to \"yas/*\" variants.")
 
-(dolist (sym yas--backported-syms)
-  (let ((backported (intern (replace-regexp-in-string "\\`yas-" "yas/" (symbol-name sym)))))
-    (when (boundp sym)
-      (make-obsolete-variable backported sym "yasnippet 0.8")
-      (defvaralias backported sym))
-    (when (fboundp sym)
-      (make-obsolete backported sym "yasnippet 0.8")
-      (defalias backported sym))))
+(when yas-backport-obsolete-alias
+  (dolist (sym yas--backported-syms)
+    (let ((backported (intern (replace-regexp-in-string "\\`yas-" "yas/" (symbol-name sym)))))
+      (when (boundp sym)
+        (make-obsolete-variable backported sym "yasnippet 0.8")
+        (defvaralias backported sym))
+      (when (fboundp sym)
+        (make-obsolete backported sym "yasnippet 0.8")
+        (defalias backported sym)))))
 
 (defvar yas--exported-syms
   (let (exported)
