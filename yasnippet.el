@@ -776,7 +776,7 @@ Key bindings:
   ;; The indicator for the mode line.
   " yas"
   :group 'yasnippet
-  (cond (yas-minor-mode
+  (cond ((and yas-minor-mode (featurep 'yasnippet))
          ;; Install the direct keymaps in `emulation-mode-map-alists'
          ;; (we use `add-hook' even though it's not technically a hook,
          ;; but it works). Then define variables named after modes to
@@ -884,7 +884,9 @@ Honour `yas-dont-activate-functions', which see."
 (defvar yas--font-lock-keywords
   (append '(("^#.*$" . font-lock-comment-face))
           (with-temp-buffer
-            (ignore-errors (emacs-lisp-mode))
+            (let ((prog-mode-hook nil)
+                  (emacs-lisp-mode-hook nil))
+              (ignore-errors (emacs-lisp-mode)))
             (font-lock-set-defaults)
             (if (eq t (car-safe font-lock-keywords))
                 ;; They're "compiled", so extract the source.
