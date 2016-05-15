@@ -202,8 +202,6 @@ created with `yas-new-snippet'. "
                  (t
                   (error "[yas] invalid element %s in `yas-snippet-dirs'" e)))))
 
-(defvaralias 'yas/root-directory 'yas-snippet-dirs)
-
 (defcustom yas-new-snippet-default "\
 # -*- mode: snippet -*-
 # name: $1
@@ -386,8 +384,9 @@ the trigger key itself."
   :type '(repeat function)
   :group 'yasnippet)
 
-(defcustom yas-backport-obsolete-alias t
-  "If non-nil backport function and variables from old version of yasnippet."
+(defcustom yas-alias-to-yas/prefix-p t
+  "If non-nil make aliases for the old style yas/ prefixed symbols.
+It must be set to nil before loading yasnippet to take effect."
   :type 'boolean
   :group 'yasnippet)
 
@@ -4603,7 +4602,7 @@ and return the directory.  Return nil if not found."
 
 They are mapped to \"yas/*\" variants.")
 
-(when yas-backport-obsolete-alias
+(when yas-alias-to-yas/prefix-p
   (dolist (sym yas--backported-syms)
     (let ((backported (intern (replace-regexp-in-string "\\`yas-" "yas/" (symbol-name sym)))))
       (when (boundp sym)
@@ -4611,7 +4610,9 @@ They are mapped to \"yas/*\" variants.")
         (defvaralias backported sym))
       (when (fboundp sym)
         (make-obsolete backported sym "yasnippet 0.8")
-        (defalias backported sym)))))
+        (defalias backported sym))))
+  (make-obsolete 'yas/root-directory 'yas-snippet-dirs "yasnippet 0.8")
+  (defvaralias 'yas/root-directory 'yas-snippet-dirs))
 
 (defvar yas--exported-syms
   (let (exported)
