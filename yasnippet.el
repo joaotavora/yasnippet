@@ -207,7 +207,7 @@ created with `yas-new-snippet'. "
 # name: $1
 # key: ${2:${1:$(yas--key-from-desc yas-text)}}
 # --
-$0"
+$0`yas-selected-text`"
   "Default snippet to use when creating a new snippet.
 If nil, don't use any snippet."
   :type 'string
@@ -2476,7 +2476,11 @@ where snippets of table might exist."
 Expands a snippet-writing snippet, unless the optional prefix arg
 NO-TEMPLATE is non-nil."
   (interactive "P")
-  (let ((guessed-directories (yas--guess-snippet-directories)))
+  (let ((guessed-directories (yas--guess-snippet-directories))
+        (yas-selected-text (or yas-selected-text
+                               (and (region-active-p)
+                                    (buffer-substring-no-properties
+                                     (region-beginning) (region-end))))))
 
     (switch-to-buffer "*new snippet*")
     (erase-buffer)
