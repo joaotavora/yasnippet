@@ -1345,8 +1345,7 @@ Returns (TEMPLATES START END). This function respects
       ((debug error) (cdr oops)))))
 
 (defun yas--eval-for-effect (form)
-  ;; FIXME: simulating lexical-binding.
-  (yas--safely-run-hook `(lambda () ,form)))
+  (yas--safely-run-hook (apply-partially #'eval form)))
 
 (defun yas--read-lisp (string &optional nil-on-error)
   "Read STRING as a elisp expression and return it.
@@ -1755,8 +1754,7 @@ With prefix argument USE-JIT do jit-loading of snippets."
         ;;
         (yas--define-parents mode-sym parents)
         (yas--menu-keymap-get-create mode-sym)
-        (let ((fun `(lambda () ;; FIXME: Simulating lexical-binding.
-                      (yas--load-directory-1 ',dir ',mode-sym))))
+        (let ((fun (apply-partially #'yas--load-directory-1 dir mode-sym)))
           (if use-jit
               (yas--schedule-jit mode-sym fun)
             (funcall fun)))
