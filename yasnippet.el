@@ -3328,16 +3328,19 @@ This renders the snippet as ordinary text."
            (yas--maybe-move-to-active-field snippet))
   (setq yas--snippets-to-move nil))
 
+(defun yas--safely-call-fun (fun)
+  (condition-case error
+      (funcall fun)
+    ((debug error)
+     (yas--message 2 "Error running %s: %s"
+                   (if (symbolp fun) fun "a hook")
+                   (error-message-string error)))))
+
 (defun yas--safely-run-hook (hook)
   (let ((debug-on-error (and (not (memq yas-good-grace '(t hooks)))
                              debug-on-error)))
-    (condition-case error
-        (funcall hook)
-      ((debug error)
-       (yas--message 2 "Error running %s: %s"
-                     (if (symbolp hook) hook "a hook")
-                     (error-message-string error))))))
-
+    (if (functionp hook) (yas--safely-call-fun hook)
+      (mapc #'yas--safely-call-fun hook))))
 
 (defun yas--check-commit-snippet ()
   "Check if point exited the currently active field of the snippet.
@@ -3345,15 +3348,19 @@ This renders the snippet as ordinary text."
 If so cleans up the whole snippet up."
   (let* ((snippets (yas-active-snippets 'all))
          (snippets-left snippets)
-         (snippet-exit-transform))
+         (snippet-exit-transform nil)
+         (snippet-exit-hook yas-after-exit-snippet-hook))
     (dolist (snippet snippets)
       (let ((active-field (yas--snippet-active-field snippet)))
         (yas--letenv (yas--snippet-expand-env snippet)
+          ;; Note: the `force-exit' field could be a transform in case of
+          ;; ${0: ...}, see `yas--move-to-field'.
           (setq snippet-exit-transform (yas--snippet-force-exit snippet))
           (cond ((or snippet-exit-transform
                      (not (and active-field (yas--field-contains-point-p active-field))))
                  (setq snippets-left (delete snippet snippets-left))
                  (setf (yas--snippet-force-exit snippet) nil)
+                 (setq snippet-exit-hook yas-after-exit-snippet-hook)
                  (yas--commit-snippet snippet))
                 ((and active-field
                       (or (not yas--active-field-overlay)
@@ -3371,7 +3378,7 @@ If so cleans up the whole snippet up."
     (unless (or (null snippets) snippets-left)
       (if snippet-exit-transform
           (yas--eval-for-effect snippet-exit-transform))
-      (mapcar #'yas--safely-run-hook yas-after-exit-snippet-hook))))
+      (yas--safely-run-hook snippet-exit-hook))))
 
 ;; Apropos markers-to-points:
 ;;
