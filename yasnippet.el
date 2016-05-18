@@ -1332,20 +1332,17 @@ Returns (TEMPLATES START END). This function respects
 
 (defun yas--eval-for-string (form)
   "Evaluate FORM and convert the result to string."
-  (let ((eval-saving-stuff
-         (lambda (form)
-           (save-excursion
-             (save-restriction
-               (save-match-data
-                 (widen)
-                 (let ((result (eval form)))
-                   (when result
-                     (format "%s" result)))))))))
-    (if (memq yas-good-grace '(t inline))
-        (condition-case oops
-            (funcall eval-saving-stuff form)
-          (error (cdr oops)))
-      (funcall eval-saving-stuff form))))
+  (let ((debug-on-error (and (not (memq yas-good-grace '(t inline)))
+                             debug-on-error)))
+    (condition-case oops
+        (save-excursion
+          (save-restriction
+            (save-match-data
+              (widen)
+              (let ((result (eval form)))
+                (when result
+                  (format "%s" result))))))
+      ((debug error) (cdr oops)))))
 
 (defun yas--eval-for-effect (form)
   ;; FIXME: simulating lexical-binding.
@@ -3334,15 +3331,14 @@ This renders the snippet as ordinary text."
   (setq yas--snippets-to-move nil))
 
 (defun yas--safely-run-hook (hook)
-  (let ((run-the-hook (lambda (hook) (funcall hook))))
-    (if (memq yas-good-grace '(t hooks))
-        (funcall run-the-hook hook)
-      (condition-case error
-          (funcall run-the-hook hook)
-        (error
-         (yas--message 2 "Error running %s: %s"
-                       (if (symbolp hook) hook "a hook")
-                       (error-message-string error)))))))
+  (let ((debug-on-error (and (not (memq yas-good-grace '(t hooks)))
+                             debug-on-error)))
+    (condition-case error
+        (funcall hook)
+      ((debug error)
+       (yas--message 2 "Error running %s: %s"
+                     (if (symbolp hook) hook "a hook")
+                     (error-message-string error))))))
 
 
 (defun yas--check-commit-snippet ()
