@@ -1344,7 +1344,6 @@ Returns (TEMPLATES START END). This function respects
     (if (memq yas-good-grace '(t inline))
         (condition-case oops
             (funcall eval-saving-stuff form)
-          (yas--exception (signal 'yas-exception (cdr oops)))
           (error (cdr oops)))
       (funcall eval-saving-stuff form))))
 
@@ -2855,17 +2854,16 @@ The last element of POSSIBILITIES may be a list of strings."
             key)))))
 
 (defun yas-throw (text)
-  "Throw a yas--exception with TEXT as the reason."
-  (signal 'yas--exception text))
-(put 'yas--exception 'error-conditions '(error yas--exception))
+  "Signal `yas-exception' with TEXT as the reason."
+  (signal 'yas-exception (list text)))
+(put 'yas-exception 'error-conditions '(error yas-exception))
+(put 'yas-exception 'error-message "[yas] Exception")
 
 (defun yas-verify-value (possibilities)
   "Verify that the current field value is in POSSIBILITIES.
-
-Otherwise throw exception."
-  (when (and yas-moving-away-p
-             (cl-notany (lambda (pos) (string= pos yas-text)) possibilities))
-    (yas-throw (yas--format "Field only allows %s" possibilities))))
+Otherwise signal `yas-exception'."
+  (when (and yas-moving-away-p (cl-notany (lambda (pos) (string= pos yas-text)) possibilities))
+    (yas-throw (format "Field only allows %s" possibilities))))
 
 (defun yas-field-value (number)
   "Get the string for field with NUMBER.
