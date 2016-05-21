@@ -43,7 +43,7 @@ function. See Github #687.
 This prevents cc-mode based modes from causing premature exit of
 snippets.  See Github #677.
 
-*** Fields are now transformated correctly after `yas-next-field'.
+*** Fields are now transformed correctly after `yas-next-field'.
 See Github #381.
 
 *** The $> construct is now escaped correctly, and documented.
