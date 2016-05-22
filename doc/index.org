@@ -3,7 +3,7 @@
 
 The YASnippet documentation has been split into separate parts:
 
-0. [[https://github.com/capitaomorte/yasnippet/blob/master/README.mdown][README]]
+0. [[https://github.com/joaotavora/yasnippet/blob/master/README.mdown][README]]
 
    Contains an introduction, installation instructions and other important
    notes.
