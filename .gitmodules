@@ -4,4 +4,4 @@
         branch = master
 [submodule "yasmate"]
         path = yasmate
-        url = https://github.com/capitaomorte/yasmate.git
+        url = https://github.com/joaotavora/yasmate.git
