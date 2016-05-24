@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/capitaomorte/yasnippet.png)](https://travis-ci.org/capitaomorte/yasnippet)
+[![Build Status](https://travis-ci.org/joaotavora/yasnippet.png)](https://travis-ci.org/joaotavora/yasnippet)
 
 # Intro
 
@@ -161,7 +161,7 @@ request).
 
 Finally, thank you very much for using YASnippet!
 
-[docs]: http://capitaomorte.github.com/yasnippet/
+[docs]: http://joaotavora.github.io/yasnippet/
 [issues]: https://github.com/capitaomorte/yasnippet/issues
 [googlecode tracker]: http://code.google.com/p/yasnippet/issues/list
 [forum]: http://groups.google.com/group/smart-snippet
