@@ -1805,7 +1805,10 @@ With prefix argument USE-JIT do jit-loading of snippets."
     (with-temp-buffer
       (dolist (file (yas--subdirs directory 'no-subdirs-just-files))
         (when (file-readable-p file)
-          (insert-file-contents file nil nil nil t)
+          ;; Erase the buffer instead of passing non-nil REPLACE to
+          ;; `insert-file-contents' (avoids Emacs bug #23659).
+          (erase-buffer)
+          (insert-file-contents file)
           (push (yas--parse-template file)
                 snippet-defs))))
     (when snippet-defs
