@@ -4,7 +4,68 @@ Copyright (C) 2016 Free Software Foundation, Inc.
 See the end of the file for license conditions.
 
 
-* 0.9.1 (est. March 2016)
+* 0.10.0 (June 11th, 2016)
+
+** Changes and New Features
+
+*** Yasnippet now prints far fewer message by default.
+See Github #682, #683.
+
+*** `yas-wrap-around-region' can be set to a register.
+The register's content will be used.  This is like the old `cua'
+option, but can be used with any register and doesn't require enabling
+cua-mode.
+
+*** Clearing of snippet fields is now decided by the command's effect.
+The `delete-selection' property is no longer consulted.  See Github #662.
+
+*** Empty lines in snippet expansion are no longer indented.
+See Github #679.
+
+*** All lines from mirror output are now indented.
+See Github #665.
+
+*** New variable yas-alias-to-yas/prefix-p
+See Github #696, #699.
+
+*** New function yas-next-field-will-exit-p
+See Github #561.
+
+*** `snippet-mode' is now autoloaded.
+
+** Fixed Bugs
+
+*** Fix incompatibility with Emacs 25 and haskell-mode.
+This should also help other modes with a non-nil syntax-propertize
+function.  See Github #687.
+
+*** Text property changes no longer disable snippets.
+This prevents cc-mode based modes from causing premature exit of
+snippets.  See Github #677.
+
+*** Fields are now transformed correctly after `yas-next-field'.
+See Github #381.
+
+*** The $> construct is now escaped correctly, and documented.
+See Github #640.
+
+*** Avoid corruption of snippet content when loading from files.
+See Github #707 and Emacs bug #23659.
+
+*** `yas-wrap-around-region' now works for snippets with fields
+farther down the buffer than $0.  See Github #636.
+
+*** The active region is deleted when using `yas-expand'.
+This makes it consistent with `yas-insert-snippet'.  See Github #523.
+
+*** Fix mirror+autofill interaction.
+See Github #643 and http://emacs.stackexchange.com/q/19206/5296.
+
+*** Snippet insertion no longer adds irrelevant strings to kill ring.
+See Github #675.
+
+
+* 0.9.1 (April 3rd, 2016)
 
 ** Changes and New Features
 
