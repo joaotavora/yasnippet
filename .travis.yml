@@ -26,3 +26,9 @@ install:
 script:
   - rake compile
   - rake tests
+
+notifications:
+  email:
+    # Default is change, but that includes a new branch's 1st success.
+    on_success: never
+    on_failure: always # The default.
