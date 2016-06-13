@@ -207,7 +207,7 @@ created with `yas-new-snippet'. "
 # name: $1
 # key: ${2:${1:$(yas--key-from-desc yas-text)}}
 # --
-$0`yas-selected-text`"
+$0`(yas-escape-text yas-selected-text)`"
   "Default snippet to use when creating a new snippet.
 If nil, don't use any snippet."
   :type 'string
@@ -1926,6 +1926,11 @@ foo\"bar\\! -> \"foo\\\"bar\\\\!\""
                                     string
                                     t)
           "\""))
+
+(defun yas-escape-text (text)
+  "Escape TEXT for snippet."
+  (replace-regexp-in-string "[\\$]" "\\\\\\&" text))
+
 
 ;;; Snippet compilation function
 
@@ -2479,10 +2484,8 @@ NO-TEMPLATE is non-nil."
   (let ((guessed-directories (yas--guess-snippet-directories))
         (yas-selected-text (or yas-selected-text
                                (and (region-active-p)
-                                    (replace-regexp-in-string
-                                     "[\\$]" "\\\\\\&"
-                                     (buffer-substring-no-properties
-                                      (region-beginning) (region-end)))))))
+                                    (buffer-substring-no-properties
+                                     (region-beginning) (region-end))))))
 
     (switch-to-buffer "*new snippet*")
     (erase-buffer)
@@ -2490,8 +2493,8 @@ NO-TEMPLATE is non-nil."
     (snippet-mode)
     (yas-minor-mode 1)
     (set (make-local-variable 'yas--guessed-modes) (mapcar #'(lambda (d)
-                                                               (yas--table-mode (car d)))
-                                                           guessed-directories))
+                                                              (yas--table-mode (car d)))
+                                                          guessed-directories))
     (if (and (not no-template) yas-new-snippet-default)
         (yas-expand-snippet yas-new-snippet-default))))
 
