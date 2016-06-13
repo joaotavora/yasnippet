@@ -2479,8 +2479,10 @@ NO-TEMPLATE is non-nil."
   (let ((guessed-directories (yas--guess-snippet-directories))
         (yas-selected-text (or yas-selected-text
                                (and (region-active-p)
-                                    (buffer-substring-no-properties
-                                     (region-beginning) (region-end))))))
+                                    (replace-regexp-in-string
+                                     "[\\$]" "\\\\\\&"
+                                     (buffer-substring-no-properties
+                                      (region-beginning) (region-end)))))))
 
     (switch-to-buffer "*new snippet*")
     (erase-buffer)
@@ -2488,8 +2490,8 @@ NO-TEMPLATE is non-nil."
     (snippet-mode)
     (yas-minor-mode 1)
     (set (make-local-variable 'yas--guessed-modes) (mapcar #'(lambda (d)
-                                                              (yas--table-mode (car d)))
-                                                          guessed-directories))
+                                                               (yas--table-mode (car d)))
+                                                           guessed-directories))
     (if (and (not no-template) yas-new-snippet-default)
         (yas-expand-snippet yas-new-snippet-default))))
 
