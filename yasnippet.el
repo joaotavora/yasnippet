@@ -207,7 +207,7 @@ created with `yas-new-snippet'. "
 # name: $1
 # key: ${2:${1:$(yas--key-from-desc yas-text)}}
 # --
-$0`yas-selected-text`"
+$0`(yas-escape-text yas-selected-text)`"
   "Default snippet to use when creating a new snippet.
 If nil, don't use any snippet."
   :type 'string
@@ -1926,6 +1926,11 @@ foo\"bar\\! -> \"foo\\\"bar\\\\!\""
                                     string
                                     t)
           "\""))
+
+(defun yas-escape-text (text)
+  "Escape TEXT for snippet."
+  (replace-regexp-in-string "[\\$]" "\\\\\\&" text))
+
 
 ;;; Snippet compilation function
 
