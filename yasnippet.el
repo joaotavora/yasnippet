@@ -4040,7 +4040,8 @@ with their evaluated value into `yas--backquote-markers-and-strings'."
             (push (cons marker transformed) yas--backquote-markers-and-strings)))))
     (when yas--change-detected
       (lwarn '(yasnippet backquote-change) :warning
-             "`%s' modified buffer in a backquote expression."
+             "`%s' modified buffer in a backquote expression.
+  To hide this warning, add (yasnippet backquote-change) to `warning-suppress-types'."
              (if yas--current-template
                  (yas--template-name yas--current-template)
                "Snippet")))))
