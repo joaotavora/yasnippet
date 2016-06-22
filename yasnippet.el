@@ -896,10 +896,10 @@ Honour `yas-dont-activate-functions', which see."
                 ;; They're "compiled", so extract the source.
                 (cadr font-lock-keywords)
               font-lock-keywords))
-          '(("$\\([0-9]+\\)"
+          '(("\\$\\([0-9]+\\)"
              (0 font-lock-keyword-face)
              (1 font-lock-string-face t))
-            ("${\\([0-9]+\\):?"
+            ("\\${\\([0-9]+\\):?"
              (0 font-lock-keyword-face)
              (1 font-lock-warning-face t))
             ("\\(\\$(\\)" 1 font-lock-preprocessor-face)
@@ -3855,7 +3855,7 @@ Meant to be called in a narrowed buffer, does various passes"
     (yas--protect-escapes)
     ;; Parse indent markers: `$>'.
     (goto-char parse-start)
-    (yas--indent-parse-create snippet)
+    (yas--indent-parse-create)
     ;; parse fields with {}
     ;;
     (goto-char parse-start)
@@ -3961,12 +3961,11 @@ The SNIPPET's markers are preserved."
                        (zerop (current-column)))
              (indent-to-column yas--indent-original-column)))
           ((eq yas-indent-line 'auto)
-           (let ((end (set-marker (make-marker) (point-max))))
-             (unless yas-also-auto-indent-first-line
-               (forward-line 1))
-             (yas--indent-region (line-beginning-position)
-                                 (point-max)
-                                 snippet))))))
+           (unless yas-also-auto-indent-first-line
+             (forward-line 1))
+           (yas--indent-region (line-beginning-position)
+                               (point-max)
+                               snippet)))))
 
 (defun yas--collect-snippet-markers (snippet)
   "Make a list of all the markers used by SNIPPET."
@@ -4073,8 +4072,8 @@ with their evaluated value into `yas--backquote-markers-and-strings'."
     (set-marker-insertion-type marker nil)
     marker))
 
-(defun yas--indent-parse-create (snippet)
-  "Parse the \"$>\" indentation markers in SNIPPET."
+(defun yas--indent-parse-create ()
+  "Parse the \"$>\" indentation markers just inserted."
   (setq yas--indent-markers ())
   (while (search-forward "$>" nil t)
     (delete-region (match-beginning 0) (match-end 0))

@@ -484,7 +484,7 @@ TODO: correct this bug!"
            (yas-should-expand '(("foo-barbaz" . "OKfoo-barbazOK"))))
          (let ((yas-key-syntaxes
                 (cons #'(lambda (_start-point)
-                          (unless (looking-back "-")
+                          (unless (eq ?- (char-before))
                             (backward-char)
                             'again))
                       yas-key-syntaxes))
