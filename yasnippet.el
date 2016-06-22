@@ -4017,20 +4017,33 @@ With optional string TEXT do it in string instead of the buffer."
 (defun yas--save-backquotes ()
   "Save all the \"`(lisp-expression)`\"-style expressions
 with their evaluated value into `yas--backquote-markers-and-strings'."
-  (while (re-search-forward yas--backquote-lisp-expression-regexp nil t)
-    (let ((current-string (match-string-no-properties 1)) transformed)
-      (save-restriction (widen)
-                        (delete-region (match-beginning 0) (match-end 0)))
-      (setq transformed (yas--eval-lisp (yas--read-lisp (yas--restore-escapes current-string '(?`)))))
-      (goto-char (match-beginning 0))
-      (when transformed
-        (let ((marker (make-marker)))
-          (save-restriction
-            (widen)
-            (insert "Y") ;; quite horrendous, I love it :)
-            (set-marker marker (point))
-            (insert "Y"))
-          (push (cons marker transformed) yas--backquote-markers-and-strings))))))
+  (let* ((yas--change-detected nil)
+         (detect-change (lambda (_beg _end) (setq yas--change-detected t))))
+    (while (re-search-forward yas--backquote-lisp-expression-regexp nil t)
+      (let ((current-string (match-string-no-properties 1)) transformed)
+        (save-restriction (widen)
+                          (delete-region (match-beginning 0) (match-end 0)))
+        (let ((before-change-functions
+               (cons detect-change before-change-functions)))
+          (setq transformed (yas--eval-lisp (yas--read-lisp
+                                             (yas--restore-escapes
+                                              current-string '(?`))))))
+        (goto-char (match-beginning 0))
+        (when transformed
+          (let ((marker (make-marker))
+                (before-change-functions (cdr before-change-functions)))
+            (save-restriction
+              (widen)
+              (insert "Y") ;; quite horrendous, I love it :)
+              (set-marker marker (point))
+              (insert "Y"))
+            (push (cons marker transformed) yas--backquote-markers-and-strings)))))
+    (when yas--change-detected
+      (lwarn '(yasnippet backquote-change) :warning
+             "`%s' modified buffer in a backquote expression."
+             (if yas--current-template
+                 (yas--template-name yas--current-template)
+               "Snippet")))))
 
 (defun yas--restore-backquotes ()
   "Replace markers in `yas--backquote-markers-and-strings' with their values."
