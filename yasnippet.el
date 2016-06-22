@@ -4017,34 +4017,20 @@ With optional string TEXT do it in string instead of the buffer."
 (defun yas--save-backquotes ()
   "Save all the \"`(lisp-expression)`\"-style expressions
 with their evaluated value into `yas--backquote-markers-and-strings'."
-  ;; Gather `(lisp-expression)`s.
-  (let ((end (point-max)))
-    (save-restriction
-      (widen)
-      (while (re-search-forward yas--backquote-lisp-expression-regexp end t)
-        (let ((expr (yas--read-lisp (yas--restore-escapes
-                                     (match-string-no-properties 1))))
-              (marker (make-marker)))
-          (delete-region (match-beginning 0) (match-end 0))
-          (insert "Y") ;; quite horrendous, I love it :)
-          (set-marker marker (point))
-          (insert "Y")
-          (push (cons marker expr) yas--backquote-markers-and-strings)))))
-  ;; Evaluate them.
-  (dolist (m-e yas--backquote-markers-and-strings)
-    (let* ((marker (car m-e))
-           (expr (cdr m-e))
-           (result (save-excursion
-                     (goto-char marker)
-                     (yas--eval-lisp expr))))
-      (setcdr m-e result)
-      (unless result
-        (save-restriction (widen)
-                          (delete-region (1- marker) (1+ marker)))
-        (set-marker marker nil))))
-  ;; Drop the nil results.
-  (setq yas--backquote-markers-and-strings
-        (cl-delete-if-not #'cdr yas--backquote-markers-and-strings)))
+  (while (re-search-forward yas--backquote-lisp-expression-regexp nil t)
+    (let ((current-string (match-string-no-properties 1)) transformed)
+      (save-restriction (widen)
+                        (delete-region (match-beginning 0) (match-end 0)))
+      (setq transformed (yas--eval-lisp (yas--read-lisp (yas--restore-escapes current-string '(?`)))))
+      (goto-char (match-beginning 0))
+      (when transformed
+        (let ((marker (make-marker)))
+          (save-restriction
+            (widen)
+            (insert "Y") ;; quite horrendous, I love it :)
+            (set-marker marker (point))
+            (insert "Y"))
+          (push (cons marker transformed) yas--backquote-markers-and-strings))))))
 
 (defun yas--restore-backquotes ()
   "Replace markers in `yas--backquote-markers-and-strings' with their values."
