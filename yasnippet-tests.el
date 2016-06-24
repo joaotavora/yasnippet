@@ -240,6 +240,16 @@ $1   ------------------------")
 XXXXX   ---------------- XXXXX ----
 XXXXX   ------------------------"))))
 
+(ert-deftest indent-mirrors-on-update ()
+  "Check that mirrors are always kept indented."
+  (with-temp-buffer
+    (ruby-mode)
+    (yas-minor-mode 1)
+    (yas-expand-snippet "def $1\n$1\nend")
+    (yas-mock-insert "xxx")
+    ;; Assuming 2 space indent.
+    (should (string= "def xxx\n  xxx\nend" (buffer-string)))))
+
 
 (ert-deftest snippet-with-multiline-mirrors-issue-665 ()
   "In issue 665, a multi-line mirror is attempted."
