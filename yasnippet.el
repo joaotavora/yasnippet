@@ -4247,7 +4247,11 @@ When multiple expressions are found, only the last one counts."
                 (cl-mapcan #'(lambda (field)
                                (mapcar #'(lambda (mirror)
                                            (cons field mirror))
-                                       (yas--field-mirrors field)))
+                                       (cl-sort
+                                        (cl-copy-list
+                                         (yas--field-mirrors field))
+                                        #'<
+                                        :key #'yas--mirror-start)))
                            (yas--snippet-fields snippet))
                 ;; then sort this list so that entries with mirrors with parent
                 ;; fields appear before. This was important for fixing #290, and
@@ -4294,13 +4298,10 @@ When multiple expressions are found, only the last one counts."
         (yas--advance-start-maybe (yas--mirror-next mirror) (point))
         ;; super-special advance
         (yas--advance-end-of-parents-maybe mirror-parent-field (point)))
-      (let ((yas--inhibit-overlay-hooks t)
-            (beg (save-excursion (goto-char (yas--mirror-start mirror))
-                                 (forward-line 1)
-                                 (point)))
-            (end (yas--mirror-end mirror)))
-        (when (< beg end)
-          (yas--indent-region beg end snippet))))))
+      (let ((yas--inhibit-overlay-hooks t))
+        (yas--indent-region (yas--mirror-start mirror)
+                            (yas--mirror-end mirror)
+                            snippet)))))
 
 (defun yas--field-update-display (field)
   "Much like `yas--mirror-update-display', but for fields."

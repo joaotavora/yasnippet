@@ -255,6 +255,7 @@ mapconcat #'(lambda (arg)
     (ert-simulate-command '(yas-next-field))
     (let ((expected (mapconcat #'identity
                                '("@bla = bla"
+                                 ;; assume ruby is always indented to 2 spaces
                                  "  @ble = ble"
                                  "  @bli = bli")
                                "\n")))
