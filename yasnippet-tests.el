@@ -227,13 +227,22 @@ end" (buffer-string)))
 No indent$>
 end" (buffer-string)))))
 
+(ert-deftest single-line-multi-mirror-indentation ()
+  "Make sure not to indent with multiple mirrors per line."
+  ;; See also Github issue #712.
+  (with-temp-buffer
+    (text-mode)
+    (yas-minor-mode 1)
+    (yas-expand-snippet "${1:XXXXX} --------
+$1   ---------------- $1 ----
+$1   ------------------------")
+    (should (string= (yas--buffer-contents) "XXXXX --------
+XXXXX   ---------------- XXXXX ----
+XXXXX   ------------------------"))))
 
-(ert-deftest navigate-a-snippet-with-multiline-mirrors-issue-665 ()
-  "In issue 665, a multi-line mirror is attempted.
 
-Indentation doesn't (yet) happen on these mirrors, but let this
-test guard against any misnavigations that might be introduced by
-an incorrect implementation of mirror auto-indentation"
+(ert-deftest snippet-with-multiline-mirrors-issue-665 ()
+  "In issue 665, a multi-line mirror is attempted."
   (with-temp-buffer
     (ruby-mode)
     (yas-minor-mode 1)
@@ -246,8 +255,8 @@ mapconcat #'(lambda (arg)
     (ert-simulate-command '(yas-next-field))
     (let ((expected (mapconcat #'identity
                                '("@bla = bla"
-                                 "[[:blank:]]*@ble = ble"
-                                 "[[:blank:]]*@bli = bli")
+                                 "  @ble = ble"
+                                 "  @bli = bli")
                                "\n")))
       (should (looking-at expected))
       (yas-mock-insert "blo")

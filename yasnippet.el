@@ -4294,10 +4294,13 @@ When multiple expressions are found, only the last one counts."
         (yas--advance-start-maybe (yas--mirror-next mirror) (point))
         ;; super-special advance
         (yas--advance-end-of-parents-maybe mirror-parent-field (point)))
-      (let ((yas--inhibit-overlay-hooks t))
-        (yas--indent-region (yas--mirror-start mirror)
-                            (yas--mirror-end mirror)
-                            snippet)))))
+      (let ((yas--inhibit-overlay-hooks t)
+            (beg (save-excursion (goto-char (yas--mirror-start mirror))
+                                 (forward-line 1)
+                                 (point)))
+            (end (yas--mirror-end mirror)))
+        (when (< beg end)
+          (yas--indent-region beg end snippet))))))
 
 (defun yas--field-update-display (field)
   "Much like `yas--mirror-update-display', but for fields."
