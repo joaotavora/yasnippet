@@ -1083,7 +1083,7 @@ Has the following fields:
         (maphash #'(lambda (k v)
                      (let ((template (gethash name v)))
                        (when (and template
-                                  (eq uuid (yas--template-uuid template)))
+                                  (equal uuid (yas--template-uuid template)))
                          (remhash name v)
                          (when (zerop (hash-table-count v))
                            (push k empty-keys)))))
