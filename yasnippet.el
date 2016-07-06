@@ -4008,8 +4008,11 @@ With optional string TEXT do it in string instead of the buffer."
 (defun yas--save-backquotes ()
   "Save all the \"`(lisp-expression)`\"-style expressions
 with their evaluated value into `yas--backquote-markers-and-strings'."
-  (let* ((yas--change-detected nil)
-         (detect-change (lambda (_beg _end) (setq yas--change-detected t))))
+  (let* ((yas--snippet-buffer (current-buffer))
+         (yas--change-detected nil)
+         (detect-change (lambda (_beg _end)
+                          (when (eq (current-buffer) yas--snippet-buffer)
+                            (setq yas--change-detected t)))))
     (while (re-search-forward yas--backquote-lisp-expression-regexp nil t)
       (let ((current-string (match-string-no-properties 1)) transformed)
         (save-restriction (widen)
