@@ -1916,7 +1916,8 @@ prefix argument."
 
 (defun yas-escape-text (text)
   "Escape TEXT for snippet."
-  (replace-regexp-in-string "[\\$]" "\\\\\\&" text))
+  (when text
+    (replace-regexp-in-string "[\\$]" "\\\\\\&" text)))
 
 
 ;;; Snippet compilation function
