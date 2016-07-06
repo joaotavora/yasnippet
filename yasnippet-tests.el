@@ -613,6 +613,24 @@ TODO: correct this bug!"
      (yas-reload-all)
      (yas--basic-jit-loading-1))))
 
+(ert-deftest snippet-load-uuid ()
+  "Test snippets with same uuid override old ones."
+  (yas-saving-variables
+   (yas-define-snippets
+    'text-mode
+    '(("1" "one" "one" nil nil nil nil "C-c 1" "uuid-1")
+      ("2" "two" "two" nil nil nil nil nil "uuid-2")))
+   (with-temp-buffer
+     (text-mode)
+     (yas-minor-mode +1)
+     (should (equal (yas-lookup-snippet "one") "one"))
+     (should (eq (key-binding "\C-c1") 'yas-expand-from-keymap))
+     (yas-define-snippets
+      'text-mode '(("_1" "one!" "won" nil nil nil nil nil "uuid-1")))
+     (should (null (yas-lookup-snippet "one" nil 'noerror)))
+     (should (null (key-binding "\C-c1")))
+     (should (equal (yas-lookup-snippet "won") "one!")))))
+
 (ert-deftest visiting-compiled-snippets ()
   "Test snippet visiting for compiled snippets."
   (yas-with-some-interesting-snippet-dirs
