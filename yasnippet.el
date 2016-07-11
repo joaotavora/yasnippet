@@ -239,7 +239,7 @@ nil.
 - To signal that the user quit the prompting process, you can
 signal `quit' with
 
-  (signal 'quit \"user quit!\")."
+  (signal \\='quit \"user quit!\")."
   :type '(repeat function)
   :group 'yasnippet)
 
@@ -327,7 +327,7 @@ menu and the modes set in `yas--extra-modes' are listed.
 
 - If set to `full', every submenu is listed
 
-- If set to `nil', hide the menu.
+- If set to nil, hide the menu.
 
 Any other non-nil value, every submenu is listed."
   :type '(choice (const :tag "Full"  full)
@@ -377,7 +377,7 @@ Leave this set at nil (the default) to be able to trigger an
 expansion simply by placing the cursor after a valid tab trigger,
 using whichever commands.
 
-Optionally, set this to something like '(self-insert-command) if
+Optionally, set this to something like (self-insert-command) if
 you to wish restrict expansion to only happen when the last
 letter of the snippet tab trigger was typed immediately before
 the trigger key itself."
@@ -437,7 +437,7 @@ is tried, unless a function element returned the symbol `again',
 in which case it is called again from the previous position and
 may once more reposition point.
 
-For example, if `yas-key-syntaxes'' value is '(\"w\" \"w_\"),
+For example, if `yas-key-syntaxes' has the value (\"w\" \"w_\"),
 trigger keys composed exclusively of \"word\"-syntax characters
 are looked for first. Failing that, longer keys composed of
 \"word\" or \"symbol\" syntax are looked for. Therefore,
@@ -504,7 +504,7 @@ snippet expansion is attempted:
 
           * Otherwise, the snippet is not considered.
 
-    * If it evaluates to the symbol 'always, all snippets are
+    * If it evaluates to the symbol `always', all snippets are
       considered for expansion, regardless of any conditions.
 
     * If it evaluates to t or some other non-nil value
@@ -516,14 +516,14 @@ snippet expansion is attempted:
 
 Here's an example preventing snippets from being expanded from
 inside comments, in `python-mode' only, with the exception of
-snippets returning the symbol 'force-in-comment in their
+snippets returning the symbol `force-in-comment' in their
 conditions.
 
- (add-hook 'python-mode-hook
+ (add-hook \\='python-mode-hook
            (lambda ()
               (setq yas-buffer-local-condition
-                    '(if (python-in-string/comment)
-                         '(require-snippet-condition . force-in-comment)
+                    \\='(if (python-in-string/comment)
+                         \\='(require-snippet-condition . force-in-comment)
                        t))))
 
 The default value is similar, it filters out potential snippet
@@ -553,7 +553,7 @@ snippet itself contains a condition that returns the symbol
 
 (defconst yas--backquote-lisp-expression-regexp
   "`\\([^`]*\\)`"
-  "A regexp to recognize a \"`lisp-expression`\" expression." )
+  "A regexp to recognize a \"\\=`lisp-expression\\=`\" expression." )
 
 (defconst yas--transform-mirror-regexp
   "${\\(?:\\([0-9]+\\):\\)?$\\([ \t\n]*([^}]*\\)"
@@ -2056,7 +2056,7 @@ MENU is a list, its elements can be:
   SUBMENU has the same form as MENU.  NAME is also added to the
   list of groups of the snippets defined thereafter.
 
-OMIT-ITEMS is a list of snippet uuid's that will always be
+OMIT-ITEMS is a list of snippet uuids that will always be
 omitted from MODE's menu, even if they're manually loaded."
   (let* ((table (yas--table-get-create mode))
          (hash (yas--table-uuidhash table)))
@@ -4007,7 +4007,7 @@ With optional string TEXT do it in string instead of the buffer."
     changed-text))
 
 (defun yas--save-backquotes ()
-  "Save all the \"`(lisp-expression)`\"-style expressions
+  "Save all the \"\\=`(lisp-expression)\\=`\"-style expressions
 with their evaluated value into `yas--backquote-markers-and-strings'."
   (let* ((yas--snippet-buffer (current-buffer))
          (yas--change-detected nil)
