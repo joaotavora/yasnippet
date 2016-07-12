@@ -929,7 +929,8 @@ Honour `yas-dont-activate-functions', which see."
   (setq font-lock-defaults '(yas--font-lock-keywords))
   (set (make-local-variable 'require-final-newline) nil)
   (set (make-local-variable 'comment-start) "#")
-  (set (make-local-variable 'comment-start-skip) "#+[\t ]*"))
+  (set (make-local-variable 'comment-start-skip) "#+[\t ]*")
+  (add-hook 'after-save-hook #'yas-maybe-load-snippet-buffer nil t))
 
 
 
@@ -2575,6 +2576,21 @@ Return the `yas--template' object created"
                   (yas--template-name yas--editing-template)
                   (yas--table-name (yas--template-table yas--editing-template))))
   yas--editing-template)
+
+(defun yas-maybe-load-snippet-buffer ()
+  "Added to `after-save-hook' in `snippet-mode'."
+  (let* ((mode (intern (file-name-sans-extension
+                        (file-name-nondirectory
+                         (directory-file-name default-directory)))))
+         (current-snippet
+          (apply #'yas--define-snippets-2 (yas--table-get-create mode)
+                 (yas--parse-template buffer-file-name)))
+         (uuid (yas--template-uuid current-snippet)))
+    (unless (equal current-snippet
+                   (if uuid (yas--get-template-by-uuid mode uuid)
+                     (yas--lookup-snippet-1
+                      (yas--template-name current-snippet) mode)))
+      (yas-load-snippet-buffer mode t))))
 
 (defun yas-load-snippet-buffer-and-close (table &optional kill)
   "Load and save the snippet, then `quit-window' if saved.
