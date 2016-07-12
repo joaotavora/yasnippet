@@ -1836,7 +1836,7 @@ prompt the user to select one."
                    (yas--message 4 "Loaded %s" directory)
                  (yas--message 4 "Prepared just-in-time loading for %s" directory)))
               (t
-               (push (yas--message 0 "Check your `yas-snippet-dirs': %s is not a directory" directory) errors)))))
+               (push (yas--message 1 "Check your `yas-snippet-dirs': %s is not a directory" directory) errors)))))
     errors))
 
 (defun yas-reload-all (&optional no-jit interactive)
@@ -3215,7 +3215,7 @@ This renders the snippet as ordinary text."
       ;; again from `yas--take-care-of-redo'....
       (setf (yas--snippet-fields snippet) nil)))
 
-  (yas--message 3 "Snippet %s exited." (yas--snippet-id snippet)))
+  (yas--message 4 "Snippet %s exited." (yas--snippet-id snippet)))
 
 (defun yas--safely-run-hooks (hook-var)
   (condition-case error
@@ -4432,8 +4432,8 @@ object satisfying `yas--field-p' to restrict the expansion to.")))
   "Log level for `yas--message' 4 means trace most anything, 0 means nothing.")
 
 (defun yas--message (level message &rest args)
-  "When LEVEL is above `yas-verbosity-level', log MESSAGE and ARGS."
-  (when (> yas-verbosity level)
+  "When LEVEL is at or below `yas-verbosity-level', log MESSAGE and ARGS."
+  (when (>= yas-verbosity level)
     (message "%s" (apply #'yas--format message args))))
 
 (defun yas--warning (format-control &rest format-args)
