@@ -3079,8 +3079,7 @@ Otherwise delegate to `yas-next-field'."
                         (and (not (eq field active))
                              (yas--field-probably-deleted-p snippet field)))
                       (yas--snippet-fields snippet))))
-    (if (>= n 0) (nth n (memq active live-fields))
-      (car (last (memq active (reverse live-fields)) (- n))))))
+    (nth (abs n) (memq active (if (>= n 0) live-fields (reverse live-fields))))))
 
 (defun yas-next-field (&optional arg)
   "Navigate to the ARGth next field.

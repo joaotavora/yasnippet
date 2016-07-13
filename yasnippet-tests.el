@@ -38,13 +38,16 @@
 (ert-deftest field-navigation ()
   (with-temp-buffer
     (yas-minor-mode 1)
-    (yas-expand-snippet "${1:brother} from another ${2:mother}")
+    (yas-expand-snippet "${1:brother} from ${2:another} ${3:mother}")
     (should (string= (yas--buffer-contents)
                      "brother from another mother"))
-
     (should (looking-at "brother"))
     (ert-simulate-command '(yas-next-field-or-maybe-expand))
+    (should (looking-at "another"))
+    (ert-simulate-command '(yas-next-field-or-maybe-expand))
     (should (looking-at "mother"))
+    (ert-simulate-command '(yas-prev-field))
+    (should (looking-at "another"))
     (ert-simulate-command '(yas-prev-field))
     (should (looking-at "brother"))))
 
