@@ -917,6 +917,7 @@ Honour `yas-dont-activate-functions', which see."
                           (define-key map (third ent) (second ent)))
                         (vector (first ent) (second ent) t))
                     '(("Load this snippet" yas-load-snippet-buffer "\C-c\C-l")
+                      ("Load and save snippet" yas-load-snippet-buffer-and-save [remap save-buffer])
                       ("Load and quit window" yas-load-snippet-buffer-and-close "\C-c\C-c")
                       ("Try out this snippet" yas-tryout-snippet "\C-c\C-t")))))
     map)
@@ -2573,17 +2574,15 @@ called interactively, prompt for the table name."
                   (yas--template-name yas--editing-template)
                   (yas--table-name (yas--template-table yas--editing-template)))))
 
-(defun yas-load-snippet-buffer-and-close (table &optional kill)
-  "Load and save the snippet, then `quit-window' if saved.
+(defun yas-load-snippet-buffer-and-save (table)
+  "Load and save the snippet.
 Loading is performed by `yas-load-snippet-buffer'.  If the
 snippet is new, ask the user whether (and where) to save it.  If
 the snippet already has a file, just save it.
 
-The prefix argument KILL is passed to `quit-window'.
-
-Don't use this from a Lisp program, call `yas-load-snippet-buffer'
-and `kill-buffer' instead."
-  (interactive (list (yas--read-table) current-prefix-arg))
+Don't use this function from a Lisp program, call
+`yas-load-snippet-buffer' and `save-buffer' instead."
+  (interactive (list (yas--read-table)))
   (yas-load-snippet-buffer table t)
   (let ((file (yas--template-get-file yas--editing-template)))
     (when (and (or
@@ -2603,13 +2602,21 @@ and `kill-buffer' instead."
           (let ((default-file-name (or (and file (file-name-nondirectory file))
                                        (yas--template-name yas--editing-template))))
             (write-file (expand-file-name
-                         (read-file-name (format "File name to create in %s? " chosen)
-                                         chosen default-file-name)
+                         (read-file-name
+                          (format "Enter snippet file name%s: "
+                                  (if default-file-name
+                                      (concat " (default " default-file-name ")")
+                                    ""))
+                          chosen default-file-name)
                          chosen))
-            (setf (yas--template-load-file yas--editing-template) buffer-file-name))))))
-  (when buffer-file-name
-    (save-buffer)
-    (quit-window kill)))
+            (setf (yas--template-load-file yas--editing-template) buffer-file-name)))))))
+
+(defun yas-load-snippet-buffer-and-close (table &optional kill)
+  "Like `yas-load-snippet-buffer-and-save' but also `quit-window' after.
+The prefix argument KILL is passed to `quit-window'."
+  (interactive (list (yas--read-table) current-prefix-arg))
+  (yas-load-snippet-buffer-and-save table)
+  (quit-window kill))
 
 (defun yas-tryout-snippet (&optional debug)
   "Test current buffer's snippet template in other buffer."
