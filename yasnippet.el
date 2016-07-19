@@ -929,7 +929,8 @@ Honour `yas-dont-activate-functions', which see."
   (setq font-lock-defaults '(yas--font-lock-keywords))
   (set (make-local-variable 'require-final-newline) nil)
   (set (make-local-variable 'comment-start) "#")
-  (set (make-local-variable 'comment-start-skip) "#+[\t ]*"))
+  (set (make-local-variable 'comment-start-skip) "#+[\t ]*")
+  (add-hook 'after-save-hook #'yas-maybe-load-snippet-buffer nil t))
 
 
 
@@ -1835,7 +1836,7 @@ prompt the user to select one."
                    (yas--message 4 "Loaded %s" directory)
                  (yas--message 4 "Prepared just-in-time loading for %s" directory)))
               (t
-               (push (yas--message 0 "Check your `yas-snippet-dirs': %s is not a directory" directory) errors)))))
+               (push (yas--message 1 "Check your `yas-snippet-dirs': %s is not a directory" directory) errors)))))
     errors))
 
 (defun yas-reload-all (&optional no-jit interactive)
@@ -2408,15 +2409,15 @@ visited file in `snippet-mode'."
                          (pp-to-string (yas--template-content template))
                        (yas--template-content template))))
            (snippet-mode)
-           (set (make-local-variable 'yas--editing-template) template)))))
+           (set (make-local-variable 'yas--editing-template) template)
+           (set (make-local-variable 'default-directory)
+                (car (cdr (car (yas--guess-snippet-directories (yas--template-table template))))))))))
 
 (defun yas--guess-snippet-directories-1 (table)
   "Guess possible snippet subdirectories for TABLE."
-  (cons (yas--table-name table)
-        (mapcan #'(lambda (parent)
-                    (yas--guess-snippet-directories-1
-                     parent))
-                (yas--table-parents table))))
+  (cons (file-name-as-directory (yas--table-name table))
+        (cl-mapcan #'yas--guess-snippet-directories-1
+                   (yas--table-parents table))))
 
 (defun yas--guess-snippet-directories (&optional table)
   "Try to guess suitable directories based on the current active
@@ -2483,6 +2484,7 @@ NO-TEMPLATE is non-nil."
     (set (make-local-variable 'yas--guessed-modes) (mapcar #'(lambda (d)
                                                               (yas--table-mode (car d)))
                                                           guessed-directories))
+    (set (make-local-variable 'default-directory) (car (cdr (car guessed-directories))))
     (if (and (not no-template) yas-new-snippet-default)
         (yas-expand-snippet yas-new-snippet-default))))
 
@@ -2549,7 +2551,8 @@ neither do the elements of PARENTS."
 (defun yas-load-snippet-buffer (table &optional interactive)
   "Parse and load current buffer's snippet definition into TABLE.
 TABLE is a symbol name passed to `yas--table-get-create'.  When
-called interactively, prompt for the table name."
+called interactively, prompt for the table name.
+Return the `yas--template' object created"
   (interactive (list (yas--read-table) t))
   (cond
    ;;  We have `yas--editing-template', this buffer's content comes from a
@@ -2571,7 +2574,23 @@ called interactively, prompt for the table name."
   (when interactive
     (yas--message 3 "Snippet \"%s\" loaded for %s."
                   (yas--template-name yas--editing-template)
-                  (yas--table-name (yas--template-table yas--editing-template)))))
+                  (yas--table-name (yas--template-table yas--editing-template))))
+  yas--editing-template)
+
+(defun yas-maybe-load-snippet-buffer ()
+  "Added to `after-save-hook' in `snippet-mode'."
+  (let* ((mode (intern (file-name-sans-extension
+                        (file-name-nondirectory
+                         (directory-file-name default-directory)))))
+         (current-snippet
+          (apply #'yas--define-snippets-2 (yas--table-get-create mode)
+                 (yas--parse-template buffer-file-name)))
+         (uuid (yas--template-uuid current-snippet)))
+    (unless (equal current-snippet
+                   (if uuid (yas--get-template-by-uuid mode uuid)
+                     (yas--lookup-snippet-1
+                      (yas--template-name current-snippet) mode)))
+      (yas-load-snippet-buffer mode t))))
 
 (defun yas-load-snippet-buffer-and-close (table &optional kill)
   "Load and save the snippet, then `quit-window' if saved.
@@ -2584,31 +2603,18 @@ The prefix argument KILL is passed to `quit-window'.
 Don't use this from a Lisp program, call `yas-load-snippet-buffer'
 and `kill-buffer' instead."
   (interactive (list (yas--read-table) current-prefix-arg))
-  (yas-load-snippet-buffer table t)
-  (let ((file (yas--template-get-file yas--editing-template)))
-    (when (and (or
-                ;; Only offer to save this if it looks like a library or new
-                ;; snippet (loaded from elisp, from a dir in `yas-snippet-dirs'
-                ;; which is not the first, or from an unwritable file)
-                ;;
-                (not file)
-                (not (file-writable-p file))
-                (and (cdr-safe yas-snippet-dirs)
-                     (not (string-prefix-p (expand-file-name (car yas-snippet-dirs)) file))))
-               (y-or-n-p (yas--format "Looks like a library or new snippet. Save to new file? ")))
-      (let* ((option (first (yas--guess-snippet-directories (yas--template-table yas--editing-template))))
-             (chosen (and option
-                          (yas--make-directory-maybe option))))
-        (when chosen
-          (let ((default-file-name (or (and file (file-name-nondirectory file))
-                                       (yas--template-name yas--editing-template))))
-            (write-file (expand-file-name
-                         (read-file-name (format "File name to create in %s? " chosen)
-                                         chosen default-file-name)
-                         chosen))
-            (setf (yas--template-load-file yas--editing-template) buffer-file-name))))))
-  (when buffer-file-name
-    (save-buffer)
+  (let ((template (yas-load-snippet-buffer table t)))
+    (when (and (buffer-modified-p)
+               (y-or-n-p
+                (format "[yas] Loaded for %s. Also save snippet buffer?"
+                        (yas--table-name (yas--template-table template)))))
+      (let ((default-directory (car (cdr (car (yas--guess-snippet-directories (yas--template-table template))))))
+            (default-file-name (yas--template-name template)))
+        (unless (or buffer-file-name (not default-file-name))
+          (setq buffer-file-name
+                (read-file-name "File to save snippet in: "
+                                nil nil nil default-file-name )))
+        (save-buffer)))
     (quit-window kill)))
 
 (defun yas-tryout-snippet (&optional debug)
@@ -3209,7 +3215,7 @@ This renders the snippet as ordinary text."
       ;; again from `yas--take-care-of-redo'....
       (setf (yas--snippet-fields snippet) nil)))
 
-  (yas--message 3 "Snippet %s exited." (yas--snippet-id snippet)))
+  (yas--message 4 "Snippet %s exited." (yas--snippet-id snippet)))
 
 (defun yas--safely-run-hooks (hook-var)
   (condition-case error
@@ -4426,8 +4432,8 @@ object satisfying `yas--field-p' to restrict the expansion to.")))
   "Log level for `yas--message' 4 means trace most anything, 0 means nothing.")
 
 (defun yas--message (level message &rest args)
-  "When LEVEL is above `yas-verbosity-level', log MESSAGE and ARGS."
-  (when (> yas-verbosity level)
+  "When LEVEL is at or below `yas-verbosity-level', log MESSAGE and ARGS."
+  (when (>= yas-verbosity level)
     (message "%s" (apply #'yas--format message args))))
 
 (defun yas--warning (format-control &rest format-args)
