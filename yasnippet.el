@@ -2075,31 +2075,37 @@ omitted from MODE's menu, even if they're manually loaded."
 
 (defun yas--define-menu-1 (table menu-keymap menu uuidhash &optional group-list)
   "Helper for `yas-define-menu'."
-  (dolist (e (reverse menu))
-    (cond ((eq (first e) 'yas-item)
-           (let ((template (or (gethash (second e) uuidhash)
-                               (puthash (second e)
-                                        (yas--make-template
-                                         :table table
-                                         :perm-group group-list
-                                         :uuid (second e))
-                                        uuidhash))))
-             (define-key menu-keymap (vector (gensym))
-               (car (yas--template-menu-binding-pair-get-create template :stay)))))
-          ((eq (first e) 'yas-submenu)
-           (let ((subkeymap (make-sparse-keymap)))
-             (define-key menu-keymap (vector (gensym))
-               `(menu-item ,(second e) ,subkeymap))
-             (yas--define-menu-1 table
-                                subkeymap
-                                (third e)
-                                uuidhash
-                                (append group-list (list (second e))))))
-          ((eq (first e) 'yas-separator)
-           (define-key menu-keymap (vector (gensym))
-             '(menu-item "----")))
-          (t
-           (yas--message 1 "Don't know anything about menu entry %s" (first e))))))
+  (cl-loop
+   for (type name submenu) in (reverse menu)
+   if (or (eq type 'yas-item)
+          (and yas-alias-to-yas/prefix-p
+               (eq type 'yas/item)))
+   do (let ((template (or (gethash name uuidhash)
+                          (puthash name
+                                   (yas--make-template
+                                    :table table
+                                    :perm-group group-list
+                                    :uuid name)
+                                   uuidhash))))
+        (define-key menu-keymap (vector (gensym))
+          (car (yas--template-menu-binding-pair-get-create template :stay))))
+   else if (or (eq type 'yas-submenu)
+               (and yas-alias-to-yas/prefix-p
+                    (eq type 'yas/submenu)))
+   do (let ((subkeymap (make-sparse-keymap)))
+        (define-key menu-keymap (vector (gensym))
+          `(menu-item ,name ,subkeymap))
+        (yas--define-menu-1 table
+                            subkeymap
+                            submenu
+                            uuidhash
+                            (append group-list (list name))))
+   else if (or (eq type 'yas-separator)
+               (and yas-alias-to-yas/prefix-p
+                    (eq type 'yas/separator)))
+   do (define-key menu-keymap (vector (gensym))
+        '(menu-item "----"))
+   else do (yas--message 1 "Don't know anything about menu entry %s" type)))
 
 (defun yas--define (mode key template &optional name condition group)
   "Define a snippet.  Expanding KEY into TEMPLATE.
