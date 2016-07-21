@@ -522,7 +522,7 @@ conditions.
  (add-hook \\='python-mode-hook
            (lambda ()
               (setq yas-buffer-local-condition
-                    \\='(if (python-in-string/comment)
+                    \\='(if (python-syntax-comment-or-string-p)
                          \\='(require-snippet-condition . force-in-comment)
                        t))))
 
