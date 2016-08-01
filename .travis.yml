@@ -16,6 +16,7 @@ install:
   - export PATH=/tmp/emacs/bin:${PATH}
   - if ! emacs -Q --batch --eval "(require 'cl-lib)" ; then
         curl -Lo cl-lib.el http://elpa.gnu.org/packages/cl-lib-0.5.el ;
+        export warnings="'(not cl-functions)" ;
     fi
   - if ! emacs -Q --batch --eval "(require 'ert)" ; then
         curl -LO https://raw.githubusercontent.com/ohler/ert/c619b56c5bc6a866e33787489545b87d79973205/lisp/emacs-lisp/ert.el &&
