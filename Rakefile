@@ -98,9 +98,12 @@ end
 desc "Compile yasnippet.el into yasnippet.elc"
 
 rule '.elc' => '.el' do |t|
+  set_warnings = ""
+  if ENV['warnings']
+    set_warnings = " --eval \"(setq byte-compile-warnings #{ENV['warnings']})\""
+  end
   sh "#{$EMACS} --batch -L . --eval \"(setq byte-compile-error-on-warn t)\"" +
-     " --eval \"(setq byte-compile-warnings #{ENV['warnings']})\"" +
-     " -f batch-byte-compile #{t.source}"
+     "#{set_warnings} -f batch-byte-compile #{t.source}"
 end
 task :compile => FileList["yasnippet.el"].ext('elc')
 
