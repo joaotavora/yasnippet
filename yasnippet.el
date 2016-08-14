@@ -2842,7 +2842,7 @@ Otherwise throw exception."
   "Get the string for field with NUMBER.
 
 Use this in primary and mirror transformations to tget."
-  (let* ((snippet (car (yas--snippets-at-point)))
+  (let* ((snippet (car (yas-active-snippets)))
          (field (and snippet
                      (yas--snippet-find-field snippet number))))
     (when field
@@ -3039,18 +3039,27 @@ through the field's start point"
    (not (and (yas--field-number field)
              (zerop (yas--field-number field))))))
 
-(defun yas--snippets-at-point (&optional all-snippets)
-  "Return a sorted list of snippets at point.
+(defun yas-active-snippets (&optional beg end)
+  "Return a sorted list of active snippets.
+The most recently-inserted snippets are returned first.
 
-The most recently-inserted snippets are returned first."
-  (sort
-   (delq nil (delete-dups
-              (mapcar (lambda (ov) (overlay-get ov 'yas--snippet))
-                      (if all-snippets (overlays-in (point-min) (point-max))
-                        (nconc (overlays-at (point))
-                               (overlays-at (1- (point))))))))
-   #'(lambda (s1 s2)
-       (<= (yas--snippet-id s2) (yas--snippet-id s1)))))
+Only snippets overlapping the region BEG ... END are returned.
+Overlapping has the same meaning as described in `overlays-in'.
+If END is omitted, it defaults to (1+ BEG).  If BEG is omitted,
+it defaults to point.  A non-nil, non-buffer position BEG is
+equivalent to a range covering the whole buffer."
+  (unless beg
+    (setq beg (point)))
+  (cond ((not (or (integerp beg) (markerp beg)))
+         (setq beg (point-min) end (point-max)))
+        ((not end)
+         (setq end (1+ beg))))
+  (cl-sort
+   (delete-dups ;; Snippets have multiple overlays.
+    (delq nil
+          (mapcar (lambda (ov) (overlay-get ov 'yas--snippet))
+                  (overlays-in beg end))))
+   #'>= :key #'yas--snippet-id))
 
 (defun yas-next-field-or-maybe-expand ()
   "Try to expand a snippet at a key before point.
@@ -3067,7 +3076,7 @@ Otherwise delegate to `yas-next-field'."
 
 (defun yas-next-field-will-exit-p (&optional arg)
   "Return non-nil if (yas-next-field ARG) would exit the current snippet."
-  (let ((snippet (car (yas--snippets-at-point)))
+  (let ((snippet (car (yas-active-snippets)))
         (active (overlay-get yas--active-field-overlay 'yas--field)))
     (when snippet
       (not (yas--find-next-field arg snippet active)))))
@@ -3087,7 +3096,7 @@ Otherwise delegate to `yas-next-field'."
 If there's none, exit the snippet."
   (interactive)
   (unless arg (setq arg 1))
-  (let* ((snippet (car (yas--snippets-at-point)))
+  (let* ((snippet (car (yas-active-snippets)))
          (active-field (overlay-get yas--active-field-overlay 'yas--field))
          (target-field (yas--find-next-field arg snippet active-field)))
     ;; Apply transform to active field.
@@ -3136,13 +3145,13 @@ Also create some protection overlays"
 (defun yas-abort-snippet (&optional snippet)
   (interactive)
   (let ((snippet (or snippet
-                     (car (yas--snippets-at-point)))))
+                     (car (yas-active-snippets)))))
     (when snippet
       (setf (yas--snippet-force-exit snippet) t))))
 
 (defun yas-exit-snippet (snippet)
   "Goto exit-marker of SNIPPET."
-  (interactive (list (cl-first (yas--snippets-at-point))))
+  (interactive (list (cl-first (yas-active-snippets))))
   (when snippet
     (setf (yas--snippet-force-exit snippet) t)
     (goto-char (if (yas--snippet-exit snippet)
@@ -3155,7 +3164,7 @@ Also create some protection overlays"
   (mapc #'(lambda (snippet)
             (yas-exit-snippet snippet)
             (yas--check-commit-snippet))
-        (yas--snippets-at-point 'all-snippets)))
+        (yas-active-snippets 'all)))
 
 
 ;;; Some low level snippet-routines:
@@ -3222,7 +3231,7 @@ This renders the snippet as ordinary text."
   "Check if point exited the currently active field of the snippet.
 
 If so cleans up the whole snippet up."
-  (let* ((snippets (yas--snippets-at-point 'all-snippets))
+  (let* ((snippets (yas-active-snippets 'all))
          (snippets-left snippets)
          (snippet-exit-transform))
     (dolist (snippet snippets)
@@ -3474,7 +3483,7 @@ Move the overlays, or create them if they do not exit."
               (not after?)
               (= length (- end beg)) ; deletion or insertion
               (yas--undo-in-progress))
-    (let ((snippets (yas--snippets-at-point)))
+    (let ((snippets (yas-active-snippets)))
       (yas--message 2 "Committing snippets. Action would destroy a protection overlay.")
       (cl-loop for snippet in snippets
                do (yas--commit-snippet snippet)))))
@@ -4324,7 +4333,7 @@ When multiple expressions are found, only the last one counts."
          ;; After undo revival the correct field is sometimes not
          ;; restored correctly, this condition handles that
          ;;
-         (let* ((snippet (car (yas--snippets-at-point)))
+         (let* ((snippet (car (yas-active-snippets)))
                 (target-field
                  (and snippet
                       (cl-find-if-not

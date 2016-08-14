@@ -145,7 +145,7 @@
     (ert-simulate-command '(yas-next-field-or-maybe-expand))
     (ert-simulate-command '(yas-skip-and-clear-or-delete-char))
     (should (looking-at "ble"))
-    (should (null (yas--snippets-at-point)))))
+    (should (null (yas-active-snippets)))))
 
 (ert-deftest ignore-trailing-whitespace ()
   (should (equal
@@ -522,6 +522,17 @@ TODO: correct this bug!"
          (setq yas-key-syntaxes '(yas-longest-key-from-whitespace))
          (yas-should-expand '(("foo-barbaz" . "OKfoo-barbazOK")
                               ("foo " . "foo "))))))))
+
+(ert-deftest nested-snippet-expansion ()
+  (with-temp-buffer
+    (yas-minor-mode +1)
+    (let ((yas-triggers-in-field t))
+      (yas-expand-snippet "Parent $1 Snippet")
+      (yas-expand-snippet "(Child $1 $2 Snippet)")
+      (let ((snippets (yas-active-snippets)))
+        (should (= (length snippets) 2))
+        (should (= (length (yas--snippet-fields (nth 0 snippets))) 2))
+        (should (= (length (yas--snippet-fields (nth 1 snippets))) 1))))))
 
 
 ;;; Loading
