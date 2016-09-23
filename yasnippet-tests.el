@@ -900,23 +900,21 @@ TODO: be meaner"
     (should (eq (key-binding [backtab]) 'yas-prev-field))))
 
 (ert-deftest test-rebindings ()
-  (unwind-protect
-      (progn
-        (define-key yas-minor-mode-map [tab] nil)
-        (define-key yas-minor-mode-map (kbd "TAB") nil)
-        (define-key yas-minor-mode-map (kbd "SPC") 'yas-expand)
-        (with-temp-buffer
-          (yas-minor-mode 1)
-          (should (not (eq (key-binding (yas--read-keybinding "TAB")) 'yas-expand)))
-          (should (eq (key-binding (yas--read-keybinding "SPC")) 'yas-expand))
-          (yas-reload-all)
-          (should (not (eq (key-binding (yas--read-keybinding "TAB")) 'yas-expand)))
-          (should (eq (key-binding (yas--read-keybinding "SPC")) 'yas-expand))))
-    ;; FIXME: actually should restore to whatever saved values where there.
-    ;;
-    (define-key yas-minor-mode-map [tab] 'yas-expand)
-    (define-key yas-minor-mode-map (kbd "TAB") 'yas-expand)
-    (define-key yas-minor-mode-map (kbd "SPC") nil)))
+  (let* ((yas-minor-mode-map (copy-keymap yas-minor-mode-map))
+         (minor-mode-map-alist
+          (cons `(yas-minor-mode . ,yas-minor-mode-map)
+                (cl-remove 'yas-minor-mode minor-mode-map-alist
+                           :test #'eq :key #'car))))
+    (define-key yas-minor-mode-map [tab] nil)
+    (define-key yas-minor-mode-map (kbd "TAB") nil)
+    (define-key yas-minor-mode-map (kbd "SPC") 'yas-expand)
+    (with-temp-buffer
+      (yas-minor-mode 1)
+      (should-not (eq (key-binding (kbd "TAB")) 'yas-expand))
+      (should (eq (key-binding (kbd "SPC")) 'yas-expand))
+      (yas-reload-all)
+      (should-not (eq (key-binding (kbd "TAB")) 'yas-expand))
+      (should (eq (key-binding (kbd "SPC")) 'yas-expand)))))
 
 (ert-deftest test-yas-in-org ()
   (with-temp-buffer
