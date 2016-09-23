@@ -4,6 +4,52 @@ Copyright (C) 2016 Free Software Foundation, Inc.
 See the end of the file for license conditions.
 
 
+
+* 0.11.0 (Oct 26, 2016)
+** Changes and New Features
+
+*** Modifying buffer in backquoted expressions is deprecated!
+Backquoted expressions should only return a string that will be
+inserted.  Snippets which modify the buffer as a side-effect will now
+trigger a warning.
+
+*** The verbosity levels for messages have been adjusted.
+While the default verbosity level was increased by 1 (it was only
+lower before due to a bug), several messages now only print at the
+level 4, so the overall effect should be less messages by default.
+
+*** Saving and loading snippets has been streamlined.  Saving the
+snippet to a file will now automatically load it.  Additionally, the
+buffer will be renamed from "*new snippet*" to whatever the snippet is
+named.  See also Github #718, #733, and #734.
+
+*** `yas-escape-text' no longer signals an error when given nil.
+
+*** `yas-describe-tables' is split into simpler commands.
+**** `yas-describe-tables' takes a prefix arg to show non-active tables.
+**** New command `yas-describe-tables-by-namehash' shows table by namehash.
+
+*** Use the region contents as the snippet body of new snippets.
+
+*** The dependency on `cl' is removed.
+Yasnippet now only requires `cl-lib'.
+
+** Fixed Bugs
+
+*** Fix field navigation (tabbing) in the backwards direction.
+See Github #722
+
+*** Add support for deprecated yas/ symbols in `yas-define-menu'.
+It was left out by accident.  This support is conditional on
+`yas-alias-to-yas/prefix-p', just like other obsolete yas/ bindings.
+
+*** Fix overriding of snippet by a new snippet with same uuid.
+See Github #714.
+
+*** Fix handling of snippets with 2 mirros on the same line.
+See Github #712.
+
+
 * 0.10.0 (June 11th, 2016)
 
 ** Changes and New Features

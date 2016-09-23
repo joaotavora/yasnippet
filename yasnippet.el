@@ -5,7 +5,7 @@
 ;;          João Távora <joaotavora@gmail.com>,
 ;;          Noam Postavsky <npostavs@gmail.com>
 ;; Maintainer: Noam Postavsky <npostavs@gmail.com>
-;; Version: 0.10.0
+;; Version: 0.11.0
 ;; X-URL: http://github.com/joaotavora/yasnippet
 ;; Keywords: convenience, emulation
 ;; URL: http://github.com/joaotavora/yasnippet
@@ -514,7 +514,7 @@ snippet itself contains a condition that returns the symbol
 
 ;;; Internal variables
 
-(defconst yas--version "0.10.0")
+(defconst yas--version "0.11.0")
 
 (defvar yas--menu-table (make-hash-table)
   "A hash table of MAJOR-MODE symbols to menu keymaps.")
