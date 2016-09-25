@@ -2600,7 +2600,8 @@ and `kill-buffer' instead."
         (unless (or buffer-file-name (not default-file-name))
           (setq buffer-file-name
                 (read-file-name "File to save snippet in: "
-                                nil nil nil default-file-name )))
+                                nil nil nil default-file-name))
+          (rename-buffer (file-name-nondirectory buffer-file-name) t))
         (save-buffer)))
     (quit-window kill)))
 
