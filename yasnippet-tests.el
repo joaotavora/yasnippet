@@ -634,6 +634,39 @@ TODO: correct this bug!"
      (should (null (key-binding "\C-c1")))
      (should (equal (yas-lookup-snippet "won") "one!")))))
 
+(ert-deftest snippet-save ()
+  "Make sure snippets can be saved correctly."
+  (yas-saving-variables
+   (yas-with-snippet-dirs
+    '((".emacs.d/snippets"
+       ("text-mode")))
+    (letf (((symbol-function 'y-or-n-p) (lambda (&rest _) t))
+           ((symbol-function 'read-file-name)
+            (lambda (_prompt &optional _dir _default _mustmatch initial _predicate)
+              (expand-file-name initial)))
+           ((symbol-function 'completing-read)
+            (lambda (_prompt collection &rest _)
+              (or (car collection) ""))))
+      (with-temp-buffer
+        (text-mode)
+        (yas-minor-mode +1)
+        (save-current-buffer
+          (yas-new-snippet t)
+          (with-current-buffer "*new snippet*"
+            (snippet-mode)
+            (insert "# name: foo\n# key: bar\n# --\nsnippet foo")
+            (call-interactively 'yas-load-snippet-buffer-and-close)))
+        (save-current-buffer
+          (yas-new-snippet t)
+          (with-current-buffer "*new snippet*"
+            (snippet-mode)
+            (insert "# name: bar\n# key: bar\n# --\nsnippet bar")
+            (call-interactively 'yas-load-snippet-buffer-and-close)))
+        (should (file-readable-p
+                 (expand-file-name "foo" (car yas-snippet-dirs))))
+        (should (file-readable-p
+                 (expand-file-name "bar" (car yas-snippet-dirs)))))))))
+
 (ert-deftest visiting-compiled-snippets ()
   "Test snippet visiting for compiled snippets."
   (yas-with-some-interesting-snippet-dirs
@@ -1018,7 +1051,7 @@ add the snippets associated with the given mode."
 
 (defun yas-call-with-snippet-dirs (dirs fn)
   (let* ((default-directory (make-temp-file "yasnippet-fixture" t))
-         (yas-snippet-dirs (mapcar #'car dirs)))
+         (yas-snippet-dirs (mapcar (lambda (d) (expand-file-name (car d))) dirs)))
     (with-temp-message ""
       (unwind-protect
           (progn
