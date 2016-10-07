@@ -26,4 +26,4 @@ there is no separate Changelog file.
 For trivial changes, a message consisting of just the changelog entry
 (the `* foo.el ...` part) is fine.
 
-[bugnote]: https://github.com/capitaomorte/yasnippet#important-note-regarding-bug-reporting
+[bugnote]: https://github.com/joaotavora/yasnippet#important-note-regarding-bug-reporting
