@@ -27,7 +27,7 @@
 (require 'yasnippet)
 (require 'ert)
 (require 'ert-x)
-(require 'cl)
+(require 'cl-lib)
 
 
 ;;; Snippet mechanics
@@ -528,19 +528,19 @@ TODO: correct this bug!"
 ;;;
 (defun yas--call-with-temporary-redefinitions (function
                                                &rest function-names-and-overriding-functions)
-  (let* ((overrides (remove-if-not #'(lambda (fdef)
-                                       (fboundp (first fdef)))
-                                   function-names-and-overriding-functions))
-         (definition-names (mapcar #'first overrides))
-         (overriding-functions (mapcar #'second overrides))
+  (let* ((overrides (cl-remove-if-not (lambda (fdef)
+                                        (fboundp (car fdef)))
+                                      function-names-and-overriding-functions))
+         (definition-names (mapcar #'car overrides))
+         (overriding-functions (mapcar #'cl-second overrides))
          (saved-functions (mapcar #'symbol-function definition-names)))
     ;; saving all definitions before overriding anything ensures FDEFINITION
     ;; errors don't cause accidental permanent redefinitions.
     ;;
     (cl-labels ((set-fdefinitions (names functions)
-                                  (loop for name in names
-                                        for fn in functions
-                                        do (fset name fn))))
+                                  (cl-loop for name in names
+                                           for fn in functions
+                                           do (fset name fn))))
       (set-fdefinitions definition-names overriding-functions)
       (unwind-protect (funcall function)
 	(set-fdefinitions definition-names saved-functions)))))
@@ -555,8 +555,8 @@ TODO: correct this bug!"
   `(yas--call-with-temporary-redefinitions
     (lambda () ,@body)
     ,@(mapcar #'(lambda (thingy)
-                  `(list ',(first thingy)
-                         (lambda ,@(rest thingy))))
+                  `(list ',(car thingy)
+                         (lambda ,@(cdr thingy))))
               fdefinitions)))
 
 (defmacro yas-with-overriden-buffer-list (&rest body)
@@ -564,10 +564,10 @@ TODO: correct this bug!"
     `(let ((,saved-sym (symbol-function 'buffer-list)))
        (yas--with-temporary-redefinitions
            ((buffer-list ()
-                         (remove-if #'(lambda (buf)
-                                        (with-current-buffer buf
-                                          (eq major-mode 'lisp-interaction-mode)))
-                                    (funcall ,saved-sym))))
+                         (cl-remove-if (lambda (buf)
+                                         (with-current-buffer buf
+                                           (eq major-mode 'lisp-interaction-mode)))
+                                       (funcall ,saved-sym))))
          ,@body))))
 
 
@@ -640,13 +640,13 @@ TODO: correct this bug!"
    (yas-with-snippet-dirs
     '((".emacs.d/snippets"
        ("text-mode")))
-    (letf (((symbol-function 'y-or-n-p) (lambda (&rest _) t))
-           ((symbol-function 'read-file-name)
-            (lambda (_prompt &optional _dir _default _mustmatch initial _predicate)
-              (expand-file-name initial)))
-           ((symbol-function 'completing-read)
-            (lambda (_prompt collection &rest _)
-              (or (car collection) ""))))
+    (cl-letf (((symbol-function 'y-or-n-p) (lambda (&rest _) t))
+              ((symbol-function 'read-file-name)
+               (lambda (_prompt &optional _dir _default _mustmatch initial _predicate)
+                 (expand-file-name initial)))
+              ((symbol-function 'completing-read)
+               (lambda (_prompt collection &rest _)
+                 (or (car collection) ""))))
       (with-temp-buffer
         (text-mode)
         (yas-minor-mode +1)
@@ -840,12 +840,12 @@ TODO: correct this bug!"
      (let ((menu (cdr (gethash 'fancy-mode yas--menu-table))))
        (should (eql 4 (length menu)))
        (dolist (item '("a-guy" "a-beggar"))
-         (should (find item menu :key #'third :test #'string=)))
-       (should-not (find "an-outcast" menu :key #'third :test #'string=))
+         (should (cl-find item menu :key #'cl-third :test #'string=)))
+       (should-not (cl-find "an-outcast" menu :key #'cl-third :test #'string=))
        (dolist (submenu '("sirs" "ladies"))
          (should (keymapp
-                  (fourth
-                   (find submenu menu :key #'third :test #'string=)))))
+                  (cl-fourth
+                   (cl-find submenu menu :key #'cl-third :test #'string=)))))
        ))))
 
 (ert-deftest test-group-menus ()
@@ -858,19 +858,19 @@ TODO: correct this bug!"
      (let ((menu (cdr (gethash 'c-mode yas--menu-table))))
        (should (eql 3 (length menu)))
        (dolist (item '("printf" "foo-group-a" "foo-group-b"))
-         (should (find item menu :key #'third :test #'string=)))
+         (should (cl-find item menu :key #'cl-third :test #'string=)))
        (dolist (submenu '("foo-group-a" "foo-group-b"))
          (should (keymapp
-                  (fourth
-                   (find submenu menu :key #'third :test #'string=))))))
+                  (cl-fourth
+                   (cl-find submenu menu :key #'cl-third :test #'string=))))))
      ;; now group directives
      ;;
      (let ((menu (cdr (gethash 'lisp-interaction-mode yas--menu-table))))
        (should (eql 1 (length menu)))
-       (should (find "barbar" menu :key #'third :test #'string=))
+       (should (cl-find "barbar" menu :key #'cl-third :test #'string=))
        (should (keymapp
-                (fourth
-                 (find "barbar" menu :key #'third :test #'string=))))))))
+                (cl-fourth
+                 (cl-find "barbar" menu :key #'cl-third :test #'string=))))))))
 
 (ert-deftest test-group-menus-twisted ()
   "Same as similarly named test, but be mean.
@@ -882,20 +882,20 @@ TODO: be meaner"
      ;; behaviour
      (with-temp-buffer
        (insert "# group: foo-group-c\n# --\nstrecmp($1)")
-       (write-region nil nil (concat (first (yas-snippet-dirs))
+       (write-region nil nil (concat (car (yas-snippet-dirs))
                                      "/c-mode/foo-group-b/strcmp")))
      (yas-reload-all 'no-jit)
      (let ((menu (cdr (gethash 'c-mode yas--menu-table))))
        (should (eql 4 (length menu)))
        (dolist (item '("printf" "foo-group-a" "foo-group-b" "foo-group-c"))
-         (should (find item menu :key #'third :test #'string=)))
+         (should (cl-find item menu :key #'cl-third :test #'string=)))
        (dolist (submenu '("foo-group-a" "foo-group-b" "foo-group-c"))
          (should (keymapp
-                  (fourth
-                   (find submenu menu :key #'third :test #'string=))))))
+                  (cl-fourth
+                   (cl-find submenu menu :key #'cl-third :test #'string=))))))
      ;; delete the .yas-make-groups file and watch behaviour
      ;;
-     (delete-file (concat (first (yas-snippet-dirs))
+     (delete-file (concat (car (yas-snippet-dirs))
                           "/c-mode/.yas-make-groups"))
      (yas-reload-all 'no-jit)
      (let ((menu (cdr (gethash 'c-mode yas--menu-table))))
@@ -903,19 +903,19 @@ TODO: be meaner"
      ;; Change a group directive and reload
      ;;
      (let ((menu (cdr (gethash 'lisp-interaction-mode yas--menu-table))))
-       (should (find "barbar" menu :key #'third :test #'string=)))
+       (should (cl-find "barbar" menu :key #'cl-third :test #'string=)))
 
      (with-temp-buffer
        (insert "# group: foofoo\n# --\n(ert-deftest ${1:name} () $0)")
-       (write-region nil nil (concat (first (yas-snippet-dirs))
+       (write-region nil nil (concat (car (yas-snippet-dirs))
                                      "/lisp-interaction-mode/ert-deftest")))
      (yas-reload-all 'no-jit)
      (let ((menu (cdr (gethash 'lisp-interaction-mode yas--menu-table))))
        (should (eql 1 (length menu)))
-       (should (find "foofoo" menu :key #'third :test #'string=))
+       (should (cl-find "foofoo" menu :key #'cl-third :test #'string=))
        (should (keymapp
-                (fourth
-                 (find "foofoo" menu :key #'third :test #'string=))))))))
+                (cl-fourth
+                 (cl-find "foofoo" menu :key #'cl-third :test #'string=))))))))
 
 
 ;;; The infamous and problematic tab keybinding
@@ -1045,9 +1045,9 @@ add the snippets associated with the given mode."
          (saved-values (mapcar #'symbol-value vars)))
     (unwind-protect
         (funcall fn)
-      (loop for var in vars
-            for saved in saved-values
-            do (set var saved)))))
+      (cl-loop for var in vars
+               for saved in saved-values
+               do (set var saved)))))
 
 (defun yas-call-with-snippet-dirs (dirs fn)
   (let* ((default-directory (make-temp-file "yasnippet-fixture" t))
@@ -1098,6 +1098,5 @@ attention to case differences."
 (provide 'yasnippet-tests)
 ;; Local Variables:
 ;; indent-tabs-mode: nil
-;; byte-compile-warnings: (not cl-functions)
 ;; End:
 ;;; yasnippet-tests.el ends here
