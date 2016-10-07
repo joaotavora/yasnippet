@@ -209,7 +209,7 @@ back-quotes (=`=). The lisp forms are evaluated when the snippet is
 being expanded. The evaluation is done in the same buffer as the
 snippet being expanded.
 
-Here's an example for c-mode` to calculate the header file guard
+Here's an example for c-mode to calculate the header file guard
 dynamically:
 
 #+BEGIN_SRC snippet
@@ -234,6 +234,27 @@ therefore define a snippet like:
 to "wrap" the selected region inside your recently inserted snippet.
 Alternatively, you can also customize the variable
 [[sym:yas-wrap-around-region][=yas-wrap-around-region=]] to =t= which will do this automatically.
+
+*** Note: backquote expressions should not modify the buffer
+
+Please note that the lisp forms in backquotes should *not* modify the
+buffer, doing so will trigger a warning.  For example, instead of
+doing
+
+#+BEGIN_SRC snippet
+  Timestamp: `(insert (current-time-string))`
+#+END_SRC
+
+do this:
+#+BEGIN_SRC snippet
+  Timestamp: `(current-time-string)`
+#+END_SRC
+
+The warning may be suppressed with the following code in your init file:
+#+BEGIN_SRC emacs-lisp
+  (add-to-list 'warning-suppress-types '(yasnippet backquote-change))
+#+END_SRC
+
 
 ** Tab stop fields
 
