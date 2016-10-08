@@ -526,48 +526,16 @@ TODO: correct this bug!"
 
 ;;; Loading
 ;;;
-(defun yas--call-with-temporary-redefinitions (function
-                                               &rest function-names-and-overriding-functions)
-  (let* ((overrides (cl-remove-if-not (lambda (fdef)
-                                        (fboundp (car fdef)))
-                                      function-names-and-overriding-functions))
-         (definition-names (mapcar #'car overrides))
-         (overriding-functions (mapcar #'cl-second overrides))
-         (saved-functions (mapcar #'symbol-function definition-names)))
-    ;; saving all definitions before overriding anything ensures FDEFINITION
-    ;; errors don't cause accidental permanent redefinitions.
-    ;;
-    (cl-labels ((set-fdefinitions (names functions)
-                                  (cl-loop for name in names
-                                           for fn in functions
-                                           do (fset name fn))))
-      (set-fdefinitions definition-names overriding-functions)
-      (unwind-protect (funcall function)
-	(set-fdefinitions definition-names saved-functions)))))
-
-(defmacro yas--with-temporary-redefinitions (fdefinitions &rest body)
-  ;; "Temporarily (but globally) redefine each function in FDEFINITIONS.
-  ;; E.g.: (yas--with-temporary-redefinitions ((foo (x) ...)
-  ;;                                           (bar (x) ...))
-  ;;         ;; code that eventually calls foo, bar of (setf foo)
-  ;;         ...)"
-  ;; FIXME: This is hideous!  Better use defadvice (or at least letf).
-  `(yas--call-with-temporary-redefinitions
-    (lambda () ,@body)
-    ,@(mapcar #'(lambda (thingy)
-                  `(list ',(car thingy)
-                         (lambda ,@(cdr thingy))))
-              fdefinitions)))
 
 (defmacro yas-with-overriden-buffer-list (&rest body)
   (let ((saved-sym (make-symbol "yas--buffer-list")))
     `(let ((,saved-sym (symbol-function 'buffer-list)))
-       (yas--with-temporary-redefinitions
-           ((buffer-list ()
-                         (cl-remove-if (lambda (buf)
-                                         (with-current-buffer buf
-                                           (eq major-mode 'lisp-interaction-mode)))
-                                       (funcall ,saved-sym))))
+       (cl-letf (((symbol-function 'buffer-list)
+                  (lambda ()
+                    (cl-remove-if (lambda (buf)
+                                    (with-current-buffer buf
+                                      (eq major-mode 'lisp-interaction-mode)))
+                                  (funcall ,saved-sym)))))
          ,@body))))
 
 
@@ -610,9 +578,9 @@ TODO: correct this bug!"
   (yas-with-some-interesting-snippet-dirs
    (yas-reload-all)
    (yas-recompile-all)
-   (yas--with-temporary-redefinitions ((yas--load-directory-2
-                                        (&rest _dummies)
-                                        (ert-fail "yas--load-directory-2 shouldn't be called when snippets have been compiled")))
+   (cl-letf (((symbol-function 'yas--load-directory-2)
+              (lambda (&rest _dummies)
+                (ert-fail "yas--load-directory-2 shouldn't be called when snippets have been compiled"))))
      (yas-reload-all)
      (yas--basic-jit-loading-1))))
 
@@ -672,9 +640,9 @@ TODO: correct this bug!"
   (yas-with-some-interesting-snippet-dirs
    (yas-recompile-all)
    (yas-reload-all 'no-jit) ; must be loaded for `yas-lookup-snippet' to work.
-   (yas--with-temporary-redefinitions ((find-file-noselect
-                                        (filename &rest _)
-                                        (throw 'yas-snippet-file filename)))
+   (cl-letf (((symbol-function 'find-file-noselect)
+              (lambda (filename &rest _)
+                (throw 'yas-snippet-file filename))))
      (should (string-suffix-p
               "cc-mode/def"
               (catch 'yas-snippet-file
@@ -1087,13 +1055,6 @@ attention to case differences."
 (put 'yas-with-snippet-dirs                  'edebug-form-spec t)
 (put 'yas-with-overriden-buffer-list         'edebug-form-spec t)
 (put 'yas-with-some-interesting-snippet-dirs 'edebug-form-spec t)
-
-
-(put 'yas--with-temporary-redefinitions 'lisp-indent-function 1)
-(put 'yas--with-temporary-redefinitions 'edebug-form-spec '((&rest (defun*)) cl-declarations body))
-
-
-
 
 (provide 'yasnippet-tests)
 ;; Local Variables:
