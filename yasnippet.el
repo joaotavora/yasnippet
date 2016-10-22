@@ -6,9 +6,9 @@
 ;;          Noam Postavsky <npostavs@gmail.com>
 ;; Maintainer: Noam Postavsky <npostavs@gmail.com>
 ;; Version: 0.10.0
-;; X-URL: http://github.com/capitaomorte/yasnippet
+;; X-URL: http://github.com/joaotavora/yasnippet
 ;; Keywords: convenience, emulation
-;; URL: http://github.com/capitaomorte/yasnippet
+;; URL: http://github.com/joaotavora/yasnippet
 ;; Package-Requires: ((cl-lib "0.5"))
 ;; EmacsWiki: YaSnippetMode
 
@@ -127,7 +127,7 @@
 ;;   `custom-set-variables' is executed in your .emacs file.
 ;;
 ;;   For more information and detailed usage, refer to the project page:
-;;      http://github.com/capitaomorte/yasnippet
+;;      http://github.com/joaotavora/yasnippet
 
 ;;; Code:
 

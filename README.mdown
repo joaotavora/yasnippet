@@ -20,7 +20,7 @@ YASnippet. Watch [a demo on YouTube][youtube-demo].
 Clone this repository somewhere
 
     $ cd ~/.emacs.d/plugins
-    $ git clone --recursive https://github.com/capitaomorte/yasnippet
+    $ git clone --recursive https://github.com/joaotavora/yasnippet
 
 Add the following in your `.emacs` file:
 
@@ -117,14 +117,14 @@ a way to reproduce the problem exactly like it happened to you.
 To do this, we need to rule out interference from external factors
 like other Emacs extensions or your own customisations.
 
-Here's an example report that "sandboxes" an Emacs session just for 
+Here's an example report that "sandboxes" an Emacs session just for
 reproducing a bug.
 
 ```
 $ emacs --version
 Emacs 24.3
 $ cd /tmp/
-$ git clone https://github.com/capitaomorte/yasnippet.git yasnippet-bug
+$ git clone https://github.com/joaotavora/yasnippet.git yasnippet-bug
 $ cd yasnippet-bug
 $ git log -1 --oneline
 6053db0 Closes #527: Unbreak case where yas-fallback-behaviour is a list
@@ -138,11 +138,11 @@ OR
 When loading yasnippet I see "Error: failed to frobnicate"!
 ```
 
-Using `emacs -Q` or temporarily moving your `.emacs` init file to the side 
+Using `emacs -Q` or temporarily moving your `.emacs` init file to the side
 is another way to achieve good reproducibility.
 
 Here's a
-[another example](https://github.com/capitaomorte/yasnippet/issues/318)
+[another example](https://github.com/joaotavora/yasnippet/issues/318)
 of a bug report. It has everything needed for a successful analysis
 and speedy resolution.
 
@@ -162,10 +162,10 @@ request).
 Finally, thank you very much for using YASnippet!
 
 [docs]: http://joaotavora.github.io/yasnippet/
-[issues]: https://github.com/capitaomorte/yasnippet/issues
+[issues]: https://github.com/joaotavora/yasnippet/issues
 [googlecode tracker]: http://code.google.com/p/yasnippet/issues/list
 [forum]: http://groups.google.com/group/smart-snippet
 [melpa]: http://melpa.milkbox.net/
-[yasmate]: http://github.com/capitaomorte/yasmate
+[yasmate]: http://github.com/joaotavora/yasmate
 [textmate-to-yas.el]: https://github.com/mattfidler/textmate-to-yas.el
 [yasnippet-snippets]: http://github.com/AndreaCrotti/yasnippet-snippets

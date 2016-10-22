@@ -1,7 +1,7 @@
 <nav>
   <ul class="center">
     <li> <a href="index.html">Overview</a>
-    <li> <a href="https://github.com/capitaomorte/yasnippet/blob/master/README.mdown">
+    <li> <a href="https://github.com/joaotavora/yasnippet/blob/master/README.mdown">
         Intro and Tutorial</a>
     <li class="center">Snippet
       <ul>

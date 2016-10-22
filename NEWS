@@ -114,7 +114,7 @@ good enough.  See issue #497.
 
 *** Documentation rewritten in org-mode and updated.
 A tremendous effort by Noam Postavsky.  Hopefully easier to maintain
-and navigate.  Available at <http://capitaomorte.github.io/yasnippet>.
+and navigate.  Available at <http://joaotavora.github.io/yasnippet>.
 
 *** Snippets are now maintained in their own repo.
 Snippets live in Andrea Crotti's
@@ -122,7 +122,7 @@ Snippets live in Andrea Crotti's
 for more details.
 
 *** Textmate snippet importer moved to separate `yasmate' repo.
-URL is <https://github.com/capitaomorte/yasmate>.  See README.md for
+URL is <https://github.com/joaotavora/yasmate>.  See README.md for
 more details.
 
 *** `yas-snippet-dirs' now allows symbols as aliases to directories.
