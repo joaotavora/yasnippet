@@ -561,7 +561,7 @@ TODO: correct this bug!"
 (ert-deftest snippet-lookup ()
   "Test `yas-lookup-snippet'."
   (yas-with-some-interesting-snippet-dirs
-   (yas-reload-all 'no-jit)
+   (yas-reload-all 'eager-loading)
    (should (equal (yas-lookup-snippet "printf" 'c-mode) "printf($1);"))
    (should (equal (yas-lookup-snippet "def" 'c-mode) "# define"))
    (should-not (yas-lookup-snippet "no such snippet" nil 'noerror))
@@ -639,7 +639,7 @@ TODO: correct this bug!"
   "Test snippet visiting for compiled snippets."
   (yas-with-some-interesting-snippet-dirs
    (yas-recompile-all)
-   (yas-reload-all 'no-jit) ; must be loaded for `yas-lookup-snippet' to work.
+   (yas-reload-all 'eager-loading) ; must be loaded for `yas-lookup-snippet' to work.
    (cl-letf (((symbol-function 'find-file-noselect)
               (lambda (filename &rest _)
                 (throw 'yas-snippet-file filename))))
@@ -804,7 +804,7 @@ TODO: correct this bug!"
 (ert-deftest test-yas-define-menu ()
   (let ((yas-use-menu t))
     (yas-with-even-more-interesting-snippet-dirs
-     (yas-reload-all 'no-jit)
+     (yas-reload-all 'eager-loading)
      (let ((menu (cdr (gethash 'fancy-mode yas--menu-table))))
        (should (eql 4 (length menu)))
        (dolist (item '("a-guy" "a-beggar"))
@@ -820,7 +820,7 @@ TODO: correct this bug!"
   "Test group-based menus using .yas-make-groups and the group directive"
   (let ((yas-use-menu t))
     (yas-with-even-more-interesting-snippet-dirs
-     (yas-reload-all 'no-jit)
+     (yas-reload-all 'eager-loading)
      ;; first the subdir-based groups
      ;;
      (let ((menu (cdr (gethash 'c-mode yas--menu-table))))
@@ -852,7 +852,7 @@ TODO: be meaner"
        (insert "# group: foo-group-c\n# --\nstrecmp($1)")
        (write-region nil nil (concat (car (yas-snippet-dirs))
                                      "/c-mode/foo-group-b/strcmp")))
-     (yas-reload-all 'no-jit)
+     (yas-reload-all 'eager-loading)
      (let ((menu (cdr (gethash 'c-mode yas--menu-table))))
        (should (eql 4 (length menu)))
        (dolist (item '("printf" "foo-group-a" "foo-group-b" "foo-group-c"))
@@ -865,7 +865,7 @@ TODO: be meaner"
      ;;
      (delete-file (concat (car (yas-snippet-dirs))
                           "/c-mode/.yas-make-groups"))
-     (yas-reload-all 'no-jit)
+     (yas-reload-all 'eager-loading)
      (let ((menu (cdr (gethash 'c-mode yas--menu-table))))
        (should (eql 5 (length menu))))
      ;; Change a group directive and reload
@@ -877,7 +877,7 @@ TODO: be meaner"
        (insert "# group: foofoo\n# --\n(ert-deftest ${1:name} () $0)")
        (write-region nil nil (concat (car (yas-snippet-dirs))
                                      "/lisp-interaction-mode/ert-deftest")))
-     (yas-reload-all 'no-jit)
+     (yas-reload-all 'eager-loading)
      (let ((menu (cdr (gethash 'lisp-interaction-mode yas--menu-table))))
        (should (eql 1 (length menu)))
        (should (cl-find "foofoo" menu :key #'cl-third :test #'string=))
