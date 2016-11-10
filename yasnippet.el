@@ -1797,7 +1797,7 @@ With prefix argument USE-JIT do jit-loading of snippets."
       (yas--load-directory-2 subdir
                             mode-sym))))
 
-(defun yas--load-snippet-dirs (&optional nojit)
+(defun yas--load-snippet-dirs (&optional eager-loading)
   "Reload the directories listed in `yas-snippet-dirs' or
 prompt the user to select one."
   (let (errors)
@@ -1807,18 +1807,18 @@ prompt the user to select one."
         (make-directory yas--default-user-snippets-dir t))
       (dolist (directory (reverse (yas-snippet-dirs)))
         (cond ((file-directory-p directory)
-               (yas-load-directory directory (not nojit))
-               (if nojit
+               (yas-load-directory directory (not eager-loading))
+               (if eager-loading
                    (yas--message 4 "Loaded %s" directory)
                  (yas--message 4 "Prepared just-in-time loading for %s" directory)))
               (t
                (push (yas--message 1 "Check your `yas-snippet-dirs': %s is not a directory" directory) errors)))))
     errors))
 
-(defun yas-reload-all (&optional no-jit interactive)
+(defun yas-reload-all (&optional eager-loading interactive)
   "Reload all snippets and rebuild the YASnippet menu.
 
-When NO-JIT is non-nil force immediate reload of all known
+When EAGER-LOADING is non-nil force immediate reload of all known
 snippets under `yas-snippet-dirs', otherwise use just-in-time
 loading.
 
@@ -1870,14 +1870,14 @@ prefix argument."
       ;; Reload the directories listed in `yas-snippet-dirs' or prompt
       ;; the user to select one.
       ;;
-      (setq errors (yas--load-snippet-dirs no-jit))
+      (setq errors (yas--load-snippet-dirs eager-loading))
       ;; Reload the direct keybindings
       ;;
       (yas-direct-keymaps-reload)
 
       (run-hooks 'yas-after-reload-hook)
       (yas--message (if errors 2 3) "%s loading of snippets %s"
-                    (if no-jit "Immediate" "Just-in-time")
+                    (if eager-loading "Immediate" "Just-in-time")
                     (if errors "failed. Check *Messages*" "succeeded.")))))
 
 (defvar yas-after-reload-hook nil
