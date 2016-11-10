@@ -1876,9 +1876,15 @@ prefix argument."
       (yas-direct-keymaps-reload)
 
       (run-hooks 'yas-after-reload-hook)
-      (yas--message (if errors 2 3) "%s loading of snippets %s"
-                    (if no-jit "Immediate" "Just-in-time")
-                    (if errors "failed. Check *Messages*" "succeeded.")))))
+      (if no-jit
+          (yas--message (if errors 2 3) "Snippets loaded %s."
+                        (if errors
+                            "with some errors. Check *Messages*"
+                          "successfully"))
+        (yas--message (if errors 2 3)
+                      "Prepared just-in-time loading of snippets %s."
+                      (if errors "with some errors. Check *Messages*"
+                        "sucessfully" ))))))
 
 (defvar yas-after-reload-hook nil
   "Hooks run after `yas-reload-all'.")
