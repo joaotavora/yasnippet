@@ -40,66 +40,58 @@
           tag content tag))
 
 (defun yas--document-symbol (symbol level)
-  (flet ((concat-lines (&rest lines)
-                       (mapconcat #'identity lines "\n")))
-    (let* ((stars (make-string level ?*))
-           (args (and (fboundp symbol)
-                      (mapcar #'symbol-name (help-function-arglist symbol t))))
-           (heading (cond ((fboundp symbol)
-                           (format
-                            "%s =%s= (%s)" stars symbol
-                            (mapconcat (lambda (a)
-                                         (format (if (string-prefix-p "&" a)
-                                                     "/%s/" "=%s=") a))
-                                       args " ")))
-                          (t
-                           (format "%s =%s=\n" stars symbol))))
-           (after-heading
-            (concat-lines ":PROPERTIES:"
-                          (format ":CUSTOM_ID: %s" symbol)
-                          ":END:"))
-           (body (or (cond ((fboundp symbol)
-                            (let ((doc-synth (car-safe (get symbol 'function-documentation))))
-                              (if (functionp doc-synth)
-                                  (funcall doc-synth nil)
-                                (documentation symbol t))))
-                           ((boundp symbol)
-                            (documentation-property symbol 'variable-documentation t))
-                           (t
-                            (format "*WARNING*: no symbol named =%s=" symbol)))
-                     (format "*WARNING*: no doc for symbol =%s=" symbol)))
-           (case-fold-search nil))
-      ;; do some transformations on the body:
-      ;; ARGxxx becomes @<code>arg@</code>xxx
-      ;; FOO becomes /foo/
-      ;; `bar' becomes [[#bar][=bar=]]
-      (setq body (replace-regexp-in-string
-                  "\\<\\([A-Z][-A-Z0-9]+\\)\\(\\sw+\\)?\\>"
-                  #'(lambda (match)
-                      (let* ((match1 (match-string 1 match))
-                             (prefix (downcase match1))
-                             (suffix (match-string 2 match))
-                             (fmt (cond
-                                   ((member prefix args)
-                                    (yas--org-raw-html "code" "%s"))
-                                   ((null suffix) "/%s/"))))
-                        (if fmt (format fmt prefix)
-                          match1)))
-                  body t t 1)
-            body (replace-regexp-in-string
-                  "`\\([a-z-]+\\)'"
-                  #'(lambda (match)
-                      (let* ((name (downcase (match-string 1 match)))
-                             (sym (intern name)))
-                        (if (memq sym yas--exported-syms)
-                            (format "[[#%s][=%s=]]" name name)
-                          (format "=%s=" name))))
-                  body t))
-      ;; output the paragraph
-      ;;
-      (concat-lines heading
-                    after-heading
-                    body))))
+  (let* ((stars (make-string level ?*))
+         (args (and (fboundp symbol)
+                    (mapcar #'symbol-name (help-function-arglist symbol t))))
+         (heading (cond ((fboundp symbol)
+                         (format
+                          "%s =%s= (%s)" stars symbol
+                          (mapconcat (lambda (a)
+                                       (format (if (string-prefix-p "&" a)
+                                                   "/%s/" "=%s=") a))
+                                     args " ")))
+                        (t
+                         (format "%s =%s=\n" stars symbol))))
+         (after-heading (format ":PROPERTIES:\n:CUSTOM_ID: %s\n:END:" symbol))
+         (body (or (cond ((fboundp symbol)
+                          (let ((doc-synth (car-safe (get symbol 'function-documentation))))
+                            (if (functionp doc-synth)
+                                (funcall doc-synth nil)
+                              (documentation symbol t))))
+                         ((boundp symbol)
+                          (documentation-property symbol 'variable-documentation t))
+                         (t
+                          (format "*WARNING*: no symbol named =%s=" symbol)))
+                   (format "*WARNING*: no doc for symbol =%s=" symbol)))
+         (case-fold-search nil))
+    ;; do some transformations on the body:
+    ;; ARGxxx becomes @<code>arg@</code>xxx
+    ;; FOO becomes /foo/
+    ;; `bar' becomes [[#bar][=bar=]]
+    (setq body (replace-regexp-in-string
+                "\\<\\([A-Z][-A-Z0-9]+\\)\\(\\sw+\\)?\\>"
+                #'(lambda (match)
+                    (let* ((match1 (match-string 1 match))
+                           (prefix (downcase match1))
+                           (suffix (match-string 2 match))
+                           (fmt (cond
+                                 ((member prefix args)
+                                  (yas--org-raw-html "code" "%s"))
+                                 ((null suffix) "/%s/"))))
+                      (if fmt (format fmt prefix)
+                        match1)))
+                body t t 1)
+          body (replace-regexp-in-string
+                "`\\([a-z-]+\\)'"
+                #'(lambda (match)
+                    (let* ((name (downcase (match-string 1 match)))
+                           (sym (intern name)))
+                      (if (memq sym yas--exported-syms)
+                          (format "[[#%s][=%s=]]" name name)
+                        (format "=%s=" name))))
+                body t))
+    ;; output the paragraph
+    (concat heading "\n" after-heading "\n" body)))
 
 (defun yas--document-symbols (level &rest names-and-predicates)
   (let ((sym-lists (make-vector (length names-and-predicates) nil))
