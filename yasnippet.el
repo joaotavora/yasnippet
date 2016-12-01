@@ -3061,6 +3061,9 @@ equivalent to a range covering the whole buffer."
                   (overlays-in beg end))))
    #'>= :key #'yas--snippet-id))
 
+(define-obsolete-function-alias 'yas--snippets-at-point
+  'yas-active-snippets "0.12")
+
 (defun yas-next-field-or-maybe-expand ()
   "Try to expand a snippet at a key before point.
 
