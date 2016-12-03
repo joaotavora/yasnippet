@@ -243,6 +243,68 @@ $1   ------------------------")
 XXXXX   ---------------- XXXXX ----
 XXXXX   ------------------------"))))
 
+(ert-deftest indent-org-property ()
+  "Handling of `org-mode' property indentation, see `org-property-format'."
+  ;; This is an interesting case because `org-indent-line' calls
+  ;; `replace-match' for properties.
+  (with-temp-buffer
+    (org-mode)
+    (yas-minor-mode +1)
+    (yas-expand-snippet "* Test ${1:test}\n:PROPERTIES:\n:ID: $1-after\n:END:")
+    (yas-mock-insert "foo bar")
+    (ert-simulate-command '(yas-next-field))
+    (goto-char (point-min))
+    (let ((expected (with-temp-buffer
+                      (insert (format (concat "* Test foo bar\n"
+                                              "  " org-property-format "\n"
+                                              "  " org-property-format "\n"
+                                              "  " org-property-format)
+                                      ":PROPERTIES:" ""
+                                      ":ID:" "foo bar-after"
+                                      ":END:" ""))
+                      (delete-trailing-whitespace)
+                      (buffer-string))))
+      ;; Some org-mode versions leave trailing whitespace, some don't.
+      (delete-trailing-whitespace)
+      (should (equal expected (buffer-string))))))
+
+(ert-deftest indent-cc-mode ()
+  "Handling of cc-mode's indentation."
+  ;; This is an interesting case because cc-mode deletes all the
+  ;; indentation before recreating it.
+  (with-temp-buffer
+    (c++-mode)
+    (yas-minor-mode +1)
+    (yas-expand-snippet "\
+int foo()
+{
+    if ($1) {
+        delete $1;
+        $1 = 0;
+    }
+}")
+    (yas-mock-insert "var")
+    (should (string= "\
+int foo()
+{
+  if (var) {
+    delete var;
+    var = 0;
+  }
+}" (buffer-string)))))
+
+(ert-deftest indent-snippet-mode ()
+  "Handling of snippet-mode indentation."
+  ;; This is an interesting case because newlines match [[:space:]] in
+  ;; snippet-mode.
+  (with-temp-buffer
+    (snippet-mode)
+    (yas-minor-mode +1)
+    (yas-expand-snippet "# -*- mode: snippet -*-\n# name: $1\n# key: $1\n# --\n")
+    (yas-mock-insert "foo")
+    (should (string= "# -*- mode: snippet -*-\n# name: foo\n# key: foo\n# --\n"
+                     (buffer-string)))))
+
 (ert-deftest indent-mirrors-on-update ()
   "Check that mirrors are always kept indented."
   (with-temp-buffer

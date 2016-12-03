@@ -3917,40 +3917,78 @@ Meant to be called in a narrowed buffer, does various passes"
     (goto-char parse-start)
     (yas--indent snippet)))
 
+;; HACK: Some implementations of `indent-line-function' (called via
+;; `indent-according-to-mode') delete text before they insert (like
+;; cc-mode), some make complicated regexp replacements (looking at
+;; you, org-mode).  To find place where the marker "should" go after
+;; indentation, we create a regexp based on what the line looks like
+;; before, putting a capture group where the marker is.  The regexp
+;; matches any whitespace with [[:space:]]* to allow for the
+;; indentation changing whitespace.  Additionally, we try to preserve
+;; the amount of whitespace *following* the marker, because
+;; indentation generally affects whitespace at the beginning, not the
+;; end.
+;;
+;; This is all best-effort heuristic stuff, but it should cover 99% of
+;; use-cases.
+
+(defun yas--snapshot-marker-location (marker)
+  "Returns info for restoring MARKER's location after indent.
+The returned value is a list of the form (REGEXP MARKER WS-COUNT)."
+  (when (and (<= (line-beginning-position) marker)
+             (<= marker (line-end-position)))
+    (let ((before
+           (split-string (buffer-substring-no-properties
+                          (line-beginning-position) marker) "[[:space:]]+" t))
+          (after
+           (split-string (buffer-substring-no-properties
+                          marker (line-end-position)) "[[:space:]]+" t)))
+      (list (concat "[[:space:]]*"
+                    (mapconcat (lambda (s)
+                                 (if (eq s marker) "\\(\\)"
+                                   (regexp-quote s)))
+                               (nconc before (list marker) after)
+                               "[[:space:]]*"))
+            marker
+            (progn (goto-char marker)
+                   (skip-syntax-forward " " (line-end-position))
+                   (- (point) marker))))))
+
+(defun yas--restore-marker-location (re-marker)
+  "Restores marker based on info from `yas--snapshot-marker-location'."
+  (let ((regexp (nth 0 re-marker))
+        (marker (nth 1 re-marker))
+        (ws-count (nth 2 re-marker)))
+    (beginning-of-line)
+    (save-restriction
+      ;; Narrowing is the only way to limit `looking-at'.
+      (narrow-to-region (point) (line-end-position))
+      (if (not (looking-at regexp))
+          (lwarn '(yasnippet re-marker) :warning
+                 "Couldn't find: %S" regexp)
+        (goto-char (match-beginning 1))
+        (skip-syntax-forward " ")
+        (skip-syntax-backward " " (- (point) ws-count))
+        (set-marker marker (point))))))
+
 (defun yas--indent-region (from to snippet)
   "Indent the lines between FROM and TO with `indent-according-to-mode'.
 The SNIPPET's markers are preserved."
-  ;;; Apropos indenting problems....
-  ;;
-  ;; `indent-according-to-mode' uses whatever `indent-line-function'
-  ;; is available. Some implementations of these functions delete text
-  ;; before they insert. If there happens to be a marker just after
-  ;; the text being deleted, the insertion actually happens after the
-  ;; marker, which misplaces it.
-  ;;
-  ;; This would also happen if we had used overlays with the
-  ;; `front-advance' property set to nil.
-  ;;
-  ;; This is why I have these `trouble-markers', they are the ones at
-  ;; the first non-whitespace char at the line.  After indentation
-  ;; takes place we should be at the correct to restore them.  All
-  ;; other non-trouble-markers should have been *pushed* and don't
-  ;; need special attention.
   (let* ((snippet-markers (yas--collect-snippet-markers snippet))
          (to (set-marker (make-marker) to)))
     (save-excursion
       (goto-char from)
       (save-restriction
         (widen)
-        ;; Indent each non-empty line.
         (cl-loop if (/= (line-beginning-position) (line-end-position)) do
-                 (back-to-indentation)
-                 (let ((trouble-markers ; The markers at (point).
-                        (cl-remove (point) snippet-markers :test #'/=)))
+                 ;; Indent each non-empty line.
+                 (let ((remarkers
+                        (delq nil (mapcar #'yas--snapshot-marker-location
+                                          snippet-markers))))
                    (unwind-protect
-                       (indent-according-to-mode)
-                     (dolist (marker trouble-markers)
-                       (set-marker marker (point)))))
+                       (progn (back-to-indentation)
+                              (indent-according-to-mode))
+                     (mapc #'yas--restore-marker-location remarkers)))
                  while (and (zerop (forward-line 1))
                             (< (point) to)))))))
 
