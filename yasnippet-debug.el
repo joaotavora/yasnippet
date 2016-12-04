@@ -25,7 +25,7 @@
 ;;; Code:
 
 (require 'yasnippet)
-(require 'cl)
+(require 'cl-lib)
 
 (defun yas-debug-snippet-vars ()
   "Debug snippets, fields, mirrors and the `buffer-undo-list'."
@@ -36,12 +36,12 @@
     (princ (format "\nPost command hook: %s\n" post-command-hook))
     (princ (format "\nPre  command hook: %s\n" pre-command-hook))
 
-    (princ (format "%s live snippets in total\n" (length (yas--snippets-at-point (quote all-snippets)))))
+    (princ (format "%s live snippets in total\n" (length (yas-active-snippets 'all-snippets))))
     (princ (format "%s overlays in buffer:\n\n" (length (overlays-in (point-min) (point-max)))))
-    (princ (format "%s live snippets at point:\n\n" (length (yas--snippets-at-point))))
+    (princ (format "%s live snippets at point:\n\n" (length (yas-active-snippets))))
 
 
-    (dolist (snippet (yas--snippets-at-point))
+    (dolist (snippet (yas-active-snippets))
       (princ (format "\tsid: %d control overlay from %d to %d\n"
                      (yas--snippet-id snippet)
                      (overlay-start (yas--snippet-control-overlay snippet))
@@ -76,11 +76,13 @@
                      "ENABLED")
                    (point-max)))
     (unless (eq buffer-undo-list t)
-      (princ (format "Undpolist has %s elements. First 10 elements follow:\n" (length buffer-undo-list)))
-      (let ((first-ten (subseq buffer-undo-list 0 (min 19
-                                                       (length buffer-undo-list)))))
+      (princ (format "Undpolist has %s elements. First 10 elements follow:\n"
+                     (length buffer-undo-list)))
+      (let ((first-ten (cl-subseq buffer-undo-list 0
+                                  (min 19 (length buffer-undo-list)))))
         (dolist (undo-elem first-ten)
-          (princ (format "%2s:  %s\n" (position undo-elem first-ten) (truncate-string-to-width (format "%s" undo-elem) 70))))))))
+          (princ (format "%2s:  %s\n" (cl-position undo-elem first-ten)
+                         (truncate-string-to-width (format "%s" undo-elem) 70))))))))
 
 (defun yas--debug-format-fom-concise (fom)
   (when fom
@@ -108,12 +110,11 @@
 
 (defun yas-debug-test (&optional quiet)
   (interactive "P")
-  (yas-load-directory (or (and (listp yas-snippet-dirs)
-                               (first yas-snippet-dirs))
+  (yas-load-directory (or (car-safe yas-snippet-dirs)
                           yas-snippet-dirs
                           "~/Source/yasnippet/snippets/"))
   (set-buffer (switch-to-buffer "*YAS TEST*"))
-  (mapc #'yas--commit-snippet (yas--snippets-at-point 'all-snippets))
+  (mapc #'yas--commit-snippet (yas-active-snippets 'all-snippets))
   (erase-buffer)
   (setq buffer-undo-list nil)
   (setq undo-in-progress nil)
@@ -128,6 +129,5 @@
 (provide 'yasnippet-debug)
 ;; Local Variables:
 ;; indent-tabs-mode: nil
-;; byte-compile-warnings: (not cl-functions)
 ;; End:
 ;;; yasnippet-debug.el ends here
