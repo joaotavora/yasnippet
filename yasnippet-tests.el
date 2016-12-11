@@ -843,6 +843,7 @@ TODO: correct this bug!"
 ;;; Menu
 ;;;
 (defmacro yas-with-even-more-interesting-snippet-dirs (&rest body)
+  (declare (debug t))
   `(yas-saving-variables
     (yas-with-snippet-dirs
       `((".emacs.d/snippets"
@@ -878,16 +879,16 @@ TODO: correct this bug!"
   (let ((yas-use-menu t))
     (yas-with-even-more-interesting-snippet-dirs
      (yas-reload-all 'no-jit)
-     (let ((menu (cdr (gethash 'fancy-mode yas--menu-table))))
-       (should (eql 4 (length menu)))
+     (let ((menu-items (yas--collect-menu-items
+                        (gethash 'fancy-mode yas--menu-table))))
+       (should (eql 4 (length menu-items)))
        (dolist (item '("a-guy" "a-beggar"))
-         (should (cl-find item menu :key #'cl-third :test #'string=)))
-       (should-not (cl-find "an-outcast" menu :key #'cl-third :test #'string=))
+         (should (cl-find item menu-items :key #'cl-second :test #'string=)))
+       (should-not (cl-find "an-outcast" menu-items :key #'cl-second :test #'string=))
        (dolist (submenu '("sirs" "ladies"))
          (should (keymapp
-                  (cl-fourth
-                   (cl-find submenu menu :key #'cl-third :test #'string=)))))
-       ))))
+                  (cl-third
+                   (cl-find submenu menu-items :key #'cl-second :test #'string=)))))))))
 
 (ert-deftest test-group-menus ()
   "Test group-based menus using .yas-make-groups and the group directive"
@@ -1036,6 +1037,14 @@ add the snippets associated with the given mode."
                         (cdr key-and-expansion)
                         (yas--buffer-contents)))))
   (yas-exit-all-snippets))
+
+(defun yas--collect-menu-items (menu-keymap)
+  (let ((yas--menu-items ()))
+    (map-keymap (lambda (_binding definition)
+                  (when (eq (car-safe definition) 'menu-item)
+                    (push definition yas--menu-items)))
+                menu-keymap)
+    yas--menu-items))
 
 (defun yas-should-not-expand (keys)
   (dolist (key keys)

@@ -2006,7 +2006,7 @@ static in the menu."
   ;; higher passes.
   ;;
   (mapc #'(lambda (item)
-            (when (and (listp (cdr item))
+            (when (and (consp (cdr-safe item))
                        (keymapp (nth 2 (cdr item))))
               (yas--delete-from-keymap (nth 2 (cdr item)) uuid)))
         (cdr keymap))
@@ -2016,9 +2016,10 @@ static in the menu."
   ;; Destructively modify keymap
   ;;
   (setcdr keymap (cl-delete-if (lambda (item)
-                                 (or (null (cdr item))
-                                     (and (keymapp (nth 2 (cdr item)))
-                                          (null (cdr (nth 2 (cdr item)))))))
+                                 (cond ((not (listp item)) nil)
+                                       ((null (cdr item)))
+                                       ((and (keymapp (nth 2 (cdr item)))
+                                             (null (cdr (nth 2 (cdr item))))))))
                                (cdr keymap))))
 
 (defun yas-define-menu (mode menu &optional omit-items)
@@ -2056,35 +2057,34 @@ omitted from MODE's menu, even if they're manually loaded."
   "Helper for `yas-define-menu'."
   (cl-loop
    for (type name submenu) in (reverse menu)
-   if (or (eq type 'yas-item)
-          (and yas-alias-to-yas/prefix-p
-               (eq type 'yas/item)))
-   do (let ((template (or (gethash name uuidhash)
-                          (puthash name
-                                   (yas--make-template
-                                    :table table
-                                    :perm-group group-list
-                                    :uuid name)
-                                   uuidhash))))
-        (define-key menu-keymap (vector (cl-gensym))
-          (car (yas--template-menu-binding-pair-get-create template :stay))))
-   else if (or (eq type 'yas-submenu)
-               (and yas-alias-to-yas/prefix-p
-                    (eq type 'yas/submenu)))
-   do (let ((subkeymap (make-sparse-keymap)))
-        (define-key menu-keymap (vector (cl-gensym))
-          `(menu-item ,name ,subkeymap))
-        (yas--define-menu-1 table
-                            subkeymap
-                            submenu
-                            uuidhash
-                            (append group-list (list name))))
-   else if (or (eq type 'yas-separator)
-               (and yas-alias-to-yas/prefix-p
-                    (eq type 'yas/separator)))
-   do (define-key menu-keymap (vector (cl-gensym))
-        '(menu-item "----"))
-   else do (yas--message 1 "Don't know anything about menu entry %s" type)))
+   collect (cond
+            ((or (eq type 'yas-item)
+                 (and yas-alias-to-yas/prefix-p
+                      (eq type 'yas/item)))
+             (let ((template (or (gethash name uuidhash)
+                                 (puthash name
+                                          (yas--make-template
+                                           :table table
+                                           :perm-group group-list
+                                           :uuid name)
+                                          uuidhash))))
+               (car (yas--template-menu-binding-pair-get-create
+                     template :stay))))
+            ((or (eq type 'yas-submenu)
+                 (and yas-alias-to-yas/prefix-p
+                      (eq type 'yas/submenu)))
+             (let ((subkeymap (make-sparse-keymap)))
+               (yas--define-menu-1 table subkeymap submenu uuidhash
+                                   (append group-list (list name)))
+               `(menu-item ,name ,subkeymap)))
+            ((or (eq type 'yas-separator)
+                 (and yas-alias-to-yas/prefix-p
+                      (eq type 'yas/separator)))
+             '(menu-item "----"))
+            (t (yas--message 1 "Don't know anything about menu entry %s" type)
+               nil))
+   into menu-entries
+   finally do (push (apply #'vector menu-entries) (cdr menu-keymap))))
 
 (defun yas--define (mode key template &optional name condition group)
   "Define a snippet.  Expanding KEY into TEMPLATE.
