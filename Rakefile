@@ -76,15 +76,11 @@ namespace :doc do
       Dir.glob("doc/stylesheets/*.css").each do |file|
         FileUtils.cp file, 'doc/gh-pages/stylesheets'
       end
-      curRev = `git rev-parse --verify HEAD`.chomp()
+      curRev = `git describe`.chomp()
       expRev = IO.read('doc/html-revision').chomp()
       if curRev != expRev
         raise ("The HTML rev: #{expRev},\n" +
                "current  rev: #{curRev}!\n")
-      end
-      if !system "git diff-index --quiet HEAD"
-        system "git status --untracked-files=no"
-        raise "You have uncommitted changes!"
       end
       Dir.chdir 'doc/gh-pages' do
         sh "git commit -a -m 'Automatic documentation update.\n\n" +

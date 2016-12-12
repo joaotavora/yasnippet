@@ -125,12 +125,12 @@
        ;; build, don't depend on git.
        (rev (unless src-epoch
               (ignore-errors
-                (car (process-lines "git" "rev-parse" "--verify" "HEAD")))))
+                (car (process-lines "git" "describe" "--dirty")))))
        (date (format-time-string
               "(%Y-%m-%d %H:%M:%S)"
               (seconds-to-time
                (string-to-number
-                (or (if rev (car (process-lines "git" "show" "--format=%ct" rev))
+                (or (if rev (car (process-lines "git" "show" "--format=%ct"))
                       src-epoch)
                     "0")))
               t))
