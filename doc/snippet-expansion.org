@@ -32,16 +32,29 @@
 ** Trigger key
 
 [[sym:yas-expand][=yas-expand=]] tries to expand a /snippet abbrev/ (also known as
-/snippet key/) before point.
+/snippet key/) before point.  YASnippet also provides a /conditional
+binding/ for this command: the variable [[sym:yas-expand][=yas-maybe-expand=]] contains a
+special value which, when bound in a keymap, tells Emacs to call
+[[sym:yas-expand][=yas-expand=]] if and only if there is a snippet abbrev before point.  If there is not 
 
-When [[sym:yas-minor-mode][=yas-minor-mode=]] is enabled, it binds [[sym:yas-expand][=yas-expand=]] to =TAB= and
-=<tab>= by default, however, you can freely set it to some other key:
+When [[sym:yas-minor-mode][=yas-minor-mode=]] is enabled, it binds [[sym:yas-maybe-expand][=yas-maybe-expand=]] to =TAB=
+and =<tab>= by default, however, you can freely remove those bindings:
 
 #+begin_src emacs-lisp :exports code
    (define-key yas-minor-mode-map (kbd "<tab>") nil)
    (define-key yas-minor-mode-map (kbd "TAB") nil)
-   (define-key yas-minor-mode-map (kbd "<the new key>") 'yas-expand)
 #+end_src
+
+And set your own:
+
+#+begin_src emacs-lisp :exports code
+  ;; Bind `SPC' to `yas-expand' when snippet expansion available (it
+  ;; will still call `self-insert-command' otherwise).
+  (define-key yas-minor-mode-map (kbd "SPC") yas-maybe-expand)
+  ;; Bind `C-c y' to `yas-expand' ONLY.
+  (define-key yas-minor-mode-map (kbd "C-c y") #'yas-expand)
+#+end_src
+
 
 To enable the YASnippet minor mode in all buffers globally use the
 command [[sym:yas-global-mode][=yas-global-mode=]]. This will enable a modeline indicator,
@@ -50,24 +63,14 @@ command [[sym:yas-global-mode][=yas-global-mode=]]. This will enable a modeline 
 [[./images/minor-mode-indicator.png]]
 
 When you use [[sym:yas-global-mode][=yas-global-mode=]] you can also selectively disable
-YASnippet in some buffers by setting the buffer-local variable
-[[sym:yas-dont-active][=yas-dont-active=]] in the buffer's mode hook.
+YASnippet in some buffers by calling [[sym:yas-minor-mode][=yas-minor-mode=]] with a negative
+argument in the buffer's mode hook.
 
 *** Fallback behaviour
 
-[[sym:yas-fallback-behaviour][=yas-fallback-behaviour=]] is a customization variable bound to
-'=call-other-command= by default. If [[sym:yas-expand][=yas-expand=]] failed to find any
-suitable snippet to expand, it will disable the minor mode temporarily
-and find if there's any other command bound to the same key.
-
-If found, the command will be called. Usually this works very well
---when there's a snippet, expand it, otherwise, call whatever command
-originally bind to the trigger key.
-
-However, you can change this behavior by customizing the
-[[sym:yas-fallback-behavior][=yas-fallback-behavior=]] variable. If you set this variable to
-'=return-nil=, it will return =nil= instead of trying to call the
-/original/ command when no snippet is found.
+YASnippet used to support a more complicated way of sharing
+keybindings before [[sym:yas-expand][=yas-maybe-expand=]] was added.  This is now
+obsolete.
 
 ** Insert at point
 

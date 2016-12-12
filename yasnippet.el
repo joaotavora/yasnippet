@@ -271,21 +271,19 @@ Otherwise `yas-next-field-or-maybe-expand' just moves on to the
 next field"
   :type 'boolean)
 
-(defcustom yas-fallback-behavior 'call-other-command
-  "How to act when `yas-expand' does *not* expand a snippet.
-
-- `call-other-command' means try to temporarily disable YASnippet
-    and call the next command bound to whatever key was used to
-    invoke `yas-expand'.
-
-- nil or the symbol `return-nil' mean do nothing. (and
-  `yas-expand' returns nil)
-
-- A Lisp form (apply COMMAND . ARGS) means interactively call
-  COMMAND. If ARGS is non-nil, call COMMAND non-interactively
-  with ARGS as arguments."
+(defcustom yas-fallback-behavior 'return-nil
+  "This option is obsolete.
+Now that the conditional keybinding `yas-maybe-expand' is
+available, there's no more need for it."
   :type '(choice (const :tag "Call previous command"  call-other-command)
                  (const :tag "Do nothing"             return-nil)))
+
+(make-obsolete-variable
+ 'yas-fallback-behavior
+ "For `call-other-command' behavior bind to the conditional
+command value `yas-maybe-expand', for `return-nil' behavior bind
+directly to `yas-expand'."
+ "0.12")
 
 (defcustom yas-choose-keys-first nil
   "If non-nil, prompt for snippet key first, then for template.
@@ -560,10 +558,20 @@ snippet itself contains a condition that returns the symbol
 (defvar yas--minor-mode-menu nil
   "Holds the YASnippet menu.")
 
+(defun yas--maybe-expand-key-filter (cmd)
+  (if (yas--templates-for-key-at-point) cmd))
+
+(defconst yas-maybe-expand
+  '(menu-item "" yas-expand :filter yas--maybe-expand-key-filter)
+  "A conditional key definition.
+This can be used as a key definition in keymaps to bind a key to
+`yas-expand' only when there is a snippet available to be
+expanded.")
+
 (defvar yas-minor-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map [(tab)]     'yas-expand)
-    (define-key map (kbd "TAB") 'yas-expand)
+    (define-key map [(tab)]     yas-maybe-expand)
+    (define-key map (kbd "TAB") yas-maybe-expand)
     (define-key map "\C-c&\C-s" 'yas-insert-snippet)
     (define-key map "\C-c&\C-n" 'yas-new-snippet)
     (define-key map "\C-c&\C-v" 'yas-visit-snippet-file)
@@ -703,10 +711,10 @@ This variable is placed in `emulation-mode-map-alists'.
 
 Its elements looks like (TABLE-NAME . KEYMAP).  They're
 instantiated on `yas-reload-all' but KEYMAP is added to only when
-loading snippets.  `yas--direct-TABLE-NAME' is then a variable set
-buffer-locally when entering `yas-minor-mode'.  KEYMAP binds all
-defined direct keybindings to the command
-`yas-expand-from-keymap' which then which snippet to expand.")
+loading snippets.  `yas--direct-TABLE-NAME' is then a variable
+set buffer-locally when entering `yas-minor-mode'.  KEYMAP binds
+all defined direct keybindings to `yas-maybe-expand-from-keymap'
+which decides on the snippet to expand.")
 
 (defun yas-direct-keymaps-reload ()
   "Force reload the direct keybinding for active snippet tables."
@@ -976,7 +984,7 @@ Has the following fields:
   A keymap for the snippets in this table that have direct
   keybindings. This is kept in sync with the keyhash, i.e., all
   the elements of the keyhash that are vectors appear here as
-  bindings to `yas-expand-from-keymap'.
+  bindings to `yas-maybe-expand-from-keymap'.
 
 `yas--table-uuidhash'
 
@@ -1075,6 +1083,10 @@ Has the following fields:
         ;;
         (remhash uuid (yas--table-uuidhash table))))))
 
+(defconst yas-maybe-expand-from-keymap
+  '(menu-item "" yas-expand-from-keymap
+              :filter yas--maybe-expand-from-keymap-filter))
+
 (defun yas--add-template (table template)
   "Store in TABLE the snippet template TEMPLATE.
 
@@ -1093,7 +1105,7 @@ keybinding)."
                             (make-hash-table :test 'equal)
                             (yas--table-hash table))))
       (when (vectorp k)
-        (define-key (yas--table-direct-keymap table) k 'yas-expand-from-keymap)))
+        (define-key (yas--table-direct-keymap table) k yas-maybe-expand-from-keymap)))
 
     ;; Update TABLE's `yas--table-uuidhash'
     (puthash (yas--template-uuid template)
@@ -2167,12 +2179,7 @@ object satisfying `yas--field-p' to restrict the expansion to."
               (nth 2 templates-and-pos)))
       (yas--fallback))))
 
-(defun yas-expand-from-keymap ()
-  "Directly expand some snippets, searching `yas--direct-keymaps'.
-
-If expansion fails, execute the previous binding for this key"
-  (interactive)
-  (setq yas--condition-cache-timestamp (current-time))
+(defun yas--maybe-expand-from-keymap-filter (cmd)
   (let* ((vec (cl-subseq (this-command-keys-vector)
                          (if current-prefix-arg
                              (length (this-command-keys))
@@ -2180,10 +2187,15 @@ If expansion fails, execute the previous binding for this key"
          (templates (cl-mapcan (lambda (table)
                                  (yas--fetch table vec))
                                (yas--get-snippet-tables))))
-    (if templates
-        (yas--expand-or-prompt-for-template templates)
-      (let ((yas-fallback-behavior 'call-other-command))
-        (yas--fallback)))))
+    (if templates (or cmd templates))))
+
+(defun yas-expand-from-keymap ()
+  "Directly expand some snippets, searching `yas--direct-keymaps'."
+  (interactive)
+  (setq yas--condition-cache-timestamp (current-time))
+  (let* ((templates (yas--maybe-expand-from-keymap-filter nil)))
+    (when templates
+      (yas--expand-or-prompt-for-template templates))))
 
 (defun yas--expand-or-prompt-for-template (templates &optional start end)
   "Expand one of TEMPLATES from START to END.

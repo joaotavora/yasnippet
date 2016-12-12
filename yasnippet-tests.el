@@ -668,11 +668,11 @@ TODO: correct this bug!"
      (text-mode)
      (yas-minor-mode +1)
      (should (equal (yas-lookup-snippet "one") "one"))
-     (should (eq (key-binding "\C-c1") 'yas-expand-from-keymap))
+     (should (eq (yas--key-binding "\C-c1") 'yas-expand-from-keymap))
      (yas-define-snippets
       'text-mode '(("_1" "one!" "won" nil nil nil nil nil "uuid-1")))
      (should (null (yas-lookup-snippet "one" nil 'noerror)))
-     (should (null (key-binding "\C-c1")))
+     (should (null (yas--key-binding "\C-c1")))
      (should (equal (yas-lookup-snippet "won") "one!")))))
 
 (ert-deftest snippet-save ()
@@ -963,16 +963,23 @@ TODO: be meaner"
 ;;; The infamous and problematic tab keybinding
 ;;;
 (ert-deftest test-yas-tab-binding ()
-  (with-temp-buffer
-    (yas-minor-mode -1)
-    (should (not (eq (key-binding (yas--read-keybinding "<tab>")) 'yas-expand)))
-    (yas-minor-mode 1)
-    (should (eq (key-binding (yas--read-keybinding "<tab>")) 'yas-expand))
-    (yas-expand-snippet "$1 $2 $3")
-    (should (eq (key-binding [(tab)]) 'yas-next-field-or-maybe-expand))
-    (should (eq (key-binding (kbd "TAB")) 'yas-next-field-or-maybe-expand))
-    (should (eq (key-binding [(shift tab)]) 'yas-prev-field))
-    (should (eq (key-binding [backtab]) 'yas-prev-field))))
+  (yas-saving-variables
+   (yas-with-snippet-dirs
+    '((".emacs.d/snippets"
+       ("fundamental-mode"
+        ("foo" . "foobar"))))
+    (yas-reload-all)
+    (with-temp-buffer
+      (yas-minor-mode -1)
+      (insert "foo")
+      (should (not (eq (key-binding (yas--read-keybinding "<tab>")) 'yas-expand)))
+      (yas-minor-mode 1)
+      (should (eq (key-binding (yas--read-keybinding "<tab>")) 'yas-expand))
+      (yas-expand-snippet "$1 $2 $3")
+      (should (eq (key-binding [(tab)]) 'yas-next-field-or-maybe-expand))
+      (should (eq (key-binding (kbd "TAB")) 'yas-next-field-or-maybe-expand))
+      (should (eq (key-binding [(shift tab)]) 'yas-prev-field))
+      (should (eq (key-binding [backtab]) 'yas-prev-field))))))
 
 (ert-deftest test-rebindings ()
   (let* ((yas-minor-mode-map (copy-keymap yas-minor-mode-map))
@@ -992,11 +999,18 @@ TODO: be meaner"
       (should (eq (key-binding (kbd "SPC")) 'yas-expand)))))
 
 (ert-deftest test-yas-in-org ()
-  (with-temp-buffer
-    (org-mode)
-    (yas-minor-mode 1)
-    (should (eq (key-binding [(tab)]) 'yas-expand))
-    (should (eq (key-binding (kbd "TAB")) 'yas-expand))))
+  (yas-saving-variables
+   (yas-with-snippet-dirs
+    '((".emacs.d/snippets"
+       ("org-mode"
+        ("foo" . "foobar"))))
+    (yas-reload-all)
+    (with-temp-buffer
+      (org-mode)
+      (yas-minor-mode 1)
+      (insert "foo")
+      (should (eq (key-binding [(tab)]) 'yas-expand))
+      (should (eq (key-binding (kbd "TAB")) 'yas-expand))))))
 
 (ert-deftest test-yas-activate-extra-modes ()
   "Given a symbol, `yas-activate-extra-mode' should be able to
@@ -1066,6 +1080,13 @@ add the snippets associated with the given mode."
 (defun yas-mock-yank (string)
   (let ((interprogram-paste-function (lambda () string)))
     (ert-simulate-command '(yank nil))))
+
+(defun yas--key-binding (key)
+  "Like `key-binding', but override `this-command-keys-vector'.
+This lets `yas--maybe-expand-from-keymap-filter' work as expected."
+  (cl-letf (((symbol-function 'this-command-keys-vector)
+             (lambda () (cl-coerce key 'vector))))
+    (key-binding key)))
 
 (defun yas-make-file-or-dirs (ass)
   (let ((file-or-dir-name (car ass))

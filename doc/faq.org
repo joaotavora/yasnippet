@@ -13,73 +13,6 @@ Note that some editors will automatically add a newline for you. In
 Emacs, if you set =require-final-newline= to =t=, it will add the
 final newline automatically.
 
-* Why doesn't TAB expand a snippet?
-
-First check the mode line to see if there's =yas=. If not, then try
-=M-x yas-minor-mode= to manually turn on the minor mode and try to
-expand the snippet again. If it works, then, you can add the following
-code to your =.emacs= /before/ loading YASnippet:
-
-#+BEGIN_SRC emacs-lisp
-  (add-hook 'the-major-mode-hook 'yas-minor-mode-on)
-#+END_SRC
-
-where =the-major-mode= is the major mode in which [[sym:yas-minor-mode][=yas-minor-mode=]] isn't
-enabled by default.
-
-The command =M-x yas-global-mode= turns YASnippet on automatically for
-/all/ major modes.
-
-If [[sym:yas-minor-mode][=yas-minor-mode=]] is on but the snippet still not expanded. Then try
-to see what command is bound to the =TAB= key: press =C-h k= and then
-press =TAB=. Emacs will show you the result.
-
-You'll see a buffer prompted by Emacs saying that
-=TAB runs the command ...=. Alternatively, you might see
-=<tab> runs the command ...=, note the difference between =TAB= and
-=<tab>= where the latter has priority. If you see =<tab>= bound to a
-command other than [[sym:yas-expand][=yas-expand=]], (e.g. in =org-mode=) you can try the
-following code to work around:
-
-#+BEGIN_SRC emacs-lisp
-  (add-hook 'org-mode-hook
-            (let ((original-command (lookup-key org-mode-map [tab])))
-              `(lambda ()
-                 (setq yas-fallback-behavior
-                       '(apply ,original-command))
-                 (local-set-key [tab] 'yas-expand))))
-#+END_SRC
-
-replace =org-mode-hook= and =org-mode-map= with the major mode hook you
-are dealing with (Use =C-h m= to see what major mode you are in).
-
-As an alternative, you can also try
-
-#+BEGIN_SRC emacs-lisp
-  (defun yas-advise-indent-function (function-symbol)
-    (eval `(defadvice ,function-symbol (around yas-try-expand-first activate)
-             ,(format
-               "Try to expand a snippet before point, then call `%s' as usual"
-               function-symbol)
-             (let ((yas-fallback-behavior nil))
-               (unless (and (interactive-p)
-                            (yas-expand))
-                 ad-do-it)))))
-
-  (yas-advise-indent-function 'ruby-indent-line)
-#+END_SRC
-
-To /advise/ the modes indentation function bound to TAB, (in this case
-=ruby-indent-line=) to first try to run [[sym:yas-expand][=yas-expand=]].
-
-If the output of =C-h k RET <tab>= tells you that =<tab>= is indeed
-bound to [[sym:yas-expand][=yas-expand=]] but YASnippet still doesn't work, check your
-configuration and you may also ask for help on the [[http://groups.google.com/group/smart-snippet][discussion group]].
-See this particular [[http://code.google.com/p/yasnippet/issues/detail?id=93&can=1][thread]] for quite some solutions and alternatives.
-
-Don't forget to attach the information on what command is bound to TAB
-as well as the mode information (Can be obtained by =C-h m=).
-
 * Why doesn't TAB navigation work with flyspell
 
 A workaround is to inhibit flyspell overlays while the snippet is
@@ -107,7 +40,7 @@ Edit the keymaps [[sym:yas-minor-mode-map][=yas-minor-mode-map=]] and
 #+begin_src emacs-lisp :exports code
    (define-key yas-minor-mode-map (kbd "<tab>") nil)
    (define-key yas-minor-mode-map (kbd "TAB") nil)
-   (define-key yas-minor-mode-map (kbd "<the new key>") 'yas-expand)
+   (define-key yas-minor-mode-map (kbd "<the new key>") yas-maybe-expand)
 
    ;;keys for navigation
    (define-key yas-keymap [(tab)]       nil)
