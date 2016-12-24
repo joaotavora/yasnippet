@@ -2973,6 +2973,20 @@ ENV is a list of elements with the form (VAR FORM)."
   (declare (debug (form body)) (indent 1))
   `(eval (cl-list* 'let* ,env ',body)))
 
+(defun yas--snippet-map-markers (fun snippet)
+  "Apply FUN to all marker (sub)fields in SNIPPET.
+Update each field with the result of calling FUN."
+  (dolist (field (yas--snippet-fields snippet))
+    (setf (yas--field-start field) (funcall fun (yas--field-start field)))
+    (setf (yas--field-end field)   (funcall fun (yas--field-end field)))
+    (dolist (mirror (yas--field-mirrors field))
+      (setf (yas--mirror-start mirror) (funcall fun (yas--mirror-start mirror)))
+      (setf (yas--mirror-end mirror)   (funcall fun (yas--mirror-end mirror)))))
+  (let ((snippet-exit (yas--snippet-exit snippet)))
+    (when snippet-exit
+      (setf (yas--exit-marker snippet-exit)
+            (funcall fun (yas--exit-marker snippet-exit))))))
+
 (defun yas--apply-transform (field-or-mirror field &optional empty-on-nil-p)
   "Calculate transformed string for FIELD-OR-MIRROR from FIELD.
 
@@ -3286,58 +3300,27 @@ If so cleans up the whole snippet up."
 
 ;; Apropos markers-to-points:
 ;;
-;; This was found useful for performance reasons, so that an
-;; excessive number of live markers aren't kept around in the
-;; `buffer-undo-list'. However, in `markers-to-points', the
-;; set-to-nil markers can't simply be discarded and replaced with
-;; fresh ones in `points-to-markers'. The original marker that was
-;; just set to nil has to be reused.
+;; This was found useful for performance reasons, so that an excessive
+;; number of live markers aren't kept around in the
+;; `buffer-undo-list'.  We reuse the original marker object, although
+;; that's probably not necessary.
 ;;
-;; This shouldn't bring horrible problems with undo/redo, but it
-;; you never know
+;; This shouldn't bring horrible problems with undo/redo, but you
+;; never know.
 ;;
 (defun yas--markers-to-points (snippet)
-  "Convert all markers in SNIPPET to a cons (POINT . MARKER)
-where POINT is the original position of the marker and MARKER is
-the original marker object with the position set to nil."
-  (dolist (field (yas--snippet-fields snippet))
-    (let ((start (marker-position (yas--field-start field)))
-          (end (marker-position (yas--field-end field))))
-      (set-marker (yas--field-start field) nil)
-      (set-marker (yas--field-end field) nil)
-      (setf (yas--field-start field) (cons start (yas--field-start field)))
-      (setf (yas--field-end field) (cons end (yas--field-end field))))
-    (dolist (mirror (yas--field-mirrors field))
-      (let ((start (marker-position (yas--mirror-start mirror)))
-            (end (marker-position (yas--mirror-end mirror))))
-        (set-marker (yas--mirror-start mirror) nil)
-        (set-marker (yas--mirror-end mirror) nil)
-        (setf (yas--mirror-start mirror) (cons start (yas--mirror-start mirror)))
-        (setf (yas--mirror-end mirror) (cons end (yas--mirror-end mirror))))))
-  (let ((snippet-exit (yas--snippet-exit snippet)))
-    (when snippet-exit
-      (let ((exit (marker-position (yas--exit-marker snippet-exit))))
-        (set-marker (yas--exit-marker snippet-exit) nil)
-        (setf (yas--exit-marker snippet-exit) (cons exit (yas--exit-marker snippet-exit)))))))
+  "Save all markers of SNIPPET as positions."
+  (yas--snippet-map-markers (lambda (m)
+                              (prog1 (cons (marker-position m) m)
+                                (set-marker m nil)))
+                            snippet))
 
 (defun yas--points-to-markers (snippet)
-  "Convert all cons (POINT . MARKER) in SNIPPET to markers.
-
-This is done by setting MARKER to POINT with `set-marker'."
-  (dolist (field (yas--snippet-fields snippet))
-    (setf (yas--field-start field) (set-marker (cdr (yas--field-start field))
-                                              (car (yas--field-start field))))
-    (setf (yas--field-end field) (set-marker (cdr (yas--field-end field))
-                                            (car (yas--field-end field))))
-    (dolist (mirror (yas--field-mirrors field))
-      (setf (yas--mirror-start mirror) (set-marker (cdr (yas--mirror-start mirror))
-                                                  (car (yas--mirror-start mirror))))
-      (setf (yas--mirror-end mirror) (set-marker (cdr (yas--mirror-end mirror))
-                                                (car (yas--mirror-end mirror))))))
-  (let ((snippet-exit (yas--snippet-exit snippet)))
-    (when snippet-exit
-      (setf (yas--exit-marker snippet-exit) (set-marker (cdr (yas--exit-marker snippet-exit))
-                                                       (car (yas--exit-marker snippet-exit)))))))
+  "Restore SNIPPET's marker positions, saved by `yas--markers-to-points'."
+  (yas--snippet-map-markers (lambda (p-m)
+                              (set-marker (cdr p-m) (car p-m))
+                              (cdr p-m))
+                            snippet))
 
 (defun yas--field-contains-point-p (field &optional point)
   (let ((point (or point
@@ -4033,16 +4016,7 @@ The SNIPPET's markers are preserved."
 (defun yas--collect-snippet-markers (snippet)
   "Make a list of all the markers used by SNIPPET."
   (let (markers)
-    (dolist (field (yas--snippet-fields snippet))
-      (push (yas--field-start field) markers)
-      (push (yas--field-end field) markers)
-      (dolist (mirror (yas--field-mirrors field))
-        (push (yas--mirror-start mirror) markers)
-        (push (yas--mirror-end mirror) markers)))
-    (let ((snippet-exit (yas--snippet-exit snippet)))
-      (when (and snippet-exit
-                 (marker-buffer (yas--exit-marker snippet-exit)))
-        (push (yas--exit-marker snippet-exit) markers)))
+    (yas--snippet-map-markers (lambda (m) (push m markers) m) snippet)
     markers))
 
 (defun yas--escape-string (escaped)
