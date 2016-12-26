@@ -28,6 +28,7 @@
 (require 'ert)
 (require 'ert-x)
 (require 'cl-lib)
+(require 'org)
 
 
 ;;; Snippet mechanics
@@ -1011,6 +1012,46 @@ TODO: be meaner"
       (insert "foo")
       (should (eq (key-binding [(tab)]) 'yas-expand))
       (should (eq (key-binding (kbd "TAB")) 'yas-expand))))))
+
+(ert-deftest yas-org-native-tab-in-source-block ()
+  "Test expansion of snippets in org source blocks."
+  :expected-result (if (fboundp 'org-in-src-block-p)
+                       :passed :failed)
+  (yas-saving-variables
+   (yas-with-snippet-dirs
+    '((".emacs.d/snippets"
+       ("text-mode"
+        ("T" . "${1:one} $1\n${2:two} $2\n<<$0>> done!"))))
+    (let ((text-mode-hook '(yas-minor-mode))
+          (org-src-tab-acts-natively t)
+          ;; Org 8.x requires this in order for
+          ;; `org-src-tab-acts-natively' to have effect.
+          (org-src-fontify-natively t))
+      (yas-reload-all)
+      ;; Org relies on font-lock to identify source blocks.
+      (yas--with-font-locked-temp-buffer
+       (org-mode)
+       (yas-minor-mode 1)
+       (insert "#+BEGIN_SRC text\nT\n#+END_SRC")
+       (if (fboundp 'font-lock-ensure)
+           (font-lock-ensure)
+         (jit-lock-fontify-now))
+       (re-search-backward "^T$") (goto-char (match-end 0))
+       (should (org-in-src-block-p))
+       (ert-simulate-command `(,(key-binding (kbd "TAB"))))
+       (ert-simulate-command `(,(key-binding (kbd "TAB"))))
+       (ert-simulate-command `(,(key-binding (kbd "TAB"))))
+       ;; Check snippet exit location.
+       (should (looking-at ">> done!"))
+       (goto-char (point-min))
+       (forward-line)
+       ;; Check snippet expansion, ignore leading whitespace due to
+       ;; `org-edit-src-content-indentation'.
+       (should (looking-at "\
+[[:space:]]*one one
+[[:space:]]*two two
+[[:space:]]*<<>> done!")))))))
+
 
 (ert-deftest test-yas-activate-extra-modes ()
   "Given a symbol, `yas-activate-extra-mode' should be able to

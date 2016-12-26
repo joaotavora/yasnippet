@@ -3257,6 +3257,67 @@ This renders the snippet as ordinary text."
 
   (yas--message 4 "Snippet %s exited." (yas--snippet-id snippet)))
 
+(defvar yas--snippets-to-move nil)
+(make-variable-buffer-local 'yas--snippets-to-move)
+
+(defun yas--prepare-snippets-for-move (beg end buf pos)
+  "Gather snippets in BEG..END for moving to POS in BUF."
+  (let ((to-move nil)
+        (snippets (yas-active-snippets beg end))
+        (dst-base-line (with-current-buffer buf
+                         (count-lines (point-min) pos))))
+    (when snippets
+      (dolist (snippet snippets)
+        (yas--snippet-map-markers
+         (lambda (m)
+           (goto-char m)
+           (beginning-of-line)
+           (prog1 (cons (count-lines (point-min) (point))
+                        (yas--snapshot-marker-location m))
+             (set-marker m nil)))
+         snippet)
+        (let ((ctrl-ov (yas--snapshot-overlay-location
+                        (yas--snippet-control-overlay snippet))))
+          (push (list ctrl-ov dst-base-line snippet) to-move)
+          (delete-overlay (car ctrl-ov))))
+      (with-current-buffer buf
+        (setq yas--snippets-to-move (nconc to-move yas--snippets-to-move))))))
+
+(defun yas--on-buffer-kill ()
+  ;; Org mode uses temp buffers for fontification and "native tab",
+  ;; move all the snippets to the original org-mode buffer when it's
+  ;; killed.
+  (let ((org-marker nil))
+    (when (and yas-minor-mode
+               (or (bound-and-true-p org-edit-src-from-org-mode)
+                   (bound-and-true-p org-src--from-org-mode))
+               (markerp
+                (setq org-marker
+                      (or (bound-and-true-p org-edit-src-beg-marker)
+                          (bound-and-true-p org-src--beg-marker)))))
+      (yas--prepare-snippets-for-move
+       (point-min) (point-max)
+       (marker-buffer org-marker) org-marker))))
+
+(add-hook 'kill-buffer-hook #'yas--on-buffer-kill)
+
+(defun yas--finish-moving-snippets ()
+  "Finish job started in `yas--prepare-snippets-for-move'."
+  (cl-loop for (ctrl-ov base-line snippet) in yas--snippets-to-move
+           for base-pos = (progn (goto-char (point-min))
+                                 (forward-line base-line) (point))
+           do (yas--snippet-map-markers
+               (lambda (l-m-r-w)
+                 (goto-char base-pos)
+                 (forward-line (nth 0 l-m-r-w))
+                 (yas--restore-marker-location (cdr l-m-r-w))
+                 (nth 1 l-m-r-w))
+               snippet)
+           (goto-char base-pos)
+           (yas--restore-overlay-location ctrl-ov)
+           (yas--maybe-move-to-active-field snippet))
+  (setq yas--snippets-to-move nil))
+
 (defun yas--safely-run-hooks (hook-var)
   (condition-case error
       (run-hooks hook-var)
@@ -3321,6 +3382,14 @@ If so cleans up the whole snippet up."
                               (set-marker (cdr p-m) (car p-m))
                               (cdr p-m))
                             snippet))
+
+(defun yas--maybe-move-to-active-field (snippet)
+  "Try to move to SNIPPET's active (or first) field and return it if found."
+  (let ((target-field (or (yas--snippet-active-field snippet)
+                          (car (yas--snippet-fields snippet)))))
+    (when target-field
+      (yas--move-to-field snippet target-field)
+      target-field)))
 
 (defun yas--field-contains-point-p (field &optional point)
   (let ((point (or point
@@ -3653,21 +3722,14 @@ to their correct locations *at the time the snippet is revived*.
 After revival, push the `yas--take-care-of-redo' in the
 `buffer-undo-list'"
   ;; Reconvert all the points to markers
-  ;;
   (yas--points-to-markers snippet)
   ;; When at least one editable field existed in the zombie snippet,
   ;; try to revive the whole thing...
-  ;;
-  (let ((target-field (or (yas--snippet-active-field snippet)
-                          (car (yas--snippet-fields snippet)))))
-    (when target-field
-      (setf (yas--snippet-control-overlay snippet) (yas--make-control-overlay snippet beg end))
-      (overlay-put (yas--snippet-control-overlay snippet) 'yas--snippet snippet)
-
-      (yas--move-to-field snippet target-field)
-
-      (push `(apply yas--take-care-of-redo ,beg ,end ,snippet)
-            buffer-undo-list))))
+  (when (yas--maybe-move-to-active-field snippet)
+    (setf (yas--snippet-control-overlay snippet) (yas--make-control-overlay snippet beg end))
+    (overlay-put (yas--snippet-control-overlay snippet) 'yas--snippet snippet)
+    (push `(apply yas--take-care-of-redo ,beg ,end ,snippet)
+          buffer-undo-list)))
 
 (defun yas--snippet-create (expand-env begin end)
   "Create a snippet from a template inserted at BEGIN to END.
@@ -3929,7 +3991,8 @@ Meant to be called in a narrowed buffer, does various passes"
 
 (defun yas--snapshot-marker-location (marker)
   "Returns info for restoring MARKER's location after indent.
-The returned value is a list of the form (REGEXP MARKER WS-COUNT)."
+The returned value is a list of the form (MARKER REGEXP WS-COUNT).
+If MARKER is not on current line, then return nil."
   (when (and (<= (line-beginning-position) marker)
              (<= marker (line-end-position)))
     (let ((before
@@ -3938,33 +4001,60 @@ The returned value is a list of the form (REGEXP MARKER WS-COUNT)."
           (after
            (split-string (buffer-substring-no-properties
                           marker (line-end-position)) "[[:space:]]+" t)))
-      (list (concat "[[:space:]]*"
+      (list marker
+            (concat "[[:space:]]*"
                     (mapconcat (lambda (s)
                                  (if (eq s marker) "\\(\\)"
                                    (regexp-quote s)))
                                (nconc before (list marker) after)
                                "[[:space:]]*"))
-            marker
             (progn (goto-char marker)
                    (skip-syntax-forward " " (line-end-position))
                    (- (point) marker))))))
 
+(defun yas--snapshot-overlay-location (overlay)
+  "Like `yas--snapshot-marker-location', but for overlays.
+The returned format is (OVERLAY (LINE RE WS) (LINE RE WS))."
+  (let ((loc-beg (progn (goto-char (overlay-start overlay))
+                        (yas--snapshot-marker-location (point))))
+        (loc-end (progn (goto-char (overlay-end overlay))
+                        (yas--snapshot-marker-location (point)))))
+    (setcar loc-beg (count-lines (point-min) (progn (goto-char (car loc-beg))
+                                                    (line-beginning-position))))
+    (setcar loc-end (count-lines (point-min) (progn (goto-char (car loc-end))
+                                                    (line-beginning-position))))
+    (list overlay loc-beg loc-end)))
+
+(defun yas--goto-saved-location (regexp ws-count)
+  "Move point to location saved by `yas--snapshot-marker-location'."
+  (beginning-of-line)
+  (save-restriction
+    ;; Narrowing is the only way to limit `looking-at'.
+    (narrow-to-region (point) (line-end-position))
+    (if (not (looking-at regexp))
+        (lwarn '(yasnippet re-marker) :warning
+               "Couldn't find: %S" regexp)
+      (goto-char (match-beginning 1))
+      (skip-syntax-forward " ")
+      (skip-syntax-backward " " (- (point) ws-count)))))
+
 (defun yas--restore-marker-location (re-marker)
-  "Restores marker based on info from `yas--snapshot-marker-location'."
-  (let ((regexp (nth 0 re-marker))
-        (marker (nth 1 re-marker))
-        (ws-count (nth 2 re-marker)))
-    (beginning-of-line)
-    (save-restriction
-      ;; Narrowing is the only way to limit `looking-at'.
-      (narrow-to-region (point) (line-end-position))
-      (if (not (looking-at regexp))
-          (lwarn '(yasnippet re-marker) :warning
-                 "Couldn't find: %S" regexp)
-        (goto-char (match-beginning 1))
-        (skip-syntax-forward " ")
-        (skip-syntax-backward " " (- (point) ws-count))
-        (set-marker marker (point))))))
+  "Restores marker based on info from `yas--snapshot-marker-location'.
+Assumes point is currently on the 'same' line as before."
+  (apply #'yas--goto-saved-location (cdr re-marker))
+  (set-marker (car re-marker) (point)))
+
+(defun yas--restore-overlay-location (ov-locations)
+  "Restores overlay based on info from `yas--snapshot-overlay-location'."
+  (move-overlay (car ov-locations)
+                (save-excursion
+                  (forward-line (car (nth 1 ov-locations)))
+                  (apply #'yas--goto-saved-location (cdr (nth 1 ov-locations)))
+                  (point))
+                (save-excursion
+                  (forward-line (car (nth 2 ov-locations)))
+                  (apply #'yas--goto-saved-location (cdr (nth 2 ov-locations)))
+                  (point))))
 
 (defun yas--indent-region (from to snippet)
   "Indent the lines between FROM and TO with `indent-according-to-mode'.
@@ -4363,6 +4453,7 @@ When multiple expressions are found, only the last one counts."
 ;;
 (defun yas--post-command-handler ()
   "Handles various yasnippet conditions after each command."
+  (yas--finish-moving-snippets)
   (cond ((eq 'undo this-command)
          ;;
          ;; After undo revival the correct field is sometimes not
