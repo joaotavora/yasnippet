@@ -4365,44 +4365,42 @@ When multiple expressions are found, only the last one counts."
   (save-restriction
     (widen)
     (save-excursion
-      (dolist (field-and-mirror
-               (sort
-                ;; make a list of ((F1 . M1) (F1 . M2) (F2 . M3) (F2 . M4) ...)
-                ;; where F is the field that M is mirroring
-                ;;
-                (cl-mapcan #'(lambda (field)
-                               (mapcar #'(lambda (mirror)
-                                           (cons field mirror))
-                                       (cl-sort
-                                        (cl-copy-list
-                                         (yas--field-mirrors field))
-                                        #'<
-                                        :key #'yas--mirror-start)))
-                           (yas--snippet-fields snippet))
-                ;; then sort this list so that entries with mirrors with parent
-                ;; fields appear before. This was important for fixing #290, and
-                ;; luckily also handles the case where a mirror in a field causes
-                ;; another mirror to need reupdating
-                ;;
-                #'(lambda (field-and-mirror1 field-and-mirror2)
-                    (> (yas--calculate-mirror-depth (cdr field-and-mirror1))
-                       (yas--calculate-mirror-depth (cdr field-and-mirror2))))))
-        (let* ((field (car field-and-mirror))
-               (mirror (cdr field-and-mirror))
-               (parent-field (yas--mirror-parent-field mirror)))
-          ;; before updating a mirror with a parent-field, maybe advance
-          ;; its start (#290)
-          ;;
-          (when parent-field
-            (yas--advance-start-maybe mirror (yas--fom-start parent-field)))
-          ;; update this mirror
-          ;;
-          (yas--mirror-update-display mirror field snippet)
-          ;; `yas--place-overlays' is needed since the active field and
-          ;; protected overlays might have been changed because of insertions
-          ;; in `yas--mirror-update-display'.
-          (let ((active-field (yas--snippet-active-field snippet)))
-            (when active-field (yas--place-overlays snippet active-field))))))))
+      (cl-loop
+       for (field . mirror)
+       in (cl-sort
+           ;; Make a list of (FIELD . MIRROR).
+           (cl-mapcan (lambda (field)
+                        (mapcar (lambda (mirror)
+                                  (cons field mirror))
+                                (yas--field-mirrors field)))
+                      (yas--snippet-fields snippet))
+           ;; Then sort this list so that entries with mirrors with
+           ;; parent fields appear before.  This was important for
+           ;; fixing #290, and also handles the case where a mirror in
+           ;; a field causes another mirror to need reupdating.
+           #'> :key (lambda (fm) (yas--calculate-mirror-depth (cdr fm))))
+       ;; Before updating a mirror with a parent-field, maybe advance
+       ;; its start (#290).
+       do (let ((parent-field (yas--mirror-parent-field mirror)))
+            (when parent-field
+              (yas--advance-start-maybe mirror (yas--fom-start parent-field))))
+       ;; Update this mirror.
+       do (yas--mirror-update-display mirror field snippet)
+       ;; Delay indenting until we're done all mirrors.  We must do
+       ;; this to avoid losing whitespace between fields that are
+       ;; still empty (i.e., they will be non-empty after updating).
+       when (eq yas-indent-line 'auto)
+       collect (cons (yas--mirror-start mirror) (yas--mirror-end mirror))
+       into indent-regions
+       ;; `yas--place-overlays' is needed since the active field and
+       ;; protected overlays might have been changed because of insertions
+       ;; in `yas--mirror-update-display'.
+       do (let ((active-field (yas--snippet-active-field snippet)))
+            (when active-field (yas--place-overlays snippet active-field)))
+       finally do
+       (let ((yas--inhibit-overlay-hooks t))
+         (cl-loop for (beg . end) in (cl-sort indent-regions #'< :key #'car)
+                  do (yas--indent-region beg end snippet)))))))
 
 (defun yas--mirror-update-display (mirror field snippet)
   "Update MIRROR according to FIELD (and mirror transform)."
@@ -4423,12 +4421,7 @@ When multiple expressions are found, only the last one counts."
         (set-marker (yas--mirror-end mirror) (point))
         (yas--advance-start-maybe (yas--mirror-next mirror) (point))
         ;; super-special advance
-        (yas--advance-end-of-parents-maybe mirror-parent-field (point)))
-      (when (eq yas-indent-line 'auto)
-        (let ((yas--inhibit-overlay-hooks t))
-          (yas--indent-region (yas--mirror-start mirror)
-                              (yas--mirror-end mirror)
-                              snippet))))))
+        (yas--advance-end-of-parents-maybe mirror-parent-field (point))))))
 
 (defun yas--field-update-display (field)
   "Much like `yas--mirror-update-display', but for fields."

@@ -244,6 +244,16 @@ $1   ------------------------")
 XXXXX   ---------------- XXXXX ----
 XXXXX   ------------------------"))))
 
+(ert-deftest single-line-multi-mirror-indentation-2 ()
+  "Like `single-line-multi-mirror-indentation' but 2 mirrors interleaved."
+  ;; See also Github issue #768.
+  (with-temp-buffer
+    (c-mode)
+    (yas-minor-mode 1)
+    (yas-expand-snippet "${1:one} ${2:two};\n$1 $2_;\n$2 $1_;\n")
+    (should (string= (yas--buffer-contents)
+                     "one two;\none two_;\ntwo one_;\n"))))
+
 (ert-deftest indent-org-property ()
   "Handling of `org-mode' property indentation, see `org-property-format'."
   ;; This is an interesting case because `org-indent-line' calls
