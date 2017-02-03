@@ -915,6 +915,21 @@ Honour `yas-dont-activate-functions', which see."
   (set (make-local-variable 'comment-start-skip) "#+[\t ]*")
   (add-hook 'after-save-hook #'yas-maybe-load-snippet-buffer nil t))
 
+(defun yas-snippet-mode-buffer-p ()
+  "Return non-nil if current buffer should be in `snippet-mode'.
+Meaning it's visiting a file under one of the mode directories in
+`yas-snippet-dirs'."
+  (when buffer-file-name
+    (member
+     (expand-file-name
+      ".."
+      (file-name-directory buffer-file-name))
+     (yas-snippet-dirs))))
+
+;; We're abusing `magic-fallback-mode-alist' here because
+;; `auto-mode-alist' doesn't support function matchers.
+(add-to-list 'magic-fallback-mode-alist
+             `(yas-snippet-mode-buffer-p . snippet-mode))
 
 
 ;;; Internal structs for template management
