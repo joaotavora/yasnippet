@@ -181,8 +181,9 @@ In particular, the following things matter:
 -  Buffer-local [[sym:yas-buffer-local-condition][=yas-buffer-local-condition=]] variable
 
    This variable provides finer grained control over what snippets can
-   be expanded in the current buffer.  You could disable snippet
-   expansion inside comments or string literals for example.  See [[condition-system][the
+   be expanded in the current buffer.  For example, the constant
+   [[sym:yas-not-string-or-comment-condition][=yas-not-string-or-comment-condition=]] has a value that disables
+   snippet expansion inside comments or string literals.  See [[condition-system][the
    condition system]] for more info.
 
 ** The condition system <<condition-system>>
