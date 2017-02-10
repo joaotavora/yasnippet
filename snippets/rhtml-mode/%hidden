@@ -1,0 +1,21 @@
+#name : hidden examples
+# --
+ <!-- start of hidden rhtml examples -->
+  1. <input id="has_a_user_model" name="has_a_user_model" type="hidden" value="false" />
+
+  2. <%= hidden_field_tag :message_delivery_json, {
+    :klass => "Registration",
+    :method => "search_by_event_id_and_status",
+    :parameters => [@event.id, status],
+    :options => {},
+    :sender_id => current_user.id
+  }.to_json %>
+
+
+  3. <%= form.hidden_field :user_id, :value => current_user.id %>
+
+  4. <%= hidden_field_tag :message_delivery_json, current_message_delivery_params.merge({:sender_id=>current_user.id}).to_json %>
+
+  5. <%= hidden_field_tag 'coach_invitation_id', @coach_invitation.id %>
+
+ <!-- end of hidden rhtml examples -->

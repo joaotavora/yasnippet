@@ -1,0 +1,5 @@
+#contributor : Charles Magid (ChasManRors)
+#name : else
+# --
+<% else ${cond} %>
+$0
