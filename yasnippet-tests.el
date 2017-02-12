@@ -553,6 +553,36 @@ TODO: correct this bug!"
                      "brother from another mother") ;; no newline should be here!
             )))
 
+(ert-deftest snippet-exit-hooks ()
+  (defvar yas--ran-exit-hook)
+  (with-temp-buffer
+    (yas-saving-variables
+     (let ((yas--ran-exit-hook nil)
+           (yas-triggers-in-field t))
+       (yas-with-snippet-dirs
+         '((".emacs.d/snippets"
+            ("emacs-lisp-mode"
+             ("foo" . "\
+# expand-env: ((yas-after-exit-snippet-hook (lambda () (setq yas--ran-exit-hook t))))
+# --
+FOO ${1:f1} ${2:f2}")
+             ("sub" . "\
+# expand-env: ((yas-after-exit-snippet-hook (lambda () (setq yas--ran-exit-hook 'sub))))
+# --
+SUB"))))
+         (yas-reload-all)
+         (emacs-lisp-mode)
+         (yas-minor-mode +1)
+         (insert "foo")
+         (ert-simulate-command '(yas-expand))
+         (should-not yas--ran-exit-hook)
+         (yas-mock-insert "sub")
+         (ert-simulate-command '(yas-expand))
+         (ert-simulate-command '(yas-next-field))
+         (should-not yas--ran-exit-hook)
+         (ert-simulate-command '(yas-next-field))
+         (should (eq yas--ran-exit-hook t)))))))
+
 (defvar yas--barbaz)
 (defvar yas--foobarbaz)
 

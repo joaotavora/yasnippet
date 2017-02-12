@@ -340,9 +340,16 @@ per-snippet basis.  A value of `cua' is considered equivalent to
                  (const cua))) ; backwards compat
 
 (defcustom yas-good-grace t
-  "If non-nil, don't raise errors in inline elisp evaluation.
+  "If non-nil, don't raise errors in elisp evaluation.
 
-An error string \"[yas] error\" is returned instead."
+This affects both the inline elisp in snippets and the hook
+variables such as `yas-after-exit-snippet-hook'.
+
+If this variable's value is `inline', an error string \"[yas]
+error\" is returned instead of raising the error.  If this
+variable's value is `hooks', a message is output to according to
+`yas-verbosity-level'.  If this variable's value is t, both are
+active."
   :type 'boolean)
 
 (defcustom yas-visit-from-menu nil
@@ -1323,33 +1330,22 @@ Returns (TEMPLATES START END). This function respects
 
 ;;; Internal functions and macros:
 
-(defun yas--handle-error (err)
-  "Handle error depending on value of `yas-good-grace'."
-  (let ((msg (yas--format "elisp error: %s" (error-message-string err))))
-    (if yas-good-grace msg
-      (error "%s" msg))))
-
-(defun yas--eval-lisp (form)
+(defun yas--eval-for-string (form)
   "Evaluate FORM and convert the result to string."
-  (let ((retval (catch 'yas--exception
-                  (condition-case err
-                      (save-excursion
-                        (save-restriction
-                          (save-match-data
-                            (widen)
-                            (let ((result (eval form)))
-                              (when result
-                                (format "%s" result))))))
-                    (error (yas--handle-error err))))))
-    (when (and (consp retval)
-               (eq 'yas--exception (car retval)))
-      (error (cdr retval)))
-    retval))
+  (let ((debug-on-error (and (not (memq yas-good-grace '(t inline)))
+                             debug-on-error)))
+    (condition-case oops
+        (save-excursion
+          (save-restriction
+            (save-match-data
+              (widen)
+              (let ((result (eval form)))
+                (when result
+                  (format "%s" result))))))
+      ((debug error) (cdr oops)))))
 
-(defun yas--eval-lisp-no-saves (form)
-  (condition-case err
-      (eval form)
-    (error (message "%s" (yas--handle-error err)))))
+(defun yas--eval-for-effect (form)
+  (yas--safely-run-hook (apply-partially #'eval form)))
 
 (defun yas--read-lisp (string &optional nil-on-error)
   "Read STRING as a elisp expression and return it.
@@ -1665,7 +1661,7 @@ this is a snippet or a snippet-command.
 
 CONDITION, EXPAND-ENV and KEYBINDING are Lisp forms, they have
 been `yas--read-lisp'-ed and will eventually be
-`yas--eval-lisp'-ed.
+`yas--eval-for-string'-ed.
 
 The remaining elements are strings.
 
@@ -1758,8 +1754,7 @@ With prefix argument USE-JIT do jit-loading of snippets."
         ;;
         (yas--define-parents mode-sym parents)
         (yas--menu-keymap-get-create mode-sym)
-        (let ((fun `(lambda () ;; FIXME: Simulating lexical-binding.
-                      (yas--load-directory-1 ',dir ',mode-sym))))
+        (let ((fun (apply-partially #'yas--load-directory-1 dir mode-sym)))
           (if use-jit
               (yas--schedule-jit mode-sym fun)
             (funcall fun)))
@@ -2854,16 +2849,16 @@ The last element of POSSIBILITIES may be a list of strings."
             key)))))
 
 (defun yas-throw (text)
-  "Throw a yas--exception with TEXT as the reason."
-  (throw 'yas--exception (cons 'yas--exception text)))
+  "Signal `yas-exception' with TEXT as the reason."
+  (signal 'yas-exception (list text)))
+(put 'yas-exception 'error-conditions '(error yas-exception))
+(put 'yas-exception 'error-message "[yas] Exception")
 
 (defun yas-verify-value (possibilities)
   "Verify that the current field value is in POSSIBILITIES.
-
-Otherwise throw exception."
-  (when (and yas-moving-away-p
-             (cl-notany (lambda (pos) (string= pos yas-text)) possibilities))
-    (yas-throw (yas--format "Field only allows %s" possibilities))))
+Otherwise signal `yas-exception'."
+  (when (and yas-moving-away-p (cl-notany (lambda (pos) (string= pos yas-text)) possibilities))
+    (yas-throw (format "Field only allows %s" possibilities))))
 
 (defun yas-field-value (number)
   "Get the string for field with NUMBER.
@@ -3020,7 +3015,7 @@ string iff EMPTY-ON-NIL-P is true."
          (transformed (and transform
                            (save-excursion
                              (goto-char start-point)
-                             (let ((ret (yas--eval-lisp transform)))
+                             (let ((ret (yas--eval-for-string transform)))
                                (or ret (and empty-on-nil-p "")))))))
     transformed))
 
@@ -3333,12 +3328,19 @@ This renders the snippet as ordinary text."
            (yas--maybe-move-to-active-field snippet))
   (setq yas--snippets-to-move nil))
 
-(defun yas--safely-run-hooks (hook-var)
+(defun yas--safely-call-fun (fun)
   (condition-case error
-      (run-hooks hook-var)
-    (error
-     (yas--message 2 "%s error: %s" hook-var (error-message-string error)))))
+      (funcall fun)
+    ((debug error)
+     (yas--message 2 "Error running %s: %s"
+                   (if (symbolp fun) fun "a hook")
+                   (error-message-string error)))))
 
+(defun yas--safely-run-hook (hook)
+  (let ((debug-on-error (and (not (memq yas-good-grace '(t hooks)))
+                             debug-on-error)))
+    (if (functionp hook) (yas--safely-call-fun hook)
+      (mapc #'yas--safely-call-fun hook))))
 
 (defun yas--check-commit-snippet ()
   "Check if point exited the currently active field of the snippet.
@@ -3346,15 +3348,19 @@ This renders the snippet as ordinary text."
 If so cleans up the whole snippet up."
   (let* ((snippets (yas-active-snippets 'all))
          (snippets-left snippets)
-         (snippet-exit-transform))
+         (snippet-exit-transform nil)
+         (snippet-exit-hook yas-after-exit-snippet-hook))
     (dolist (snippet snippets)
       (let ((active-field (yas--snippet-active-field snippet)))
         (yas--letenv (yas--snippet-expand-env snippet)
+          ;; Note: the `force-exit' field could be a transform in case of
+          ;; ${0: ...}, see `yas--move-to-field'.
           (setq snippet-exit-transform (yas--snippet-force-exit snippet))
           (cond ((or snippet-exit-transform
                      (not (and active-field (yas--field-contains-point-p active-field))))
                  (setq snippets-left (delete snippet snippets-left))
                  (setf (yas--snippet-force-exit snippet) nil)
+                 (setq snippet-exit-hook yas-after-exit-snippet-hook)
                  (yas--commit-snippet snippet))
                 ((and active-field
                       (or (not yas--active-field-overlay)
@@ -3371,8 +3377,8 @@ If so cleans up the whole snippet up."
                  nil)))))
     (unless (or (null snippets) snippets-left)
       (if snippet-exit-transform
-          (yas--eval-lisp-no-saves snippet-exit-transform))
-      (yas--safely-run-hooks 'yas-after-exit-snippet-hook))))
+          (yas--eval-for-effect snippet-exit-transform))
+      (yas--safely-run-hook snippet-exit-hook))))
 
 ;; Apropos markers-to-points:
 ;;
@@ -3648,7 +3654,7 @@ considered when expanding the snippet."
     (cond ((listp content)
            ;; x) This is a snippet-command
            ;;
-           (yas--eval-lisp-no-saves content))
+           (yas--eval-for-effect content))
           (t
            ;; x) This is a snippet-snippet :-)
            ;;
@@ -4169,9 +4175,9 @@ with their evaluated value into `yas--backquote-markers-and-strings'."
                           (delete-region (match-beginning 0) (match-end 0)))
         (let ((before-change-functions
                (cons detect-change before-change-functions)))
-          (setq transformed (yas--eval-lisp (yas--read-lisp
-                                             (yas--restore-escapes
-                                              current-string '(?`))))))
+          (setq transformed (yas--eval-for-string (yas--read-lisp
+                                                   (yas--restore-escapes
+                                                    current-string '(?`))))))
         (goto-char (match-beginning 0))
         (when transformed
           (let ((marker (make-marker))
