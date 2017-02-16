@@ -3166,7 +3166,11 @@ If there's none, exit the snippet."
 (defun yas--place-overlays (snippet field)
   "Correctly place overlays for SNIPPET's FIELD."
   (yas--make-move-field-protection-overlays snippet field)
-  (yas--make-move-active-field-overlay snippet field))
+  ;; Only move active field overlays if this is field is from the
+  ;; innermost snippet.
+  (when (eq snippet (car (yas-active-snippets (1- (yas--field-start field))
+                                              (1+ (yas--field-end field)))))
+    (yas--make-move-active-field-overlay snippet field)))
 
 (defun yas--move-to-field (snippet field)
   "Update SNIPPET to move to field FIELD.
@@ -3174,6 +3178,7 @@ If there's none, exit the snippet."
 Also create some protection overlays"
   (goto-char (yas--field-start field))
   (yas--place-overlays snippet field)
+  (overlay-put yas--active-field-overlay 'yas--snippet snippet)
   (overlay-put yas--active-field-overlay 'yas--field field)
   (let ((number (yas--field-number field)))
     ;; check for the special ${0: ...} field

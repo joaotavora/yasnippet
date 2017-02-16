@@ -678,7 +678,7 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
          (yas-should-expand '(("foo-barbaz" . "OKfoo-barbazOK")
                               ("foo " . "foo "))))))))
 
-(ert-deftest nested-snippet-expansion ()
+(ert-deftest nested-snippet-expansion-1 ()
   (with-temp-buffer
     (yas-minor-mode +1)
     (let ((yas-triggers-in-field t))
@@ -688,6 +688,52 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
         (should (= (length snippets) 2))
         (should (= (length (yas--snippet-fields (nth 0 snippets))) 2))
         (should (= (length (yas--snippet-fields (nth 1 snippets))) 1))))))
+
+(ert-deftest nested-snippet-expansion-2 ()
+  (let ((yas-triggers-in-field t))
+    (yas-with-snippet-dirs
+      '((".emacs.d/snippets"
+         ("text-mode"
+          ("nest" . "one($1:$1) two($2).$0"))))
+      (yas-reload-all)
+      (text-mode)
+      (yas-minor-mode +1)
+      (insert "nest")
+      (ert-simulate-command '(yas-expand))
+      (yas-mock-insert "nest")
+      (ert-simulate-command '(yas-expand))
+      (yas-mock-insert "x")
+      (ert-simulate-command '(yas-next-field-or-maybe-expand))
+      (yas-mock-insert "y")
+      (ert-simulate-command '(yas-next-field-or-maybe-expand))
+      (ert-simulate-command '(yas-next-field-or-maybe-expand))
+      (yas-mock-insert "z")
+      (ert-simulate-command '(yas-next-field-or-maybe-expand))
+      (should (string= (buffer-string)
+                       "one(one(x:x) two(y).:one(x:x) two(y).) two(z).")))))
+
+(ert-deftest nested-snippet-expansion-3 ()
+  (let ((yas-triggers-in-field t))
+    (yas-with-snippet-dirs
+      '((".emacs.d/snippets"
+         ("text-mode"
+          ("rt" . "\
+\\sqrt${1:$(if (string-equal \"\" yas/text) \"\" \"[\")}${1:}${1:$(if (string-equal \"\" yas/text) \"\" \"]\")}{$2}$0"))))
+      (yas-reload-all)
+      (text-mode)
+      (yas-minor-mode +1)
+      (insert "rt")
+      (ert-simulate-command '(yas-expand))
+      (yas-mock-insert "3")
+      (ert-simulate-command '(yas-next-field-or-maybe-expand))
+      (yas-mock-insert "rt")
+      (ert-simulate-command '(yas-next-field-or-maybe-expand))
+      (yas-mock-insert "5")
+      (ert-simulate-command '(yas-next-field-or-maybe-expand))
+      (yas-mock-insert "2")
+      (ert-simulate-command '(yas-next-field-or-maybe-expand))
+      (ert-simulate-command '(yas-next-field-or-maybe-expand))
+      (should (string= (buffer-string) "\\sqrt[3]{\\sqrt[5]{2}}")))))
 
 
 ;;; Loading
