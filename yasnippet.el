@@ -3347,6 +3347,9 @@ This renders the snippet as ordinary text."
   (let ((debug-on-error (and (not (memq yas-good-grace '(t hooks)))
                              debug-on-error)))
     (if (functionp hook) (yas--safely-call-fun hook)
+      ;; If the hooks variable is set as buffer-local, t is added to
+      ;; the list.
+      (setq hook (remove t hook))
       (mapc #'yas--safely-call-fun hook))))
 
 (defun yas--check-commit-snippet ()
