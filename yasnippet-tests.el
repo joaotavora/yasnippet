@@ -583,6 +583,38 @@ SUB"))))
          (ert-simulate-command '(yas-next-field))
          (should (eq yas--ran-exit-hook t)))))))
 
+(ert-deftest snippet-exit-hooks-bindings ()
+  "Check that `yas-after-exit-snippet-hook' is handled correctly
+in the case of a buffer-local variable and being overwritten by
+the expand-env field."
+  (defvar yas--ran-exit-hook)
+  (with-temp-buffer
+    (yas-saving-variables
+     (let ((yas--ran-exit-hook nil)
+           (yas-triggers-in-field t)
+           (yas-after-exit-snippet-hook nil))
+       (yas-with-snippet-dirs
+         '((".emacs.d/snippets"
+            ("emacs-lisp-mode"
+             ("foo" . "foobar\n")
+             ("baz" . "\
+# expand-env: ((yas-after-exit-snippet-hook (lambda () (setq yas--ran-exit-hook 'letenv))))
+# --
+foobaz\n"))))
+         (yas-reload-all)
+         (emacs-lisp-mode)
+         (yas-minor-mode +1)
+         (add-hook 'yas-after-exit-snippet-hook (lambda () (push 'global yas--ran-exit-hook)))
+         (add-hook 'yas-after-exit-snippet-hook (lambda () (push 'local yas--ran-exit-hook)) nil t)
+         (insert "baz")
+         (ert-simulate-command '(yas-expand))
+         (should (eq 'letenv yas--ran-exit-hook))
+         (insert "foo")
+         (ert-simulate-command '(yas-expand))
+         (should (eq 'global (nth 0 yas--ran-exit-hook)))
+         (should (eq 'local (nth 1 yas--ran-exit-hook))))))))
+
+
 (defvar yas--barbaz)
 (defvar yas--foobarbaz)
 
