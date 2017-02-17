@@ -456,13 +456,17 @@ Attention: These hooks are not run when exiting nested/stacked snippet expansion
   '()
   "Hooks to run just before expanding a snippet.")
 
-(defvar yas-buffer-local-condition
+(defconst yas-not-string-or-comment-condition
   '(if (and (let ((ppss (syntax-ppss)))
               (or (nth 3 ppss) (nth 4 ppss)))
             (memq this-command '(yas-expand yas-expand-from-trigger-key
                                             yas-expand-from-keymap)))
        '(require-snippet-condition . force-in-comment)
      t)
+  "Disables snippet expansion in strings and comments.
+To use, set `yas-buffer-local-condition' to this value.")
+
+(defcustom yas-buffer-local-condition t
   "Snippet expanding condition.
 
 This variable is a Lisp form which is evaluated every time a
@@ -509,12 +513,15 @@ conditions.
               (setq yas-buffer-local-condition
                     \\='(if (python-syntax-comment-or-string-p)
                          \\='(require-snippet-condition . force-in-comment)
-                       t))))
-
-The default value is similar, it filters out potential snippet
-expansions inside comments and string literals, unless the
-snippet itself contains a condition that returns the symbol
-`force-in-comment'.")
+                       t))))"
+  :type
+  `(choice
+    (const :tag "Disable snippet expansion inside strings and comments"
+           ,yas-not-string-or-comment-condition)
+    (const :tag "Expand all snippets regardless of conditions" always)
+    (const :tag "Expand snippets unless their condition is nil" t)
+    (const :tag "Disable all snippet expansion" nil)
+    sexp))
 
 
 ;;; Internal variables
