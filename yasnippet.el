@@ -1352,7 +1352,7 @@ Returns (TEMPLATES START END). This function respects
       ((debug error) (cdr oops)))))
 
 (defun yas--eval-for-effect (form)
-  (yas--safely-call-fun (apply-partially #'eval form)))
+  (yas--safely-run-hook (apply-partially #'eval form)))
 
 (defun yas--read-lisp (string &optional nil-on-error)
   "Read STRING as a elisp expression and return it.
@@ -3343,16 +3343,32 @@ This renders the snippet as ordinary text."
                    (if (symbolp fun) fun "a hook")
                    (error-message-string error)))))
 
-(defun yas--safely-run-hook (hook-symbol)
-  (let ((hook (symbol-value hook-symbol))
-        (debug-on-error (and (not (memq yas-good-grace '(t hooks)))
+(defun yas--safely-run-hook-bindings (hook-symbol &optional hook-env)
+  "Handle the lexical scope of HOOK-SYMBOL.
+
+If HOOK-ENV has non-nil value, that value will be run instead of
+the buffer-local (if any) and global value."
+  (let ((hook (symbol-value hook-symbol)))
+    (cond (hook-env (yas--safely-run-hook hook-env))
+          ((listp hook)
+           (if (not (member t hook))
+               (yas--safely-run-hook hook)
+             (setq hook (remove t hook))
+             (yas--safely-run-hook hook)
+             (yas--safely-run-hook (default-value hook-symbol))))
+          (t (yas--safely-run-hook hook)))))
+
+(defun yas--safely-run-hook (hook)
+  "Call the HOOK functions according to `yas-good-grace'.
+
+The HOOK variable’s value can also be a single function—either a
+lambda expression or a symbol with a function definition.  This
+function should not be used with buffer-local or let binding
+variables. Instead use `yas--safely-run-hook-bindings'."
+  (let ((debug-on-error (and (not (memq yas-good-grace '(t hooks)))
                              debug-on-error)))
     (if (functionp hook) (yas--safely-call-fun hook)
-      (if (not (member t hook))
-          (mapc #'yas--safely-call-fun hook)
-        (setq hook (remove t hook))
-        (mapc #'yas--safely-call-fun hook)
-        (mapc #'yas--safely-call-fun (default-value hook-symbol))))))
+      (mapc #'yas--safely-call-fun hook))))
 
 (defun yas--check-commit-snippet ()
   "Check if point exited the currently active field of the snippet.
@@ -3360,7 +3376,9 @@ This renders the snippet as ordinary text."
 If so cleans up the whole snippet up."
   (let* ((snippets (yas-active-snippets 'all))
          (snippets-left snippets)
-         (snippet-exit-transform nil))
+         (snippet-exit-transform nil)
+         (snippet-exit-hook yas-after-exit-snippet-hook)
+         (snippet-exit-hook-env))
     (dolist (snippet snippets)
       (let ((active-field (yas--snippet-active-field snippet)))
         (yas--letenv (yas--snippet-expand-env snippet)
@@ -3371,6 +3389,7 @@ If so cleans up the whole snippet up."
                      (not (and active-field (yas--field-contains-point-p active-field))))
                  (setq snippets-left (delete snippet snippets-left))
                  (setf (yas--snippet-force-exit snippet) nil)
+                 (setq snippet-exit-hook-env yas-after-exit-snippet-hook)
                  (yas--commit-snippet snippet))
                 ((and active-field
                       (or (not yas--active-field-overlay)
@@ -3388,7 +3407,10 @@ If so cleans up the whole snippet up."
     (unless (or (null snippets) snippets-left)
       (if snippet-exit-transform
           (yas--eval-for-effect snippet-exit-transform))
-      (yas--safely-run-hook 'yas-after-exit-snippet-hook))))
+      (if (eq snippet-exit-hook snippet-exit-hook-env)
+          ;; No env binding.
+          (yas--safely-run-hook-bindings 'yas-after-exit-snippet-hook)
+        (yas--safely-run-hook-bindings 'yas-after-exit-snippet-hook snippet-exit-hook-env)))))
 
 ;; Apropos markers-to-points:
 ;;
