@@ -1352,7 +1352,7 @@ Returns (TEMPLATES START END). This function respects
       ((debug error) (cdr oops)))))
 
 (defun yas--eval-for-effect (form)
-  (yas--safely-run-hook (apply-partially #'eval form)))
+  (yas--safely-call-fun (apply-partially #'eval form)))
 
 (defun yas--read-lisp (string &optional nil-on-error)
   "Read STRING as a elisp expression and return it.
@@ -3339,15 +3339,23 @@ This renders the snippet as ordinary text."
   (condition-case error
       (funcall fun)
     ((debug error)
-     (yas--message 2 "Error running %s: %s"
-                   (if (symbolp fun) fun "a hook")
+     (yas--message 2 "Error running %s: %s" fun
                    (error-message-string error)))))
 
-(defun yas--safely-run-hook (hook)
+(defun yas--safely-run-hooks (hooks)
+  "Call the HOOKS functions according to `yas-good-grace'.
+
+The HOOKs variable’s value can also be a single
+function—either a lambda expression or a symbol with a function
+definition."
   (let ((debug-on-error (and (not (memq yas-good-grace '(t hooks)))
                              debug-on-error)))
-    (if (functionp hook) (yas--safely-call-fun hook)
-      (mapc #'yas--safely-call-fun hook))))
+    (condition-case error
+        (run-hooks hooks)
+      ((debug error)
+       (yas--message 2 "Error running %s: %s"
+                     hooks
+                     (error-message-string error))))))
 
 (defun yas--check-commit-snippet ()
   "Check if point exited the currently active field of the snippet.
@@ -3355,7 +3363,9 @@ This renders the snippet as ordinary text."
 If so cleans up the whole snippet up."
   (let* ((snippets (yas-active-snippets 'all))
          (snippets-left snippets)
-         (snippet-exit-transform nil)
+         (snippet-exit-transform)
+         ;; Record the custom snippet `yas-after-exit-snippet-hook'
+         ;; set in the expand-env field.
          (snippet-exit-hook yas-after-exit-snippet-hook))
     (dolist (snippet snippets)
       (let ((active-field (yas--snippet-active-field snippet)))
@@ -3383,9 +3393,10 @@ If so cleans up the whole snippet up."
                 (t
                  nil)))))
     (unless (or (null snippets) snippets-left)
-      (if snippet-exit-transform
-          (yas--eval-for-effect snippet-exit-transform))
-      (yas--safely-run-hook snippet-exit-hook))))
+      (when snippet-exit-transform
+        (yas--eval-for-effect snippet-exit-transform))
+      (let ((yas-after-exit-snippet-hook snippet-exit-hook))
+        (yas--safely-run-hooks 'yas-after-exit-snippet-hook)))))
 
 ;; Apropos markers-to-points:
 ;;
