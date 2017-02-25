@@ -584,6 +584,9 @@ SUB"))))
          (should (eq yas--ran-exit-hook t)))))))
 
 (ert-deftest snippet-exit-hooks-bindings ()
+  "Check that `yas-after-exit-snippet-hook' is handled correctly
+in the case of a buffer-local variable and being overwritten by
+the expand-env field."
   (defvar yas--ran-exit-hook)
   (with-temp-buffer
     (yas-saving-variables
