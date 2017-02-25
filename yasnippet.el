@@ -3339,8 +3339,7 @@ This renders the snippet as ordinary text."
   (condition-case error
       (funcall fun)
     ((debug error)
-     (yas--message 2 "Error running %s: %s"
-                   (if (symbolp fun) fun)
+     (yas--message 2 "Error running %s: %s" fun
                    (error-message-string error)))))
 
 (defun yas--safely-run-hooks (hooks)
@@ -3365,9 +3364,9 @@ If so cleans up the whole snippet up."
   (let* ((snippets (yas-active-snippets 'all))
          (snippets-left snippets)
          (snippet-exit-transform)
-         ;; Allow overriding `yas-after-exit-snippet-hook'.
-         ;; Keep track of the letenv hook.
-         (snippet-exit-hook-env yas-after-exit-snippet-hook))
+         ;; Record the custom snippet `yas-after-exit-snippet-hook'
+         ;; set in the expand-env field.
+         (snippet-exit-hook yas-after-exit-snippet-hook))
     (dolist (snippet snippets)
       (let ((active-field (yas--snippet-active-field snippet)))
         (yas--letenv (yas--snippet-expand-env snippet)
@@ -3378,7 +3377,7 @@ If so cleans up the whole snippet up."
                      (not (and active-field (yas--field-contains-point-p active-field))))
                  (setq snippets-left (delete snippet snippets-left))
                  (setf (yas--snippet-force-exit snippet) nil)
-                 (setq snippet-exit-hook-env yas-after-exit-snippet-hook)
+                 (setq snippet-exit-hook yas-after-exit-snippet-hook)
                  (yas--commit-snippet snippet))
                 ((and active-field
                       (or (not yas--active-field-overlay)
@@ -3396,8 +3395,7 @@ If so cleans up the whole snippet up."
     (unless (or (null snippets) snippets-left)
       (when snippet-exit-transform
         (yas--eval-for-effect snippet-exit-transform))
-      (if (not (eq snippet-exit-hook-env yas-after-exit-snippet-hook))
-          (yas--safely-run-hooks 'snippet-exit-hook-env)
+      (let ((yas-after-exit-snippet-hook snippet-exit-hook))
         (yas--safely-run-hooks 'yas-after-exit-snippet-hook)))))
 
 ;; Apropos markers-to-points:
