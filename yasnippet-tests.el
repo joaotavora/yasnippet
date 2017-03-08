@@ -614,6 +614,26 @@ foobaz\n"))))
          (should (eq 'global (nth 0 yas--ran-exit-hook)))
          (should (eq 'local (nth 1 yas--ran-exit-hook))))))))
 
+(ert-deftest snippet-mirror-bindings ()
+  "Check that variables defined with the expand-env field are
+accessible from mirror transformations."
+  (with-temp-buffer
+    (yas-saving-variables
+     (let ((yas-triggers-in-field t)
+           (yas-good-grace nil))
+       (yas-with-snippet-dirs
+         '((".emacs.d/snippets"
+            ("emacs-lisp-mode"
+             ("baz" . "\
+# expand-env: ((func #'upcase))
+# --
+hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \"baz\")}$0"))))
+         (yas-reload-all)
+         (emacs-lisp-mode)
+         (yas-minor-mode +1)
+         (insert "baz")
+         (ert-simulate-command '(yas-expand))
+         (should (string= (yas--buffer-contents) "hello BAZ foobaz\n")))))))
 
 (defvar yas--barbaz)
 (defvar yas--foobarbaz)
