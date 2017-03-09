@@ -3731,7 +3731,8 @@ considered when expanding the snippet."
            (let ((first-field (car (yas--snippet-fields snippet))))
              (when first-field
                (sit-for 0) ;; fix issue 125
-               (yas--move-to-field snippet first-field)))
+               (yas--letenv (yas--snippet-expand-env snippet)
+                 (yas--move-to-field snippet first-field))))
            (yas--message 4 "snippet expanded.")
            t))))
 
