@@ -3534,7 +3534,8 @@ field start.  This hook does nothing if an undo is in progress."
               yas--inhibit-overlay-hooks
               (not (overlayp yas--active-field-overlay)) ; Avoid Emacs bug #21824.
               (yas--undo-in-progress))
-    (let* ((inhibit-modification-hooks t)
+    (let* ((inhibit-modification-hooks nil)
+           (yas--inhibit-overlay-hooks t)
            (field (overlay-get overlay 'yas--field))
            (snippet (overlay-get yas--active-field-overlay 'yas--snippet)))
       (save-match-data
