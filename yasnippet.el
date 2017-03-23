@@ -3688,17 +3688,10 @@ considered when expanding the snippet."
              ;; them mostly to make the undo information
              ;;
              (setq yas--start-column (current-column))
-             (let ((yas--inhibit-overlay-hooks t)
-                   ;; Avoid major-mode's syntax propertizing function,
-                   ;; since we mess with the syntax-table and also
-                   ;; insert things that are not valid in the
-                   ;; major-mode language syntax anyway.
-                   (syntax-propertize-function nil))
+             (let ((yas--inhibit-overlay-hooks t))
                (insert content)
                (setq snippet
-                     (yas--snippet-create expand-env start (point))))
-             ;; Invalidate any syntax-propertizing done while `syntax-propertize-function' was nil
-             (syntax-ppss-flush-cache start))
+                     (yas--snippet-create expand-env start (point)))))
 
            ;; stacked-expansion: This checks for stacked expansion, save the
            ;; `yas--previous-active-field' and advance its boundary.
@@ -3948,7 +3941,10 @@ expansion.")
 necessary fields, mirrors and exit points.
 
 Meant to be called in a narrowed buffer, does various passes"
-  (let ((parse-start (point)))
+  (let ((parse-start (point))
+        ;; Avoid major-mode's syntax propertizing function, since we
+        ;; change the syntax-table while calling `scan-sexps'.
+        (syntax-propertize-function nil))
     ;; Reset the yas--dollar-regions
     ;;
     (setq yas--dollar-regions nil)
@@ -4011,7 +4007,10 @@ Meant to be called in a narrowed buffer, does various passes"
     ;; indent the best we can
     ;;
     (goto-char parse-start)
-    (yas--indent snippet)))
+    ;; Invalidate any syntax-propertizing done while
+    ;; `syntax-propertize-function' was nil.
+    (syntax-ppss-flush-cache parse-start))
+  (yas--indent snippet))
 
 ;; HACK: Some implementations of `indent-line-function' (called via
 ;; `indent-according-to-mode') delete text before they insert (like
