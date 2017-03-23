@@ -3004,6 +3004,15 @@ Update each field with the result of calling FUN."
       (setf (yas--exit-marker snippet-exit)
             (funcall fun (yas--exit-marker snippet-exit))))))
 
+(defun yas--snippet-live-p (snippet)
+  "Return non-nil if SNIPPET hasn't been committed."
+  (catch 'live
+    (yas--snippet-map-markers (lambda (m)
+                                (if (markerp m) m
+                                  (throw 'live nil)))
+                              snippet)
+    t))
+
 (defun yas--apply-transform (field-or-mirror field &optional empty-on-nil-p)
   "Calculate transformed string for FIELD-OR-MIRROR from FIELD.
 
@@ -3538,16 +3547,19 @@ field start.  This hook does nothing if an undo is in progress."
            (yas--inhibit-overlay-hooks t)
            (field (overlay-get overlay 'yas--field))
            (snippet (overlay-get yas--active-field-overlay 'yas--snippet)))
-      (save-match-data
-        (yas--letenv (yas--snippet-expand-env snippet)
-          (when (yas--skip-and-clear-field-p field beg end length)
-            ;; We delete text starting from the END of insertion.
-            (yas--skip-and-clear field end))
-          (setf (yas--field-modified-p field) t)
-          (yas--advance-end-maybe field (overlay-end overlay))
-          (save-excursion
-            (yas--field-update-display field))
-          (yas--update-mirrors snippet))))))
+      (if (yas--snippet-live-p snippet)
+          (save-match-data
+            (yas--letenv (yas--snippet-expand-env snippet)
+              (when (yas--skip-and-clear-field-p field beg end length)
+                ;; We delete text starting from the END of insertion.
+                (yas--skip-and-clear field end))
+              (setf (yas--field-modified-p field) t)
+              (yas--advance-end-maybe field (overlay-end overlay))
+              (save-excursion
+                (yas--field-update-display field))
+              (yas--update-mirrors snippet)))
+        (lwarn '(yasnippet zombie) :warning "Killing zombie snippet!")
+        (delete-overlay overlay)))))
 
 ;;; Apropos protection overlays:
 ;;
