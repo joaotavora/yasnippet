@@ -768,6 +768,12 @@ which decides on the snippet to expand.")
 (defvar yas-minor-mode-hook nil
   "Hook run when `yas-minor-mode' is turned on.")
 
+(defun yas--auto-fill-wrapper ()
+  (when (and auto-fill-function
+             (not (eq auto-fill-function #'yas--auto-fill)))
+    (setq yas--original-auto-fill-function auto-fill-function)
+    (setq auto-fill-function #'yas--auto-fill)))
+
 ;;;###autoload
 (define-minor-mode yas-minor-mode
   "Toggle YASnippet mode.
@@ -802,14 +808,13 @@ Key bindings:
          ;; Perform JIT loads
          (yas--load-pending-jits)
          ;; Install auto-fill handler.
-         (when (and auto-fill-function
-                    (not (eq auto-fill-function #'yas--auto-fill)))
-           (setq yas--original-auto-fill-function auto-fill-function)
-           (setq auto-fill-function #'yas--auto-fill)))
+         (yas--auto-fill-wrapper)       ; Now...
+         (add-hook 'auto-fill-mode-hook #'yas--auto-fill-wrapper)) ; or later.
         (t
          ;; Uninstall the direct keymaps, post-command hook, and
          ;; auto-fill handler.
          (remove-hook 'post-command-hook #'yas--post-command-handler t)
+         (remove-hook 'auto-fill-mode-hook #'yas--auto-fill-wrapper)
          (when (local-variable-p 'yas--original-auto-fill-function)
            (setq auto-fill-function yas--original-auto-fill-function))
          (setq emulation-mode-map-alists
