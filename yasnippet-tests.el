@@ -91,6 +91,15 @@
       (should (string= (yas--buffer-contents)
                        (concat filled-words "\n"))))))
 
+(ert-deftest auto-fill-with-multiparagraph ()
+  "Test auto-fill protection on snippet spanning multiple paragraphs"
+  (with-temp-buffer
+    (yas-minor-mode +1)
+    (auto-fill-mode +1)
+    (yas-expand-snippet "foo$1\n\n$2bar")
+    (yas-mock-insert " ")
+    (ert-simulate-command '(yas-next-field-or-maybe-expand))
+    (should (looking-at "bar"))))
 
 (ert-deftest primary-field-transformation ()
   (with-temp-buffer

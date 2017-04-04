@@ -3606,7 +3606,8 @@ field start.  This hook does nothing if an undo is in progress."
          (reoverlays nil))
     (dolist (snippet snippets)
       (dolist (m (yas--collect-snippet-markers snippet))
-        (push (yas--snapshot-marker-location m beg end) remarkers))
+        (when (and (<= beg m) (<= m end))
+          (push (yas--snapshot-marker-location m beg end) remarkers)))
       (push (yas--snapshot-overlay-location
              (yas--snippet-control-overlay snippet) beg end)
             reoverlays))
@@ -4129,15 +4130,21 @@ The returned value is a list of the form (MARKER REGEXP WS-COUNT)."
                              (nconc before (list marker) after)
                              "[[:space:]\n]*"))
           (progn (goto-char marker)
-                 (skip-syntax-forward " " end)
+                 (skip-chars-forward "[:space:]\n" end)
                  (- (point) marker)))))
 
 (defun yas--snapshot-overlay-location (overlay beg end)
   "Like `yas--snapshot-marker-location' for overlays.
-The returned format is (OVERLAY (RE WS) (RE WS))."
-  (list overlay
-        (cdr (yas--snapshot-marker-location (overlay-start overlay) beg end))
-        (cdr (yas--snapshot-marker-location (overlay-end overlay) beg end))))
+The returned format is (OVERLAY (RE WS) (RE WS)).  Either of
+the (RE WS) lists may be nil if the start or end, respectively,
+of the overlay is outside the range BEG .. END."
+  (let ((obeg (overlay-start overlay))
+        (oend (overlay-end overlay)))
+    (list overlay
+          (when (and (<= beg obeg) (< obeg end))
+            (cdr (yas--snapshot-marker-location obeg beg end)))
+          (when (and (<= beg oend) (< oend end))
+            (cdr (yas--snapshot-marker-location oend beg end))))))
 
 (defun yas--snapshot-overlay-line-location (overlay)
   "Return info for restoring OVERLAY's line based location.
@@ -4160,8 +4167,8 @@ Buffer must be narrowed to BEG..END used to create the snapshot info."
       (lwarn '(yasnippet re-marker) :warning
              "Couldn't find: %S" regexp)
     (goto-char (match-beginning 1))
-    (skip-syntax-forward " ")
-    (skip-syntax-backward " " (- (point) ws-count))))
+    (skip-chars-forward "[:space:]\n")
+    (skip-chars-backward "[:space:]\n" (- (point) ws-count))))
 
 (defun yas--restore-marker-location (re-marker)
   "Restores marker based on info from `yas--snapshot-marker-location'.
@@ -4174,10 +4181,12 @@ Buffer must be narrowed to BEG..END used to create the snapshot info."
 Buffer must be narrowed to BEG..END used to create the snapshot info."
   (cl-destructuring-bind (overlay loc-beg loc-end) ov-locations
     (move-overlay overlay
-                  (progn (apply #'yas--goto-saved-location loc-beg)
-                         (point))
-                  (progn (apply #'yas--goto-saved-location loc-end)
-                         (point)))))
+                  (if (not loc-beg) (overlay-start overlay)
+                    (apply #'yas--goto-saved-location loc-beg)
+                    (point))
+                  (if (not loc-end) (overlay-end overlay)
+                    (apply #'yas--goto-saved-location loc-end)
+                    (point)))))
 
 
 (defun yas--restore-overlay-line-location (ov-locations)
