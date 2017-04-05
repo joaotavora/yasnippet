@@ -3809,6 +3809,7 @@ considered when expanding the snippet."
                (yas--letenv (yas--snippet-expand-env snippet)
                  (yas--move-to-field snippet first-field))))
            (yas--message 4 "snippet expanded.")
+           (setq deactivate-mark nil)
            t))))
 
 (defun yas--take-care-of-redo (_beg _end snippet)
