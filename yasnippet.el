@@ -152,10 +152,13 @@
   :prefix "yas-"
   :group 'editing)
 
+(defconst yas--loaddir
+  (file-name-directory (or load-file-name buffer-file-name))
+  "Directory that yasnippet was loaded from.")
+
 (defvar yas-installed-snippets-dir nil)
 (setq yas-installed-snippets-dir
-      (when load-file-name
-        (expand-file-name "snippets" (file-name-directory load-file-name))))
+      (expand-file-name "snippets" yas--loaddir))
 
 (defconst yas--default-user-snippets-dir
   (expand-file-name "snippets" user-emacs-directory))
@@ -1977,9 +1980,21 @@ This works by stubbing a few functions, then calling
 
 (defun yas-about ()
   (interactive)
-  (message (concat "yasnippet (version "
-                   yas--version
-                   ") -- pluskid/joaotavora/npostavs")))
+  (message "yasnippet (version %s) -- pluskid/joaotavora/npostavs"
+           (or (ignore-errors (car (let ((default-directory yas--loaddir))
+                                     (process-lines "git" "describe"
+                                                    "--tags" "--dirty"))))
+               (when (and (featurep 'package) (fboundp 'package-desc-version))
+                 (ignore-errors
+                   (let* ((yas-pkg (cdr (assq 'yasnippet package-alist)))
+                          (version (package-version-join
+                                    (package-desc-version (car yas-pkg)))))
+                     ;; Special case for MELPA's bogus version numbers.
+                     (if (string-match "\\`20..[01][0-9][0-3][0-9][.][0-9]\\{3,4\\}\\'"
+                                       version)
+                         (concat yas--version "-snapshot" version)
+                       version))))
+               yas--version)))
 
 
 ;;; Apropos snippet menu:
