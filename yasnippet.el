@@ -1984,7 +1984,10 @@ This works by stubbing a few functions, then calling
            (or (ignore-errors (car (let ((default-directory yas--loaddir))
                                      (process-lines "git" "describe"
                                                     "--tags" "--dirty"))))
-               (when (and (featurep 'package) (fboundp 'package-desc-version))
+               (when (and (featurep 'package)
+                          (fboundp 'package-desc-version)
+                          (fboundp 'package-version-join))
+                 (defvar package-alist)
                  (ignore-errors
                    (let* ((yas-pkg (cdr (assq 'yasnippet package-alist)))
                           (version (package-version-join
