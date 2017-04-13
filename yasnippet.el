@@ -3293,7 +3293,8 @@ This renders the snippet as ordinary text."
                (overlay-buffer control-overlay))
       (setq yas-snippet-beg (overlay-start control-overlay))
       (setq yas-snippet-end (overlay-end control-overlay))
-      (delete-overlay control-overlay))
+      (delete-overlay control-overlay)
+      (setf (yas--snippet-control-overlay snippet) nil))
 
     (let ((yas--inhibit-overlay-hooks t))
       (when yas--active-field-overlay
@@ -3448,8 +3449,9 @@ If so cleans up the whole snippet up."
 ;;
 ;; This was found useful for performance reasons, so that an excessive
 ;; number of live markers aren't kept around in the
-;; `buffer-undo-list'.  We reuse the original marker object, although
-;; that's probably not necessary.
+;; `buffer-undo-list'.  We don't reuse the original marker object
+;; because that leaves an unreadable object in the history list and
+;; undo-tree persistence has trouble with that.
 ;;
 ;; This shouldn't bring horrible problems with undo/redo, but you
 ;; never know.
@@ -3457,16 +3459,13 @@ If so cleans up the whole snippet up."
 (defun yas--markers-to-points (snippet)
   "Save all markers of SNIPPET as positions."
   (yas--snippet-map-markers (lambda (m)
-                              (prog1 (cons (marker-position m) m)
+                              (prog1 (marker-position m)
                                 (set-marker m nil)))
                             snippet))
 
 (defun yas--points-to-markers (snippet)
   "Restore SNIPPET's marker positions, saved by `yas--markers-to-points'."
-  (yas--snippet-map-markers (lambda (p-m)
-                              (set-marker (cdr p-m) (car p-m))
-                              (cdr p-m))
-                            snippet))
+  (yas--snippet-map-markers #'copy-marker snippet))
 
 (defun yas--maybe-move-to-active-field (snippet)
   "Try to move to SNIPPET's active (or first) field and return it if found."
