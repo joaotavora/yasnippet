@@ -169,3 +169,7 @@ Finally, thank you very much for using YASnippet!
 [yasmate]: http://github.com/joaotavora/yasmate
 [textmate-to-yas.el]: https://github.com/mattfidler/textmate-to-yas.el
 [yasnippet-snippets]: http://github.com/AndreaCrotti/yasnippet-snippets
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/capitaomorte/yasnippet/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
