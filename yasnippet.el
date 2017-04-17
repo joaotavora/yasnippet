@@ -580,7 +580,9 @@ conditions.
   "Holds the YASnippet menu.")
 
 (defun yas--maybe-expand-key-filter (cmd)
-  (if (yas--templates-for-key-at-point) cmd))
+  (when (let ((yas--condition-cache-timestamp (current-time)))
+          (yas--templates-for-key-at-point))
+    cmd))
 
 (defconst yas-maybe-expand
   '(menu-item "" yas-expand :filter yas--maybe-expand-key-filter)
@@ -2230,7 +2232,8 @@ object satisfying `yas--field-p' to restrict the expansion to."
       (yas--fallback))))
 
 (defun yas--maybe-expand-from-keymap-filter (cmd)
-  (let* ((vec (cl-subseq (this-command-keys-vector)
+  (let* ((yas--condition-cache-timestamp (current-time))
+         (vec (cl-subseq (this-command-keys-vector)
                          (if current-prefix-arg
                              (length (this-command-keys))
                            0)))
