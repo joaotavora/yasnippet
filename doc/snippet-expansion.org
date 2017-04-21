@@ -35,7 +35,10 @@
 /snippet key/) before point.  YASnippet also provides a /conditional
 binding/ for this command: the variable [[sym:yas-expand][=yas-maybe-expand=]] contains a
 special value which, when bound in a keymap, tells Emacs to call
-[[sym:yas-expand][=yas-expand=]] if and only if there is a snippet abbrev before point.  If there is not 
+[[sym:yas-expand][=yas-expand=]] if and only if there is a snippet abbrev before point.
+If there is no snippet to expand, Emacs will behave as if [[sym:yas-expand][=yas-expand=]]
+is unbound and so will run whatever command is bound to that key
+normally.
 
 When [[sym:yas-minor-mode][=yas-minor-mode=]] is enabled, it binds [[sym:yas-maybe-expand][=yas-maybe-expand=]] to =TAB=
 and =<tab>= by default, however, you can freely remove those bindings:
