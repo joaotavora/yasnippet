@@ -105,7 +105,9 @@ should be added like this to `yas-snippet-dirs`:
 
 Please refer to the comprehensive [documentation][docs] for full
 customisation and support.  If you find a bug in the code or in the
-documentation, please report it on [the GitHub issue tracker][issues].
+documentation, please report it to the main Emacs bug list,
+bug-gnu-emacs@gnu.org, and put "yasnippet" somewhere in the subject.
+Alternatively, you may use the [Github issue tracker][issues].
 
 ## Important note regarding bug reporting
 
