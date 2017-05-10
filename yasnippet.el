@@ -4351,7 +4351,8 @@ with their evaluated value into `yas--backquote-markers-and-strings'."
   (ignore-errors
     (save-match-data ; `scan-sexps' may modify match data.
       (with-syntax-table (standard-syntax-table)
-        (scan-sexps from count)))))
+        (let ((parse-sexp-lookup-properties nil))
+          (scan-sexps from count))))))
 
 (defun yas--make-marker (pos)
   "Create a marker at POS with nil `marker-insertion-type'."
