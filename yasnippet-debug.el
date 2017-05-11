@@ -288,18 +288,19 @@
            (format "snippet exit at %d"
                    (marker-position (yas--fom-start fom)))))))
 
-(defun yas-debug-process-command-line ()
+(defun yas-debug-process-command-line (&optional options)
   "Implement command line processing."
   (setq yas-verbosity 99)
   (setq yas-triggers-in-field t)
   (setq debug-on-error t)
   (let* ((snippet-file nil)
          (snippet-mode 'fundamental-mode)
-         (options (cl-loop for opt = (pop command-line-args-left)
-                           while (and opt (not (equal opt "--"))
-                                      (string-prefix-p "-" opt))
-                           collect opt))
          (snippet-key nil))
+    (unless options
+      (setq options (cl-loop for opt = (pop command-line-args-left)
+                             while (and opt (not (equal opt "--"))
+                                        (string-prefix-p "-" opt))
+                             collect opt)))
     (when-let (mode (cl-member "-M:" options :test #'string-prefix-p))
       (setq snippet-mode (intern (concat (substring (car mode) 3) "-mode"))))
     (when-let (mode (cl-member "-M." options :test #'string-prefix-p))
