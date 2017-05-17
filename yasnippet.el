@@ -3580,6 +3580,11 @@ field start.  This hook does nothing if an undo is in progress."
   (unless (or (not after?)
               yas--inhibit-overlay-hooks
               (not (overlayp yas--active-field-overlay)) ; Avoid Emacs bug #21824.
+              ;; If a single change hits multiple overlays of the same
+              ;; snippet, then we delete the snippet the first time,
+              ;; and then subsequent calls get a deleted overlay.
+              ;; Don't delete the snippet again!
+              (not (overlay-buffer overlay))
               (yas--undo-in-progress))
     (let* ((inhibit-modification-hooks nil)
            (yas--inhibit-overlay-hooks t)
