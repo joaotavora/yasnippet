@@ -95,25 +95,28 @@
          (color-ov (yas-debug-get-live-indicator marker))
          (color (car color-ov))
          (ov (cdr color-ov))
-         (decorator (overlay-get ov 'before-string)))
-    (propertize (format "at %d" (marker-position marker))
-                'cursor-sensor-functions
-                `(,(lambda (window _oldpos dir)
-                     (overlay-put
-                      ov 'before-string
-                      (propertize decorator
-                                  'face (if (eq dir 'entered)
-                                            'mode-line-highlight color)))))
-                'face color)))
+         (decorator (overlay-get ov 'before-string))
+         (str (format "at %d" (+ marker))))
+    (if (markerp marker)
+        (propertize str
+                    'cursor-sensor-functions
+                    `(,(lambda (window _oldpos dir)
+                         (overlay-put
+                          ov 'before-string
+                          (propertize decorator
+                                      'face (if (eq dir 'entered)
+                                                'mode-line-highlight color)))))
+                    'face color)
+      str)))
 
 (defun yas-debug-ov-fom-start (ovfom)
-  (if (overlayp ovfom) (overlay-start ovfom)
-    (let ((m (yas--fom-start ovfom)))
-      (when (markerp m) (marker-position m)))))
+  (cond ((overlayp ovfom) (overlay-start ovfom))
+        ((integerp ovfom) ovfom)
+        (t (yas--fom-start ovfom))))
 (defun yas-debug-ov-fom-end (ovfom)
-  (if (overlayp ovfom) (overlay-end ovfom)
-    (let ((m (yas--fom-end ovfom)))
-      (when (markerp m) (marker-position m)))))
+  (cond ((overlayp ovfom) (overlay-end ovfom))
+        ((integerp ovfom) ovfom)
+        (t (yas--fom-end ovfom))))
 
 (defun yas-debug-live-range (range)
   (let* ((color-ov (yas-debug-get-live-indicator range))
@@ -123,8 +126,8 @@
          (decorator-end (overlay-get ov 'after-string))
          (beg (yas-debug-ov-fom-start range))
          (end (yas-debug-ov-fom-end range)))
-    (if (and beg end)
-        (propertize (format "from %d to %d" beg end)
+    (if (and beg end (not (integerp beg)) (not (integerp end)))
+        (propertize (format "from %d to %d" (+ beg) (+ end))
                     'cursor-sensor-functions
                     `(,(lambda (window _oldpos dir)
                          (let ((face (if (eq dir 'entered)
@@ -278,15 +281,15 @@
     (cond ((yas--field-p fom)
            (format "field %s from %d to %d"
                    (yas--field-number fom)
-                   (marker-position (yas--field-start fom))
-                   (marker-position (yas--field-end fom))))
+                   (+ (yas--field-start fom))
+                   (+ (yas--field-end fom))))
           ((yas--mirror-p fom)
            (format "mirror from %d to %d"
-                   (marker-position (yas--mirror-start fom))
-                   (marker-position (yas--mirror-end fom))))
+                   (+ (yas--mirror-start fom))
+                   (+ (yas--mirror-end fom))))
           (t
            (format "snippet exit at %d"
-                   (marker-position (yas--fom-start fom)))))))
+                   (+ (yas--fom-start fom)))))))
 
 (defun yas-debug-process-command-line (&optional options)
   "Implement command line processing."
