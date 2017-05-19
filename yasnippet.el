@@ -4025,45 +4025,30 @@ expansion.")
 necessary fields, mirrors and exit points.
 
 Meant to be called in a narrowed buffer, does various passes"
-  (let ((parse-start (point))
-        ;; Avoid major-mode's syntax propertizing function, since we
-        ;; change the syntax-table while calling `scan-sexps'.
-        (syntax-propertize-function nil))
-    ;; Reset the yas--dollar-regions
-    ;;
-    (setq yas--dollar-regions nil)
-    ;; protect just the backquotes
-    ;;
-    (yas--protect-escapes nil '(?`))
-    ;; replace all backquoted expressions
-    ;;
-    (goto-char parse-start)
-    (yas--save-backquotes)
-    ;; protect escaped characters
-    ;;
-    (yas--protect-escapes)
-    ;; Parse indent markers: `$>'.
-    (goto-char parse-start)
-    (yas--indent-parse-create)
-    ;; parse fields with {}
-    ;;
-    (goto-char parse-start)
-    (yas--field-parse-create snippet)
-    ;; parse simple mirrors and fields
-    ;;
-    (goto-char parse-start)
-    (yas--simple-mirror-parse-create snippet)
-    ;; parse mirror transforms
-    ;;
-    (goto-char parse-start)
-    (yas--transform-mirror-parse-create snippet)
-    ;; calculate adjacencies of fields and mirrors
-    ;;
+  (let ((parse-start (point)))
+    ;; Avoid major-mode's syntax propertizing function, since we
+    ;; change the syntax-table while calling `scan-sexps'.
+    (let ((syntax-propertize-function nil))
+      (setq yas--dollar-regions nil)  ; Reset the yas--dollar-regions.
+      (yas--protect-escapes nil '(?`))  ; Protect just the backquotes.
+      (goto-char parse-start)
+      (yas--save-backquotes)     ; Replace all backquoted expressions.
+      (yas--protect-escapes)     ; Protect escaped characters.
+      (goto-char parse-start)
+      (yas--indent-parse-create)        ; Parse indent markers: `$>'.
+      (goto-char parse-start)
+      (yas--field-parse-create snippet) ; Parse fields with {}.
+      (goto-char parse-start)
+      (yas--simple-mirror-parse-create snippet) ; Parse simple mirrors & fields.
+      (goto-char parse-start)
+      (yas--transform-mirror-parse-create snippet) ; Parse mirror transforms.
+      ;; Invalidate any syntax-propertizing done while
+      ;; `syntax-propertize-function' was nil.
+      (syntax-ppss-flush-cache parse-start))
+    ;; Set "next" links of fields & mirrors.
     (yas--calculate-adjacencies snippet)
-    ;; Delete $-constructs
-    ;;
     (save-restriction
-      (widen)
+      (widen)                           ; Delete $-constructs.
       (yas--delete-regions yas--dollar-regions))
     ;; Make sure to do this insertion *after* deleting the dollar
     ;; regions, otherwise we invalidate the calculated positions of
@@ -4078,23 +4063,12 @@ Meant to be called in a narrowed buffer, does various passes"
                 (get-register yas-wrap-around-region))
            (insert (prog1 (get-register yas-wrap-around-region)
                      (set-register yas-wrap-around-region nil)))))
-    ;; restore backquoted expression values
-    ;;
-    (yas--restore-backquotes)
-    ;; restore escapes
-    ;;
+    (yas--restore-backquotes)  ; Restore backquoted expression values.
     (goto-char parse-start)
-    (yas--restore-escapes)
-    ;; update mirrors for the first time
-    ;;
-    (yas--update-mirrors snippet)
-    ;; indent the best we can
-    ;;
-    (goto-char parse-start)
-    ;; Invalidate any syntax-propertizing done while
-    ;; `syntax-propertize-function' was nil.
-    (syntax-ppss-flush-cache parse-start))
-  (yas--indent snippet))
+    (yas--restore-escapes)        ; Restore escapes.
+    (yas--update-mirrors snippet) ; Update mirrors for the first time.
+    (goto-char parse-start))
+  (yas--indent snippet))                ; Indent the best we can.
 
 ;; HACK: Some implementations of `indent-line-function' (called via
 ;; `indent-according-to-mode') delete text before they insert (like
