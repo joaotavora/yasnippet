@@ -166,6 +166,15 @@
              (insert "# key: foo \n# --\nfoo")
              (yas--parse-template)))))
 
+(ert-deftest ignore-trailing-whitespace ()
+  (should (equal
+           (with-temp-buffer
+             (insert "# key: foo\n# --\nfoo")
+             (yas--parse-template))
+           (with-temp-buffer
+             (insert "# key: foo \n# --\nfoo")
+             (yas--parse-template)))))
+
 ;; (ert-deftest in-snippet-undo ()
 ;;   (with-temp-buffer
 ;;     (yas-minor-mode 1)
