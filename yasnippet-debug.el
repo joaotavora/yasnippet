@@ -192,6 +192,12 @@
 
 (defvar yas-debug-target-buffer nil)
 (defvar-local yas-debug-target-snippets nil)
+(defvar yas-debug-undo nil)
+
+(defun yas-toggle-debug-undo (value)
+  (interactive (list (not yas-debug-undo)))
+  (setq yas-debug-undo value)
+  (yas--message 3 "debug undo %sabled" (if yas-debug-undo "en" "dis")))
 
 (defadvice yas--snippet-parse-create (before yas-debug-target-snippet (snippet))
   (add-to-list 'yas-debug-target-snippets snippet))
@@ -223,7 +229,11 @@
                        (unless (memq loc yas-debug-recently-live-indicators)
                          (delete-overlay (cdr color-ov))
                          (remhash loc yas-debug-live-indicators)))
-                     yas-debug-live-indicators)))
+                     yas-debug-live-indicators))
+          (when (and yas-debug-undo (listp buffer-undo-list))
+            (printf "Undo list has %s elements:\n" (length buffer-undo-list))
+            (cl-loop for undo-elem in buffer-undo-list
+                     do (printf "%S\n" undo-elem))))
         (when hook
           (setq yas-debug-target-buffer (current-buffer))
           (ad-enable-advice 'yas--snippet-parse-create 'before 'yas-debug-target-snippet)
