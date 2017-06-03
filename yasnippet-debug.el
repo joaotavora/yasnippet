@@ -167,8 +167,9 @@
               (yas-debug-live-range overlay)))
     (when-let (active-field (yas--snippet-active-field snippet))
       (unless (consp (yas--field-start active-field))
-        (printf "\tactive field: #%d %s covering \"%s\"\n"
+        (printf "\tactive field: #%d %s %s covering \"%s\"\n"
                 (yas--field-number active-field)
+                (if (yas--field-modified-p active-field) "**" "--")
                 (yas-debug-live-range active-field)
                 (buffer-substring-no-properties (yas--field-start active-field) (yas--field-end active-field)))))
     (when-let (exit (yas--snippet-exit snippet))
@@ -177,8 +178,9 @@
               (yas--exit-next exit)))
     (dolist (field (yas--snippet-fields snippet))
       (unless (consp (yas--field-start field))
-        (printf "\tfield: %d %s covering \"%s\" next: %s%s\n"
+        (printf "\tfield: %d %s %s covering \"%s\" next: %s%s\n"
                 (yas--field-number field)
+                (if (yas--field-modified-p field) "**" "--")
                 (yas-debug-live-range field)
                 (buffer-substring-no-properties (yas--field-start field) (yas--field-end field))
                 (yas--debug-format-fom-concise (yas--field-next field))
