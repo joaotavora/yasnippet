@@ -3717,9 +3717,10 @@ Move the overlays, or create them if they do not exit."
 (defvar yas--first-indent-undo nil
   "Internal variable for indent undo entries.
 Used to pass info from `yas--indent-region' to `yas-expand-snippet'.")
-(defvar yas--return-first-indent-undo nil
-  "Whether to record undo info in `yas--indent-region'.
-See also `yas--first-indent-undo'.")
+(defvar yas--get-indent-undo-pos nil
+  "Record undo info for line beginning at given position.
+We bind this when first creating a snippet.  See also
+`yas--first-indent-undo'.")
 
 (defun yas-expand-snippet (content &optional start end expand-env)
   "Expand snippet CONTENT at current point.
@@ -3774,7 +3775,7 @@ considered when expanding the snippet."
            ;;
            ;;    stacked expansion: also shoosh the overlay modification hooks
            (let ((buffer-undo-list t)
-                 (yas--return-first-indent-undo t))
+                 (yas--get-indent-undo-pos (line-beginning-position)))
              ;; snippet creation might evaluate users elisp, which
              ;; might generate errors, so we have to be ready to catch
              ;; them mostly to make the undo information
@@ -4199,12 +4200,7 @@ The SNIPPET's markers are preserved."
     (save-restriction
       (widen)
       (let* ((snippet-markers (yas--collect-snippet-markers snippet))
-             (to (set-marker (make-marker) to))
-             (control-ov (yas--snippet-control-overlay snippet))
-             (1st-bol (progn (goto-char (if control-ov (overlay-start control-ov)
-                                          from))
-                             (beginning-of-line)
-                             (point))))
+             (to (set-marker (make-marker) to)))
         (goto-char from)
         (cl-loop for bol = (line-beginning-position)
                  for eol = (line-end-position)
@@ -4217,8 +4213,7 @@ The SNIPPET's markers are preserved."
                              remarkers)))
                    (unwind-protect
                        (progn (back-to-indentation)
-                              (if (and yas--return-first-indent-undo
-                                       (= 1st-bol bol))
+                              (if (eq yas--get-indent-undo-pos bol)
                                   (let ((buffer-undo-list nil))
                                     (indent-according-to-mode)
                                     (setq yas--first-indent-undo

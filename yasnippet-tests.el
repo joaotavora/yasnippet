@@ -176,6 +176,39 @@
 ;;     (should (string= (yas--buffer-contents)
 ;;                      "brother from another mother!"))))
 
+(ert-deftest undo-indentation ()
+  "Check undoing works when only line of snippet is indented."
+  (let ((yas-also-auto-indent-first-line t))
+    (yas-with-snippet-dirs
+     '((".emacs.d/snippets" ("emacs-lisp-mode" ("s" . "(setq $0)"))))
+     (with-temp-buffer
+       (emacs-lisp-mode)
+       (yas-minor-mode 1)
+       (insert "(let\n(while s")
+       (setq buffer-undo-list ())
+       (ert-simulate-command '(yas-expand))
+       ;; Need undo barrier, I think command loop puts it normally.
+       (push nil buffer-undo-list)
+       (should (string= (buffer-string) "(let\n    (while (setq )"))
+       (ert-simulate-command '(undo))
+       (should (string= (buffer-string) "(let\n(while s"))))))
+
+(ert-deftest undo-indentation-multiline ()
+  "Check undoing works when first line of multi-line snippet is indented."
+  (yas-with-snippet-dirs
+    '((".emacs.d/snippets" ("js-mode" ("if" . "if ($1) {\n\n}\n"))))
+    (with-temp-buffer
+      (js-mode)
+      (yas-minor-mode 1)
+      (insert "if\nabc = 123456789 + abcdef;")
+      (setq buffer-undo-list ())
+      (goto-char (point-min))
+      (search-forward "if")
+      (ert-simulate-command '(yas-expand))
+      (push nil buffer-undo-list)       ; See test above.
+      (ert-simulate-command '(undo))
+      (should (string= (buffer-string) "if\nabc = 123456789 + abcdef;")))))
+
 (ert-deftest dont-clear-on-partial-deletion-issue-515 ()
   "Ensure fields are not cleared when user doesn't really mean to."
   (with-temp-buffer
