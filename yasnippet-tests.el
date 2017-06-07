@@ -183,6 +183,7 @@
      '((".emacs.d/snippets" ("emacs-lisp-mode" ("s" . "(setq $0)"))))
      (with-temp-buffer
        (emacs-lisp-mode)
+       (yas-reload-all)
        (yas-minor-mode 1)
        (insert "(let\n(while s")
        (setq buffer-undo-list ())
@@ -199,6 +200,7 @@
     '((".emacs.d/snippets" ("js-mode" ("if" . "if ($1) {\n\n}\n"))))
     (with-temp-buffer
       (js-mode)
+      (yas-reload-all)
       (yas-minor-mode 1)
       (insert "if\nabc = 123456789 + abcdef;")
       (setq buffer-undo-list ())
