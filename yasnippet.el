@@ -526,6 +526,12 @@ conditions.
     (const :tag "Disable all snippet expansion" nil)
     sexp))
 
+(defcustom yas-overlay-priority 100
+  "Priority to use for yasnippets overlays.
+This is useful to control whether snippet navigation bindings
+override bindings from other packages (e.g., `company-mode')."
+  :type 'integer)
+
 
 ;;; Internal variables
 
@@ -3500,7 +3506,7 @@ holds the keymap."
                                nil
                                t)))
     (overlay-put overlay 'keymap yas-keymap)
-    (overlay-put overlay 'priority 100)
+    (overlay-put overlay 'priority yas-overlay-priority)
     (overlay-put overlay 'yas--snippet snippet)
     overlay))
 
@@ -3556,7 +3562,7 @@ Move the overlay, or create it if it does not exit."
           (make-overlay (yas--field-start field)
                         (yas--field-end field)
                         nil nil t))
-    (overlay-put yas--active-field-overlay 'priority 100)
+    (overlay-put yas--active-field-overlay 'priority yas-overlay-priority)
     (overlay-put yas--active-field-overlay 'face 'yas-field-highlight-face)
     (overlay-put yas--active-field-overlay 'yas--snippet snippet)
     (overlay-put yas--active-field-overlay 'modification-hooks '(yas--on-field-overlay-modification))
