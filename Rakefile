@@ -20,6 +20,12 @@ task :tests do
     " --batch -f ert-run-tests-batch-and-exit"
 end
 
+desc "run test in interactive mode"
+task :itests do
+  sh "#{$EMACS} -Q -L . -l yasnippet-tests.el" +
+     " --eval \"(call-interactively 'ert)\""
+end
+
 desc "create a release package"
 task :package do
   release_dir = "pkg/yasnippet-#{$version}"

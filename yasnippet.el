@@ -3828,7 +3828,7 @@ considered when expanding the snippet."
                (sit-for 0) ;; fix issue 125
                (yas--letenv (yas--snippet-expand-env snippet)
                  (yas--move-to-field snippet first-field))))
-           (yas--message 4 "snippet expanded.")
+           (yas--message 4 "snippet %d expanded." (yas--snippet-id snippet))
            (setq deactivate-mark nil)
            t))))
 
@@ -4601,27 +4601,29 @@ When multiple expressions are found, only the last one counts."
 ;;
 (defun yas--post-command-handler ()
   "Handles various yasnippet conditions after each command."
-  (yas--finish-moving-snippets)
-  (cond ((eq 'undo this-command)
-         ;;
-         ;; After undo revival the correct field is sometimes not
-         ;; restored correctly, this condition handles that
-         ;;
-         (let* ((snippet (car (yas-active-snippets)))
-                (target-field
-                 (and snippet
-                      (cl-find-if-not
-                       (lambda (field)
-                         (yas--field-probably-deleted-p snippet field))
-                       (remq nil
-                             (cons (yas--snippet-active-field snippet)
-                                   (yas--snippet-fields snippet)))))))
-           (when target-field
-             (yas--move-to-field snippet target-field))))
-        ((not (yas--undo-in-progress))
-         ;; When not in an undo, check if we must commit the snippet
-         ;; (user exited it).
-         (yas--check-commit-snippet))))
+  (condition-case err
+      (progn (yas--finish-moving-snippets)
+             (cond ((eq 'undo this-command)
+                    ;;
+                    ;; After undo revival the correct field is sometimes not
+                    ;; restored correctly, this condition handles that
+                    ;;
+                    (let* ((snippet (car (yas-active-snippets)))
+                           (target-field
+                            (and snippet
+                                 (cl-find-if-not
+                                  (lambda (field)
+                                    (yas--field-probably-deleted-p snippet field))
+                                  (remq nil
+                                        (cons (yas--snippet-active-field snippet)
+                                              (yas--snippet-fields snippet)))))))
+                      (when target-field
+                        (yas--move-to-field snippet target-field))))
+                   ((not (yas--undo-in-progress))
+                    ;; When not in an undo, check if we must commit the snippet
+                    ;; (user exited it).
+                    (yas--check-commit-snippet))))
+    ((debug error) (signal (car err) (cdr err)))))
 
 ;;; Fancy docs:
 ;;
