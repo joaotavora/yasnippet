@@ -3,8 +3,88 @@ Yasnippet NEWS -- history of user-visible changes.
 Copyright (C) 2016 Free Software Foundation, Inc.
 See the end of the file for license conditions.
 
-
 
+Don't delete snippets more than once.
+
+
+
+* 0.12.0 (Jul 17, 2017)
+
+** Changes and New Features
+
+*** Snippets can now expand in strings & comments by default again.
+'yas-buffer-local-condition' is now a defcustom See Github #774.
+
+*** 'yas-after-exit-snippet-hook' can now be bound in 'expand-env' of
+snippets.  See Github #28, #702, #779, #786.
+
+*** Snippets under directories in 'yas-snippet-dirs' are now in
+snippet-mode automatically.
+
+*** Snippets can now be expanded in org source blocks, if
+'org-src-tab-acts-natively' and 'org-src-fontify-natively' are set.
+See Github #761.
+
+*** 'yas-fallback-behavior' is now obsolete, 'yas-expand' is now bound
+conditionally with an extended menu item, 'yas-maybe-expand'.
+Therefore users wanting to bind 'yas-expand' to a different key, SPC
+for example, should do
+
+    (define-key yas-minor-mode-map (kbd "SPC") yas-maybe-expand)
+
+See Github #760, #808.
+
+*** The documentation build output is now reproducible.  The timestamp
+now depends on the commit date, or the environment variable
+SOURCE_DATE_EPOCH is that is set.
+
+*** 'yas-indent-line' and 'expand-env' are now respected during mirror
+updates.  See Github #743.
+
+*** New function 'yas-active-snippets'.  Renamed from
+'yas--snippets-at-point', which remains as an obsolete alias.  See
+Github #727.
+
+*** New custom option 'yas-overlay-priority'.  This is can be used to
+give the snippet navigation keymaps higher priority than keymaps from
+overlays created by other packages, like 'auto-complete'.  See Github
+#828.
+
+** Fixed bugs
+
+*** Snippets having ${0:soon-to-be-deleted} with no other fields now
+correctly put the field 0 text in the active region after exiting.
+See Github #653.
+
+*** Fix undo of snippet insertion which also triggers indentation.
+See Github #821.
+
+*** Fixed a bug causing whitespace loss between mirrors.
+
+*** Fixed several bugs causing problems when combining Yasnippet with
+other modes and packages, like 'auto-fill-mode', 'c++-mode',
+'rust-mode', and 'lentic'.
+
+**** Fix another bug with auto-fill-mode.
+See Github #784, #794.
+
+**** Fix a bug in parsing of snippet fields for modes that use the
+'syntax-table' text property, 'c++-mode' is one example of this.  See
+Github #815.
+
+**** 'syntax-propertize-function' is now restored before indenting the
+snippet.  This improves compatibility with modes which rely on it for
+indentation, like 'rust-mode'.  See Github #782, #818.
+
+**** Avoid trying to delete a snippet which is already deleted.  This
+prevents an error when using 'rust-mode's 'rust-format-buffer'
+command.
+
+**** Ensure inhibit-modification-hooks is nil while modifying buffer.
+This fixes problems for packages relying on modification hooks, like
+'lentic'.  See Github #756, #712.
+
+
 * 0.11.0 (Oct 26, 2016)
 ** Changes and New Features
 

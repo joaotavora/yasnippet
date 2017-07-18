@@ -1,6 +1,6 @@
 ;;; yasnippet-tests.el --- some yasnippet tests  -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012, 2013, 2014, 2015  Free Software Foundation, Inc.
+;; Copyright (C) 2012, 2013, 2014, 2015, 2017  Free Software Foundation, Inc.
 
 ;; Author: João Távora <joaot@siscog.pt>
 ;; Keywords: emulations, convenience
