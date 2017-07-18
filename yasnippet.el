@@ -585,6 +585,8 @@ override bindings from other packages (e.g., `company-mode')."
 (defvar yas--minor-mode-menu nil
   "Holds the YASnippet menu.")
 
+(defvar yas--condition-cache-timestamp nil)
+
 (defun yas--maybe-expand-key-filter (cmd)
   (when (let ((yas--condition-cache-timestamp (current-time)))
           (yas--templates-for-key-at-point))
@@ -2183,7 +2185,6 @@ Just put this function in `hippie-expand-try-functions-list'."
 ;;;
 ;;;
 ;;;
-(defvar yas--condition-cache-timestamp nil)
 (defmacro yas-define-condition-cache (func doc &rest body)
   "Define a function FUNC with doc DOC and body BODY.
 BODY is executed at most once every snippet expansion attempt, to check
@@ -3030,7 +3031,9 @@ DEPTH is a count of how many nested mirrors can affect this mirror"
   "Evaluate BODY with bindings from ENV.
 ENV is a list of elements with the form (VAR FORM)."
   (declare (debug (form body)) (indent 1))
-  `(eval (cl-list* 'let* ,env ',body)))
+  (let ((envvar (make-symbol "env")))
+    `(let ((,envvar ,env))
+       (cl-progv (mapcar #'car ,envvar) (mapcar #'cadr ,envvar) . ,body))))
 
 (defun yas--snippet-map-markers (fun snippet)
   "Apply FUN to all marker (sub)fields in SNIPPET.
@@ -4543,7 +4546,7 @@ When multiple expressions are found, only the last one counts."
             (when parent-field
               (yas--advance-start-maybe mirror (yas--fom-start parent-field))))
        ;; Update this mirror.
-       do (yas--mirror-update-display mirror field snippet)
+       do (yas--mirror-update-display mirror field)
        ;; Delay indenting until we're done all mirrors.  We must do
        ;; this to avoid losing whitespace between fields that are
        ;; still empty (i.e., they will be non-empty after updating).
@@ -4560,7 +4563,7 @@ When multiple expressions are found, only the last one counts."
          (cl-loop for (beg . end) in (cl-sort indent-regions #'< :key #'car)
                   do (yas--indent-region beg end snippet)))))))
 
-(defun yas--mirror-update-display (mirror field snippet)
+(defun yas--mirror-update-display (mirror field)
   "Update MIRROR according to FIELD (and mirror transform)."
 
   (let* ((mirror-parent-field (yas--mirror-parent-field mirror))

@@ -91,8 +91,7 @@
           (puthash location (cons color ov) yas-debug-live-indicators)))))
 
 (defun yas-debug-live-marker (marker)
-  (let* ((buffer (current-buffer))
-         (color-ov (yas-debug-get-live-indicator marker))
+  (let* ((color-ov (yas-debug-get-live-indicator marker))
          (color (car color-ov))
          (ov (cdr color-ov))
          (decorator (overlay-get ov 'before-string))
@@ -100,7 +99,7 @@
     (if (markerp marker)
         (propertize str
                     'cursor-sensor-functions
-                    `(,(lambda (window _oldpos dir)
+                    `(,(lambda (_window _oldpos dir)
                          (overlay-put
                           ov 'before-string
                           (propertize decorator
@@ -129,7 +128,7 @@
     (if (and beg end (not (integerp beg)) (not (integerp end)))
         (propertize (format "from %d to %d" (+ beg) (+ end))
                     'cursor-sensor-functions
-                    `(,(lambda (window _oldpos dir)
+                    `(,(lambda (_window _oldpos dir)
                          (let ((face (if (eq dir 'entered)
                                          'mode-line-highlight color)))
                            (overlay-put ov 'before-string
@@ -271,7 +270,7 @@
     (printf "%s overlays in buffer:\n\n" (length (overlays-in (point-min) (point-max))))
     (printf "%s live snippets at point:\n\n" (length (yas-active-snippets)))
 
-    (yas-debug-snippets outbuf)
+    (yas-debug-snippets outbuf) ;;FIXME: reference to free variable ‘outbuf’
 
     (printf "\nUndo is %s and point-max is %s.\n"
             (if (eq buffer-undo-list t)
@@ -286,7 +285,7 @@
         (dolist (undo-elem first-ten)
           (printf "%2s:  %s\n" (cl-position undo-elem first-ten)
                   (truncate-string-to-width (format "%s" undo-elem) 70)))))
-    (display-buffer tracebuf)))
+    (display-buffer tracebuf))) ;;FIXME: reference to free variable ‘tracebuf’
 
 (defun yas--debug-format-fom-concise (fom)
   (when fom
@@ -308,8 +307,7 @@
   (setq yas-verbosity 99)
   (setq yas-triggers-in-field t)
   (setq debug-on-error t)
-  (let* ((snippet-file nil)
-         (snippet-mode 'fundamental-mode)
+  (let* ((snippet-mode 'fundamental-mode)
          (snippet-key nil))
     (unless options
       (setq options (cl-loop for opt = (pop command-line-args-left)
