@@ -36,10 +36,18 @@
   (file-name-directory (or load-file-name buffer-file-name))
   "Directory that yasnippet was loaded from.")
 
-(require 'yasnippet (expand-file-name "yasnippet" yas--loaddir))
+(require 'yasnippet (if (boundp 'yas--loaddir)
+                        ;; Don't require '-L <path>' when debugging.
+                        (expand-file-name "yasnippet" yas--loaddir)))
 (require 'cl-lib)
 (eval-when-compile
-  (unless (require 'subr-x nil t)
+  (unless (fboundp 'cl-flet)
+    (defalias 'cl-flet 'flet)))
+(require 'color nil t)
+(require 'edebug)
+(eval-when-compile
+  (unless (and (require 'subr-x nil t) (fboundp 'when-let))
+    ;; Introduced in 25.1
     (defmacro when-let (key-val &rest body)
       (declare (indent 1) (debug ((symbolp form) body)))
       `(let ((,(car key-val) ,(cadr key-val)))
@@ -73,7 +81,9 @@
                (color
                 (cl-loop with best-color = nil with max-dist = -1
                          for color = (format "#%06X" (random #x1000000))
-                         for comp = (apply #'color-rgb-to-hex (color-complement color))
+                         for comp = (if (fboundp 'color-complement)
+                                        (apply #'color-rgb-to-hex (color-complement color))
+                                      color)
                          if (< (color-distance color (face-foreground 'default))
                                (color-distance comp (face-foreground 'default)))
                          do (setq color comp)
@@ -192,7 +202,9 @@
                   (yas--debug-format-fom-concise (yas--mirror-next mirror))))))))
 
 (defvar yas-debug-target-buffer nil)
-(defvar-local yas-debug-target-snippets nil)
+(defvar yas-debug-target-snippets nil nil)
+(make-variable-buffer-local 'yas-debug-target-snippets)
+
 (defvar yas-debug-undo nil)
 
 (defun yas-toggle-debug-undo (value)
@@ -246,7 +258,6 @@
           ;; want when the caller has a single window open.  Good
           ;; enough for now.
           (when (eq hook 'create)
-            (require 'edebug)
             (edebug-instrument-function 'yas--snippet-parse-create)
             (let ((buf-point (find-function-noselect 'yas--snippet-parse-create)))
               (with-current-buffer (car buf-point)
@@ -256,36 +267,6 @@
 
 (defun yas-debug-snippet-create ()
   (yas-debug-snippets nil 'create))
-
-(defun yas-debug-snippet-vars ()
-  "Debug snippets, fields, mirrors and the `buffer-undo-list'."
-  (interactive)
-  (yas-debug-with-tracebuf ()
-    (printf "Interesting YASnippet vars: \n\n")
-
-    (printf "\nPost command hook: %s\n" post-command-hook)
-    (printf "\nPre  command hook: %s\n" pre-command-hook)
-
-    (printf "%s live snippets in total\n" (length (yas-active-snippets 'all-snippets)))
-    (printf "%s overlays in buffer:\n\n" (length (overlays-in (point-min) (point-max))))
-    (printf "%s live snippets at point:\n\n" (length (yas-active-snippets)))
-
-    (yas-debug-snippets outbuf) ;;FIXME: reference to free variable ‘outbuf’
-
-    (printf "\nUndo is %s and point-max is %s.\n"
-            (if (eq buffer-undo-list t)
-                "DISABLED"
-              "ENABLED")
-            (point-max))
-    (unless (eq buffer-undo-list t)
-      (printf "Undpolist has %s elements. First 10 elements follow:\n"
-              (length buffer-undo-list))
-      (let ((first-ten (cl-subseq buffer-undo-list 0
-                                  (min 19 (length buffer-undo-list)))))
-        (dolist (undo-elem first-ten)
-          (printf "%2s:  %s\n" (cl-position undo-elem first-ten)
-                  (truncate-string-to-width (format "%s" undo-elem) 70)))))
-    (display-buffer tracebuf))) ;;FIXME: reference to free variable ‘tracebuf’
 
 (defun yas--debug-format-fom-concise (fom)
   (when fom

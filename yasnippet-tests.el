@@ -22,6 +22,11 @@
 
 ;; Test basic snippet mechanics and the loading system
 
+;; To test this in emacs22 mac osx:
+;; curl -L -O https://github.com/mirrors/emacs/raw/master/lisp/emacs-lisp/ert.el
+;; curl -L -O https://github.com/mirrors/emacs/raw/master/lisp/emacs-lisp/ert-x.el
+;; /usr/bin/emacs -nw -Q -L . -l yasnippet-tests.el --batch -e ert
+
 ;;; Code:
 
 (require 'yasnippet)
@@ -29,6 +34,122 @@
 (require 'ert-x)
 (require 'cl-lib)
 (require 'org)
+
+
+;;; Helper macros and function
+
+(defmacro yas-with-snippet-dirs (dirs &rest body)
+  (declare (indent defun) (debug t))
+  `(yas-call-with-snippet-dirs
+    ,dirs #'(lambda () ,@body)))
+
+(defun yas-should-expand (keys-and-expansions)
+  (dolist (key-and-expansion keys-and-expansions)
+    (yas-exit-all-snippets)
+    (erase-buffer)
+    (insert (car key-and-expansion))
+    (ert-simulate-command '(yas-expand))
+    (unless (string= (yas--buffer-contents) (cdr key-and-expansion))
+      (ert-fail (format "\"%s\" should have expanded to \"%s\" but got \"%s\""
+                        (car key-and-expansion)
+                        (cdr key-and-expansion)
+                        (yas--buffer-contents)))))
+  (yas-exit-all-snippets))
+
+(defun yas--collect-menu-items (menu-keymap)
+  (let ((yas--menu-items ()))
+    (map-keymap (lambda (_binding definition)
+                  (when (eq (car-safe definition) 'menu-item)
+                    (push definition yas--menu-items)))
+                menu-keymap)
+    yas--menu-items))
+
+(defun yas-should-not-expand (keys)
+  (dolist (key keys)
+    (yas-exit-all-snippets)
+    (erase-buffer)
+    (insert key)
+    (ert-simulate-command '(yas-expand))
+    (unless (string= (yas--buffer-contents) key)
+      (ert-fail (format "\"%s\" should have stayed put, but instead expanded to \"%s\""
+                        key
+                        (yas--buffer-contents))))))
+
+(defun yas-mock-insert (string)
+  (dotimes (i (length string))
+    (let ((last-command-event (aref string i)))
+      (ert-simulate-command '(self-insert-command 1)))))
+
+(defun yas-mock-yank (string)
+  (let ((interprogram-paste-function (lambda () string)))
+    (ert-simulate-command '(yank nil))))
+
+(defun yas--key-binding (key)
+  "Like `key-binding', but override `this-command-keys-vector'.
+This lets `yas--maybe-expand-from-keymap-filter' work as expected."
+  (cl-letf (((symbol-function 'this-command-keys-vector)
+             (lambda () (cl-coerce key 'vector))))
+    (key-binding key)))
+
+(defun yas-make-file-or-dirs (ass)
+  (let ((file-or-dir-name (car ass))
+        (content (cdr ass)))
+    (cond ((listp content)
+           (make-directory file-or-dir-name 'parents)
+           (let ((default-directory (concat default-directory "/" file-or-dir-name)))
+             (mapc #'yas-make-file-or-dirs content)))
+          ((stringp content)
+           (with-temp-buffer
+             (insert content)
+             (write-region nil nil file-or-dir-name nil 'nomessage)))
+          (t
+           (message "[yas] oops don't know this content")))))
+
+
+(defun yas-variables ()
+  (let ((syms))
+    (mapatoms #'(lambda (sym)
+                  (if (and (string-match "^yas-[^/]" (symbol-name sym))
+                           (boundp sym))
+                      (push sym syms))))
+    syms))
+
+(defun yas-call-with-saving-variables (fn)
+  (let* ((vars (yas-variables))
+         (saved-values (mapcar #'symbol-value vars)))
+    (unwind-protect
+        (funcall fn)
+      (cl-loop for var in vars
+               for saved in saved-values
+               do (set var saved)))))
+
+(defun yas-call-with-snippet-dirs (dirs fn)
+  (let* ((default-directory (make-temp-file "yasnippet-fixture" t))
+         (yas-snippet-dirs (mapcar (lambda (d) (expand-file-name (car d))) dirs)))
+    (with-temp-message ""
+      (unwind-protect
+          (progn
+            (mapc #'yas-make-file-or-dirs dirs)
+            (funcall fn))
+        (when (>= emacs-major-version 24)
+          (delete-directory default-directory 'recursive))))))
+
+;;; Older emacsen
+;;;
+(unless (fboundp 'special-mode)
+  ;; FIXME: Why provide this default definition here?!?
+  (defalias 'special-mode 'fundamental))
+
+(unless (fboundp 'string-suffix-p)
+  ;; introduced in Emacs 24.4
+  (defun string-suffix-p (suffix string &optional ignore-case)
+    "Return non-nil if SUFFIX is a suffix of STRING.
+If IGNORE-CASE is non-nil, the comparison is done without paying
+attention to case differences."
+    (let ((start-pos (- (length string) (length suffix))))
+      (and (>= start-pos 0)
+           (eq t (compare-strings suffix nil nil
+                                  string start-pos nil ignore-case))))))
 
 
 ;;; Snippet mechanics
@@ -499,13 +620,8 @@ mapconcat #'(lambda (arg)
                   (kill-buffer ,temp-buffer))))))))
 
 (defmacro yas-saving-variables (&rest body)
+  (declare (debug t))
   `(yas-call-with-saving-variables #'(lambda () ,@body)))
-
-(defmacro yas-with-snippet-dirs (dirs &rest body)
-  (declare (indent defun))
-  `(yas-call-with-snippet-dirs ,dirs
-                               #'(lambda ()
-                                   ,@body)))
 
 (ert-deftest example-for-issue-474 ()
   (yas--with-font-locked-temp-buffer
@@ -597,21 +713,22 @@ TODO: correct this bug!"
                      "brother from another mother") ;; no newline should be here!
             )))
 
+(defvar yas-tests--ran-exit-hook nil)
+
 (ert-deftest snippet-exit-hooks ()
-  (defvar yas--ran-exit-hook)
   (with-temp-buffer
     (yas-saving-variables
-     (let ((yas--ran-exit-hook nil)
+     (let ((yas-tests--ran-exit-hook nil)
            (yas-triggers-in-field t))
        (yas-with-snippet-dirs
          '((".emacs.d/snippets"
             ("emacs-lisp-mode"
              ("foo" . "\
-# expand-env: ((yas-after-exit-snippet-hook (lambda () (setq yas--ran-exit-hook t))))
+# expand-env: ((yas-after-exit-snippet-hook (lambda () (setq yas-tests--ran-exit-hook t))))
 # --
 FOO ${1:f1} ${2:f2}")
              ("sub" . "\
-# expand-env: ((yas-after-exit-snippet-hook (lambda () (setq yas--ran-exit-hook 'sub))))
+# expand-env: ((yas-after-exit-snippet-hook (lambda () (setq yas-tests--ran-exit-hook 'sub))))
 # --
 SUB"))))
          (yas-reload-all)
@@ -619,22 +736,21 @@ SUB"))))
          (yas-minor-mode +1)
          (insert "foo")
          (ert-simulate-command '(yas-expand))
-         (should-not yas--ran-exit-hook)
+         (should-not yas-tests--ran-exit-hook)
          (yas-mock-insert "sub")
          (ert-simulate-command '(yas-expand))
          (ert-simulate-command '(yas-next-field))
-         (should-not yas--ran-exit-hook)
+         (should-not yas-tests--ran-exit-hook)
          (ert-simulate-command '(yas-next-field))
-         (should (eq yas--ran-exit-hook t)))))))
+         (should (eq yas-tests--ran-exit-hook t)))))))
 
 (ert-deftest snippet-exit-hooks-bindings ()
   "Check that `yas-after-exit-snippet-hook' is handled correctly
 in the case of a buffer-local variable and being overwritten by
 the expand-env field."
-  (defvar yas--ran-exit-hook)
   (with-temp-buffer
     (yas-saving-variables
-     (let ((yas--ran-exit-hook nil)
+     (let ((yas-tests--ran-exit-hook nil)
            (yas-triggers-in-field t)
            (yas-after-exit-snippet-hook nil))
        (yas-with-snippet-dirs
@@ -642,21 +758,21 @@ the expand-env field."
             ("emacs-lisp-mode"
              ("foo" . "foobar\n")
              ("baz" . "\
-# expand-env: ((yas-after-exit-snippet-hook (lambda () (setq yas--ran-exit-hook 'letenv))))
+# expand-env: ((yas-after-exit-snippet-hook (lambda () (setq yas-tests--ran-exit-hook 'letenv))))
 # --
 foobaz\n"))))
          (yas-reload-all)
          (emacs-lisp-mode)
          (yas-minor-mode +1)
-         (add-hook 'yas-after-exit-snippet-hook (lambda () (push 'global yas--ran-exit-hook)))
-         (add-hook 'yas-after-exit-snippet-hook (lambda () (push 'local yas--ran-exit-hook)) nil t)
+         (add-hook 'yas-after-exit-snippet-hook (lambda () (push 'global yas-tests--ran-exit-hook)))
+         (add-hook 'yas-after-exit-snippet-hook (lambda () (push 'local yas-tests--ran-exit-hook)) nil t)
          (insert "baz")
          (ert-simulate-command '(yas-expand))
-         (should (eq 'letenv yas--ran-exit-hook))
+         (should (eq 'letenv yas-tests--ran-exit-hook))
          (insert "foo")
          (ert-simulate-command '(yas-expand))
-         (should (eq 'global (nth 0 yas--ran-exit-hook)))
-         (should (eq 'local (nth 1 yas--ran-exit-hook))))))))
+         (should (eq 'global (nth 0 yas-tests--ran-exit-hook)))
+         (should (eq 'local (nth 1 yas-tests--ran-exit-hook))))))))
 
 (ert-deftest snippet-mirror-bindings ()
   "Check that variables defined with the expand-env field are
@@ -784,6 +900,7 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
 ;;;
 
 (defmacro yas-with-overriden-buffer-list (&rest body)
+  (declare (debug t))
   (let ((saved-sym (make-symbol "yas--buffer-list")))
     `(let ((,saved-sym (symbol-function 'buffer-list)))
        (cl-letf (((symbol-function 'buffer-list)
@@ -796,6 +913,7 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
 
 
 (defmacro yas-with-some-interesting-snippet-dirs (&rest body)
+  (declare (debug t))
   `(yas-saving-variables
     (yas-with-overriden-buffer-list
      (yas-with-snippet-dirs
@@ -1259,128 +1377,6 @@ add the snippets associated with the given mode."
        (yas-should-expand '(("car" . "(car )")))))))
 
 
-;;; Helpers
-;;;
-(defun yas-should-expand (keys-and-expansions)
-  (dolist (key-and-expansion keys-and-expansions)
-    (yas-exit-all-snippets)
-    (erase-buffer)
-    (insert (car key-and-expansion))
-    (let ((yas-fallback-behavior nil))
-      (ert-simulate-command '(yas-expand)))
-    (unless (string= (yas--buffer-contents) (cdr key-and-expansion))
-      (ert-fail (format "\"%s\" should have expanded to \"%s\" but got \"%s\""
-                        (car key-and-expansion)
-                        (cdr key-and-expansion)
-                        (yas--buffer-contents)))))
-  (yas-exit-all-snippets))
-
-(defun yas--collect-menu-items (menu-keymap)
-  (let ((yas--menu-items ()))
-    (map-keymap (lambda (_binding definition)
-                  (when (eq (car-safe definition) 'menu-item)
-                    (push definition yas--menu-items)))
-                menu-keymap)
-    yas--menu-items))
-
-(defun yas-should-not-expand (keys)
-  (dolist (key keys)
-    (yas-exit-all-snippets)
-    (erase-buffer)
-    (insert key)
-    (let ((yas-fallback-behavior nil))
-      (ert-simulate-command '(yas-expand)))
-    (unless (string= (yas--buffer-contents) key)
-      (ert-fail (format "\"%s\" should have stayed put, but instead expanded to \"%s\""
-                        key
-                        (yas--buffer-contents))))))
-
-(defun yas-mock-insert (string)
-  (dotimes (i (length string))
-    (let ((last-command-event (aref string i)))
-      (ert-simulate-command '(self-insert-command 1)))))
-
-(defun yas-mock-yank (string)
-  (let ((interprogram-paste-function (lambda () string)))
-    (ert-simulate-command '(yank nil))))
-
-(defun yas--key-binding (key)
-  "Like `key-binding', but override `this-command-keys-vector'.
-This lets `yas--maybe-expand-from-keymap-filter' work as expected."
-  (cl-letf (((symbol-function 'this-command-keys-vector)
-             (lambda () (cl-coerce key 'vector))))
-    (key-binding key)))
-
-(defun yas-make-file-or-dirs (ass)
-  (let ((file-or-dir-name (car ass))
-        (content (cdr ass)))
-    (cond ((listp content)
-           (make-directory file-or-dir-name 'parents)
-           (let ((default-directory (concat default-directory "/" file-or-dir-name)))
-             (mapc #'yas-make-file-or-dirs content)))
-          ((stringp content)
-           (with-temp-buffer
-             (insert content)
-             (write-region nil nil file-or-dir-name nil 'nomessage)))
-          (t
-           (message "[yas] oops don't know this content")))))
-
-
-(defun yas-variables ()
-  (let ((syms))
-    (mapatoms #'(lambda (sym)
-                  (if (and (string-match "^yas-[^/]" (symbol-name sym))
-                           (boundp sym))
-                      (push sym syms))))
-    syms))
-
-(defun yas-call-with-saving-variables (fn)
-  (let* ((vars (yas-variables))
-         (saved-values (mapcar #'symbol-value vars)))
-    (unwind-protect
-        (funcall fn)
-      (cl-loop for var in vars
-               for saved in saved-values
-               do (set var saved)))))
-
-(defun yas-call-with-snippet-dirs (dirs fn)
-  (let* ((default-directory (make-temp-file "yasnippet-fixture" t))
-         (yas-snippet-dirs (mapcar (lambda (d) (expand-file-name (car d))) dirs)))
-    (with-temp-message ""
-      (unwind-protect
-          (progn
-            (mapc #'yas-make-file-or-dirs dirs)
-            (funcall fn))
-        (when (>= emacs-major-version 24)
-          (delete-directory default-directory 'recursive))))))
-
-;;; Older emacsen
-;;;
-(unless (fboundp 'special-mode)
-  ;; FIXME: Why provide this default definition here?!?
-  (defalias 'special-mode 'fundamental))
-
-(unless (fboundp 'string-suffix-p)
-  ;; introduced in Emacs 24.4
-  (defun string-suffix-p (suffix string &optional ignore-case)
-    "Return non-nil if SUFFIX is a suffix of STRING.
-If IGNORE-CASE is non-nil, the comparison is done without paying
-attention to case differences."
-    (let ((start-pos (- (length string) (length suffix))))
-      (and (>= start-pos 0)
-           (eq t (compare-strings suffix nil nil
-                                  string start-pos nil ignore-case))))))
-
-;;; btw to test this in emacs22 mac osx:
-;;; curl -L -O https://github.com/mirrors/emacs/raw/master/lisp/emacs-lisp/ert.el
-;;; curl -L -O https://github.com/mirrors/emacs/raw/master/lisp/emacs-lisp/ert-x.el
-;;; /usr/bin/emacs -nw -Q -L . -l yasnippet-tests.el --batch -e ert
-
-
-(put 'yas-saving-variables                   'edebug-form-spec t)
-(put 'yas-with-snippet-dirs                  'edebug-form-spec t)
-(put 'yas-with-overriden-buffer-list         'edebug-form-spec t)
-(put 'yas-with-some-interesting-snippet-dirs 'edebug-form-spec t)
 
 (provide 'yasnippet-tests)
 ;; Local Variables:

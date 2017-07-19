@@ -4,10 +4,18 @@ git:
   submodules: false
 
 env:
-  - EMACS_VERSION=23.4
-  - EMACS_VERSION=24.3
-  - EMACS_VERSION=24.5
-  - EMACS_VERSION=25.2
+  global:
+    - Wlexical=t
+    - Werror=t
+    - tests_Werror=t # For yasnippet-tests.el
+  matrix:
+    - EMACS_VERSION=23.4
+    # 24.3 gives a bunch of 'value returned from (car value-N) is
+    # unused' warnings.
+    - EMACS_VERSION=24.3 tests_Werror=nil
+    - EMACS_VERSION=24.5
+    - EMACS_VERSION=25.2
+
 
 install:
   - curl -LO https://github.com/npostavs/emacs-travis/releases/download/bins/emacs-bin-${EMACS_VERSION}.tar.gz
@@ -15,7 +23,7 @@ install:
   # Configure $PATH: Emacs installed to /tmp/emacs
   - export PATH=/tmp/emacs/bin:${PATH}
   - if ! emacs -Q --batch --eval "(require 'cl-lib)" ; then
-        curl -Lo cl-lib.el http://elpa.gnu.org/packages/cl-lib-0.5.el ;
+        curl -Lo cl-lib.el http://elpa.gnu.org/packages/cl-lib-0.6.1.el ;
         export warnings="'(not cl-functions)" ;
     fi
   - if ! emacs -Q --batch --eval "(require 'ert)" ; then
@@ -25,7 +33,9 @@ install:
   - emacs --version
 
 script:
-  - rake compile
+  - rake yasnippet.elc
+  - rake yasnippet-debug.elc
+  - rake yasnippet-tests.elc Werror=$tests_Werror
   - rake tests
 
 notifications:

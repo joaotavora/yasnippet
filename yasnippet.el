@@ -132,6 +132,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(declare-function cl-progv-after "cl-extra") ; Needed for 23.4.
 (require 'easymenu)
 (require 'help-mode)
 
@@ -3029,11 +3030,16 @@ DEPTH is a count of how many nested mirrors can affect this mirror"
 
 (defmacro yas--letenv (env &rest body)
   "Evaluate BODY with bindings from ENV.
-ENV is a list of elements with the form (VAR FORM)."
+ENV is a lisp expression that evaluates to list of elements with
+the form (VAR FORM), where VAR is a symbol and FORM is a lisp
+expression that evaluates to its value."
   (declare (debug (form body)) (indent 1))
-  (let ((envvar (make-symbol "env")))
+  (let ((envvar (make-symbol "envvar")))
     `(let ((,envvar ,env))
-       (cl-progv (mapcar #'car ,envvar) (mapcar #'cadr ,envvar) . ,body))))
+       (cl-progv
+           (mapcar #'car ,envvar)
+           (mapcar (lambda (v-f) (eval (cadr v-f))) ,envvar)
+         ,@body))))
 
 (defun yas--snippet-map-markers (fun snippet)
   "Apply FUN to all marker (sub)fields in SNIPPET.

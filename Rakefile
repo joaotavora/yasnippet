@@ -100,14 +100,22 @@ end
 desc "Compile yasnippet.el into yasnippet.elc"
 
 rule '.elc' => '.el' do |t|
-  set_warnings = ""
+  cmdline = $EMACS + ' --batch -L .'
   if ENV['warnings']
-    set_warnings = " --eval \"(setq byte-compile-warnings #{ENV['warnings']})\""
+    cmdline += " --eval \"(setq byte-compile-warnings #{ENV['warnings']})\""
   end
-  sh "#{$EMACS} --batch -L . --eval \"(setq byte-compile-error-on-warn t)\"" +
-     "#{set_warnings} -f batch-byte-compile #{t.source}"
+  if ENV['Werror']
+    cmdline += " --eval \"(setq byte-compile-error-on-warn #{ENV['Werror']})\""
+  end
+  if ENV['Wlexical']
+    cmdline += " --eval \"(setq byte-compile-force-lexical-warnings #{ENV['Wlexical']})\""
+  end
+  cmdline +=" -f batch-byte-compile #{t.source}"
+
+  sh cmdline
 end
 task :compile => FileList["yasnippet.el"].ext('elc')
+task :compile_all => FileList["*.el"].ext('elc')
 
 task :default => :doc
 
