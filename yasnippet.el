@@ -3635,7 +3635,10 @@ field start.  This hook does nothing if an undo is in progress."
         (narrow-to-region beg end)
         (mapc #'yas--restore-marker-location remarkers)
         (mapc #'yas--restore-overlay-location reoverlays))
-      (mapc #'yas--update-mirrors snippets))))
+      (mapc (lambda (snippet)
+              (yas--letenv (yas--snippet-expand-env snippet)
+                (yas--update-mirrors snippet)))
+            snippets))))
 
 
 ;;; Apropos protection overlays:
