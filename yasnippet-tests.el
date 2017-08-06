@@ -1019,13 +1019,13 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
         (yas-minor-mode +1)
         (save-current-buffer
           (yas-new-snippet t)
-          (with-current-buffer "*new snippet*"
+          (with-current-buffer yas-new-snippet-buffer-name
             (snippet-mode)
             (insert "# name: foo\n# key: bar\n# --\nsnippet foo")
             (call-interactively 'yas-load-snippet-buffer-and-close)))
         (save-current-buffer
           (yas-new-snippet t)
-          (with-current-buffer "*new snippet*"
+          (with-current-buffer yas-new-snippet-buffer-name
             (snippet-mode)
             (insert "# name: bar\n# key: bar\n# --\nsnippet bar")
             (call-interactively 'yas-load-snippet-buffer-and-close)))

@@ -2528,6 +2528,10 @@ where snippets of table might exist."
               ;; create the .yas-parents file here...
               candidate)))))
 
+;; NOTE: Using the traditional "*new snippet*" stops whitespace mode
+;; from activating (it doesn't like the leading "*").
+(defconst yas-new-snippet-buffer-name "+new-snippet+")
+
 (defun yas-new-snippet (&optional no-template)
   "Pops a new buffer for writing a snippet.
 
@@ -2540,7 +2544,7 @@ NO-TEMPLATE is non-nil."
                                     (buffer-substring-no-properties
                                      (region-beginning) (region-end))))))
 
-    (switch-to-buffer "*new snippet*")
+    (switch-to-buffer yas-new-snippet-buffer-name)
     (erase-buffer)
     (kill-all-local-variables)
     (snippet-mode)
