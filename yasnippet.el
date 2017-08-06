@@ -3799,10 +3799,9 @@ considered when expanding the snippet."
              ;; them mostly to make the undo information
              ;;
              (setq yas--start-column (current-column))
-             (let ((yas--inhibit-overlay-hooks t))
-               (insert content)
-               (setq snippet
-                     (yas--snippet-create expand-env start (point)))))
+             (insert content)
+             (setq snippet
+                   (yas--snippet-create expand-env start (point))))
 
            ;; stacked-expansion: This checks for stacked expansion, save the
            ;; `yas--previous-active-field' and advance its boundary.
