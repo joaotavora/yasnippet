@@ -3839,9 +3839,14 @@ considered when expanding the snippet."
              (when first-field
                (sit-for 0) ;; fix issue 125
                (yas--letenv (yas--snippet-expand-env snippet)
-                 (yas--move-to-field snippet first-field))))
+                 (yas--move-to-field snippet first-field))
+               (when (and (eq (yas--field-number first-field) 0)
+                          (> (length (yas--field-text-for-display
+                                      first-field))
+                             0))
+                 ;; Keep region for ${0:exit text}.
+                 (setq deactivate-mark nil))))
            (yas--message 4 "snippet %d expanded." (yas--snippet-id snippet))
-           (setq deactivate-mark nil)
            t))))
 
 (defun yas--take-care-of-redo (_beg _end snippet)
