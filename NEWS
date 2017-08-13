@@ -1,9 +1,17 @@
 Yasnippet NEWS -- history of user-visible changes.
 
-Copyright (C) 2016 Free Software Foundation, Inc.
+Copyright (C) 2017 Free Software Foundation, Inc.
 See the end of the file for license conditions.
 
+* 0.12.2 (Aug 28, 2017)
 
+** The new option 'yas-also-auto-indent-empty-lines' allows restoring
+the old indent behavior.  See Github #850, #710, #685, #679.
+
+** Keybinding triggered snippets once again deactivate the mark.
+See Github #840.
+
+
 * 0.12.1 (Jul 23, 2017)
 
 This is a quick bugfix release.
