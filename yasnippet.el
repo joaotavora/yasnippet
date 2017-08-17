@@ -261,7 +261,11 @@ applies)."
 (defcustom yas-also-auto-indent-first-line nil
   "Non-nil means also auto indent first line according to mode.
 
-Naturally this is only valid when `yas-indent-line' is `auto'"
+Naturally this is only valid when `yas-indent-line' is `auto'."
+  :type 'boolean)
+
+(defcustom yas-also-indent-empty-lines nil
+  "Non-nil means also indent empty lines according to mode."
   :type 'boolean)
 
 (defcustom yas-snippet-revival t
@@ -4227,7 +4231,9 @@ The SNIPPET's markers are preserved."
         (goto-char from)
         (cl-loop for bol = (line-beginning-position)
                  for eol = (line-end-position)
-                 if (/= bol eol) do
+                 if (or yas-also-indent-empty-lines
+                        (/= bol eol))
+                 do
                  ;; Indent each non-empty line.
                  (let ((remarkers nil))
                    (dolist (m snippet-markers)

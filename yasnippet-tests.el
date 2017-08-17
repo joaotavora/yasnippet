@@ -384,6 +384,23 @@ end" (buffer-string)))
 end" (buffer-string)))
     (should (= 4 (current-column)))))
 
+(ert-deftest yas-also-indent-empty-lines ()
+  "Respect `yas-also-indent-empty-lines' setting."
+  (with-temp-buffer
+    (ruby-mode)
+    (yas-minor-mode 1)
+    (set (make-local-variable 'yas-indent-line) 'auto)
+    (set (make-local-variable 'yas-also-auto-indent-first-line) t)
+    (set (make-local-variable 'yas-also-indent-empty-lines) t)
+    (yas-expand-snippet "def foo\n\nend")
+    (should (string= "def foo\n  \nend" (buffer-string)))
+    ;; Test that it keeps working without setting
+    ;; `yas-also-auto-indent-first-line'.
+    (setq yas-also-auto-indent-first-line nil)
+    (erase-buffer)
+    (yas-expand-snippet "def foo\n\nend")
+    (should (string= "def foo\n  \nend" (buffer-string)))))
+
 (ert-deftest indentation-markers ()
   "Test a snippet with indentation markers (`$<')."
   (with-temp-buffer
