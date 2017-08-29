@@ -4,7 +4,6 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Writing snippets</title>
-<!-- 2016-04-30 Sat 22:37 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="generator" content="Org-mode" />
 <style type="text/css">
@@ -140,7 +139,7 @@ for the JavaScript code in this tag.
 <nav>
   <ul class="center">
     <li> <a href="index.html">Overview</a>
-    <li> <a href="https://github.com/capitaomorte/yasnippet/blob/master/README.mdown">
+    <li> <a href="https://github.com/joaotavora/yasnippet/blob/master/README.mdown">
         Intro and Tutorial</a>
     <li class="center">Snippet
       <ul>
@@ -163,7 +162,7 @@ for the JavaScript code in this tag.
 <li><a href="#sec-1">Snippet development</a>
 <ul>
 <li><a href="#sec-1-1">Quickly finding snippets</a></li>
-<li><a href="#sec-1-2">Using the <code>snippet-mode</code> major mode</a></li>
+<li><a href="#sec-1-2">Using the <code>snippet-mode</code> major mode </a></li>
 </ul>
 </li>
 <li><a href="#sec-2">File content</a>
@@ -182,7 +181,11 @@ for the JavaScript code in this tag.
 <li><a href="#sec-3">Template Syntax</a>
 <ul>
 <li><a href="#sec-3-1">Plain Text</a></li>
-<li><a href="#sec-3-2">Embedded Emacs-lisp code</a></li>
+<li><a href="#sec-3-2">Embedded Emacs-lisp code</a>
+<ul>
+<li><a href="#sec-3-2-1">Note: backquote expressions should not modify the buffer</a></li>
+</ul>
+</li>
 <li><a href="#sec-3-3">Tab stop fields</a></li>
 <li><a href="#sec-3-4">Placeholder fields</a></li>
 <li><a href="#sec-3-5">Mirrors </a></li>
@@ -190,6 +193,7 @@ for the JavaScript code in this tag.
 <li><a href="#sec-3-7">Fields with transformations</a></li>
 <li><a href="#sec-3-8">Choosing fields value from a list and other tricks</a></li>
 <li><a href="#sec-3-9">Nested placeholder fields</a></li>
+<li><a href="#sec-3-10">Indentation markers</a></li>
 </ul>
 </li>
 </ul>
@@ -207,30 +211,16 @@ There are some ways you can quickly find a snippet file or create a new one:
 </p>
 
 <ul class="org-ul">
-<li><code>M-x yas-new-snippet</code>
+<li><code>M-x yas-new-snippet</code>, key bindind: <code>C-c &amp; C-n</code>
 
 <p>
-Creates a new buffer with a template for making a new snippet.
-The buffer is in <code>snippet-mode</code> (see below). When you are done
-editing the new snippet, use <code>C-c C-c</code> to save it. This will
-prompt for a directory two steps: first, the snippet table
-(with a default based on the major mode you started in), and then
-then snippet collection directory (defaults to the first directory
-in <code>yas-snippet-dirs</code>. (See <a href="snippet-organization.html">Organizing Snippets</a>
-for more detail on how snippets are organized.)
+Creates a new buffer with a template for making a new snippet.  The
+buffer is in <code>snippet-mode</code> (see <a href="#snippet-mode">below</a>).  When you are done editing
+the new snippet, use <a href="#yas-load-snippet-buffer-and-close"><code>C-c C-c</code></a> to save it.
 </p>
 </li>
 
-<li><code>M-x yas-find-snippets</code>
-
-<p>
-Lets you find the snippet file in the directory the snippet was
-loaded from (if it exists) like <code>find-file-other-window</code>. The
-directory searching logic is similar to <code>M-x yas-new-snippet</code>.
-</p>
-</li>
-
-<li><code>M-x yas-visit-snippet-file</code>
+<li><code>M-x yas-visit-snippet-file</code>, key binding: <code>C-c &amp; C-v</code>
 
 <p>
 Prompts you for possible snippet expansions like
@@ -241,14 +231,14 @@ to the snippet definition's file, if it exists.
 </ul>
 
 <p>
-Once you find this file it will be set to <code>snippet-mode</code> (see ahead) and
-you can start editing your snippet.
+Once you find this file it will be set to <code>snippet-mode</code> (see <a href="#snippet-mode">ahead</a>)
+and you can start editing your snippet.
 </p>
 </div>
 </div>
 
 <div id="outline-container-sec-1-2" class="outline-3">
-<h3 id="sec-1-2">Using the <code>snippet-mode</code> major mode</h3>
+<h3 id="sec-1-2">Using the <code>snippet-mode</code> major mode <a id="snippet-mode" name="snippet-mode"></a></h3>
 <div class="outline-text-3" id="text-1-2">
 <p>
 There is a major mode <code>snippet-mode</code> to edit snippets. You can set the
@@ -257,26 +247,36 @@ useful syntax highlighting.
 </p>
 
 <p>
-Two commands are defined in this mode:
+Three commands are defined in this mode:
 </p>
 
 <ul class="org-ul">
-<li><code>M-x yas-load-snippet-buffer</code>
+<li><code>M-x yas-load-snippet-buffer</code>, key binding: <code>C-c C-l</code>
 
 <p>
-When editing a snippet, this loads the snippet into the correct
-mode and menu. Bound to <code>C-c C-c</code> by default while in
-<code>snippet-mode</code>.
+Prompts for a snippet table (with a default based on snippet's
+major mode) and loads the snippet currently being edited.
 </p>
 </li>
 
-<li><code>M-x yas-tryout-snippet</code>
+<li><code>M-x yas-load-snippet-buffer-and-close</code>, key binding: <code>C-c C-c</code>
+   <a id="yas-load-snippet-buffer-and-close" name="yas-load-snippet-buffer-and-close"></a>
+
+<p>
+Like <code>yas-load-snippet-buffer</code>, but also saves the snippet and
+calls <code>quit-window</code>.  The destination is decided based on the
+chosen snippet table and snippet collection directly (defaulting to
+the first directory in <code>yas-snippet-dirs</code> (see <a href="snippet-organization.html">Organizing Snippets</a>
+for more detail on how snippets are organized).
+</p>
+</li>
+
+<li><code>M-x yas-tryout-snippet</code>, key binding: <code>C-c C-t</code>
 
 <p>
 When editing a snippet, this opens a new empty buffer, sets it to
 the appropriate major mode and inserts the snippet there, so you
-can see what it looks like. This is bound to <code>C-c C-t</code> while in
-<code>snippet-mode</code>.
+can see what it looks like.
 </p>
 </li>
 </ul>
@@ -537,7 +537,7 @@ snippet being expanded.
 </p>
 
 <p>
-Here's an example for c-mode` to calculate the header file guard
+Here's an example for c-mode to calculate the header file guard
 dynamically:
 </p>
 
@@ -572,7 +572,43 @@ Alternatively, you can also customize the variable
 <a href="snippet-reference.html#yas-wrap-around-region"><code>yas-wrap-around-region</code></a> to <code>t</code> which will do this automatically.
 </p>
 </div>
+
+<div id="outline-container-sec-3-2-1" class="outline-4">
+<h4 id="sec-3-2-1">Note: backquote expressions should not modify the buffer</h4>
+<div class="outline-text-4" id="text-3-2-1">
+<p>
+Please note that the lisp forms in backquotes should <b>not</b> modify the
+buffer, doing so will trigger a warning.  For example, instead of
+doing
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-snippet">Timestamp: `(insert (current-time-string))`
+</pre>
 </div>
+
+<p>
+do this:
+</p>
+<div class="org-src-container">
+
+<pre class="src src-snippet">Timestamp: `(current-time-string)`
+</pre>
+</div>
+
+<p>
+The warning may be suppressed with the following code in your init file:
+</p>
+<div class="org-src-container">
+
+<pre class="src src-emacs-lisp">(add-to-list 'warning-suppress-types '(yasnippet backquote-change))
+</pre>
+</div>
+</div>
+</div>
+</div>
+
 
 <div id="outline-container-sec-3-3" class="outline-3">
 <h3 id="sec-3-3">Tab stop fields</h3>
@@ -850,11 +886,21 @@ performs the normal Emacs <code>delete-char</code> command.
 </p>
 </div>
 </div>
+
+<div id="outline-container-sec-3-10" class="outline-3">
+<h3 id="sec-3-10">Indentation markers</h3>
+<div class="outline-text-3" id="text-3-10">
+<p>
+If <a href="snippet-reference.html#yas-indent-line"><code>yas-indent-line</code></a> is <b>not</b> set to '<code>auto</code>, it's still possible to
+indent specific lines by adding an indentation marker, <code>$&gt;</code>, somewhere
+on the line.
+</p>
+</div>
+</div>
 </div>
 </div>
 <div id="postamble" class="status">
-<hr><p class='creator'>Generated by <a href="http://www.gnu.org/software/emacs/">Emacs</a> 24.5.1 (<a href="http://orgmode.org">Org</a> mode 8.2.10) on  from df229b9ab8db87fe5a1133365fdc299a65f9be86
-</p>
+<hr><p class='creator'>Generated by <a href="http://www.gnu.org/software/emacs/">Emacs</a> 25.2.50.5 (<a href="http://orgmode.org">Org</a> mode 8.2.10) from 0.12.2 (2017-08-29 02:08:58)</p>
 <p class='xhtml-validation'><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

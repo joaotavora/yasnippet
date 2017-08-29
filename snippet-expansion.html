@@ -4,7 +4,6 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Expanding snippets</title>
-<!-- 2016-04-30 Sat 22:37 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="generator" content="Org-mode" />
 <style type="text/css">
@@ -140,7 +139,7 @@ for the JavaScript code in this tag.
 <nav>
   <ul class="center">
     <li> <a href="index.html">Overview</a>
-    <li> <a href="https://github.com/capitaomorte/yasnippet/blob/master/README.mdown">
+    <li> <a href="https://github.com/joaotavora/yasnippet/blob/master/README.mdown">
         Intro and Tutorial</a>
     <li class="center">Snippet
       <ul>
@@ -181,7 +180,7 @@ for the JavaScript code in this tag.
 <li><a href="#sec-2">Controlling expansion</a>
 <ul>
 <li><a href="#sec-2-1">Eligible snippets</a></li>
-<li><a href="#sec-2-2">The condition system</a></li>
+<li><a href="#sec-2-2">The condition system </a></li>
 <li><a href="#sec-2-3">Multiples snippet with the same key</a>
 <ul>
 <li><a href="#sec-2-3-1">Use the X window system</a></li>
@@ -247,21 +246,41 @@ TODO: example for this
 <div class="outline-text-3" id="text-1-1">
 <p>
 <a href="snippet-reference.html#yas-expand"><code>yas-expand</code></a> tries to expand a <i>snippet abbrev</i> (also known as
-<i>snippet key</i>) before point.
+<i>snippet key</i>) before point.  YASnippet also provides a <i>conditional
+binding</i> for this command: the variable <a href="snippet-reference.html#yas-expand"><code>yas-maybe-expand</code></a> contains a
+special value which, when bound in a keymap, tells Emacs to call
+<a href="snippet-reference.html#yas-expand"><code>yas-expand</code></a> if and only if there is a snippet abbrev before point.
+If there is no snippet to expand, Emacs will behave as if <a href="snippet-reference.html#yas-expand"><code>yas-expand</code></a>
+is unbound and so will run whatever command is bound to that key
+normally.
 </p>
 
 <p>
-When <a href="snippet-reference.html#yas-minor-mode"><code>yas-minor-mode</code></a> is enabled, it binds <a href="snippet-reference.html#yas-expand"><code>yas-expand</code></a> to <code>TAB</code> and
-<code>&lt;tab&gt;</code> by default, however, you can freely set it to some other key:
+When <a href="snippet-reference.html#yas-minor-mode"><code>yas-minor-mode</code></a> is enabled, it binds <a href="snippet-reference.html#yas-maybe-expand"><code>yas-maybe-expand</code></a> to <code>TAB</code>
+and <code>&lt;tab&gt;</code> by default, however, you can freely remove those bindings:
 </p>
 
 <div class="org-src-container">
 
 <pre class="src src-emacs-lisp">(define-key yas-minor-mode-map (kbd <span class="org-string">"&lt;tab&gt;"</span>) nil)
 (define-key yas-minor-mode-map (kbd <span class="org-string">"TAB"</span>) nil)
-(define-key yas-minor-mode-map (kbd <span class="org-string">"&lt;the new key&gt;"</span>) 'yas-expand)
 </pre>
 </div>
+
+<p>
+And set your own:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-emacs-lisp"><span class="org-comment-delimiter">;; </span><span class="org-comment">Bind `</span><span class="org-comment"><span class="org-constant">SPC</span></span><span class="org-comment">' to `</span><span class="org-comment"><span class="org-constant">yas-expand</span></span><span class="org-comment">' when snippet expansion available (it</span>
+<span class="org-comment-delimiter">;; </span><span class="org-comment">will still call `</span><span class="org-comment"><span class="org-constant">self-insert-command</span></span><span class="org-comment">' otherwise).</span>
+(define-key yas-minor-mode-map (kbd <span class="org-string">"SPC"</span>) yas-maybe-expand)
+<span class="org-comment-delimiter">;; </span><span class="org-comment">Bind `C-c y' to `</span><span class="org-comment"><span class="org-constant">yas-expand</span></span><span class="org-comment">' ONLY.</span>
+(define-key yas-minor-mode-map (kbd <span class="org-string">"C-c y"</span>) #'yas-expand)
+</pre>
+</div>
+
 
 <p>
 To enable the YASnippet minor mode in all buffers globally use the
@@ -277,8 +296,8 @@ command <a href="snippet-reference.html#yas-global-mode"><code>yas-global-mode</
 
 <p>
 When you use <a href="snippet-reference.html#yas-global-mode"><code>yas-global-mode</code></a> you can also selectively disable
-YASnippet in some buffers by setting the buffer-local variable
-<a href="snippet-reference.html#yas-dont-active"><code>yas-dont-active</code></a> in the buffer's mode hook.
+YASnippet in some buffers by calling <a href="snippet-reference.html#yas-minor-mode"><code>yas-minor-mode</code></a> with a negative
+argument in the buffer's mode hook.
 </p>
 </div>
 
@@ -286,23 +305,9 @@ YASnippet in some buffers by setting the buffer-local variable
 <h4 id="sec-1-1-1">Fallback behaviour</h4>
 <div class="outline-text-4" id="text-1-1-1">
 <p>
-<a href="snippet-reference.html#yas-fallback-behaviour"><code>yas-fallback-behaviour</code></a> is a customization variable bound to
-'<code>call-other-command</code> by default. If <a href="snippet-reference.html#yas-expand"><code>yas-expand</code></a> failed to find any
-suitable snippet to expand, it will disable the minor mode temporarily
-and find if there's any other command bound to the same key.
-</p>
-
-<p>
-If found, the command will be called. Usually this works very well
-&#x2013;when there's a snippet, expand it, otherwise, call whatever command
-originally bind to the trigger key.
-</p>
-
-<p>
-However, you can change this behavior by customizing the
-<a href="snippet-reference.html#yas-fallback-behavior"><code>yas-fallback-behavior</code></a> variable. If you set this variable to
-'<code>return-nil</code>, it will return <code>nil</code> instead of trying to call the
-<i>original</i> command when no snippet is found.
+YASnippet used to support a more complicated way of sharing
+keybindings before <a href="snippet-reference.html#yas-expand"><code>yas-maybe-expand</code></a> was added.  This is now
+obsolete.
 </p>
 </div>
 </div>
@@ -474,21 +479,20 @@ mode. Typically, you call this from a minor mode hook, for example:
 <pre class="src src-emacs-lisp"><span class="org-comment-delimiter">;; </span><span class="org-comment">When entering rinari-minor-mode, consider also the snippets in the</span>
 <span class="org-comment-delimiter">;; </span><span class="org-comment">snippet table "rails-mode"</span>
 (add-hook 'rinari-minor-mode-hook
-          #'(<span class="org-keyword">lambda</span> ()
+          #'(lambda ()
               (yas-activate-extra-mode 'rails-mode)))
 </pre>
 </div>
 
 <ul class="org-ul">
-<li>Buffer-local
-<a href="snippet-reference.html#yas-buffer-local-condition"><code>yas-buffer-local-condition</code></a>
-variable
+<li>Buffer-local <a href="snippet-reference.html#yas-buffer-local-condition"><code>yas-buffer-local-condition</code></a> variable
 
 <p>
 This variable provides finer grained control over what snippets can
-be expanded in the current buffer. The default value won't let you
-expand snippets inside comments or string literals for example. See
-The condition system\_ for more info.
+be expanded in the current buffer.  For example, the constant
+<a href="snippet-reference.html#yas-not-string-or-comment-condition"><code>yas-not-string-or-comment-condition</code></a> has a value that disables
+snippet expansion inside comments or string literals.  See <a href="#condition-system">the
+condition system</a> for more info.
 </p>
 </li>
 </ul>
@@ -496,7 +500,7 @@ The condition system\_ for more info.
 </div>
 
 <div id="outline-container-sec-2-2" class="outline-3">
-<h3 id="sec-2-2">The condition system</h3>
+<h3 id="sec-2-2">The condition system <a id="condition-system" name="condition-system"></a></h3>
 <div class="outline-text-3" id="text-2-2">
 <p>
 Consider this scenario: you are an old Emacs hacker. You like the
@@ -506,36 +510,35 @@ block or a string (e.g. in <code>python-mode</code>).
 </p>
 
 <p>
-If you use the <code># condition :</code> directive (see
-<a href="./snippet-development.html">Writing Snippets</a>) you could just specify
-the condition for <code>if</code> to be <code>(not (python-in-string/comment))</code>. But how
-about <code>while</code>, <code>for</code>, etc. ? Writing the same condition for all the
-snippets is just boring. So has a buffer local variable
-<a href="snippet-reference.html#yas-buffer-local-condition"><code>yas-buffer-local-condition</code></a>. You can set this variable to
-<code>(not (python-in-string/comment))</code> in <code>python-mode-hook</code>.
+If you use the <code># condition :</code> directive (see <a href="./snippet-development.html">Writing Snippets</a>) you
+could just specify the condition for <code>if</code> to be <code>(not
+(python-syntax-comment-or-string-p))</code>.  But how about <code>while</code>, <code>for</code>,
+etc?  Writing the same condition for all the snippets is just boring.
+So you can instead set <a href="snippet-reference.html#yas-buffer-local-condition"><code>yas-buffer-local-condition</code></a> to <code>(not
+(python-syntax-comment-or-string-p))</code> in <code>python-mode-hook</code>.
 </p>
 
 <p>
 Then, what if you really want some particular snippet to expand even
-inside a comment? Set <a href="snippet-reference.html#yas-buffer-local-condition"><code>yas-buffer-local-condition</code></a> like this
+inside a comment?  Set <a href="snippet-reference.html#yas-buffer-local-condition"><code>yas-buffer-local-condition</code></a> like this
 </p>
 
 <div class="org-src-container">
 
 <pre class="src src-emacs-lisp">(add-hook 'python-mode-hook
           (<span class="org-keyword">lambda</span> ()
-            (setq yas-buffer-local-condition
-                  '(<span class="org-keyword">if</span> (python-in-string/comment)
+            (<span class="org-keyword">setq</span> yas-buffer-local-condition
+                  '(<span class="org-keyword">if</span> (python-syntax-comment-or-string-p)
                        '(require-snippet-condition . force-in-comment)
                      t))))
 </pre>
 </div>
 
 <p>
-&#x2026; and specify the condition for a snippet that you're going to expand
-in comment to be evaluated to the symbol <code>force-in-comment</code>. Then it can
-be expanded as you expected, while other snippets like <code>if</code> still can't
-expanded in comment.
+&#x2026; and for a snippet that you want to expand in comments, specify a
+condition which evaluates to the symbol <code>force-in-comment</code>.  Then it
+can be expanded as you expected, while other snippets like <code>if</code> still
+can't expanded in comments.
 </p>
 
 <p>
@@ -568,7 +571,7 @@ can put in your emacs-file:
 
 <div class="org-src-container">
 
-<pre class="src src-emacs-lisp">(setq yas-prompt-functions '(yas-x-prompt yas-dropdown-prompt))
+<pre class="src src-emacs-lisp">(<span class="org-keyword">setq</span> yas-prompt-functions '(yas-x-prompt yas-dropdown-prompt))
 </pre>
 </div>
 
@@ -656,8 +659,7 @@ See the documentation on variable <a href="snippet-reference.html#yas-prompt-fun
 </div>
 </div>
 <div id="postamble" class="status">
-<hr><p class='creator'>Generated by <a href="http://www.gnu.org/software/emacs/">Emacs</a> 24.5.1 (<a href="http://orgmode.org">Org</a> mode 8.2.10) on  from df229b9ab8db87fe5a1133365fdc299a65f9be86
-</p>
+<hr><p class='creator'>Generated by <a href="http://www.gnu.org/software/emacs/">Emacs</a> 25.2.50.5 (<a href="http://orgmode.org">Org</a> mode 8.2.10) from 0.12.2 (2017-08-29 02:08:58)</p>
 <p class='xhtml-validation'><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
