@@ -606,6 +606,14 @@ mapconcat #'(lambda (arg)
       (yas-expand-snippet "Look ma! ${1:`(yas-selected-text)`} OK?")
       (should (string= (yas--buffer-contents) "Look ma! He)}o world! OK?")))))
 
+(ert-deftest insert-snippet-with-backslashes-in-active-field ()
+  ;; This test case fails if `yas--inhibit-overlay-hooks' is not bound
+  ;; in `yas-expand-snippet' (see Github #844).
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    (yas-expand-snippet "${1:$$(if (not yas-modified-p) \"a\")}")
+    (yas-expand-snippet "\\\\alpha")))
+
 (ert-deftest example-for-issue-271 ()
   (with-temp-buffer
     (yas-minor-mode 1)
