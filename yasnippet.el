@@ -3760,30 +3760,36 @@ considered when expanding the snippet."
              "[yas] `yas-expand-snippet' needs properly setup `yas-minor-mode'")
   (run-hooks 'yas-before-expand-snippet-hook)
 
-  ;;
-  (let* ((yas-selected-text (or yas-selected-text
-                                (and (region-active-p)
-                                     (buffer-substring-no-properties (region-beginning)
-                                                                     (region-end)))))
-         (start (or start
-                    (and (region-active-p)
-                         (region-beginning))
-                    (point)))
-         (end (or end
-                  (and (region-active-p)
-                       (region-end))
-                  (point)))
-         (to-delete (and start
-                         end
+  (let* ((clear-field
+          (let ((field (and yas--active-field-overlay
+                            (overlay-buffer yas--active-field-overlay)
+                            (overlay-get yas--active-field-overlay 'yas--field))))
+            (and field (yas--skip-and-clear-field-p
+                        field (point) (point) 0)
+                 field)))
+         (start (cond (start)
+                      ((region-active-p)
+                       (region-beginning))
+                      (clear-field
+                       (yas--field-start clear-field))
+                      (t (point))))
+         (end (cond (end)
+                    ((region-active-p)
+                     (region-end))
+                    (clear-field
+                     (yas--field-end clear-field))
+                    (t (point))))
+         (to-delete (and (> end start)
                          (buffer-substring-no-properties start end)))
+         (yas-selected-text
+          (or yas-selected-text
+              (if (not clear-field) to-delete)))
          (yas--first-indent-undo nil)
          snippet)
     (goto-char start)
     (setq yas--indent-original-column (current-column))
     ;; Delete the region to delete, this *does* get undo-recorded.
-    ;;
-    (when (and to-delete
-               (> end start))
+    (when to-delete
       (delete-region start end))
 
     (cond ((listp content)
