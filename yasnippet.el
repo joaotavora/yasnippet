@@ -157,16 +157,14 @@
   (file-name-directory (or load-file-name buffer-file-name))
   "Directory that yasnippet was loaded from.")
 
-(defvar yas-installed-snippets-dir nil)
-(setq yas-installed-snippets-dir
-      (expand-file-name "snippets" yas--loaddir))
+(defconst yas-installed-snippets-dir (expand-file-name "snippets" yas--loaddir))
+(make-obsolete-variable 'yas-installed-snippets-dir "\
+Yasnippet no longer comes with installed snippets" "0.13")
 
 (defconst yas--default-user-snippets-dir
   (expand-file-name "snippets" user-emacs-directory))
 
-(defcustom yas-snippet-dirs (remove nil
-                                    (list yas--default-user-snippets-dir
-                                          'yas-installed-snippets-dir))
+(defcustom yas-snippet-dirs (list yas--default-user-snippets-dir)
   "List of top-level snippet directories.
 
 Each element, a string or a symbol whose value is a string,

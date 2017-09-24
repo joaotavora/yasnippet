@@ -58,22 +58,15 @@ where you want YASnippet enabled.
 Yasnippet no longer bundles snippets directly, but it's very easy to
 get some!
 
-If you git-cloned yasnippet with the `--recursive` option you'll also
-download "git submodules" and find two subdirs under the main tree.
-
-1. `snippets/`
-
-    Points to [yasnippet-snippets] the snippet collection of
+1. [yasnippet-snippets] - a snippet collection package maintained by
     [AndreaCrotti](https://github.com/AndreaCrotti).
 
-    The default configuraiton already points to this dir, so to use
-    them, just make sure the submodule really was downloaded
-    (i.e. there are some files under `snippets/`)
+    It can be installed with `M-x install-package RET
+    yasnippet-snippets` if you have added MELPA to your package
+    sources.
 
-2. `yasmate/`
-
-    Points to a github repo of the [yasmate] tool, which is dedicated
-    to converting textmate bundles into yasnippet snippets.
+2. [yasmate] a tool which is dedicated to converting textmate bundles
+    into yasnippet snippets.
 
     To use these snippets you have to run the tool first, so
     [see its doc][yasmate]), and then point the `yas-snippet-dirs`
@@ -96,7 +89,6 @@ should be added like this to `yas-snippet-dirs`:
           '("~/.emacs.d/snippets"                 ;; personal snippets
             "/path/to/some/collection/"           ;; foo-mode and bar-mode snippet collection
             "/path/to/yasnippet/yasmate/snippets" ;; the yasmate collection
-            "/path/to/yasnippet/snippets"         ;; the default collection
             ))
 
     (yas-global-mode 1) ;; or M-x yas-reload-all if you've started YASnippet already.
