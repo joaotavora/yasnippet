@@ -4737,7 +4737,7 @@ object satisfying `yas--field-p' to restrict the expansion to.")))
   "Log level for `yas--message' 4 means trace most anything, 0 means nothing.")
 
 (defun yas--message (level message &rest args)
-  "When LEVEL is at or below `yas-verbosity-level', log MESSAGE and ARGS."
+  "When LEVEL is at or below `yas-verbosity', log MESSAGE and ARGS."
   (when (>= yas-verbosity level)
     (message "%s" (apply #'yas--format message args))))
 
