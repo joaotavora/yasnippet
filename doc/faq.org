@@ -32,7 +32,7 @@ same property in YASnippet's overlays, even if one sets the latter's
 solve this problem, drop a line in the
 [[http://groups.google.com/group/smart-snippet][discussion group]].
 
-* How to I use alternative keys, i.e. not TAB?
+* How do I use alternative keys, i.e. not TAB?
 
 Edit the keymaps [[sym:yas-minor-mode-map][=yas-minor-mode-map=]] and
 [[sym:yas-keymap][=yas-keymap=]] as you would any other keymap:
