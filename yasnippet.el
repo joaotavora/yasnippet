@@ -1493,7 +1493,7 @@ Here's a list of currently recognized directives:
          expand-env
          binding
          uuid)
-    (if (re-search-forward "^# --\n" nil t)
+    (if (re-search-forward "^# --\\s-*\n" nil t)
         (progn (setq template
                      (buffer-substring-no-properties (point)
                                                      (point-max)))
