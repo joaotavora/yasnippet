@@ -1340,7 +1340,7 @@ TODO: be meaner"
 
 (ert-deftest yas-org-native-tab-in-source-block ()
   "Test expansion of snippets in org source blocks."
-  :expected-result (if (fboundp 'org-in-src-block-p)
+  :expected-result (if (and (fboundp 'org-in-src-block-p) (version< (org-version) "9"))
                        :passed :failed)
   (yas-saving-variables
    (yas-with-snippet-dirs
