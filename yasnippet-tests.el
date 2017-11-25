@@ -297,7 +297,7 @@ attention to case differences."
 ;;     (should (string= (yas--buffer-contents)
 ;;                      "brother from another mother!"))))
 
-(ert-deftest undo-indentation ()
+(ert-deftest undo-indentation-1 ()
   "Check undoing works when only line of snippet is indented."
   (let ((yas-also-auto-indent-first-line t))
     (yas-with-snippet-dirs
@@ -315,10 +315,47 @@ attention to case differences."
        (ert-simulate-command '(undo))
        (should (string= (buffer-string) "(let\n(while s"))))))
 
-(ert-deftest undo-indentation-multiline ()
-  "Check undoing works when first line of multi-line snippet is indented."
+(ert-deftest undo-indentation-2 ()
+  "Check undoing works when only line of snippet is indented."
+  (let ((yas-also-auto-indent-first-line t)
+        (indent-tabs-mode nil))
+    (yas-with-snippet-dirs
+     '((".emacs.d/snippets" ("emacs-lisp-mode" ("t" . "; TODO"))))
+     (with-temp-buffer
+       (emacs-lisp-mode)
+       (yas-reload-all)
+       (yas-minor-mode 1)
+       (insert "t")
+       (setq buffer-undo-list ())
+       (ert-simulate-command '(yas-expand))
+       ;; Need undo barrier, I think command loop puts it normally.
+       (push nil buffer-undo-list)
+       (should (string= (buffer-string) (concat (make-string comment-column ?\s) "; TODO")))
+       (ert-simulate-command '(undo))
+       (should (string= (buffer-string) "t"))))))
+
+(ert-deftest undo-indentation-multiline-1 ()
+  "Check undoing works when 1st line of multi-line snippet is indented."
   (yas-with-snippet-dirs
     '((".emacs.d/snippets" ("js-mode" ("if" . "if ($1) {\n\n}\n"))))
+    (with-temp-buffer
+      (js-mode)
+      (yas-reload-all)
+      (yas-minor-mode 1)
+      (insert "if\nabc = 123456789 + abcdef;")
+      (setq buffer-undo-list ())
+      (goto-char (point-min))
+      (search-forward "if")
+      (ert-simulate-command '(yas-expand))
+      (push nil buffer-undo-list)       ; See test above.
+      (ert-simulate-command '(undo))
+      (should (string= (buffer-string) "if\nabc = 123456789 + abcdef;")))))
+
+
+(ert-deftest undo-indentation-multiline-2 ()
+  "Check undoing works when 2nd line of multi-line snippet is indented."
+  (yas-with-snippet-dirs
+    '((".emacs.d/snippets" ("js-mode" ("if" . "if (true) {\n${1:foo};\n}\n"))))
     (with-temp-buffer
       (js-mode)
       (yas-reload-all)

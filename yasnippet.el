@@ -3740,14 +3740,6 @@ Move the overlays, or create them if they do not exit."
 ;; running, but if managed correctly (including overlay priorities)
 ;; they should account for all situations...
 
-(defvar yas--first-indent-undo nil
-  "Internal variable for indent undo entries.
-Used to pass info from `yas--indent-region' to `yas-expand-snippet'.")
-(defvar yas--get-indent-undo-pos nil
-  "Record undo info for line beginning at given position.
-We bind this when first creating a snippet.  See also
-`yas--first-indent-undo'.")
-
 (defun yas-expand-snippet (content &optional start end expand-env)
   "Expand snippet CONTENT at current point.
 
@@ -3784,7 +3776,6 @@ considered when expanding the snippet."
          (yas-selected-text
           (or yas-selected-text
               (if (not clear-field) to-delete)))
-         (yas--first-indent-undo nil)
          snippet)
     (goto-char start)
     (setq yas--indent-original-column (current-column))
@@ -3798,25 +3789,11 @@ considered when expanding the snippet."
            (yas--eval-for-effect content))
           (t
            ;; x) This is a snippet-snippet :-)
-           ;;
-           ;;    Narrow the region down to the content, shoosh the
-           ;;    `buffer-undo-list', and create the snippet, the new
-           ;;    snippet updates its mirrors once, so we are left with
-           ;;    some plain text.  The undo action for deleting this
-           ;;    plain text will get recorded at the end.
-           ;;
-           ;;    stacked expansion: also shoosh the overlay modification hooks
-           (let ((buffer-undo-list t)
-                 (yas--get-indent-undo-pos (line-beginning-position)))
-             ;; snippet creation might evaluate users elisp, which
-             ;; might generate errors, so we have to be ready to catch
-             ;; them mostly to make the undo information
-             ;;
-             (setq yas--start-column (current-column))
-             (let ((yas--inhibit-overlay-hooks t))
-               (insert content)
-               (setq snippet
-                     (yas--snippet-create expand-env start (point)))))
+           (setq yas--start-column (current-column))
+           ;; Stacked expansion: also shoosh the overlay modification hooks.
+           (let ((yas--inhibit-overlay-hooks t))
+             (setq snippet
+                   (yas--snippet-create content expand-env start (point))))
 
            ;; stacked-expansion: This checks for stacked expansion, save the
            ;; `yas--previous-active-field' and advance its boundary.
@@ -3832,20 +3809,6 @@ considered when expanding the snippet."
            ;;
            (unless (yas--snippet-fields snippet)
              (yas-exit-snippet snippet))
-
-           ;; Undo actions from indent of snippet's 1st line.
-           (setq buffer-undo-list
-                 (nconc yas--first-indent-undo buffer-undo-list))
-           ;; Undo action for the expand snippet contents.
-           (push (cons (overlay-start (yas--snippet-control-overlay snippet))
-                       (overlay-end (yas--snippet-control-overlay snippet)))
-                 buffer-undo-list)
-           ;; Follow up with `yas--take-care-of-redo' on the newly
-           ;; inserted snippet boundaries.
-           (push `(apply yas--take-care-of-redo ,start
-                         ,(overlay-end (yas--snippet-control-overlay snippet))
-                         ,snippet)
-                 buffer-undo-list)
 
            ;; Now, schedule a move to the first field
            ;;
@@ -3863,7 +3826,7 @@ considered when expanding the snippet."
            (yas--message 4 "snippet %d expanded." (yas--snippet-id snippet))
            t))))
 
-(defun yas--take-care-of-redo (_beg _end snippet)
+(defun yas--take-care-of-redo (snippet)
   "Commits SNIPPET, which in turn pushes an undo action for reviving it.
 
 Meant to exit in the `buffer-undo-list'."
@@ -3891,16 +3854,34 @@ After revival, push the `yas--take-care-of-redo' in the
     (push `(apply yas--take-care-of-redo ,beg ,end ,snippet)
           buffer-undo-list)))
 
-(defun yas--snippet-create (expand-env begin end)
+(defun yas--snippet-create (content expand-env begin end)
   "Create a snippet from a template inserted at BEGIN to END.
 
 Returns the newly created snippet."
   (save-restriction
-    (narrow-to-region begin end)
     (let ((snippet (yas--make-snippet expand-env)))
       (yas--letenv expand-env
-        (goto-char begin)
-        (yas--snippet-parse-create snippet)
+        ;; Put a single undo action for the expanded snippet's
+        ;; content.
+        (let ((buffer-undo-list t))
+          ;; Some versions of cc-mode fail when inserting snippet
+          ;; content in a narrowed buffer.
+          (goto-char begin)
+          (insert content)
+          (setq end (+ end (length content)))
+          (narrow-to-region begin end)
+          (goto-char (point-min))
+          (yas--snippet-parse-create snippet))
+        (push (cons (point-min) (point-max))
+              buffer-undo-list)
+
+        ;; Indent, collecting undo information normally.
+        (yas--indent snippet)
+
+        ;; Follow up with `yas--take-care-of-redo' on the newly
+        ;; inserted snippet boundaries.
+        (push `(apply yas--take-care-of-redo ,snippet)
+              buffer-undo-list)
 
         ;; Sort and link each field
         (yas--snippet-sort-fields snippet)
@@ -4111,8 +4092,7 @@ Meant to be called in a narrowed buffer, does various passes"
     (goto-char parse-start)
     (yas--restore-escapes)        ; Restore escapes.
     (yas--update-mirrors snippet) ; Update mirrors for the first time.
-    (goto-char parse-start))
-  (yas--indent snippet))                ; Indent the best we can.
+    (goto-char parse-start)))
 
 ;; HACK: Some implementations of `indent-line-function' (called via
 ;; `indent-according-to-mode') delete text before they insert (like
@@ -4252,12 +4232,7 @@ The SNIPPET's markers are preserved."
                              remarkers)))
                    (unwind-protect
                        (progn (back-to-indentation)
-                              (if (eq yas--get-indent-undo-pos bol)
-                                  (let ((buffer-undo-list nil))
-                                    (indent-according-to-mode)
-                                    (setq yas--first-indent-undo
-                                          (delq nil buffer-undo-list)))
-                                (indent-according-to-mode)))
+                              (indent-according-to-mode))
                      (save-restriction
                        (narrow-to-region bol (line-end-position))
                        (mapc #'yas--restore-marker-location remarkers))))
