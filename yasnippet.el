@@ -3643,7 +3643,8 @@ field start.  This hook does nothing if an undo is in progress."
             reoverlays))
     (goto-char orig-point)
     (let ((yas--inhibit-overlay-hooks t))
-      (funcall yas--original-auto-fill-function))
+      (when (functionp yas--original-auto-fill-function)
+        (funcall yas--original-auto-fill-function)))
     (save-excursion
       (setq end (progn (forward-paragraph) (point)))
       (setq beg (progn (backward-paragraph) (point))))
