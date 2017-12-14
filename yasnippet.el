@@ -766,7 +766,7 @@ which decides on the snippet to expand.")
   "Compute list of mode symbols that are active for `yas-expand' and friends."
   (defvar yas--dfs)        ;We rely on dynbind.  We could use `letrec' instead!
   (let* ((explored (if mode (list mode) ; Building up list in reverse.
-                     (cons major-mode (reverse yas--extra-modes))))
+                     (reverse (cons major-mode yas--extra-modes))))
          (yas--dfs
           (lambda (mode)
             (cl-loop for neighbour
