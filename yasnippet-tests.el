@@ -1406,5 +1406,6 @@ add the snippets associated with the given mode."
 (provide 'yasnippet-tests)
 ;; Local Variables:
 ;; indent-tabs-mode: nil
+;; autoload-compute-prefixes: nil
 ;; End:
 ;;; yasnippet-tests.el ends here

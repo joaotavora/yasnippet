@@ -339,5 +339,6 @@
 (provide 'yasnippet-debug)
 ;; Local Variables:
 ;; indent-tabs-mode: nil
+;; autoload-compute-prefixes: nil
 ;; End:
 ;;; yasnippet-debug.el ends here
