@@ -952,7 +952,7 @@ Honour `yas-dont-activate-functions', which see."
 
 
 ;;;###autoload
-(define-derived-mode snippet-mode text-mode "Snippet"
+(define-derived-mode snippet-mode prog-mode "Snippet"
   "A mode for editing yasnippets"
   (setq font-lock-defaults '(yas--font-lock-keywords))
   (set (make-local-variable 'require-final-newline) nil)
