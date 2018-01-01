@@ -406,8 +406,8 @@ It must be set to nil before loading yasnippet to take effect."
                       map)
   "The active keymap while a snippet expansion is in progress.")
 
-(defvar yas-key-syntaxes (list "w" "w_" "w_." "w_.()"
-                               #'yas-try-key-from-whitespace)
+(defvar yas-key-syntaxes (list #'yas-try-key-from-whitespace
+                               "w_.()" "w_." "w_" "w")
   "Syntaxes and functions to help look for trigger keys before point.
 
 Each element in this list specifies how to skip buffer positions
