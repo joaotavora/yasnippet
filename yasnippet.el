@@ -3779,8 +3779,10 @@ considered when expanding the snippet."
          (to-delete (and (> end start)
                          (buffer-substring-no-properties start end)))
          (yas-selected-text
-          (or yas-selected-text
-              (if (not clear-field) to-delete)))
+          (cond (yas-selected-text)
+                ((and (region-active-p)
+                      (not clear-field))
+                 to-delete)))
          snippet)
     (goto-char start)
     (setq yas--indent-original-column (current-column))

@@ -625,6 +625,19 @@ mapconcat #'(lambda (arg)
     (yas-expand-snippet "${1:$$(if (not yas-modified-p) \"a\")}")
     (yas-expand-snippet "\\\\alpha")))
 
+(ert-deftest expand-with-unused-yas-selected-text ()
+  (with-temp-buffer
+    (yas-with-snippet-dirs
+      '((".emacs.d/snippets"
+         ("emacs-lisp-mode"
+          ("foo" . "expanded `yas-selected-text`foo"))))
+      (yas-reload-all)
+      (emacs-lisp-mode)
+      (yas-minor-mode +1)
+      (insert "foo")
+      (ert-simulate-command '(yas-expand))
+      (should (equal (buffer-string) "expanded foo")))))
+
 (ert-deftest example-for-issue-271 ()
   (with-temp-buffer
     (yas-minor-mode 1)
