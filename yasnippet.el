@@ -2511,10 +2511,11 @@ where snippets of table might exist."
         (tables (if table (list table)
                   (yas--get-snippet-tables))))
     ;; HACK! the snippet table created here is actually registered!
-    ;;
-    (unless (or table (gethash major-mode yas--tables))
-      (push (yas--table-get-create major-mode)
-            tables))
+    (unless table
+      ;; The major mode is probably the best guess, put it first.
+      (let ((major-mode-table (yas--table-get-create major-mode)))
+        (cl-callf2 delq major-mode-table tables)
+        (push major-mode-table tables)))
 
     (mapcar #'(lambda (table)
                 (cons table
