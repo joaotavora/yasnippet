@@ -951,14 +951,25 @@ Honour `yas-dont-activate-functions', which see."
   "The keymap used when `snippet-mode' is active.")
 
 
-;;;###autoload
-(define-derived-mode snippet-mode prog-mode "Snippet"
-  "A mode for editing yasnippets"
-  (setq font-lock-defaults '(yas--font-lock-keywords))
-  (set (make-local-variable 'require-final-newline) nil)
-  (set (make-local-variable 'comment-start) "#")
-  (set (make-local-variable 'comment-start-skip) "#+[\t ]*")
-  (add-hook 'after-save-hook #'yas-maybe-load-snippet-buffer nil t))
+
+;;;###autoload(autoload 'snippet-mode "yasnippet" "A mode for editing yasnippets" t nil)
+(eval-and-compile
+  (if (fboundp 'prog-mode)
+      ;; `prog-mode' is new in 24.1.
+      (define-derived-mode snippet-mode prog-mode "Snippet"
+        "A mode for editing yasnippets"
+        (setq font-lock-defaults '(yas--font-lock-keywords))
+        (set (make-local-variable 'require-final-newline) nil)
+        (set (make-local-variable 'comment-start) "#")
+        (set (make-local-variable 'comment-start-skip) "#+[\t ]*")
+        (add-hook 'after-save-hook #'yas-maybe-load-snippet-buffer nil t))
+    (define-derived-mode snippet-mode fundamental-mode "Snippet"
+      "A mode for editing yasnippets"
+      (setq font-lock-defaults '(yas--font-lock-keywords))
+      (set (make-local-variable 'require-final-newline) nil)
+      (set (make-local-variable 'comment-start) "#")
+      (set (make-local-variable 'comment-start-skip) "#+[\t ]*")
+      (add-hook 'after-save-hook #'yas-maybe-load-snippet-buffer nil t))))
 
 (defun yas-snippet-mode-buffer-p ()
   "Return non-nil if current buffer should be in `snippet-mode'.

@@ -1090,7 +1090,7 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
                           yet-another-c-mode
                           and-also-this-one
                           and-that-one
-                          ;; prog-mode doesn't exist in emacs 24.3
+                          ;; prog-mode doesn't exist in emacs 23.4
                           ,@(if (fboundp 'prog-mode)
                                 '(prog-mode))
                           emacs-lisp-mode
@@ -1117,7 +1117,7 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
                                 c-mode
                                 ,major-mode))
               (expected-rest `(cc-mode
-                               ;; prog-mode doesn't exist in emacs 24.3
+                               ;; prog-mode doesn't exist in emacs 23.4
                                ,@(if (fboundp 'prog-mode)
                                      '(prog-mode))
                                emacs-lisp-mode
