@@ -347,14 +347,6 @@ buffer-locally, otherwise install it globally.  If HOOK is
 (when command-line-args-left
   (yas-debug-process-command-line))
 
-(defun yas-exterminate-package ()
-  (interactive)
-  (yas-global-mode -1)
-  (yas-minor-mode -1)
-  (mapatoms #'(lambda (atom)
-                (when (string-match "yas[-/]" (symbol-name atom))
-                  (unintern atom obarray)))))
-
 (provide 'yasnippet-debug)
 ;; Local Variables:
 ;; indent-tabs-mode: nil

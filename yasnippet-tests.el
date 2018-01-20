@@ -1225,6 +1225,34 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
     (yas-should-not-expand '("sc" "dolist" "ert-deftest"))))
 
 
+;;; Unloading
+(ert-deftest yas-unload ()
+  "Test unloading and reloading."
+  (with-temp-buffer
+    (let ((status (call-process
+                   (concat invocation-directory invocation-name)
+                   nil '(t t) nil
+                   "-Q" "--batch" "-L" yas--loaddir "-l" "yasnippet"
+                   "--eval"
+                   (prin1-to-string
+                    '(condition-case err
+                         (progn
+                           (yas-minor-mode +1)
+                           (unload-feature 'yasnippet)
+                           ;; Unloading leaves `yas-minor-mode' bound,
+                           ;; harmless, though perhaps surprising.
+                           (when (bound-and-true-p yas-minor-mode)
+                             (error "`yas-minor-mode' still enabled"))
+                           (when (fboundp 'yas-minor-mode)
+                             (error "`yas-minor-mode' still fboundp"))
+                           (require 'yasnippet)
+                           (unless (fboundp 'yas-minor-mode)
+                             (error "Failed to reload")))
+                       (error (message "%S" (error-message-string err))
+                              (kill-emacs 1)))))))
+      (ert-info ((buffer-string)) (should (eq status 0))))))
+
+
 ;;; Menu
 ;;;
 (defmacro yas-with-even-more-interesting-snippet-dirs (&rest body)
