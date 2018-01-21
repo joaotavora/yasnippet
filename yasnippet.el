@@ -396,13 +396,21 @@ It must be set to nil before loading yasnippet to take effect."
 
 ;;; User-visible variables
 
+(defconst yas-maybe-skip-and-clear-field
+  '(menu-item "" yas-skip-and-clear-field
+              :filter yas--maybe-clear-field-filter)
+  "A conditional key definition.
+This can be used as a key definition in keymaps to bind a key to
+`yas-skip-and-clear-field' only when at the beginning of an
+unmodified snippey field.")
+
 (defvar yas-keymap  (let ((map (make-sparse-keymap)))
                       (define-key map [(tab)]       'yas-next-field-or-maybe-expand)
                       (define-key map (kbd "TAB")   'yas-next-field-or-maybe-expand)
                       (define-key map [(shift tab)] 'yas-prev-field)
                       (define-key map [backtab]     'yas-prev-field)
                       (define-key map (kbd "C-g")   'yas-abort-snippet)
-                      (define-key map (kbd "C-d")   'yas-skip-and-clear-or-delete-char)
+                      (define-key map (kbd "C-d")   yas-maybe-skip-and-clear-field)
                       map)
   "The active keymap while a snippet expansion is in progress.")
 
@@ -3547,22 +3555,37 @@ holds the keymap."
     (overlay-put overlay 'yas--snippet snippet)
     overlay))
 
+(defun yas-current-field ()
+  "Return the currently active field."
+  (and yas--active-field-overlay
+       (overlay-buffer yas--active-field-overlay)
+       (overlay-get yas--active-field-overlay 'yas--field)))
+
+(defun yas--maybe-clear-field-filter (cmd)
+  "Return CMD if at start of unmodified snippet field.
+Use as a `:filter' argument for a conditional keybinding."
+  (let ((field (yas-current-field)))
+    (when (and field
+               (not (yas--field-modified-p field))
+               (eq (point) (marker-position (yas--field-start field))))
+      cmd)))
+
+(defun yas-skip-and-clear-field (&optional field)
+  "Clears unmodified FIELD if at field start, skips to next tab."
+  (interactive)
+  (yas--skip-and-clear (or field (yas-current-field)))
+  (yas-next-field 1))
+
 (defun yas-skip-and-clear-or-delete-char (&optional field)
   "Clears unmodified field if at field start, skips to next tab.
 
 Otherwise deletes a character normally by calling `delete-char'."
   (interactive)
-  (let ((field (or field
-                   (and yas--active-field-overlay
-                        (overlay-buffer yas--active-field-overlay)
-                        (overlay-get yas--active-field-overlay 'yas--field)))))
-    (cond ((and field
-                (not (yas--field-modified-p field))
-                (eq (point) (marker-position (yas--field-start field))))
-           (yas--skip-and-clear field)
-           (yas-next-field 1))
-          (t
-           (call-interactively 'delete-char)))))
+  (declare (obsolete "Bind to `yas-maybe-skip-and-clear-field' instead." "0.13"))
+  (cond ((yas--maybe-clear-field-filter t)
+         (yas--skip-and-clear (or field (yas-current-field)))
+         (yas-next-field 1))
+        (t (call-interactively 'delete-char))))
 
 (defun yas--skip-and-clear (field &optional from)
   "Deletes the region of FIELD and sets it's modified state to t.

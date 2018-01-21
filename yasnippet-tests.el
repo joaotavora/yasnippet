@@ -274,7 +274,7 @@ attention to case differences."
     (ert-simulate-command '(yas-next-field-or-maybe-expand))
     (should (looking-at "testblable"))
     (ert-simulate-command '(yas-next-field-or-maybe-expand))
-    (ert-simulate-command '(yas-skip-and-clear-or-delete-char))
+    (ert-simulate-command '(yas-skip-and-clear-field))
     (should (looking-at "ble"))
     (should (null (yas-active-snippets)))))
 
