@@ -297,6 +297,30 @@ attention to case differences."
 ;;     (should (string= (yas--buffer-contents)
 ;;                      "brother from another mother!"))))
 
+(ert-deftest undo-redo ()
+  "Check redoing of snippet undo."
+  (yas-with-snippet-dirs '((".emacs.d/snippets"
+                            ("emacs-lisp-mode" ("x" . "${1:one},and done"))))
+    (with-temp-buffer
+      (emacs-lisp-mode)
+      (yas-reload-all)
+      (yas-minor-mode 1)
+      (yas-expand-snippet "x$0")
+      (let ((pre-expand-string (buffer-string)))
+        (setq buffer-undo-list nil)
+        (ert-simulate-command '(yas-expand))
+        (push nil buffer-undo-list)
+        (ert-simulate-command '(yas-next-field)) ; $1 -> exit snippet.
+        (should (string-match-p "\\`one,and done" (buffer-string)))
+        (push nil buffer-undo-list)
+        (ert-simulate-command '(undo))  ; Revive snippet.
+        (ert-simulate-command '(undo))  ; Undo expansion.
+        (should (string= (buffer-string) pre-expand-string))
+        (ert-simulate-command '(move-end-of-line 1))
+        (push nil buffer-undo-list)
+        (ert-simulate-command '(undo))  ; Redo (re-expand snippet).
+        (should (string-match-p "\\`one,and done" (buffer-string)))))))
+
 (defun yas-test-expand-and-undo (mode snippet-entry initial-contents)
   (yas-with-snippet-dirs
    `((".emacs.d/snippets" (,(symbol-name mode) ,snippet-entry)))
