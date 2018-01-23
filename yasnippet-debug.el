@@ -193,7 +193,11 @@
                 (yas-debug-live-range field)
                 (buffer-substring-no-properties (yas--field-start field) (yas--field-end field))
                 (yas--debug-format-fom-concise (yas--field-next field))
-                (if (yas--field-parent-field field) "(has a parent)" "")))
+                (if (yas--field-parent-field field)
+                    (format " parent: %s"
+                            (yas--debug-format-fom-concise
+                             (yas--field-parent-field field)))
+                  "")))
       (dolist (mirror (yas--field-mirrors field))
         (unless (consp (yas--mirror-start mirror))
           (printf "\t\tmirror: %s covering \"%s\" next: %s\n"
@@ -224,6 +228,14 @@
   (clrhash yas-debug-live-indicators))
 
 (defun yas-debug-snippets (&optional outbuf hook)
+  "Print debug information on active snippets to buffer OUTBUF.
+If OUTBUF is nil, use a buffer named \"*YASsnippet trace*\".
+If HOOK is non-nil, install `yas-debug-snippets' in
+`post-command-hook' to update the information on every command
+after this one. If it is `snippet-navigation' then install hook
+buffer-locally, otherwise install it globally.  If HOOK is
+`edebug-create', also instrument the function
+`yas--snippet-parse-create' with `edebug' and show its source."
   (interactive (list nil t))
   (condition-case err
       (yas-debug-with-tracebuf outbuf
@@ -253,11 +265,12 @@
           (ad-activate 'yas--snippet-parse-create)
           (ad-enable-advice 'yas--commit-snippet 'after 'yas-debug-untarget-snippet)
           (ad-activate 'yas--commit-snippet)
-          (add-hook 'post-command-hook #'yas-debug-snippets)
+          (add-hook 'post-command-hook #'yas-debug-snippets
+                    nil (eq hook 'snippet-navigation))
           ;; Window management is slapped together, it does what I
           ;; want when the caller has a single window open.  Good
           ;; enough for now.
-          (when (eq hook 'create)
+          (when (eq hook 'edebug-create)
             (edebug-instrument-function 'yas--snippet-parse-create)
             (let ((buf-point (find-function-noselect 'yas--snippet-parse-create)))
               (with-current-buffer (car buf-point)

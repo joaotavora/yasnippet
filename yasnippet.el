@@ -2705,8 +2705,11 @@ and `kill-buffer' instead."
         (save-buffer)))
     (quit-window kill)))
 
+(declare-function yas-debug-snippets "yasnippet-debug")
+
 (defun yas-tryout-snippet (&optional debug)
-  "Test current buffer's snippet template in other buffer."
+  "Test current buffer's snippet template in other buffer.
+DEBUG is for debugging the YASnippet engine itself."
   (interactive "P")
   (let* ((major-mode-and-parent (yas--compute-major-mode-and-parents buffer-file-name))
          (parsed (yas--parse-template))
@@ -2736,9 +2739,9 @@ and `kill-buffer' instead."
                                  (point-max)
                                  (yas--template-expand-env yas--current-template))
              (when (and debug
-                        (require 'yasnippet-debug nil t)
-                        (fboundp 'yas-debug-snippet-vars))
-               (add-hook 'post-command-hook #'yas-debug-snippet-vars nil t))))
+                        (require 'yasnippet-debug nil t))
+               (yas-debug-snippets "*YASnippet trace*" 'snippet-navigation)
+               (display-buffer "*YASnippet trace*"))))
           (t
            (yas--message 1 "Cannot test snippet for unknown major mode")))))
 
