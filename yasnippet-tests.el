@@ -278,6 +278,17 @@ attention to case differences."
     (should (looking-at "ble"))
     (should (null (yas-active-snippets)))))
 
+(ert-deftest delete-nested-simple-field-issue-824 ()
+  "Test deleting a field with a nested simple field in it."
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    (yas-expand-snippet "${3:so-$4and}$0${2:-so}")
+    (ert-simulate-command '(yas-next-field-or-maybe-expand))
+    (should (looking-at "so-and-so"))
+    (ert-simulate-command '(yas-skip-and-clear-or-delete-char))
+    (should (looking-at "-so"))
+    (should (null (yas-active-snippets)))))
+
 (ert-deftest ignore-trailing-whitespace ()
   (should (equal
            (with-temp-buffer

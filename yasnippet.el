@@ -3996,22 +3996,27 @@ has to be called before the $-constructs are deleted."
       (when soup
         (cl-reduce link-foms soup)))))
 
-(defun yas--calculate-mirrors-in-fields (snippet mirror)
-  "Attempt to assign a parent field of SNIPPET to the mirror MIRROR.
+(defun yas--calculate-simple-fom-parentage (snippet fom)
+  "Discover if FOM is parented by some field in SNIPPET.
 
 Use the tightest containing field if more than one field contains
 the mirror.  Intended to be called *before* the dollar-regions are
 deleted."
   (let ((min (point-min))
         (max (point-max)))
-    (dolist (field (yas--snippet-fields snippet))
-      (when (and (<= (yas--field-start field) (yas--mirror-start mirror))
-                 (<= (yas--mirror-end mirror) (yas--field-end field))
+    (dolist (field (remq fom (yas--snippet-fields snippet)))
+      (when (and (<= (yas--field-start field) (yas--fom-start fom))
+                 (<= (yas--fom-end fom) (yas--field-end field))
                (< min (yas--field-start field))
                (< (yas--field-end field) max))
           (setq min (yas--field-start field)
                 max (yas--field-end field))
-          (setf (yas--mirror-parent-field mirror) field)))))
+          (cond ((yas--field-p fom)
+                 (setf (yas--field-parent-field fom) field))
+                ((yas--mirror-p fom)
+                 (setf (yas--mirror-parent-field fom) field))
+                (t ; it's an exit, so noop
+                 nil ))))))
 
 (defun yas--advance-end-maybe (fom newend)
   "Maybe advance FOM's end to NEWEND if it needs it.
@@ -4082,7 +4087,7 @@ Meant to be called in a narrowed buffer, does various passes"
       (goto-char parse-start)
       (yas--field-parse-create snippet) ; Parse fields with {}.
       (goto-char parse-start)
-      (yas--simple-mirror-parse-create snippet) ; Parse simple mirrors & fields.
+      (yas--simple-fom-create snippet) ; Parse simple mirrors & fields.
       (goto-char parse-start)
       (yas--transform-mirror-parse-create snippet) ; Parse mirror transforms.
       ;; Invalidate any syntax-propertizing done while
@@ -4487,10 +4492,10 @@ When multiple expressions are found, only the last one counts."
       (when brand-new-mirror
         (push brand-new-mirror
               (yas--field-mirrors field))
-        (yas--calculate-mirrors-in-fields snippet brand-new-mirror)
+        (yas--calculate-simple-fom-parentage snippet brand-new-mirror)
         (push (cons (match-beginning 0) real-match-end-0) yas--dollar-regions)))))
 
-(defun yas--simple-mirror-parse-create (snippet)
+(defun yas--simple-fom-create (snippet)
   "Parse the simple \"$n\" fields/mirrors/exitmarkers in SNIPPET."
   (while (re-search-forward yas--simple-mirror-regexp nil t)
     (let ((number (string-to-number (match-string-no-properties 1))))
@@ -4500,20 +4505,22 @@ When multiple expressions are found, only the last one counts."
              (push (cons (match-beginning 0) (yas--exit-marker (yas--snippet-exit snippet)))
                    yas--dollar-regions))
             (t
-             (let ((field (yas--snippet-find-field snippet number)))
+             (let ((field (yas--snippet-find-field snippet number))
+                   (fom))
                (if field
-                   (let ((brand-new-mirror (yas--make-mirror
-                                            (yas--make-marker (match-beginning 0))
-                                            (yas--make-marker (match-beginning 0))
-                                            nil)))
-                     (push brand-new-mirror
-                           (yas--field-mirrors field))
-                     (yas--calculate-mirrors-in-fields snippet brand-new-mirror))
-                 (push (yas--make-field number
-                                       (yas--make-marker (match-beginning 0))
-                                       (yas--make-marker (match-beginning 0))
-                                       nil)
-                       (yas--snippet-fields snippet))))
+                   (push
+                    (setq fom (yas--make-mirror
+                               (yas--make-marker (match-beginning 0))
+                               (yas--make-marker (match-beginning 0))
+                               nil))
+                    (yas--field-mirrors field))
+                 (push
+                  (setq fom (yas--make-field number
+                                             (yas--make-marker (match-beginning 0))
+                                             (yas--make-marker (match-beginning 0))
+                                             nil))
+                  (yas--snippet-fields snippet)))
+               (yas--calculate-simple-fom-parentage snippet fom))
              (push (cons (match-beginning 0) (match-end 0))
                    yas--dollar-regions))))))
 
