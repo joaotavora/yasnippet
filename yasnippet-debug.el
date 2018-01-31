@@ -334,7 +334,7 @@ buffer-locally, otherwise install it globally.  If HOOK is
     (when-let (verbosity (car (or (member "-v" options) (member "-vv" options))))
       (set-window-buffer
        (split-window) (yas-debug-snippets
-                       nil (if (equal verbosity "-vv") 'create t))))
+                       nil (if (equal verbosity "-vv") 'edebug-create t))))
     (yas-minor-mode +1)
     (when snippet-key (insert snippet-key))))
 
