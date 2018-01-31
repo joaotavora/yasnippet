@@ -58,7 +58,7 @@
                       (if ,(car key-val)
                         (when-let* ,key-vals
                           ,@body)))
-                 (macroexp-progn body)))))))
+                 `(progn ,@body)))))))
 
 (defvar yas-debug-live-indicators
   (make-hash-table :test #'eq))
