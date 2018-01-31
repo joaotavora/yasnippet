@@ -14,7 +14,8 @@ env:
     # unused' warnings.
     - EMACS_VERSION=24.3 tests_Werror=nil
     - EMACS_VERSION=24.5
-    - EMACS_VERSION=25.2
+    - EMACS_VERSION=25.3
+    - EMACS_VERSION=26-prerelease
 
 
 install:
