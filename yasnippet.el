@@ -4087,11 +4087,6 @@ next FOM.  Works its way up recursively for parents of parents."
   "When expanding the snippet the \"parse-create\" functions add
 cons cells to this var.")
 
-(defvar yas--backquote-markers-and-strings nil
-  "List of (MARKER . STRING) marking where the values from
-backquoted Lisp expressions should be inserted at the end of
-expansion.")
-
 (defvar yas--indent-markers nil
   "List of markers for manual indentation.")
 
@@ -4100,15 +4095,16 @@ expansion.")
 necessary fields, mirrors and exit points.
 
 Meant to be called in a narrowed buffer, does various passes"
-  (let ((parse-start (point)))
+  (let ((saved-quotes nil)
+        (parse-start (point)))
     ;; Avoid major-mode's syntax propertizing function, since we
     ;; change the syntax-table while calling `scan-sexps'.
     (let ((syntax-propertize-function nil))
       (setq yas--dollar-regions nil)  ; Reset the yas--dollar-regions.
       (yas--protect-escapes nil '(?`))  ; Protect just the backquotes.
       (goto-char parse-start)
-      (yas--save-backquotes)     ; Replace all backquoted expressions.
-      (yas--protect-escapes)     ; Protect escaped characters.
+      (setq saved-quotes (yas--save-backquotes)) ; `expressions`.
+      (yas--protect-escapes)            ; Protect escaped characters.
       (goto-char parse-start)
       (yas--indent-parse-create)        ; Parse indent markers: `$>'.
       (goto-char parse-start)
@@ -4138,7 +4134,7 @@ Meant to be called in a narrowed buffer, does various passes"
                 (get-register yas-wrap-around-region))
            (insert (prog1 (get-register yas-wrap-around-region)
                      (set-register yas-wrap-around-region nil)))))
-    (yas--restore-backquotes)  ; Restore backquoted expression values.
+    (yas--restore-backquotes saved-quotes)  ; Restore `expression` values.
     (goto-char parse-start)
     (yas--restore-escapes)        ; Restore escapes.
     (yas--update-mirrors snippet) ; Update mirrors for the first time.
@@ -4353,9 +4349,11 @@ With optional string TEXT do it in string instead of the buffer."
     changed-text))
 
 (defun yas--save-backquotes ()
-  "Save all the \"\\=`(lisp-expression)\\=`\"-style expressions
-with their evaluated value into `yas--backquote-markers-and-strings'."
-  (let* ((yas--snippet-buffer (current-buffer))
+  "Save all \"\\=`(lisp-expression)\\=`\"-style expressions.
+Return a list of (MARKER . STRING) entires for each backquoted
+Lisp expression."
+  (let* ((saved-quotes nil)
+         (yas--snippet-buffer (current-buffer))
          (yas--change-detected nil)
          (detect-change (lambda (_beg _end)
                           (when (eq (current-buffer) yas--snippet-buffer)
@@ -4378,29 +4376,28 @@ with their evaluated value into `yas--backquote-markers-and-strings'."
               (insert "Y") ;; quite horrendous, I love it :)
               (set-marker marker (point))
               (insert "Y"))
-            (push (cons marker transformed) yas--backquote-markers-and-strings)))))
+            (push (cons marker transformed) saved-quotes)))))
     (when yas--change-detected
       (lwarn '(yasnippet backquote-change) :warning
              "`%s' modified buffer in a backquote expression.
   To hide this warning, add (yasnippet backquote-change) to `warning-suppress-types'."
              (if yas--current-template
                  (yas--template-name yas--current-template)
-               "Snippet")))))
+               "Snippet")))
+    saved-quotes))
 
-(defun yas--restore-backquotes ()
-  "Replace markers in `yas--backquote-markers-and-strings' with their values."
-  (while yas--backquote-markers-and-strings
-    (let* ((marker-and-string (pop yas--backquote-markers-and-strings))
-           (marker (car marker-and-string))
-           (string (cdr marker-and-string)))
-      (save-excursion
-        (goto-char marker)
-        (save-restriction
-          (widen)
-          (delete-char -1)
-          (insert string)
-          (delete-char 1))
-        (set-marker marker nil)))))
+(defun yas--restore-backquotes (saved-quotes)
+  "Replace markers in SAVED-QUOTES with their values.
+SAVED-QUOTES is the in format returned by `yas--save-backquotes'."
+  (cl-loop for (marker . string) in saved-quotes do
+           (save-excursion
+             (goto-char marker)
+             (save-restriction
+               (widen)
+               (delete-char -1)
+               (insert string)
+               (delete-char 1))
+             (set-marker marker nil))))
 
 (defun yas--scan-sexps (from count)
   (ignore-errors

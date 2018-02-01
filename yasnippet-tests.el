@@ -683,6 +683,17 @@ mapconcat #'(lambda (arg)
       (yas-mock-insert "bbb")
       (should (string= (yas--buffer-contents) "if condition\naaa\nelse\nbbb\nend")))))
 
+(ert-deftest yas-no-memory-of-bad-snippet ()
+  "Check that expanding an incorrect has no influence on future expansions."
+  ;; See https://github.com/joaotavora/yasnippet/issues/800.
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    (should-error (yas-expand-snippet "```foo\n\n```"))
+    (erase-buffer) ; Bad snippet may leave wrong text.
+    ;; But expanding the corrected snippet should work fine.
+    (yas-expand-snippet "\\`\\`\\`foo\n\n\\`\\`\\`")
+    (should (equal (buffer-string) "```foo\n\n```"))))
+
 (defmacro yas--with-font-locked-temp-buffer (&rest body)
   "Like `with-temp-buffer', but ensure `font-lock-mode'."
   (declare (indent 0) (debug t))
