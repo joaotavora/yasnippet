@@ -80,7 +80,7 @@ Here's a list of currently supported directives:
 
 This is the probably the most important directive, it's the
 abbreviation you type to expand a snippet just before hitting the key
-that runs [[sym:yas-expand][=yas-expand=]]. If you don't specify this
+that runs [[sym:yas-expand][=yas-expand=]]. If you don't specify this,
 the snippet will not be expandable through the trigger mechanism.
 
 ** =# name:= snippet name
@@ -89,8 +89,8 @@ This is a one-line description of the snippet. It will be displayed in
 the menu. It's a good idea to select a descriptive name for a snippet --
 especially distinguishable among similar snippets.
 
-If you omit this name it will default to the file name the snippet was
-loaded from.
+If you omit this name, it will default to the file name the snippet
+was loaded from.
 
 ** =# condition:= snippet condition
 
@@ -277,7 +277,7 @@ like this:
   ${N:default value}
 #+END_SRC
 
-They acts as the default value for a tab stop. But when you firstly
+They act as the default value for a tab stop. But when you firstly
 type at a tab stop, the default value will be replaced by your typing.
 The number can be omitted if you don't want to create [[mirrors-fields][mirrors]] or
 [[mirror-transformations][transformations]] for this field.
@@ -365,9 +365,9 @@ is not. Here's an snippet for rst title:
 ** Fields with transformations
 
 From version 0.6 on, you can also have lisp transformation inside
-fields. These work mostly mirror transformations but are evaluated when
-you first enter the field, after each change you make to the field and
-also just before you exit the field.
+fields. These work mostly like mirror transformations. However, they
+are evaluated when you first enter the field, after each change you
+make to the field and also just before you exit the field.
 
 The syntax is also a tiny bit different, so that the parser can
 distinguish between fields and mirrors. In the following example
@@ -431,7 +431,7 @@ From version 0.6 on, you can also have nested placeholders of the type:
 #+END_SRC
 
 This allows you to choose if you want to give this =div= an =id=
-attribute. If you tab forward after expanding it will let you change
+attribute. If you tab forward after expanding, it will let you change
 "some\_id" to whatever you like. Alternatively, you can just press =C-d=
 (which executes [[sym:yas-skip-and-clear-or-delete-char][=yas-skip-and-clear-or-delete-char=]]) and go straight to
 the exit marker.
