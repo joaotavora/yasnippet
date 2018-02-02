@@ -277,7 +277,7 @@ like this:
   ${N:default value}
 #+END_SRC
 
-They act as the default value for a tab stop. But when you firstly
+They act as the default value for a tab stop. But when you first
 type at a tab stop, the default value will be replaced by your typing.
 The number can be omitted if you don't want to create [[mirrors-fields][mirrors]] or
 [[mirror-transformations][transformations]] for this field.
