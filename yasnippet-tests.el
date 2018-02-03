@@ -1031,10 +1031,27 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
   "Test `yas-lookup-snippet'."
   (yas-with-some-interesting-snippet-dirs
    (yas-reload-all 'no-jit)
-   (should (equal (yas-lookup-snippet "printf" 'c-mode) "printf($1);"))
-   (should (equal (yas-lookup-snippet "def" 'c-mode) "# define"))
+   (should (equal (yas--template-content (yas-lookup-snippet "printf" 'c-mode))
+                  "printf($1);"))
+   (should (equal (yas--template-content (yas-lookup-snippet "def" 'c-mode))
+                  "# define"))
    (should-not (yas-lookup-snippet "no such snippet" nil 'noerror))
    (should-not (yas-lookup-snippet "printf" 'emacs-lisp-mode 'noerror))))
+
+(ert-deftest yas-lookup-snippet-with-env ()
+  (with-temp-buffer
+    (yas-with-snippet-dirs
+      '((".emacs.d/snippets"
+         ("emacs-lisp-mode"
+          ("foo" . "\
+# expand-env: ((foo \"bar\"))
+# --
+`foo`"))))
+      (yas-reload-all)
+      (emacs-lisp-mode)
+      (yas-minor-mode +1)
+      (yas-expand-snippet (yas-lookup-snippet "foo"))
+      (should (equal (buffer-string) "bar")))))
 
 (ert-deftest basic-jit-loading ()
   "Test basic loading and expansion of snippets"
@@ -1063,13 +1080,15 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
    (with-temp-buffer
      (text-mode)
      (yas-minor-mode +1)
-     (should (equal (yas-lookup-snippet "one") "one"))
+     (should (equal (yas--template-content (yas-lookup-snippet "one"))
+                    "one"))
      (should (eq (yas--key-binding "\C-c1") 'yas-expand-from-keymap))
      (yas-define-snippets
       'text-mode '(("_1" "one!" "won" nil nil nil nil nil "uuid-1")))
      (should (null (yas-lookup-snippet "one" nil 'noerror)))
      (should (null (yas--key-binding "\C-c1")))
-     (should (equal (yas-lookup-snippet "won") "one!")))))
+     (should (equal (yas--template-content(yas-lookup-snippet "won"))
+                    "one!")))))
 
 (ert-deftest snippet-save ()
   "Make sure snippets can be saved correctly."
