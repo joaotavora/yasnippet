@@ -684,7 +684,7 @@ mapconcat #'(lambda (arg)
       (should (string= (yas--buffer-contents) "if condition\naaa\nelse\nbbb\nend")))))
 
 (ert-deftest yas-no-memory-of-bad-snippet ()
-  "Check that expanding an incorrect has no influence on future expansions."
+  "Expanding an incorrect snippet should not influence future expansions."
   ;; See https://github.com/joaotavora/yasnippet/issues/800.
   (with-temp-buffer
     (yas-minor-mode 1)
