@@ -673,6 +673,22 @@ mapconcat #'(lambda (arg)
       (ert-simulate-command '(yas-expand))
       (should (equal (buffer-string) "expanded foo")))))
 
+(ert-deftest yas-expand-command-snippet ()
+  (with-temp-buffer
+    (yas-with-snippet-dirs
+      '((".emacs.d/snippets"
+         ("emacs-lisp-mode"
+          ("foo" . "\
+# type: command
+# --
+\(insert \"expanded foo\")"))))
+      (yas-reload-all)
+      (emacs-lisp-mode)
+      (yas-minor-mode +1)
+      (insert "foo")
+      (ert-simulate-command '(yas-expand))
+      (should (equal (buffer-string) "expanded foo")))))
+
 (ert-deftest example-for-issue-271 ()
   (with-temp-buffer
     (yas-minor-mode 1)
