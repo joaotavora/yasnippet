@@ -45,7 +45,7 @@
                     (mapcar #'symbol-name (help-function-arglist symbol t))))
          (heading (cond ((fboundp symbol)
                          (format
-                          "%s =%s= (%s)" stars symbol
+                          "%s =%s= (%s)\n" stars symbol
                           (mapconcat (lambda (a)
                                        (format (if (string-prefix-p "&" a)
                                                    "/%s/" "=%s=") a))
@@ -91,7 +91,7 @@
                         (format "=%s=" name))))
                 body t))
     ;; output the paragraph
-    (concat heading "\n" after-heading "\n" body)))
+    (concat heading after-heading "\n" body)))
 
 (defun yas--document-symbols (level &rest names-and-predicates)
   (let ((sym-lists (make-vector (length names-and-predicates) nil))

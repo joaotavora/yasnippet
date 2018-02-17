@@ -50,6 +50,10 @@ task :release => [:package, 'doc:archive'] do
   raise "Not implemented for github yet!"
 end
 
+# rake doc[../htmlize]
+#
+# To do this interactively, load doc/yas-doc-helper, open one of the
+# org files, and do `C-c C-e P'.
 desc "Generate document"
 task :doc, [:htmlize] do |t, args|
   load_path = '-L .'

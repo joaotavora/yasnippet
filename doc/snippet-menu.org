@@ -24,7 +24,7 @@ In this menu, you can find
 Invoking "Load snippets..." from the menu invokes [[sym:yas-load-directory][=yas-load-directory=]]
 and prompts you for a snippet directory hierarchy to load.
 
-Also useful is the "Reload everything" item to invoke [[#yas-reload-all][=yas-reload-all=]]
+Also useful is the "Reload everything" item to invoke [[sym:yas-reload-all][=yas-reload-all=]]
 which uncondionally reloads all the snippets directories defined in
 [[sym:yas-snippet-dirs][=yas-snippet-dirs=]] and rebuilds the menus.
 
