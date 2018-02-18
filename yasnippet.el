@@ -237,7 +237,7 @@ nil.
 - To signal that the user quit the prompting process, you can
 signal `quit' with
 
-  (signal \\='quit \"user quit!\")."
+    (signal \\='quit \"user quit!\")"
   :type '(repeat function))
 
 (defcustom yas-indent-line 'auto

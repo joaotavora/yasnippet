@@ -31,13 +31,14 @@
     (require 'ox-publish))
 (require 'yasnippet) ; docstrings must be loaded
 
-(defun yas--org-raw-html (tag content)
+(defun yas--org-raw-html (tag content &optional attrs)
   ;; in version 8.0 org-mode changed the export syntax, see
   ;; http://orgmode.org/worg/org-8.0.html#sec-8-1
   (format (if (version< org-version "8.0.0")
               "@<%s>%s@</%s>"                ; old: @<tag>
             "@@html:<%s>@@%s@@html:</%s>@@") ; new: @@html:<tag>@@
-          tag content tag))
+          (concat tag (if attrs " ") attrs)
+          content tag))
 
 (defun yas--document-symbol (symbol level)
   (let* ((stars (make-string level ?*))
@@ -45,14 +46,17 @@
                     (mapcar #'symbol-name (help-function-arglist symbol t))))
          (heading (cond ((fboundp symbol)
                          (format
-                          "%s =%s= (%s)\n" stars symbol
+                          "%s %s (%s)\n" stars (yas--org-raw-html "code" symbol "class='function'")
                           (mapconcat (lambda (a)
                                        (format (if (string-prefix-p "&" a)
-                                                   "/%s/" "=%s=") a))
+                                                   "/%s/" "=%s=")
+                                               a))
                                      args " ")))
                         (t
-                         (format "%s =%s=\n" stars symbol))))
+                         (format "%s %s\n" stars
+                                 (yas--org-raw-html "code" symbol "class='variable'")))))
          (after-heading (format ":PROPERTIES:\n:CUSTOM_ID: %s\n:END:" symbol))
+         (text-quoting-style 'grave)
          (body (or (cond ((fboundp symbol)
                           (let ((doc-synth (car-safe (get symbol 'function-documentation))))
                             (if (functionp doc-synth)
@@ -64,10 +68,17 @@
                           (format "*WARNING*: no symbol named =%s=" symbol)))
                    (format "*WARNING*: no doc for symbol =%s=" symbol)))
          (case-fold-search nil))
-    ;; do some transformations on the body:
+    ;; Do some transformations on the body:
     ;; ARGxxx becomes @<code>arg@</code>xxx
     ;; FOO becomes /foo/
     ;; `bar' becomes [[#bar][=bar=]]
+    ;;    (...) becomes #+BEGIN_SRC elisp (...) #+END_SRC
+    ;; Info node `(some-manual) Node Name' becomes
+    ;; [[https://www.gnu.org/software/emacs/manual/html_node/some-manual/Node-Name.html]
+    ;;  [(some-manual) Node Name]]
+    ;;
+    ;; This is fairly fragile, though it seems to be working for
+    ;; now...
     (setq body (replace-regexp-in-string
                 "\\<\\([A-Z][-A-Z0-9]+\\)\\(\\sw+\\)?\\>"
                 #'(lambda (match)
@@ -82,14 +93,39 @@
                         match1)))
                 body t t 1)
           body (replace-regexp-in-string
-                "`\\([a-z-]+\\)'"
+                "\\\\{[^}]+}"
+                (lambda (match)
+                  (concat "#+BEGIN_EXAMPLE\n"
+                          (substitute-command-keys match)
+                          "#+END_EXAMPLE\n"))
+                body t t)
+          body (substitute-command-keys body)
+          body (replace-regexp-in-string
+                "Info node `(\\([-a-z]+\\)) \\([A-Za-z0-9 ]+\\)'"
+                (lambda (match)
+                  (let* ((manual (match-string 1 match))
+                         (node (match-string 2 match))
+                         (html-node (replace-regexp-in-string " " "-" node t t)))
+                    (format "Info node\
+ [[https://www.gnu.org/software/emacs/manual/html_node/%s/%s.html][(%s) %s]]"
+                            manual html-node manual node)))
+                body t t)
+          body (replace-regexp-in-string
+                "`\\([-a-z]+\\)'"
                 #'(lambda (match)
                     (let* ((name (downcase (match-string 1 match)))
-                           (sym (intern name)))
+                           (sym (intern-soft name)))
                       (if (memq sym yas--exported-syms)
                           (format "[[#%s][=%s=]]" name name)
                         (format "=%s=" name))))
-                body t))
+                body t t)
+          body (replace-regexp-in-string
+                "\n\n    +(.+\\(?:\n    +.+\\)*"
+                (lambda (match)
+                  (concat "\n#+BEGIN_SRC elisp\n"
+                          match
+                          "\n#+END_SRC\n"))
+                body t t))
     ;; output the paragraph
     (concat heading after-heading "\n" body)))
 
