@@ -1,0 +1,989 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Writing snippets</title>
+<meta name="generator" content="Org mode" />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { width: 90%; }
+  /*]]>*/-->
+</style>
+<link rel="stylesheet" type="text/css" href="stylesheets/manual.css" />
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2017 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="preamble" class="status">
+<nav>
+  <ul class="center">
+    <li> <a href="index.html">Overview</a>
+    <li> <a href="https://github.com/joaotavora/yasnippet/blob/master/README.mdown">
+        Intro and Tutorial</a>
+    <li class="center border">Snippet
+      <ul id="snippet-submenu">
+        <li> <a href="snippet-organization.html">Organization</a>
+        <li> <a href="snippet-expansion.html">Expansion</a>
+        <li> <span class='current'>Development</span>
+        <li> <a href="snippet-menu.html">Menu</a>
+      </ul>
+    <li> <a href="faq.html">FAQ</a>
+    <li> <a href="snippet-reference.html">Reference</a>
+  </ul>
+</nav>
+</div>
+<div id="content">
+<h1 class="title">Writing snippets</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#org6796ab7">Snippet development</a>
+<ul>
+<li><a href="#orgd2c5216">Quickly finding snippets</a></li>
+<li><a href="#org4406e2d">Using the <code>snippet-mode</code> major mode </a></li>
+</ul>
+</li>
+<li><a href="#org5e87ae3">File content</a>
+<ul>
+<li><a href="#org9b062b6"><code># key:</code> snippet abbrev</a></li>
+<li><a href="#org592456a"><code># name:</code> snippet name</a></li>
+<li><a href="#org185b594"><code># condition:</code> snippet condition</a></li>
+<li><a href="#orgd710184"><code># group:</code> snippet menu grouping</a></li>
+<li><a href="#orga37203f"><code># expand-env:</code> expand environment</a></li>
+<li><a href="#org67f4e69"><code># binding:</code> direct keybinding</a></li>
+<li><a href="#org24f6fba"><code># type:</code> <code>snippet</code> or <code>command</code></a></li>
+<li><a href="#orgd0516f9"><code># uuid:</code> unique identifier</a></li>
+<li><a href="#orge2b38b9"><code># contributor:</code> snippet author</a></li>
+</ul>
+</li>
+<li><a href="#org9801aa7">Template Syntax</a>
+<ul>
+<li><a href="#org0e7ccf8">Plain Text</a></li>
+<li><a href="#orgcde188c">Embedded Emacs-lisp code</a>
+<ul>
+<li><a href="#org9804f4c">Note: backquote expressions should not modify the buffer</a></li>
+</ul>
+</li>
+<li><a href="#org41a4ac7">Tab stop fields</a></li>
+<li><a href="#org844d0b2">Placeholder fields</a></li>
+<li><a href="#org087775c">Mirrors </a></li>
+<li><a href="#orge2c1f71">Mirrors with transformations </a></li>
+<li><a href="#org4efa067">Fields with transformations</a></li>
+<li><a href="#org73e1209">Choosing fields value from a list and other tricks</a></li>
+<li><a href="#orgca40be6">Nested placeholder fields</a></li>
+<li><a href="#org92b7360">Indentation markers</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org6796ab7" class="outline-2">
+<h2 id="org6796ab7">Snippet development</h2>
+<div class="outline-text-2" id="text-org6796ab7">
+</div>
+<div id="outline-container-orgd2c5216" class="outline-3">
+<h3 id="orgd2c5216">Quickly finding snippets</h3>
+<div class="outline-text-3" id="text-orgd2c5216">
+<p>
+There are some ways you can quickly find a snippet file or create a new one:
+</p>
+
+<ul class="org-ul">
+<li><p>
+<code>M-x yas-new-snippet</code>, key bindind: <code>C-c &amp; C-n</code>
+</p>
+
+<p>
+Creates a new buffer with a template for making a new snippet.  The
+buffer is in <code>snippet-mode</code> (see <a href="#orgb9ac10d">below</a>).  When you are done editing
+the new snippet, use <a href="#org7f07002"><code>C-c C-c</code></a> to save it.
+</p></li>
+
+<li><p>
+<code>M-x yas-visit-snippet-file</code>, key binding: <code>C-c &amp; C-v</code>
+</p>
+
+<p>
+Prompts you for possible snippet expansions like
+<a href="snippet-reference.html#yas-insert-snippet"><code>yas-insert-snippet</code></a>, but instead of expanding it, takes you directly
+to the snippet definition's file, if it exists.
+</p></li>
+</ul>
+
+<p>
+Once you find this file it will be set to <code>snippet-mode</code> (see <a href="#orgb9ac10d">ahead</a>)
+and you can start editing your snippet.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org4406e2d" class="outline-3">
+<h3 id="org4406e2d">Using the <code>snippet-mode</code> major mode <a id="orgb9ac10d"></a></h3>
+<div class="outline-text-3" id="text-org4406e2d">
+<p>
+There is a major mode <code>snippet-mode</code> to edit snippets. You can set the
+buffer to this mode with <code>M-x snippet-mode</code>. It provides reasonably
+useful syntax highlighting.
+</p>
+
+<p>
+Three commands are defined in this mode:
+</p>
+
+<ul class="org-ul">
+<li><p>
+<code>M-x yas-load-snippet-buffer</code>, key binding: <code>C-c C-l</code>
+</p>
+
+<p>
+Prompts for a snippet table (with a default based on snippet's
+major mode) and loads the snippet currently being edited.
+</p></li>
+
+<li><p>
+<code>M-x yas-load-snippet-buffer-and-close</code>, key binding: <code>C-c C-c</code>
+<a id="org7f07002"></a>
+</p>
+
+<p>
+Like <code>yas-load-snippet-buffer</code>, but also saves the snippet and
+calls <code>quit-window</code>.  The destination is decided based on the
+chosen snippet table and snippet collection directly (defaulting to
+the first directory in <code>yas-snippet-dirs</code> (see <a href="snippet-organization.html">Organizing Snippets</a>
+for more detail on how snippets are organized).
+</p></li>
+
+<li><p>
+<code>M-x yas-tryout-snippet</code>, key binding: <code>C-c C-t</code>
+</p>
+
+<p>
+When editing a snippet, this opens a new empty buffer, sets it to
+the appropriate major mode and inserts the snippet there, so you
+can see what it looks like.
+</p></li>
+</ul>
+
+<p>
+There are also <i>snippets for writing snippets</i>: <code>vars</code>, <code>$f</code> and <code>$m</code>
+:-).
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org5e87ae3" class="outline-2">
+<h2 id="org5e87ae3">File content</h2>
+<div class="outline-text-2" id="text-org5e87ae3">
+<p>
+A file defining a snippet generally contains the template to be
+expanded.
+</p>
+
+<p>
+Optionally, if the file contains a line of <code># --</code>, the lines above it
+count as comments, some of which can be <i>directives</i> (or meta data).
+Snippet directives look like <code># property: value</code> and tweak certain
+snippets properties described below. If no <code># --</code> is found, the whole
+file is considered the snippet template.
+</p>
+
+<p>
+Here's a typical example:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-snippet"><span class="org-comment"># contributor: pluskid <a href="mailto:pluskid%40gmail.com">&lt;pluskid@gmail.com&gt;</a></span>
+<span class="org-comment"># name: __...__</span>
+<span class="org-comment"># --</span>
+__${init<span class="org-keyword">}</span>__
+</pre>
+</div>
+
+<p>
+Here's a list of currently supported directives:
+</p>
+</div>
+
+<div id="outline-container-org9b062b6" class="outline-3">
+<h3 id="org9b062b6"><code># key:</code> snippet abbrev</h3>
+<div class="outline-text-3" id="text-org9b062b6">
+<p>
+This is the probably the most important directive, it's the
+abbreviation you type to expand a snippet just before hitting the key
+that runs <a href="snippet-reference.html#yas-expand"><code>yas-expand</code></a>. If you don't specify this,
+the snippet will not be expandable through the trigger mechanism.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org592456a" class="outline-3">
+<h3 id="org592456a"><code># name:</code> snippet name</h3>
+<div class="outline-text-3" id="text-org592456a">
+<p>
+This is a one-line description of the snippet. It will be displayed in
+the menu. It's a good idea to select a descriptive name for a snippet &#x2013;
+especially distinguishable among similar snippets.
+</p>
+
+<p>
+If you omit this name, it will default to the file name the snippet
+was loaded from.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org185b594" class="outline-3">
+<h3 id="org185b594"><code># condition:</code> snippet condition</h3>
+<div class="outline-text-3" id="text-org185b594">
+<p>
+This is a piece of Emacs-lisp code. If a snippet has a condition, then
+it will only be expanded when the condition code evaluate to some
+non-nil value.
+</p>
+
+<p>
+See also <a href="snippet-reference.html#yas-buffer-local-condition"><code>yas-buffer-local-condition</code></a> in
+<a href="./snippet-expansion.html">Expanding snippets</a>
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgd710184" class="outline-3">
+<h3 id="orgd710184"><code># group:</code> snippet menu grouping</h3>
+<div class="outline-text-3" id="text-orgd710184">
+<p>
+When expanding/visiting snippets from the menu-bar menu, snippets for a
+given mode can be grouped into sub-menus . This is useful if one has too
+many snippets for a mode which will make the menu too long.
+</p>
+
+<p>
+The <code># group:</code> property only affect menu construction (See
+<a href="./snippet-menu.html">the YASnippet menu</a>) and the same effect can be
+achieved by grouping snippets into sub-directories and using the
+<code>.yas-make-groups</code> special file (for this see
+<a href="./snippet-organization.html">Organizing Snippets</a>
+</p>
+
+<p>
+Refer to the bundled snippets for <code>ruby-mode</code> for examples on the
+<code># group:</code> directive. Group can also be nested, e.g.
+<code>control structure.loops</code> tells that the snippet is under the <code>loops</code>
+group which is under the <code>control structure</code> group.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orga37203f" class="outline-3">
+<h3 id="orga37203f"><code># expand-env:</code> expand environment</h3>
+<div class="outline-text-3" id="text-orga37203f">
+<p>
+This is another piece of Emacs-lisp code in the form of a <code>let</code> <i>varlist
+form</i>, i.e. a list of lists assigning values to variables. It can be
+used to override variable values while the snippet is being expanded.
+</p>
+
+<p>
+Interesting variables to override are <a href="snippet-reference.html#yas-wrap-around-region"><code>yas-wrap-around-region</code></a> and
+<a href="snippet-reference.html#yas-indent-line"><code>yas-indent-line</code></a> (see <a href="./snippet-expansion.html">Expanding Snippets</a>).
+</p>
+
+<p>
+As an example, you might normally have <a href="snippet-reference.html#yas-indent-line"><code>yas-indent-line</code></a> set to '<code>auto</code>
+and <a href="snippet-reference.html#yas-wrap-around-region"><code>yas-wrap-around-region</code></a> set to <code>t</code>, but for this particularly
+brilliant piece of ASCII art these values would mess up your hard work.
+You can then use:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-snippet"><span class="org-comment"># name: ASCII home</span>
+<span class="org-comment"># expand-env: ((yas-indent-line 'fixed) (yas-wrap-around-region 'nil))</span>
+<span class="org-comment"># --</span>
+                welcome to my
+            X      humble
+           / \      home,
+          /   \      <span class="org-keyword">$</span><span class="org-string">0</span>
+         /     \
+        /-------\
+        |       |
+        |  +-+  |
+        |  | |  |
+        +--+-+--+
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org67f4e69" class="outline-3">
+<h3 id="org67f4e69"><code># binding:</code> direct keybinding</h3>
+<div class="outline-text-3" id="text-org67f4e69">
+<p>
+You can use this directive to expand a snippet directly from a normal
+Emacs keybinding. The keybinding will be registered in the Emacs keymap
+named after the major mode the snippet is active for.
+</p>
+
+<p>
+Additionally a variable <a href="snippet-reference.html#yas-prefix"><code>yas-prefix</code></a> is set to to the prefix argument
+you normally use for a command. This allows for small variations on the
+same snippet, for example in this "html-mode" snippet.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-snippet"><span class="org-comment"># name: &lt;p&gt;...&lt;/p&gt;</span>
+<span class="org-comment"># binding: C-c C-c C-m</span>
+<span class="org-comment"># --</span>
+&lt;p&gt;`(<span class="org-keyword">when</span> yas-prefix <span class="org-string">"\n"</span>)`<span class="org-keyword">$</span><span class="org-string">0</span>`(<span class="org-keyword">when</span> yas-prefix <span class="org-string">"\n"</span>)`&lt;/p&gt;
+</pre>
+</div>
+
+<p>
+This binding will be recorded in the keymap <code>html-mode-map</code>. To expand a
+paragraph tag newlines, just press <code>C-u C-c C-c C-m</code>. Omitting the <code>C-u</code>
+will expand the paragraph tag without newlines.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org24f6fba" class="outline-3">
+<h3 id="org24f6fba"><code># type:</code> <code>snippet</code> or <code>command</code></h3>
+<div class="outline-text-3" id="text-org24f6fba">
+<p>
+If the <code>type</code> directive is set to <code>command</code>, the body of the snippet
+is interpreted as lisp code to be evaluated when the snippet is
+triggered.
+</p>
+
+<p>
+If it's <code>snippet</code> (the default when there is no <code>type</code> directive), the
+snippet body will be parsed according to the <a href="#org9801aa7">Template Syntax</a>,
+described below.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgd0516f9" class="outline-3">
+<h3 id="orgd0516f9"><code># uuid:</code> unique identifier</h3>
+<div class="outline-text-3" id="text-orgd0516f9">
+<p>
+This provides to a way to identify a snippet, independent of its name.
+Loading a second snippet file with the same uuid would replace the
+previous snippet.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orge2b38b9" class="outline-3">
+<h3 id="orge2b38b9"><code># contributor:</code> snippet author</h3>
+<div class="outline-text-3" id="text-orge2b38b9">
+<p>
+This is optional and has no effect whatsoever on snippet functionality,
+but it looks nice.
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org9801aa7" class="outline-2">
+<h2 id="org9801aa7">Template Syntax</h2>
+<div class="outline-text-2" id="text-org9801aa7">
+<p>
+The syntax of the snippet template is simple but powerful, very similar
+to TextMate's.
+</p>
+</div>
+
+<div id="outline-container-org0e7ccf8" class="outline-3">
+<h3 id="org0e7ccf8">Plain Text</h3>
+<div class="outline-text-3" id="text-org0e7ccf8">
+<p>
+Arbitrary text can be included as the content of a template. They are
+usually interpreted as plain text, except <code>$</code> and <code>`</code>. You need to
+use <code>\</code> to escape them: <code>\$</code> and <code>\`</code>. The <code>\</code> itself may also needed to be
+escaped as <code>\\</code> sometimes.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgcde188c" class="outline-3">
+<h3 id="orgcde188c">Embedded Emacs-lisp code</h3>
+<div class="outline-text-3" id="text-orgcde188c">
+<p>
+Emacs-Lisp code can be embedded inside the template, written inside
+back-quotes (<code>`</code>). The lisp forms are evaluated when the snippet is
+being expanded. The evaluation is done in the same buffer as the
+snippet being expanded.
+</p>
+
+<p>
+Here's an example for c-mode to calculate the header file guard
+dynamically:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-snippet"><span class="org-comment">#ifndef ${</span><span class="org-warning">1</span><span class="org-comment">:_`(upcase (file-name-nondirectory (file-name-sans-extension (buffer-file-name))))`_H_}</span>
+<span class="org-comment">#define $</span><span class="org-string">1</span>
+
+<span class="org-keyword">$</span><span class="org-string">0</span>
+
+<span class="org-comment">#endif /* $</span><span class="org-string">1</span><span class="org-comment"> */</span>
+</pre>
+</div>
+
+<p>
+From version 0.6, snippets expansions are run with some special
+Emacs-lisp variables bound. One of this is <a href="snippet-reference.html#yas-selected-text"><code>yas-selected-text</code></a>. You can
+therefore define a snippet like:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-snippet">for (<span class="org-keyword">$</span><span class="org-string">1</span>;<span class="org-keyword">$</span><span class="org-string">2</span>;<span class="org-keyword">$</span><span class="org-string">3</span>) {
+  `yas-selected-text`<span class="org-keyword">$</span><span class="org-string">0</span>
+<span class="org-keyword">}</span>
+</pre>
+</div>
+
+<p>
+to "wrap" the selected region inside your recently inserted snippet.
+Alternatively, you can also customize the variable
+<a href="snippet-reference.html#yas-wrap-around-region"><code>yas-wrap-around-region</code></a> to <code>t</code> which will do this automatically.
+</p>
+</div>
+
+<div id="outline-container-org9804f4c" class="outline-4">
+<h4 id="org9804f4c">Note: backquote expressions should not modify the buffer</h4>
+<div class="outline-text-4" id="text-org9804f4c">
+<p>
+Please note that the lisp forms in backquotes should <b>not</b> modify the
+buffer, doing so will trigger a warning.  For example, instead of
+doing
+</p>
+
+<div class="org-src-container">
+<pre class="src src-snippet">Timestamp: `(insert (current-time-string))`
+</pre>
+</div>
+
+<p>
+do this:
+</p>
+<div class="org-src-container">
+<pre class="src src-snippet">Timestamp: `(current-time-string)`
+</pre>
+</div>
+
+<p>
+The warning may be suppressed with the following code in your init file:
+</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(add-to-list 'warning-suppress-types '(yasnippet backquote-change))
+</pre>
+</div>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-org41a4ac7" class="outline-3">
+<h3 id="org41a4ac7">Tab stop fields</h3>
+<div class="outline-text-3" id="text-org41a4ac7">
+<p>
+Tab stops are fields that you can navigate back and forth by <code>TAB</code> and
+<code>S-TAB</code>. They are written by <code>$</code> followed with a number. <code>$0</code> has the
+special meaning of the <i>exit point</i> of a snippet. That is the last place
+to go when you've traveled all the fields. Here's a typical example:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-snippet">&lt;div<span class="org-keyword">$</span><span class="org-string">1</span>&gt;
+    <span class="org-keyword">$</span><span class="org-string">0</span>
+&lt;/div&gt;
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org844d0b2" class="outline-3">
+<h3 id="org844d0b2">Placeholder fields</h3>
+<div class="outline-text-3" id="text-org844d0b2">
+<p>
+Tab stops can have default values &#x2013; a.k.a placeholders. The syntax is
+like this:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-snippet">${N:default value<span class="org-keyword">}</span>
+</pre>
+</div>
+
+<p>
+They act as the default value for a tab stop. But when you first
+type at a tab stop, the default value will be replaced by your typing.
+The number can be omitted if you don't want to create <a href="#orge0a8493">mirrors</a> or
+<a href="#org6c77fba">transformations</a> for this field.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org087775c" class="outline-3">
+<h3 id="org087775c">Mirrors <a id="orge0a8493"></a></h3>
+<div class="outline-text-3" id="text-org087775c">
+<p>
+We refer the tab stops with placeholders as a <i>field</i>. A field can have
+mirrors. Its mirrors will get updated when you change the text of a
+field. Here's an example:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-snippet">\begin{<span class="org-keyword">${</span><span class="org-warning">1</span><span class="org-keyword">:</span>enumerate<span class="org-keyword">}}</span>
+    <span class="org-keyword">$</span><span class="org-string">0</span>
+\end{<span class="org-keyword">$</span><span class="org-string">1</span><span class="org-keyword">}</span>
+</pre>
+</div>
+
+<p>
+When you type "document" at <code>${1:enumerate}</code>, the word "document" will
+also be inserted at <code>\end{$1}</code>. The best explanation is to see the
+screencast(<a href="http://www.youtube.com/watch?v=vOj7btx3ATg">YouTube</a> or <a href="http://yasnippet.googlecode.com/files/yasnippet.avi">avi video</a>).
+</p>
+
+<p>
+The tab stops with the same number to the field act as its mirrors. If
+none of the tab stops has an initial value, the first one is selected as
+the field and others mirrors.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orge2c1f71" class="outline-3">
+<h3 id="orge2c1f71">Mirrors with transformations <a id="org6c77fba"></a></h3>
+<div class="outline-text-3" id="text-orge2c1f71">
+<p>
+If the value of an <code>${n:</code>-construct starts with and contains <code>$(</code>,
+then it is interpreted as a mirror for field <code>n</code> with a
+transformation. The mirror's text content is calculated according to
+this transformation, which is Emacs-lisp code that gets evaluated in
+an environment where the variable <a href="snippet-reference.html#yas-text"><code>yas-text</code></a> is bound to the text
+content (string) contained in the field <code>n</code>. Here's an example for
+Objective-C:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-snippet">- (<span class="org-keyword">${</span><span class="org-warning">1</span><span class="org-keyword">:</span>id<span class="org-keyword">}</span>)<span class="org-keyword">${</span><span class="org-warning">2</span><span class="org-keyword">:</span>foo<span class="org-keyword">}</span>
+{
+    return <span class="org-keyword">$</span><span class="org-string">2</span>;
+<span class="org-keyword">}</span>
+
+- (void)set<span class="org-keyword">${</span><span class="org-warning">2</span><span class="org-keyword">:</span><span class="org-preprocessor">$(</span>capitalize yas-text)<span class="org-keyword">}</span>:(<span class="org-keyword">$</span><span class="org-string">1</span>)aValue
+{
+    [<span class="org-keyword">$</span><span class="org-string">2</span> autorelease];
+    <span class="org-keyword">$</span><span class="org-string">2</span> = [aValue retain];
+<span class="org-keyword">}</span>
+<span class="org-keyword">$</span><span class="org-string">0</span>
+</pre>
+</div>
+
+<p>
+Look at <code>${2:$(capitalize yas-text)}</code>, it is a mirror with
+transformation instead of a field. The actual field is at the first
+line: <code>${2:foo}</code>. When you type text in <code>${2:foo}</code>, the transformation
+will be evaluated and the result will be placed there as the
+transformed text. So in this example, if you type "baz" in the field,
+the transformed text will be "Baz". This example is also available in
+the screencast.
+</p>
+
+<p>
+Another example is for <code>rst-mode</code>. In reStructuredText, the document
+title can be some text surrounded by "<code>=</code>" below and above. The "<code>=</code>"
+should be at least as long as the text. So
+</p>
+
+<div class="org-src-container">
+<pre class="src src-rst"><span class="org-rst-adornment">=====</span>
+<span class="org-rst-level-1">Title</span>
+<span class="org-rst-adornment">=====</span>
+</pre>
+</div>
+
+<p>
+is a valid title but
+</p>
+
+<div class="org-src-container">
+<pre class="src src-rst"><span class="org-rst-adornment">===</span>
+<span class="org-rst-level-1">Title</span>
+<span class="org-rst-adornment">===</span>
+</pre>
+</div>
+
+<p>
+is not. Here's an snippet for rst title:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-snippet"><span class="org-keyword">${</span><span class="org-warning">1</span><span class="org-keyword">:</span><span class="org-preprocessor">$(</span>make-string (string-width yas-text) ?\=)<span class="org-keyword">}</span>
+<span class="org-keyword">${</span><span class="org-warning">1</span><span class="org-keyword">:</span>Title<span class="org-keyword">}</span>
+<span class="org-keyword">${</span><span class="org-warning">1</span><span class="org-keyword">:</span><span class="org-preprocessor">$(</span>make-string (string-width yas-text) ?\=)<span class="org-keyword">}</span>
+
+<span class="org-keyword">$</span><span class="org-string">0</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org4efa067" class="outline-3">
+<h3 id="org4efa067">Fields with transformations</h3>
+<div class="outline-text-3" id="text-org4efa067">
+<p>
+From version 0.6 on, you can also have lisp transformation inside
+fields. These work mostly like mirror transformations. However, they
+are evaluated when you first enter the field, after each change you
+make to the field and also just before you exit the field.
+</p>
+
+<p>
+The syntax is also a tiny bit different, so that the parser can
+distinguish between fields and mirrors. In the following example
+</p>
+
+<pre class="example">
+#define "${1:mydefine$(upcase yas-text)}"
+
+</pre>
+
+<p>
+<code>mydefine</code> gets automatically upcased to <code>MYDEFINE</code> once you enter the
+field. As you type text, it gets filtered through the transformation
+every time.
+</p>
+
+<p>
+Note that to tell this kind of expression from a mirror with a
+transformation, YASnippet needs extra text between the <code>:</code> and the
+transformation's <code>$</code>. If you don't want this extra-text, you can use two
+<code>$</code>'s instead.
+</p>
+
+<pre class="example">
+#define "${1:$$(upcase yas-text)}"
+
+</pre>
+
+<p>
+Please note that as soon as a transformation takes place, it changes the
+value of the field and sets it its internal modification state to
+<code>true</code>. As a consequence, the auto-deletion behaviour of normal fields
+does not take place. This is by design.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org73e1209" class="outline-3">
+<h3 id="org73e1209">Choosing fields value from a list and other tricks</h3>
+<div class="outline-text-3" id="text-org73e1209">
+<p>
+As mentioned, the field transformation is invoked just after you enter
+the field, and with some useful variables bound, notably
+<a href="snippet-reference.html#yas-modified-p"><code>yas-modified-p</code></a> and <a href="snippet-reference.html#yas-moving-away-p"><code>yas-moving-away-p</code></a>. Because of this feature you
+can place a transformation in the primary field that lets you select
+default values for it.
+</p>
+
+<p>
+The <a href="snippet-reference.html#yas-choose-value"><code>yas-choose-value</code></a> does this work for you. For example:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-snippet">&lt;div align=<span class="org-string">"${</span><span class="org-warning">2</span><span class="org-string">:$$(yas-choose-value '("</span>right<span class="org-string">" "</span>center<span class="org-string">" "</span>left<span class="org-string">"))}"</span>&gt;
+  <span class="org-keyword">$</span><span class="org-string">0</span>
+&lt;/div&gt;
+</pre>
+</div>
+
+<p>
+See the definition of <a href="snippet-reference.html#yas-choose-value"><code>yas-choose-value</code></a> to see how it was written using
+the two variables.
+</p>
+
+<p>
+Here's another use, for LaTeX-mode, which calls reftex-label just as you
+enter snippet field 2. This one makes use of <a href="snippet-reference.html#yas-modified-p"><code>yas-modified-p</code></a> directly.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-snippet">\section{<span class="org-keyword">${</span><span class="org-warning">1</span><span class="org-keyword">:</span><span class="org-string">"Titel der Tour"</span><span class="org-keyword">}}</span>%
+\index{<span class="org-keyword">$</span><span class="org-string">1</span><span class="org-keyword">}</span>%
+\label{{2:<span class="org-string">"waiting for reftex-label call..."</span><span class="org-preprocessor">$(</span><span class="org-keyword">unless</span> yas-modified-p (reftex-label nil 'dont-
+insert))<span class="org-keyword">}}</span>%
+</pre>
+</div>
+
+<p>
+The function <a href="snippet-reference.html#yas-verify-value"><code>yas-verify-value</code></a> has another neat trick, and makes use
+of <a href="snippet-reference.html#yas-moving-away-p"><code>yas-moving-away-p</code></a>. Try it and see! Also, check out this <a href="http://groups.google.com/group/smart-snippet/browse_thread/thread/282a90a118e1b662">thread</a>
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgca40be6" class="outline-3">
+<h3 id="orgca40be6">Nested placeholder fields</h3>
+<div class="outline-text-3" id="text-orgca40be6">
+<p>
+From version 0.6 on, you can also have nested placeholders of the type:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-snippet">&lt;div<span class="org-keyword">${</span><span class="org-warning">1</span><span class="org-keyword">:</span> id=<span class="org-string">"${</span><span class="org-warning">2</span><span class="org-string">:some_id}"</span><span class="org-keyword">}</span>&gt;<span class="org-keyword">$</span><span class="org-string">0</span>&lt;/div&gt;
+</pre>
+</div>
+
+<p>
+This allows you to choose if you want to give this <code>div</code> an <code>id</code>
+attribute. If you tab forward after expanding, it will let you change
+"some\<sub>id</sub>" to whatever you like. Alternatively, you can just press <code>C-d</code>
+(which executes <a href="snippet-reference.html#yas-skip-and-clear-or-delete-char"><code>yas-skip-and-clear-or-delete-char</code></a>) and go straight to
+the exit marker.
+</p>
+
+<p>
+By the way, <code>C-d</code> will only clear the field if you cursor is at the
+beginning of the field <i>and</i> it hasn't been changed yet. Otherwise, it
+performs the normal Emacs <code>delete-char</code> command.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org92b7360" class="outline-3">
+<h3 id="org92b7360">Indentation markers</h3>
+<div class="outline-text-3" id="text-org92b7360">
+<p>
+If <a href="snippet-reference.html#yas-indent-line"><code>yas-indent-line</code></a> is <b>not</b> set to '<code>auto</code>, it's still possible to
+indent specific lines by adding an indentation marker, <code>$&gt;</code>, somewhere
+on the line.
+</p>
+</div>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<hr><p class='creator'>Generated by <a href="https://www.gnu.org/software/emacs/">Emacs</a> 26.0.90 (<a href="http://orgmode.org">Org</a> mode 9.1.2) from 0.12.2-37-gdc6d7d2 (2018-02-18 12:46:06)</p>
+<p class='xhtml-validation'><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>

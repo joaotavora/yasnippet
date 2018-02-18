@@ -1,0 +1,455 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Organizing snippets</title>
+<meta name="generator" content="Org mode" />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { width: 90%; }
+  /*]]>*/-->
+</style>
+<link rel="stylesheet" type="text/css" href="stylesheets/manual.css" />
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2017 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="preamble" class="status">
+<nav>
+  <ul class="center">
+    <li> <a href="index.html">Overview</a>
+    <li> <a href="https://github.com/joaotavora/yasnippet/blob/master/README.mdown">
+        Intro and Tutorial</a>
+    <li class="center border">Snippet
+      <ul id="snippet-submenu">
+        <li> <span class='current'>Organization</span>
+        <li> <a href="snippet-expansion.html">Expansion</a>
+        <li> <a href="snippet-development.html">Development</a>
+        <li> <a href="snippet-menu.html">Menu</a>
+      </ul>
+    <li> <a href="faq.html">FAQ</a>
+    <li> <a href="snippet-reference.html">Reference</a>
+  </ul>
+</nav>
+</div>
+<div id="content">
+<h1 class="title">Organizing snippets</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#org91b0471">Basic structure</a></li>
+<li><a href="#org10ee311">Setting up <code>yas-snippet-dirs</code></a></li>
+<li><a href="#org7468fa9">The <code>.yas-parents</code> file</a></li>
+<li><a href="#orgac3b0a5"><span class="todo TODO">TODO</span> The <code>.yas-make-groups</code> file</a></li>
+<li><a href="#orge57abf6">The <code>.yas-setup.el</code> file</a></li>
+<li><a href="#org40a5619">The <code>.yas-compiled-snippet.el</code> file</a></li>
+<li><a href="#org2f7147a">The <code>.yas-skip</code> file</a></li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org91b0471" class="outline-2">
+<h2 id="org91b0471">Basic structure</h2>
+<div class="outline-text-2" id="text-org91b0471">
+<p>
+Snippet collections can be stored in plain text files. They are
+arranged by sub-directories naming <b>snippet tables</b>.  These mostly
+name Emacs major mode names.
+</p>
+
+<pre class="example">
+.
+|-- c-mode
+|   `-- printf
+|-- java-mode
+|   `-- println
+`-- text-mode
+    |-- email
+    `-- time
+</pre>
+
+<p>
+The collections are loaded into <b>snippet tables</b> which the
+triggering mechanism (see <a href="snippet-expansion.html">Expanding Snippets</a>) looks up and
+(hopefully) causes the right snippet to be expanded for you.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org10ee311" class="outline-2">
+<h2 id="org10ee311">Setting up <code>yas-snippet-dirs</code></h2>
+<div class="outline-text-2" id="text-org10ee311">
+<p>
+The emacs variable <a href="snippet-reference.html#yas-snippet-dirs"><code>yas-snippet-dirs</code></a> tells YASnippet
+which collections to consider. It's used when you activate
+<a href="snippet-reference.html#yas-global-mode"><code>yas-global-mode</code></a> or call
+<a href="snippet-reference.html#yas-reload-all"><code>yas-reload-all</code></a> interactively.
+</p>
+
+<p>
+The default considers:
+</p>
+
+<ul class="org-ul">
+<li>a personal collection that lives in <code>~/.emacs.d/snippets</code></li>
+<li>the bundled collection, taken as a relative path to <code>yasnippet.el</code> localtion</li>
+</ul>
+
+<p>
+When you come across other snippet collections, do the following to try them
+out:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp"><span class="org-comment-delimiter">;; </span><span class="org-comment">Develop in ~/emacs.d/mysnippets, but also</span>
+<span class="org-comment-delimiter">;; </span><span class="org-comment">try out snippets in ~/Downloads/interesting-snippets</span>
+(<span class="org-keyword">setq</span> yas-snippet-dirs '(<span class="org-string">"~/emacs.d/mysnippets"</span>
+                           <span class="org-string">"~/Downloads/interesting-snippets"</span>))
+
+<span class="org-comment-delimiter">;; </span><span class="org-comment">OR, keeping YASnippet defaults try out ~/Downloads/interesting-snippets</span>
+(<span class="org-keyword">setq</span> yas-snippet-dirs (append yas-snippet-dirs
+                               '(<span class="org-string">"~/Downloads/interesting-snippets"</span>)))
+</pre>
+</div>
+
+<p>
+Collections appearing earlier in the list override snippets with same names
+appearing in collections later in the list. <a href="snippet-reference.html#yas-new-snippet"><code>yas-new-snippet</code></a> always stores
+snippets in the first collection.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org7468fa9" class="outline-2">
+<h2 id="org7468fa9">The <code>.yas-parents</code> file</h2>
+<div class="outline-text-2" id="text-org7468fa9">
+<p>
+It's very useful to have certain modes share snippets between
+themselves. To do this, choose a mode subdirectory and place a
+<code>.yas-parents</code> containing a whitespace-separated list of other mode
+names. When you reload those modes become parents of the original
+mode.
+</p>
+
+<pre class="example">
+.
+|-- c-mode
+|   |-- .yas-parents    # contains "cc-mode text-mode"
+|   `-- printf
+|-- cc-mode
+|   |-- for
+|   `-- while
+|-- java-mode
+|   |-- .yas-parents    # contains "cc-mode text-mode"
+|   `-- println
+`-- text-mode
+    |-- email
+    `-- time
+</pre>
+</div>
+</div>
+
+
+<div id="outline-container-orgac3b0a5" class="outline-2">
+<h2 id="orgac3b0a5"><span class="todo TODO">TODO</span> The <code>.yas-make-groups</code> file</h2>
+<div class="outline-text-2" id="text-orgac3b0a5">
+<p>
+If you place an empty plain text file <code>.yas-make-groups</code> inside one
+of the mode directories, the names of these sub-directories are
+considered groups of snippets and <a href="snippet-menu.html">the menu</a> is organized much more
+cleanly:
+</p>
+
+
+<div class="figure">
+<p><img src="./images/menu-groups.png" alt="menu-groups.png" />
+</p>
+</div>
+
+<p>
+Another way to achieve this is to place a <code># group:</code> directive
+inside the snippet definition. See <a href="./snippet-development.html">Writing Snippets</a>.
+</p>
+
+<pre class="example">
+$ tree ruby-mode/
+ruby-mode/
+|-- .yas-make-groups
+|-- collections
+|   |-- each
+|   `-- ...
+|-- control structure
+|   |-- forin
+|   `-- ...
+|-- definitions
+|   `-- ...
+`-- general
+   `-- ...
+</pre>
+
+<p>
+Yet another way to create a nice snippet menu is to write into
+<code>.yas-make-groups</code> a menu definition. TODO
+</p>
+</div>
+</div>
+
+<div id="outline-container-orge57abf6" class="outline-2">
+<h2 id="orge57abf6">The <code>.yas-setup.el</code> file</h2>
+<div class="outline-text-2" id="text-orge57abf6">
+<p>
+If there is file named <code>.yas-setup.el</code> in a mode's snippet
+subdirectory, it is loaded along with the snippets.  Utility
+functions used by the snippets can be put here.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org40a5619" class="outline-2">
+<h2 id="org40a5619">The <code>.yas-compiled-snippet.el</code> file</h2>
+<div class="outline-text-2" id="text-org40a5619">
+<p>
+You may compile a top-level snippet directory with the
+<code>yas-compile-directory</code> function, which will create a
+<code>.yas-compiled-snippets.el</code> file under each mode subdirectory,
+which contains definitions for all snippets in the subdirectory.
+Compilation helps improve loading time.
+</p>
+
+<p>
+Alternatively, you may compile all directories in the list
+<code>yas-snippet-dirs</code> with the <code>yas-recompile-all</code> function.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org2f7147a" class="outline-2">
+<h2 id="org2f7147a">The <code>.yas-skip</code> file</h2>
+<div class="outline-text-2" id="text-org2f7147a">
+<p>
+A <code>.yas-skip</code> file in a mode's snippet subdirectory tells YASnippet
+not to load snippets from there.
+</p>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<hr><p class='creator'>Generated by <a href="https://www.gnu.org/software/emacs/">Emacs</a> 26.0.90 (<a href="http://orgmode.org">Org</a> mode 9.1.2) from 0.12.2-37-gdc6d7d2 (2018-02-18 12:46:06)</p>
+<p class='xhtml-validation'><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>

@@ -1,0 +1,1934 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Reference</title>
+<meta name="generator" content="Org mode" />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { width: 90%; }
+  /*]]>*/-->
+</style>
+<link rel="stylesheet" type="text/css" href="stylesheets/manual.css" />
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2017 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="preamble" class="status">
+<nav>
+  <ul class="center">
+    <li> <a href="index.html">Overview</a>
+    <li> <a href="https://github.com/joaotavora/yasnippet/blob/master/README.mdown">
+        Intro and Tutorial</a>
+    <li class="center border">Snippet
+      <ul id="snippet-submenu">
+        <li> <a href="snippet-organization.html">Organization</a>
+        <li> <a href="snippet-expansion.html">Expansion</a>
+        <li> <a href="snippet-development.html">Development</a>
+        <li> <a href="snippet-menu.html">Menu</a>
+      </ul>
+    <li> <a href="faq.html">FAQ</a>
+    <li> <span class='current'>Reference</span>
+  </ul>
+</nav>
+</div>
+<div id="content">
+<h1 class="title">Reference</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#org4ea5a4a">Interactive functions</a>
+<ul>
+<li><a href="#yas-load-snippet-buffer-and-close"><code class='function'>yas-load-snippet-buffer-and-close</code> (<code>table</code> <i>&amp;optional</i> <code>kill</code>)</a></li>
+<li><a href="#yas-expand-from-trigger-key"><code class='function'>yas-expand-from-trigger-key</code> (<i>&amp;optional</i> <code>field</code>)</a></li>
+<li><a href="#yas-skip-and-clear-or-delete-char"><code class='function'>yas-skip-and-clear-or-delete-char</code> (<i>&amp;optional</i> <code>field</code>)</a></li>
+<li><a href="#yas-global-mode"><code class='function'>yas-global-mode</code> (<i>&amp;optional</i> <code>arg</code>)</a></li>
+<li><a href="#yas-recompile-all"><code class='function'>yas-recompile-all</code> ()</a></li>
+<li><a href="#yas-visit-snippet-file"><code class='function'>yas-visit-snippet-file</code> ()</a></li>
+<li><a href="#yas-deactivate-extra-mode"><code class='function'>yas-deactivate-extra-mode</code> (<code>mode</code>)</a></li>
+<li><a href="#yas-prev-field"><code class='function'>yas-prev-field</code> ()</a></li>
+<li><a href="#yas-load-snippet-buffer"><code class='function'>yas-load-snippet-buffer</code> (<code>table</code> <i>&amp;optional</i> <code>interactive</code>)</a></li>
+<li><a href="#yas-exit-all-snippets"><code class='function'>yas-exit-all-snippets</code> ()</a></li>
+<li><a href="#yas-next-field"><code class='function'>yas-next-field</code> (<i>&amp;optional</i> <code>arg</code>)</a></li>
+<li><a href="#yas-abort-snippet"><code class='function'>yas-abort-snippet</code> (<i>&amp;optional</i> <code>snippet</code>)</a></li>
+<li><a href="#yas-describe-tables"><code class='function'>yas-describe-tables</code> (<i>&amp;optional</i> <code>with-nonactive</code>)</a></li>
+<li><a href="#yas-expand-from-keymap"><code class='function'>yas-expand-from-keymap</code> ()</a></li>
+<li><a href="#yas-new-snippet"><code class='function'>yas-new-snippet</code> (<i>&amp;optional</i> <code>no-template</code>)</a></li>
+<li><a href="#yas-reload-all"><code class='function'>yas-reload-all</code> (<i>&amp;optional</i> <code>no-jit</code> <code>interactive</code>)</a></li>
+<li><a href="#yas-next-field-or-maybe-expand"><code class='function'>yas-next-field-or-maybe-expand</code> ()</a></li>
+<li><a href="#yas-activate-extra-mode"><code class='function'>yas-activate-extra-mode</code> (<code>mode</code>)</a></li>
+<li><a href="#yas-insert-snippet"><code class='function'>yas-insert-snippet</code> (<i>&amp;optional</i> <code>no-condition</code>)</a></li>
+<li><a href="#yas-expand"><code class='function'>yas-expand</code> (<i>&amp;optional</i> <code>field</code>)</a></li>
+<li><a href="#yas-minor-mode"><code class='function'>yas-minor-mode</code> (<i>&amp;optional</i> <code>arg</code>)</a></li>
+<li><a href="#yas-direct-keymaps-reload"><code class='function'>yas-direct-keymaps-reload</code> ()</a></li>
+<li><a href="#yas-exit-snippet"><code class='function'>yas-exit-snippet</code> (<code>snippet</code>)</a></li>
+<li><a href="#yas-about"><code class='function'>yas-about</code> ()</a></li>
+<li><a href="#yas-minor-mode-on"><code class='function'>yas-minor-mode-on</code> ()</a></li>
+<li><a href="#yas-skip-and-clear-field"><code class='function'>yas-skip-and-clear-field</code> (<i>&amp;optional</i> <code>field</code>)</a></li>
+<li><a href="#yas-compile-directory"><code class='function'>yas-compile-directory</code> (<code>top-level-dir</code>)</a></li>
+<li><a href="#yas-load-directory"><code class='function'>yas-load-directory</code> (<code>top-level-dir</code> <i>&amp;optional</i> <code>use-jit</code> <code>interactive</code>)</a></li>
+<li><a href="#yas-describe-table-by-namehash"><code class='function'>yas-describe-table-by-namehash</code> ()</a></li>
+<li><a href="#yas-tryout-snippet"><code class='function'>yas-tryout-snippet</code> (<i>&amp;optional</i> <code>debug</code>)</a></li>
+</ul>
+</li>
+<li><a href="#orgfd54294">Customization variables</a>
+<ul>
+<li><a href="#yas-expand-only-for-last-commands"><code class='variable'>yas-expand-only-for-last-commands</code></a></li>
+<li><a href="#yas-wrap-around-region"><code class='variable'>yas-wrap-around-region</code></a></li>
+<li><a href="#yas-new-snippet-default"><code class='variable'>yas-new-snippet-default</code></a></li>
+<li><a href="#yas-choose-keys-first"><code class='variable'>yas-choose-keys-first</code></a></li>
+<li><a href="#yas-triggers-in-field"><code class='variable'>yas-triggers-in-field</code></a></li>
+<li><a href="#yas-use-menu"><code class='variable'>yas-use-menu</code></a></li>
+<li><a href="#yas-snippet-dirs"><code class='function'>yas-snippet-dirs</code> ()</a></li>
+<li><a href="#yas-buffer-local-condition"><code class='variable'>yas-buffer-local-condition</code></a></li>
+<li><a href="#yas-choose-tables-first"><code class='variable'>yas-choose-tables-first</code></a></li>
+<li><a href="#yas-overlay-priority"><code class='variable'>yas-overlay-priority</code></a></li>
+<li><a href="#yas-snippet-revival"><code class='variable'>yas-snippet-revival</code></a></li>
+<li><a href="#yas-good-grace"><code class='variable'>yas-good-grace</code></a></li>
+<li><a href="#yas-visit-from-menu"><code class='variable'>yas-visit-from-menu</code></a></li>
+<li><a href="#yas-prompt-functions"><code class='variable'>yas-prompt-functions</code></a></li>
+<li><a href="#yas-trigger-symbol"><code class='variable'>yas-trigger-symbol</code></a></li>
+<li><a href="#yas-also-indent-empty-lines"><code class='variable'>yas-also-indent-empty-lines</code></a></li>
+<li><a href="#yas-also-auto-indent-first-line"><code class='variable'>yas-also-auto-indent-first-line</code></a></li>
+<li><a href="#yas-indent-line"><code class='variable'>yas-indent-line</code></a></li>
+<li><a href="#yas-alias-to-yas/prefix-p"><code class='variable'>yas-alias-to-yas/prefix-p</code></a></li>
+</ul>
+</li>
+<li><a href="#orga164956">Useful functions</a>
+<ul>
+<li><a href="#yas-expand-snippet"><code class='function'>yas-expand-snippet</code> (<code>snippet</code> <i>&amp;optional</i> <code>start</code> <code>end</code> <code>expand-env</code>)</a></li>
+<li><a href="#yas-define-snippets"><code class='function'>yas-define-snippets</code> (<code>mode</code> <code>snippets</code>)</a></li>
+<li><a href="#yas-completing-prompt"><code class='function'>yas-completing-prompt</code> (<code>prompt</code> <code>choices</code> <i>&amp;optional</i> <code>display-fn</code> <code>completion-fn</code>)</a></li>
+<li><a href="#yas-inside-string"><code class='function'>yas-inside-string</code> ()</a></li>
+<li><a href="#yas-lookup-snippet"><code class='function'>yas-lookup-snippet</code> (<code>name</code> <i>&amp;optional</i> <code>mode</code> <code>noerror</code>)</a></li>
+<li><a href="#yas-x-prompt"><code class='function'>yas-x-prompt</code> (<code>prompt</code> <code>choices</code> <i>&amp;optional</i> <code>display-fn</code>)</a></li>
+<li><a href="#yas-global-mode-enable-in-buffers"><code class='function'>yas-global-mode-enable-in-buffers</code> ()</a></li>
+<li><a href="#yas-selected-text"><code class='function'>yas-selected-text</code> ()</a></li>
+<li><a href="#yas-field-value"><code class='function'>yas-field-value</code> (<code>number</code>)</a></li>
+<li><a href="#yas-global-mode-cmhh"><code class='function'>yas-global-mode-cmhh</code> ()</a></li>
+<li><a href="#yas-escape-text"><code class='function'>yas-escape-text</code> (<code>text</code>)</a></li>
+<li><a href="#yas-dropdown-prompt"><code class='function'>yas-dropdown-prompt</code> (<code>_prompt</code> <code>choices</code> <i>&amp;optional</i> <code>display-fn</code>)</a></li>
+<li><a href="#yas-shortest-key-until-whitespace"><code class='function'>yas-shortest-key-until-whitespace</code> (<code>_start-point</code>)</a></li>
+<li><a href="#yas-substr"><code class='function'>yas-substr</code> (<code>str</code> <code>pattern</code> <i>&amp;optional</i> <code>subexp</code>)</a></li>
+<li><a href="#yas-ido-prompt"><code class='function'>yas-ido-prompt</code> (<code>prompt</code> <code>choices</code> <i>&amp;optional</i> <code>display-fn</code>)</a></li>
+<li><a href="#yas-maybe-ido-prompt"><code class='function'>yas-maybe-ido-prompt</code> (<code>prompt</code> <code>choices</code> <i>&amp;optional</i> <code>display-fn</code>)</a></li>
+<li><a href="#yas-snippet-mode-buffer-p"><code class='function'>yas-snippet-mode-buffer-p</code> ()</a></li>
+<li><a href="#yas-no-prompt"><code class='function'>yas-no-prompt</code> (<code>_prompt</code> <code>choices</code> <i>&amp;optional</i> <code>_display-fn</code>)</a></li>
+<li><a href="#yas-longest-key-from-whitespace"><code class='function'>yas-longest-key-from-whitespace</code> (<code>start-point</code>)</a></li>
+<li><a href="#yas-try-key-from-whitespace"><code class='function'>yas-try-key-from-whitespace</code> (<code>_start-point</code>)</a></li>
+<li><a href="#yas-choose-value"><code class='function'>yas-choose-value</code> (<i>&amp;rest</i> <code>possibilities</code>)</a></li>
+<li><a href="#yas-global-mode-check-buffers"><code class='function'>yas-global-mode-check-buffers</code> ()</a></li>
+<li><a href="#yas-minor-mode-set-explicitly"><code class='function'>yas-minor-mode-set-explicitly</code> ()</a></li>
+<li><a href="#yas-define-menu"><code class='function'>yas-define-menu</code> (<code>mode</code> <code>menu</code> <i>&amp;optional</i> <code>omit-items</code>)</a></li>
+<li><a href="#yas-current-field"><code class='function'>yas-current-field</code> ()</a></li>
+<li><a href="#yas-unimplemented"><code class='function'>yas-unimplemented</code> (<i>&amp;optional</i> <code>missing-feature</code>)</a></li>
+<li><a href="#yas-define-condition-cache"><code class='function'>yas-define-condition-cache</code> (<code>func</code> <code>doc</code> <i>&amp;rest</i> <code>body</code>)</a></li>
+<li><a href="#yas-active-keys"><code class='function'>yas-active-keys</code> ()</a></li>
+<li><a href="#yas-text"><code class='function'>yas-text</code> ()</a></li>
+<li><a href="#yas-next-field-will-exit-p"><code class='function'>yas-next-field-will-exit-p</code> (<i>&amp;optional</i> <code>arg</code>)</a></li>
+<li><a href="#yas-active-snippets"><code class='function'>yas-active-snippets</code> (<i>&amp;optional</i> <code>beg</code> <code>end</code>)</a></li>
+<li><a href="#yas-verify-value"><code class='function'>yas-verify-value</code> (<code>possibilities</code>)</a></li>
+<li><a href="#yas-default-from-field"><code class='function'>yas-default-from-field</code> (<code>number</code>)</a></li>
+<li><a href="#yas-key-to-value"><code class='function'>yas-key-to-value</code> (<code>alist</code>)</a></li>
+<li><a href="#yas-throw"><code class='function'>yas-throw</code> (<code>text</code>)</a></li>
+<li><a href="#yas-hippie-try-expand"><code class='function'>yas-hippie-try-expand</code> (<code>first-time?</code>)</a></li>
+<li><a href="#yas-maybe-load-snippet-buffer"><code class='function'>yas-maybe-load-snippet-buffer</code> ()</a></li>
+</ul>
+</li>
+<li><a href="#org9104429">Useful variables</a>
+<ul>
+<li><a href="#yas-key-syntaxes"><code class='variable'>yas-key-syntaxes</code></a></li>
+<li><a href="#yas-modified-p"><code class='variable'>yas-modified-p</code></a></li>
+<li><a href="#yas-dont-activate-functions"><code class='variable'>yas-dont-activate-functions</code></a></li>
+<li><a href="#yas-before-expand-snippet-hook"><code class='variable'>yas-before-expand-snippet-hook</code></a></li>
+<li><a href="#yas-maybe-skip-and-clear-field"><code class='variable'>yas-maybe-skip-and-clear-field</code></a></li>
+<li><a href="#yas-keymap"><code class='variable'>yas-keymap</code></a></li>
+<li><a href="#yas-verbosity"><code class='variable'>yas-verbosity</code></a></li>
+<li><a href="#yas-minor-mode-hook"><code class='variable'>yas-minor-mode-hook</code></a></li>
+<li><a href="#yas-minor-mode-major-mode"><code class='variable'>yas-minor-mode-major-mode</code></a></li>
+<li><a href="#yas-not-string-or-comment-condition"><code class='variable'>yas-not-string-or-comment-condition</code></a></li>
+<li><a href="#yas-after-exit-snippet-hook"><code class='variable'>yas-after-exit-snippet-hook</code></a></li>
+<li><a href="#yas-maybe-expand"><code class='variable'>yas-maybe-expand</code></a></li>
+<li><a href="#yas-after-reload-hook"><code class='variable'>yas-after-reload-hook</code></a></li>
+<li><a href="#yas-new-snippet-buffer-name"><code class='variable'>yas-new-snippet-buffer-name</code></a></li>
+<li><a href="#yas-snippet-end"><code class='variable'>yas-snippet-end</code></a></li>
+<li><a href="#yas-minor-mode-map"><code class='variable'>yas-minor-mode-map</code></a></li>
+<li><a href="#yas-global-mode-hook"><code class='variable'>yas-global-mode-hook</code></a></li>
+<li><a href="#yas-snippet-beg"><code class='variable'>yas-snippet-beg</code></a></li>
+<li><a href="#yas-moving-away-p"><code class='variable'>yas-moving-away-p</code></a></li>
+<li><a href="#yas-maybe-expand-from-keymap"><code class='variable'>yas-maybe-expand-from-keymap</code></a></li>
+<li><a href="#yas-global-mode-buffers"><code class='variable'>yas-global-mode-buffers</code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org4ea5a4a" class="outline-2">
+<h2 id="org4ea5a4a">Interactive functions</h2>
+<div class="outline-text-2" id="text-org4ea5a4a">
+</div>
+<div id="outline-container-org23d2081" class="outline-3">
+<h3 id="yas-load-snippet-buffer-and-close"><a id="org23d2081"></a><code class='function'>yas-load-snippet-buffer-and-close</code> (<code>table</code> <i>&amp;optional</i> <code>kill</code>)</h3>
+<div class="outline-text-3" id="text-yas-load-snippet-buffer-and-close">
+<p>
+Load and save the snippet, then <code>quit-window</code> if saved.
+Loading is performed by <a href="#yas-load-snippet-buffer"><code>yas-load-snippet-buffer</code></a>.  If the
+snippet is new, ask the user whether (and where) to save it.  If
+the snippet already has a file, just save it.
+</p>
+
+<p>
+The prefix argument <code>kill</code> is passed to <code>quit-window</code>.
+</p>
+
+<p>
+Don't use this from a Lisp program, call <a href="#yas-load-snippet-buffer"><code>yas-load-snippet-buffer</code></a>
+and <code>kill-buffer</code> instead.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orga173b1c" class="outline-3">
+<h3 id="yas-expand-from-trigger-key"><a id="orga173b1c"></a><code class='function'>yas-expand-from-trigger-key</code> (<i>&amp;optional</i> <code>field</code>)</h3>
+<div class="outline-text-3" id="text-yas-expand-from-trigger-key">
+<p>
+Expand a snippet before point.
+</p>
+
+<p>
+If no snippet expansion is possible, fall back to the behaviour
+defined in <code>yas-fallback-behavior</code>.
+</p>
+
+<p>
+Optional argument <code>field</code> is for non-interactive use and is an
+object satisfying <code>yas--field-p</code> to restrict the expansion to.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org748fa45" class="outline-3">
+<h3 id="yas-skip-and-clear-or-delete-char"><a id="org748fa45"></a><code class='function'>yas-skip-and-clear-or-delete-char</code> (<i>&amp;optional</i> <code>field</code>)</h3>
+<div class="outline-text-3" id="text-yas-skip-and-clear-or-delete-char">
+<p>
+Clears unmodified field if at field start, skips to next tab.
+</p>
+
+<p>
+Otherwise deletes a character normally by calling <code>delete-char</code>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org81f2f41" class="outline-3">
+<h3 id="yas-global-mode"><a id="org81f2f41"></a><code class='function'>yas-global-mode</code> (<i>&amp;optional</i> <code>arg</code>)</h3>
+<div class="outline-text-3" id="text-yas-global-mode">
+<p>
+Toggle Yas minor mode in all buffers.
+With prefix <code>arg</code>, enable Yas-Global mode if <code>arg</code> is positive;
+otherwise, disable it.  If called from Lisp, enable the mode if
+<code>arg</code> is omitted or nil.
+</p>
+
+<p>
+Yas minor mode is enabled in all buffers where
+<a href="#yas-minor-mode-on"><code>yas-minor-mode-on</code></a> would do it.
+See <a href="#yas-minor-mode"><code>yas-minor-mode</code></a> for more information on Yas minor mode.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org656516d" class="outline-3">
+<h3 id="yas-recompile-all"><a id="org656516d"></a><code class='function'>yas-recompile-all</code> ()</h3>
+<div class="outline-text-3" id="text-yas-recompile-all">
+<p>
+Compile every dir in <a href="#yas-snippet-dirs"><code>yas-snippet-dirs</code></a>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgccf8a89" class="outline-3">
+<h3 id="yas-visit-snippet-file"><a id="orgccf8a89"></a><code class='function'>yas-visit-snippet-file</code> ()</h3>
+<div class="outline-text-3" id="text-yas-visit-snippet-file">
+<p>
+Choose a snippet to edit, selection like <a href="#yas-insert-snippet"><code>yas-insert-snippet</code></a>.
+</p>
+
+<p>
+Only success if selected snippet was loaded from a file.  Put the
+visited file in <code>snippet-mode</code>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgac53e94" class="outline-3">
+<h3 id="yas-deactivate-extra-mode"><a id="orgac53e94"></a><code class='function'>yas-deactivate-extra-mode</code> (<code>mode</code>)</h3>
+<div class="outline-text-3" id="text-yas-deactivate-extra-mode">
+<p>
+Deactivates the snippets for the given <code>mode</code> in the buffer.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orge580c39" class="outline-3">
+<h3 id="yas-prev-field"><a id="orge580c39"></a><code class='function'>yas-prev-field</code> ()</h3>
+<div class="outline-text-3" id="text-yas-prev-field">
+<p>
+Navigate to prev field.  If there's none, exit the snippet.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org79873b5" class="outline-3">
+<h3 id="yas-load-snippet-buffer"><a id="org79873b5"></a><code class='function'>yas-load-snippet-buffer</code> (<code>table</code> <i>&amp;optional</i> <code>interactive</code>)</h3>
+<div class="outline-text-3" id="text-yas-load-snippet-buffer">
+<p>
+Parse and load current buffer's snippet definition into <code>table</code>.
+<code>table</code> is a symbol name passed to <code>yas--table-get-create</code>.  When
+called interactively, prompt for the table name.
+Return the <code>yas--template</code> object created
+</p>
+</div>
+</div>
+
+<div id="outline-container-orga761631" class="outline-3">
+<h3 id="yas-exit-all-snippets"><a id="orga761631"></a><code class='function'>yas-exit-all-snippets</code> ()</h3>
+<div class="outline-text-3" id="text-yas-exit-all-snippets">
+<p>
+Exit all snippets.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org5e205d0" class="outline-3">
+<h3 id="yas-next-field"><a id="org5e205d0"></a><code class='function'>yas-next-field</code> (<i>&amp;optional</i> <code>arg</code>)</h3>
+<div class="outline-text-3" id="text-yas-next-field">
+<p>
+Navigate to the <code>arg</code>th next field.
+</p>
+
+<p>
+If there's none, exit the snippet.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orge7d931b" class="outline-3">
+<h3 id="yas-abort-snippet"><a id="orge7d931b"></a><code class='function'>yas-abort-snippet</code> (<i>&amp;optional</i> <code>snippet</code>)</h3>
+<div class="outline-text-3" id="text-yas-abort-snippet">
+<p>
+<b><i>warning</i></b>: no doc for symbol <code>yas-abort-snippet</code>
+</p>
+</div>
+</div>
+
+<div id="outline-container-org5ae0fcf" class="outline-3">
+<h3 id="yas-describe-tables"><a id="org5ae0fcf"></a><code class='function'>yas-describe-tables</code> (<i>&amp;optional</i> <code>with-nonactive</code>)</h3>
+<div class="outline-text-3" id="text-yas-describe-tables">
+<p>
+Display snippets for each table.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org5041672" class="outline-3">
+<h3 id="yas-expand-from-keymap"><a id="org5041672"></a><code class='function'>yas-expand-from-keymap</code> ()</h3>
+<div class="outline-text-3" id="text-yas-expand-from-keymap">
+<p>
+Expand/run snippets from keymaps, possibly falling back to original binding.
+</p>
+</div>
+</div>
+
+
+<div id="outline-container-org4c4f6fa" class="outline-3">
+<h3 id="yas-new-snippet"><a id="org4c4f6fa"></a><code class='function'>yas-new-snippet</code> (<i>&amp;optional</i> <code>no-template</code>)</h3>
+<div class="outline-text-3" id="text-yas-new-snippet">
+<p>
+Pops a new buffer for writing a snippet.
+</p>
+
+<p>
+Expands a snippet-writing snippet, unless the optional prefix arg
+<code>no-template</code> is non-nil.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgc10bc09" class="outline-3">
+<h3 id="yas-reload-all"><a id="orgc10bc09"></a><code class='function'>yas-reload-all</code> (<i>&amp;optional</i> <code>no-jit</code> <code>interactive</code>)</h3>
+<div class="outline-text-3" id="text-yas-reload-all">
+<p>
+Reload all snippets and rebuild the YASnippet menu.
+</p>
+
+<p>
+When <code>no-jit</code> is non-nil force immediate reload of all known
+snippets under <a href="#yas-snippet-dirs"><code>yas-snippet-dirs</code></a>, otherwise use just-in-time
+loading.
+</p>
+
+<p>
+When called interactively, use just-in-time loading when given a
+prefix argument.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org7c6a414" class="outline-3">
+<h3 id="yas-next-field-or-maybe-expand"><a id="org7c6a414"></a><code class='function'>yas-next-field-or-maybe-expand</code> ()</h3>
+<div class="outline-text-3" id="text-yas-next-field-or-maybe-expand">
+<p>
+Try to expand a snippet at a key before point.
+</p>
+
+<p>
+Otherwise delegate to <a href="#yas-next-field"><code>yas-next-field</code></a>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgf5cbc65" class="outline-3">
+<h3 id="yas-activate-extra-mode"><a id="orgf5cbc65"></a><code class='function'>yas-activate-extra-mode</code> (<code>mode</code>)</h3>
+<div class="outline-text-3" id="text-yas-activate-extra-mode">
+<p>
+Activates the snippets for the given <code>mode</code> in the buffer.
+</p>
+
+<p>
+The function can be called in the hook of a minor mode to
+activate snippets associated with that mode.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orga44bb40" class="outline-3">
+<h3 id="yas-insert-snippet"><a id="orga44bb40"></a><code class='function'>yas-insert-snippet</code> (<i>&amp;optional</i> <code>no-condition</code>)</h3>
+<div class="outline-text-3" id="text-yas-insert-snippet">
+<p>
+Choose a snippet to expand, pop-up a list of choices according
+to <a href="#yas-prompt-functions"><code>yas-prompt-functions</code></a>.
+</p>
+
+<p>
+With prefix argument <code>no-condition</code>, bypass filtering of snippets
+by condition.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgb5e3b83" class="outline-3">
+<h3 id="yas-expand"><a id="orgb5e3b83"></a><code class='function'>yas-expand</code> (<i>&amp;optional</i> <code>field</code>)</h3>
+<div class="outline-text-3" id="text-yas-expand">
+<p>
+Expand a snippet before point. If no snippet
+expansion is possible, defer to <code>yas-fallback-behavior</code> (which see).
+</p>
+
+<p>
+Optional argument <code>field</code> is for non-interactive use and is an
+object satisfying <code>yas--field-p</code> to restrict the expansion to.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgadfb5e0" class="outline-3">
+<h3 id="yas-minor-mode"><a id="orgadfb5e0"></a><code class='function'>yas-minor-mode</code> (<i>&amp;optional</i> <code>arg</code>)</h3>
+<div class="outline-text-3" id="text-yas-minor-mode">
+<p>
+Toggle YASnippet mode.
+</p>
+
+<p>
+When YASnippet mode is enabled, <a href="#yas-expand"><code>yas-expand</code></a>, normally bound to
+the <i>tab</i> key, expands snippets of code depending on the major
+mode.
+</p>
+
+<p>
+With no argument, this command toggles the mode.
+positive prefix argument turns on the mode.
+Negative prefix argument turns off the mode.
+</p>
+
+<p>
+Key bindings:
+</p>
+<pre class="example">
+key             binding
+---             -------
+
+C-c		Prefix Command
+
+C-c &amp;		Prefix Command
+
+C-c &amp; C-n	yas-new-snippet
+C-c &amp; C-s	yas-insert-snippet
+C-c &amp; C-v	yas-visit-snippet-file
+
+</pre>
+</div>
+</div>
+
+
+<div id="outline-container-org039d09e" class="outline-3">
+<h3 id="yas-direct-keymaps-reload"><a id="org039d09e"></a><code class='function'>yas-direct-keymaps-reload</code> ()</h3>
+<div class="outline-text-3" id="text-yas-direct-keymaps-reload">
+<p>
+Force reload the direct keybinding for active snippet tables.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org0043439" class="outline-3">
+<h3 id="yas-exit-snippet"><a id="org0043439"></a><code class='function'>yas-exit-snippet</code> (<code>snippet</code>)</h3>
+<div class="outline-text-3" id="text-yas-exit-snippet">
+<p>
+Goto exit-marker of <code>snippet</code>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org441703f" class="outline-3">
+<h3 id="yas-about"><a id="org441703f"></a><code class='function'>yas-about</code> ()</h3>
+<div class="outline-text-3" id="text-yas-about">
+<p>
+<b><i>warning</i></b>: no doc for symbol <code>yas-about</code>
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgbb2e245" class="outline-3">
+<h3 id="yas-minor-mode-on"><a id="orgbb2e245"></a><code class='function'>yas-minor-mode-on</code> ()</h3>
+<div class="outline-text-3" id="text-yas-minor-mode-on">
+<p>
+Turn on YASnippet minor mode.
+</p>
+
+<p>
+Honour <a href="#yas-dont-activate-functions"><code>yas-dont-activate-functions</code></a>, which see.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgfd84c4c" class="outline-3">
+<h3 id="yas-skip-and-clear-field"><a id="orgfd84c4c"></a><code class='function'>yas-skip-and-clear-field</code> (<i>&amp;optional</i> <code>field</code>)</h3>
+<div class="outline-text-3" id="text-yas-skip-and-clear-field">
+<p>
+Clears unmodified <code>field</code> if at field start, skips to next tab.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgb6bc867" class="outline-3">
+<h3 id="yas-compile-directory"><a id="orgb6bc867"></a><code class='function'>yas-compile-directory</code> (<code>top-level-dir</code>)</h3>
+<div class="outline-text-3" id="text-yas-compile-directory">
+<p>
+Create .yas-compiled-snippets.el files under subdirs of <code>top-level-dir</code>.
+</p>
+
+<p>
+This works by stubbing a few functions, then calling
+<a href="#yas-load-directory"><code>yas-load-directory</code></a>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org22feaaa" class="outline-3">
+<h3 id="yas-load-directory"><a id="org22feaaa"></a><code class='function'>yas-load-directory</code> (<code>top-level-dir</code> <i>&amp;optional</i> <code>use-jit</code> <code>interactive</code>)</h3>
+<div class="outline-text-3" id="text-yas-load-directory">
+<p>
+Load snippets in directory hierarchy <code>top-level-dir</code>.
+</p>
+
+<p>
+Below <code>top-level-dir</code> each directory should be a mode name.
+</p>
+
+<p>
+With prefix argument <code>use-jit</code> do jit-loading of snippets.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org8ad247f" class="outline-3">
+<h3 id="yas-describe-table-by-namehash"><a id="org8ad247f"></a><code class='function'>yas-describe-table-by-namehash</code> ()</h3>
+<div class="outline-text-3" id="text-yas-describe-table-by-namehash">
+<p>
+Display snippet tables by <i>namehash</i>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org62b7674" class="outline-3">
+<h3 id="yas-tryout-snippet"><a id="org62b7674"></a><code class='function'>yas-tryout-snippet</code> (<i>&amp;optional</i> <code>debug</code>)</h3>
+<div class="outline-text-3" id="text-yas-tryout-snippet">
+<p>
+Test current buffer's snippet template in other buffer.
+<code>debug</code> is for debugging the YASnippet engine itself.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-orgfd54294" class="outline-2">
+<h2 id="orgfd54294">Customization variables</h2>
+<div class="outline-text-2" id="text-orgfd54294">
+</div>
+<div id="outline-container-orgdccac6c" class="outline-3">
+<h3 id="yas-expand-only-for-last-commands"><a id="orgdccac6c"></a><code class='variable'>yas-expand-only-for-last-commands</code></h3>
+<div class="outline-text-3" id="text-yas-expand-only-for-last-commands">
+<p>
+List of <code>last-command</code> values to restrict tab-triggering to, or nil.
+</p>
+
+<p>
+Leave this set at nil (the default) to be able to trigger an
+expansion simply by placing the cursor after a valid tab trigger,
+using whichever commands.
+</p>
+
+<p>
+Optionally, set this to something like (self-insert-command) if
+you to wish restrict expansion to only happen when the last
+letter of the snippet tab trigger was typed immediately before
+the trigger key itself.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org65f79e1" class="outline-3">
+<h3 id="yas-wrap-around-region"><a id="org65f79e1"></a><code class='variable'>yas-wrap-around-region</code></h3>
+<div class="outline-text-3" id="text-yas-wrap-around-region">
+<p>
+What to insert for snippet's $0 field.
+</p>
+
+<p>
+If set to a character, insert contents of corresponding register.
+If non-nil insert region contents.  This can be overridden on a
+per-snippet basis.  A value of <code>cua</code> is considered equivalent to
+`?0' for backwards compatibility.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org87a4502" class="outline-3">
+<h3 id="yas-new-snippet-default"><a id="org87a4502"></a><code class='variable'>yas-new-snippet-default</code></h3>
+<div class="outline-text-3" id="text-yas-new-snippet-default">
+<p>
+Default snippet to use when creating a new snippet.
+If nil, don't use any snippet.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org5033607" class="outline-3">
+<h3 id="yas-choose-keys-first"><a id="org5033607"></a><code class='variable'>yas-choose-keys-first</code></h3>
+<div class="outline-text-3" id="text-yas-choose-keys-first">
+<p>
+If non-nil, prompt for snippet key first, then for template.
+</p>
+
+<p>
+Otherwise prompts for all possible snippet names.
+</p>
+
+<p>
+This affects <a href="#yas-insert-snippet"><code>yas-insert-snippet</code></a> and <a href="#yas-visit-snippet-file"><code>yas-visit-snippet-file</code></a>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org081357f" class="outline-3">
+<h3 id="yas-triggers-in-field"><a id="org081357f"></a><code class='variable'>yas-triggers-in-field</code></h3>
+<div class="outline-text-3" id="text-yas-triggers-in-field">
+<p>
+If non-nil, allow stacked expansions (snippets inside snippets).
+</p>
+
+<p>
+Otherwise <a href="#yas-next-field-or-maybe-expand"><code>yas-next-field-or-maybe-expand</code></a> just moves on to the
+next field
+</p>
+</div>
+</div>
+
+<div id="outline-container-org30d1b5e" class="outline-3">
+<h3 id="yas-use-menu"><a id="org30d1b5e"></a><code class='variable'>yas-use-menu</code></h3>
+<div class="outline-text-3" id="text-yas-use-menu">
+<p>
+Display a YASnippet menu in the menu bar.
+</p>
+
+<p>
+When non-nil, submenus for each snippet table will be listed
+under the menu "Yasnippet".
+</p>
+
+<ul class="org-ul">
+<li>If set to <code>abbreviate</code>, only the current major-mode</li>
+</ul>
+<p>
+menu and the modes set in <code>yas--extra-modes</code> are listed.
+</p>
+
+<ul class="org-ul">
+<li>If set to <code>full</code>, every submenu is listed</li>
+
+<li>If set to nil, hide the menu.</li>
+</ul>
+
+<p>
+Any other non-nil value, every submenu is listed.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgfe01983" class="outline-3">
+<h3 id="yas-snippet-dirs"><a id="orgfe01983"></a><code class='function'>yas-snippet-dirs</code> ()</h3>
+<div class="outline-text-3" id="text-yas-snippet-dirs">
+<p>
+Return variable <a href="#yas-snippet-dirs"><code>yas-snippet-dirs</code></a> as list of strings.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org89b757f" class="outline-3">
+<h3 id="yas-buffer-local-condition"><a id="org89b757f"></a><code class='variable'>yas-buffer-local-condition</code></h3>
+<div class="outline-text-3" id="text-yas-buffer-local-condition">
+<p>
+Snippet expanding condition.
+</p>
+
+<p>
+This variable is a Lisp form which is evaluated every time a
+snippet expansion is attempted:
+</p>
+
+<ul class="org-ul">
+<li>If it evaluates to nil, no snippets can be expanded.</li>
+
+<li>If it evaluates to the a cons (require-snippet-condition
+. <i>requirement</i>)
+
+<ul class="org-ul">
+<li>Snippets bearing no "# condition:" directive are not
+considered</li>
+
+<li>Snippets bearing conditions that evaluate to nil (or
+produce an error) won't be considered.</li>
+
+<li>If the snippet has a condition that evaluates to non-nil
+<i>result</i>:
+
+<ul class="org-ul">
+<li>If <i>requirement</i> is t, the snippet is considered</li>
+
+<li>If <i>requirement</i> is <code>eq</code> <i>result</i>, the snippet is
+considered</li>
+
+<li>Otherwise, the snippet is not considered.</li>
+</ul></li>
+</ul></li>
+
+<li>If it evaluates to the symbol <code>always</code>, all snippets are
+considered for expansion, regardless of any conditions.</li>
+
+<li>If it evaluates to t or some other non-nil value
+
+<ul class="org-ul">
+<li>Snippet bearing no conditions, or conditions that
+evaluate to non-nil, are considered for expansion.</li>
+
+<li>Otherwise, the snippet is not considered.</li>
+</ul></li>
+</ul>
+
+<p>
+Here's an example preventing snippets from being expanded from
+inside comments, in <code>python-mode</code> only, with the exception of
+snippets returning the symbol <code>force-in-comment</code> in their
+conditions.
+</p>
+
+<p>
+(add-hook 'python-mode-hook
+	  (lambda ()
+	     (setq yas-buffer-local-condition
+		   '(if (python-syntax-comment-or-string-p)
+			'(require-snippet-condition . force-in-comment)
+		      t))))
+</p>
+</div>
+</div>
+
+<div id="outline-container-org7146a1e" class="outline-3">
+<h3 id="yas-choose-tables-first"><a id="org7146a1e"></a><code class='variable'>yas-choose-tables-first</code></h3>
+<div class="outline-text-3" id="text-yas-choose-tables-first">
+<p>
+If non-nil, and multiple eligible snippet tables, prompts user for tables first.
+</p>
+
+<p>
+Otherwise, user chooses between the merging together of all
+eligible tables.
+</p>
+
+<p>
+This affects <a href="#yas-insert-snippet"><code>yas-insert-snippet</code></a>, <a href="#yas-visit-snippet-file"><code>yas-visit-snippet-file</code></a>
+</p>
+</div>
+</div>
+
+<div id="outline-container-org7f001ad" class="outline-3">
+<h3 id="yas-overlay-priority"><a id="org7f001ad"></a><code class='variable'>yas-overlay-priority</code></h3>
+<div class="outline-text-3" id="text-yas-overlay-priority">
+<p>
+Priority to use for yasnippets overlays.
+This is useful to control whether snippet navigation bindings
+override bindings from other packages (e.g., <code>company-mode</code>).
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgb5f6d3c" class="outline-3">
+<h3 id="yas-snippet-revival"><a id="orgb5f6d3c"></a><code class='variable'>yas-snippet-revival</code></h3>
+<div class="outline-text-3" id="text-yas-snippet-revival">
+<p>
+Non-nil means re-activate snippet fields after undo/redo.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org6cafc7b" class="outline-3">
+<h3 id="yas-good-grace"><a id="org6cafc7b"></a><code class='variable'>yas-good-grace</code></h3>
+<div class="outline-text-3" id="text-yas-good-grace">
+<p>
+If non-nil, don't raise errors in elisp evaluation.
+</p>
+
+<p>
+This affects both the inline elisp in snippets and the hook
+variables such as <a href="#yas-after-exit-snippet-hook"><code>yas-after-exit-snippet-hook</code></a>.
+</p>
+
+<p>
+If this variable's value is <code>inline</code>, an error string "[yas]
+error" is returned instead of raising the error.  If this
+variable's value is <code>hooks</code>, a message is output to according to
+<code>yas-verbosity-level</code>.  If this variable's value is t, both are
+active.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org6ad6a13" class="outline-3">
+<h3 id="yas-visit-from-menu"><a id="org6ad6a13"></a><code class='variable'>yas-visit-from-menu</code></h3>
+<div class="outline-text-3" id="text-yas-visit-from-menu">
+<p>
+If non-nil visit snippets's files from menu, instead of expanding them.
+</p>
+
+<p>
+This can only work when snippets are loaded from files.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org978c9a1" class="outline-3">
+<h3 id="yas-prompt-functions"><a id="org978c9a1"></a><code class='variable'>yas-prompt-functions</code></h3>
+<div class="outline-text-3" id="text-yas-prompt-functions">
+<p>
+Functions to prompt for keys, templates, etc interactively.
+</p>
+
+<p>
+These functions are called with the following arguments:
+</p>
+
+<ul class="org-ul">
+<li><i>prompt</i>: A string to prompt the user</li>
+
+<li><i>choices</i>: a list of strings or objects.</li>
+
+<li>optional <i>display-fn</i> : A function that, when applied to each of</li>
+</ul>
+<p>
+the objects in <i>choices</i> will return a string.
+</p>
+
+<p>
+The return value of any function you put here should be one of
+the objects in <i>choices</i>, properly formatted with <i>display-fn</i> (if
+that is passed).
+</p>
+
+<ul class="org-ul">
+<li>To signal that your particular style of prompting is</li>
+</ul>
+<p>
+unavailable at the moment, you can also have the function return
+nil.
+</p>
+
+<ul class="org-ul">
+<li>To signal that the user quit the prompting process, you can</li>
+</ul>
+<p>
+signal <code>quit</code> with
+</p>
+<div class="org-src-container">
+<pre class="src src-elisp">(<span class="org-warning">signal</span> 'quit <span class="org-string">"user quit!"</span>)
+</pre>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-orga090fb4" class="outline-3">
+<h3 id="yas-trigger-symbol"><a id="orga090fb4"></a><code class='variable'>yas-trigger-symbol</code></h3>
+<div class="outline-text-3" id="text-yas-trigger-symbol">
+<p>
+The text that will be used in menu to represent the trigger.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org9329416" class="outline-3">
+<h3 id="yas-also-indent-empty-lines"><a id="org9329416"></a><code class='variable'>yas-also-indent-empty-lines</code></h3>
+<div class="outline-text-3" id="text-yas-also-indent-empty-lines">
+<p>
+Non-nil means also indent empty lines according to mode.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org1929080" class="outline-3">
+<h3 id="yas-also-auto-indent-first-line"><a id="org1929080"></a><code class='variable'>yas-also-auto-indent-first-line</code></h3>
+<div class="outline-text-3" id="text-yas-also-auto-indent-first-line">
+<p>
+Non-nil means also auto indent first line according to mode.
+</p>
+
+<p>
+Naturally this is only valid when <a href="#yas-indent-line"><code>yas-indent-line</code></a> is <code>auto</code>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org5624550" class="outline-3">
+<h3 id="yas-indent-line"><a id="org5624550"></a><code class='variable'>yas-indent-line</code></h3>
+<div class="outline-text-3" id="text-yas-indent-line">
+<p>
+Controls indenting applied to a recent snippet expansion.
+</p>
+
+<p>
+The following values are possible:
+</p>
+
+<ul class="org-ul">
+<li><code>fixed</code> Indent the snippet to the current column;</li>
+
+<li><code>auto</code> Indent each line of the snippet with <code>indent-according-to-mode</code></li>
+</ul>
+
+<p>
+Every other value means don't apply any snippet-side indentation
+after expansion (the manual per-line "$&gt;" indentation still
+applies).
+</p>
+</div>
+</div>
+
+<div id="outline-container-org59b28b7" class="outline-3">
+<h3 id="yas-alias-to-yas/prefix-p"><a id="org59b28b7"></a><code class='variable'>yas-alias-to-yas/prefix-p</code></h3>
+<div class="outline-text-3" id="text-yas-alias-to-yas/prefix-p">
+<p>
+If non-nil make aliases for the old style yas/ prefixed symbols.
+It must be set to nil before loading yasnippet to take effect.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-orga164956" class="outline-2">
+<h2 id="orga164956">Useful functions</h2>
+<div class="outline-text-2" id="text-orga164956">
+</div>
+<div id="outline-container-orgaa161dc" class="outline-3">
+<h3 id="yas-expand-snippet"><a id="orgaa161dc"></a><code class='function'>yas-expand-snippet</code> (<code>snippet</code> <i>&amp;optional</i> <code>start</code> <code>end</code> <code>expand-env</code>)</h3>
+<div class="outline-text-3" id="text-yas-expand-snippet">
+<p>
+Expand <code>snippet</code> at current point.
+</p>
+
+<p>
+Text between <code>start</code> and <code>end</code> will be deleted before inserting
+template.  <code>expand-env</code> is a list of (<i>sym</i> <i>value</i>) let-style dynamic
+bindings considered when expanding the snippet.  If omitted, use
+<code>snippet</code>'s expand-env field.
+</p>
+
+<p>
+<code>snippet</code> may be a snippet structure (e.g., as returned by
+<a href="#yas-lookup-snippet"><code>yas-lookup-snippet</code></a>), or just a snippet body (which is a string
+for normal snippets, and a list for command snippets).
+</p>
+</div>
+</div>
+
+<div id="outline-container-org05211d0" class="outline-3">
+<h3 id="yas-define-snippets"><a id="org05211d0"></a><code class='function'>yas-define-snippets</code> (<code>mode</code> <code>snippets</code>)</h3>
+<div class="outline-text-3" id="text-yas-define-snippets">
+<p>
+Define <code>snippets</code> for <code>mode</code>.
+</p>
+
+<p>
+<code>snippets</code> is a list of snippet definitions, each taking the
+following form
+</p>
+
+<p>
+(<i>key</i> <i>template</i> <i>name</i> <i>condition</i> <i>group</i> <i>expand-env</i> <i>load-file</i> <i>keybinding</i> <i>uuid</i> <i>save-file</i>)
+</p>
+
+<p>
+Within these, only <i>key</i> and <i>template</i> are actually mandatory.
+</p>
+
+<p>
+<i>template</i> might be a Lisp form or a string, depending on whether
+this is a snippet or a snippet-command.
+</p>
+
+<p>
+<i>condition</i>, <i>expand-env</i> and <i>keybinding</i> are Lisp forms, they have
+been <code>yas--read-lisp</code>-ed and will eventually be
+<code>yas--eval-for-string</code>-ed.
+</p>
+
+<p>
+The remaining elements are strings.
+</p>
+
+<p>
+<i>file</i> is probably of very little use if you're programatically
+defining snippets.
+</p>
+
+<p>
+<i>uuid</i> is the snippet's "unique-id". Loading a second snippet
+file with the same uuid would replace the previous snippet.
+</p>
+
+<p>
+You can use <code>yas--parse-template</code> to return such lists based on
+the current buffers contents.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orga40a1ab" class="outline-3">
+<h3 id="yas-completing-prompt"><a id="orga40a1ab"></a><code class='function'>yas-completing-prompt</code> (<code>prompt</code> <code>choices</code> <i>&amp;optional</i> <code>display-fn</code> <code>completion-fn</code>)</h3>
+<div class="outline-text-3" id="text-yas-completing-prompt">
+<p>
+<b><i>warning</i></b>: no doc for symbol <code>yas-completing-prompt</code>
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgc91043e" class="outline-3">
+<h3 id="yas-inside-string"><a id="orgc91043e"></a><code class='function'>yas-inside-string</code> ()</h3>
+<div class="outline-text-3" id="text-yas-inside-string">
+<p>
+Return non-nil if the point is inside a string according to font-lock.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orga161a85" class="outline-3">
+<h3 id="yas-lookup-snippet"><a id="orga161a85"></a><code class='function'>yas-lookup-snippet</code> (<code>name</code> <i>&amp;optional</i> <code>mode</code> <code>noerror</code>)</h3>
+<div class="outline-text-3" id="text-yas-lookup-snippet">
+<p>
+Get the snippet named <code>name</code> in <code>mode</code>'s tables.
+</p>
+
+<p>
+<code>mode</code> defaults to the current buffer's <code>major-mode</code>.  If <code>noerror</code>
+is non-nil, then don't signal an error if there isn't any snippet
+called <code>name</code>.
+</p>
+
+<p>
+Honours <a href="#yas-buffer-local-condition"><code>yas-buffer-local-condition</code></a>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org337fd66" class="outline-3">
+<h3 id="yas-x-prompt"><a id="org337fd66"></a><code class='function'>yas-x-prompt</code> (<code>prompt</code> <code>choices</code> <i>&amp;optional</i> <code>display-fn</code>)</h3>
+<div class="outline-text-3" id="text-yas-x-prompt">
+<p>
+Display choices in a x-window prompt.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org958f639" class="outline-3">
+<h3 id="yas-global-mode-enable-in-buffers"><a id="org958f639"></a><code class='function'>yas-global-mode-enable-in-buffers</code> ()</h3>
+<div class="outline-text-3" id="text-yas-global-mode-enable-in-buffers">
+<p>
+<b><i>warning</i></b>: no doc for symbol <code>yas-global-mode-enable-in-buffers</code>
+</p>
+</div>
+</div>
+
+<div id="outline-container-org5963804" class="outline-3">
+<h3 id="yas-selected-text"><a id="org5963804"></a><code class='function'>yas-selected-text</code> ()</h3>
+<div class="outline-text-3" id="text-yas-selected-text">
+<p>
+Return <a href="#yas-selected-text"><code>yas-selected-text</code></a> if that exists and is non-empty, else nil.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org7e2de01" class="outline-3">
+<h3 id="yas-field-value"><a id="org7e2de01"></a><code class='function'>yas-field-value</code> (<code>number</code>)</h3>
+<div class="outline-text-3" id="text-yas-field-value">
+<p>
+Get the string for field with <code>number</code>.
+</p>
+
+<p>
+Use this in primary and mirror transformations to get the text of
+other fields.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgcb8f069" class="outline-3">
+<h3 id="yas-global-mode-cmhh"><a id="orgcb8f069"></a><code class='function'>yas-global-mode-cmhh</code> ()</h3>
+<div class="outline-text-3" id="text-yas-global-mode-cmhh">
+<p>
+<b><i>warning</i></b>: no doc for symbol <code>yas-global-mode-cmhh</code>
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgad100fb" class="outline-3">
+<h3 id="yas-escape-text"><a id="orgad100fb"></a><code class='function'>yas-escape-text</code> (<code>text</code>)</h3>
+<div class="outline-text-3" id="text-yas-escape-text">
+<p>
+Escape <code>text</code> for snippet.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgebbe5ef" class="outline-3">
+<h3 id="yas-dropdown-prompt"><a id="orgebbe5ef"></a><code class='function'>yas-dropdown-prompt</code> (<code>_prompt</code> <code>choices</code> <i>&amp;optional</i> <code>display-fn</code>)</h3>
+<div class="outline-text-3" id="text-yas-dropdown-prompt">
+<p>
+<b><i>warning</i></b>: no doc for symbol <code>yas-dropdown-prompt</code>
+</p>
+</div>
+</div>
+
+<div id="outline-container-org40bd76d" class="outline-3">
+<h3 id="yas-shortest-key-until-whitespace"><a id="org40bd76d"></a><code class='function'>yas-shortest-key-until-whitespace</code> (<code>_start-point</code>)</h3>
+<div class="outline-text-3" id="text-yas-shortest-key-until-whitespace">
+<p>
+Like <a href="#yas-longest-key-from-whitespace"><code>yas-longest-key-from-whitespace</code></a> but take the shortest key.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgfab5041" class="outline-3">
+<h3 id="yas-substr"><a id="orgfab5041"></a><code class='function'>yas-substr</code> (<code>str</code> <code>pattern</code> <i>&amp;optional</i> <code>subexp</code>)</h3>
+<div class="outline-text-3" id="text-yas-substr">
+<p>
+Search <code>pattern</code> in <code>str</code> and return <code>subexp</code>th match.
+</p>
+
+<p>
+If found, the content of subexp group <code>subexp</code> (default 0) is
+  returned, or else the original <code>str</code> will be returned.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgd1181ec" class="outline-3">
+<h3 id="yas-ido-prompt"><a id="orgd1181ec"></a><code class='function'>yas-ido-prompt</code> (<code>prompt</code> <code>choices</code> <i>&amp;optional</i> <code>display-fn</code>)</h3>
+<div class="outline-text-3" id="text-yas-ido-prompt">
+<p>
+<b><i>warning</i></b>: no doc for symbol <code>yas-ido-prompt</code>
+</p>
+</div>
+</div>
+
+<div id="outline-container-org2407ad5" class="outline-3">
+<h3 id="yas-maybe-ido-prompt"><a id="org2407ad5"></a><code class='function'>yas-maybe-ido-prompt</code> (<code>prompt</code> <code>choices</code> <i>&amp;optional</i> <code>display-fn</code>)</h3>
+<div class="outline-text-3" id="text-yas-maybe-ido-prompt">
+<p>
+<b><i>warning</i></b>: no doc for symbol <code>yas-maybe-ido-prompt</code>
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgcc6d20e" class="outline-3">
+<h3 id="yas-snippet-mode-buffer-p"><a id="orgcc6d20e"></a><code class='function'>yas-snippet-mode-buffer-p</code> ()</h3>
+<div class="outline-text-3" id="text-yas-snippet-mode-buffer-p">
+<p>
+Return non-nil if current buffer should be in <code>snippet-mode</code>.
+Meaning it's visiting a file under one of the mode directories in
+<a href="#yas-snippet-dirs"><code>yas-snippet-dirs</code></a>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgceb552f" class="outline-3">
+<h3 id="yas-no-prompt"><a id="orgceb552f"></a><code class='function'>yas-no-prompt</code> (<code>_prompt</code> <code>choices</code> <i>&amp;optional</i> <code>_display-fn</code>)</h3>
+<div class="outline-text-3" id="text-yas-no-prompt">
+<p>
+<b><i>warning</i></b>: no doc for symbol <code>yas-no-prompt</code>
+</p>
+</div>
+</div>
+
+<div id="outline-container-org7047590" class="outline-3">
+<h3 id="yas-longest-key-from-whitespace"><a id="org7047590"></a><code class='function'>yas-longest-key-from-whitespace</code> (<code>start-point</code>)</h3>
+<div class="outline-text-3" id="text-yas-longest-key-from-whitespace">
+<p>
+As <a href="#yas-key-syntaxes"><code>yas-key-syntaxes</code></a> element, look for longest key between point and whitespace.
+</p>
+
+<p>
+A newline will be considered whitespace even if the mode syntax
+marks it as something else (typically comment ender).
+</p>
+</div>
+</div>
+
+<div id="outline-container-org8bb6271" class="outline-3">
+<h3 id="yas-try-key-from-whitespace"><a id="org8bb6271"></a><code class='function'>yas-try-key-from-whitespace</code> (<code>_start-point</code>)</h3>
+<div class="outline-text-3" id="text-yas-try-key-from-whitespace">
+<p>
+As <a href="#yas-key-syntaxes"><code>yas-key-syntaxes</code></a> element, look for whitespace delimited key.
+</p>
+
+<p>
+A newline will be considered whitespace even if the mode syntax
+marks it as something else (typically comment ender).
+</p>
+</div>
+</div>
+
+<div id="outline-container-org2f59d72" class="outline-3">
+<h3 id="yas-choose-value"><a id="org2f59d72"></a><code class='function'>yas-choose-value</code> (<i>&amp;rest</i> <code>possibilities</code>)</h3>
+<div class="outline-text-3" id="text-yas-choose-value">
+<p>
+Prompt for a string in <code>possibilities</code> and return it.
+</p>
+
+<p>
+The last element of <code>possibilities</code> may be a list of strings.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org37042f0" class="outline-3">
+<h3 id="yas-global-mode-check-buffers"><a id="org37042f0"></a><code class='function'>yas-global-mode-check-buffers</code> ()</h3>
+<div class="outline-text-3" id="text-yas-global-mode-check-buffers">
+<p>
+<b><i>warning</i></b>: no doc for symbol <code>yas-global-mode-check-buffers</code>
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgc6bf59b" class="outline-3">
+<h3 id="yas-minor-mode-set-explicitly"><a id="orgc6bf59b"></a><code class='function'>yas-minor-mode-set-explicitly</code> ()</h3>
+<div class="outline-text-3" id="text-yas-minor-mode-set-explicitly">
+<p>
+<b><i>warning</i></b>: no doc for symbol <code>yas-minor-mode-set-explicitly</code>
+</p>
+</div>
+</div>
+
+<div id="outline-container-orge7acd7d" class="outline-3">
+<h3 id="yas-define-menu"><a id="orge7acd7d"></a><code class='function'>yas-define-menu</code> (<code>mode</code> <code>menu</code> <i>&amp;optional</i> <code>omit-items</code>)</h3>
+<div class="outline-text-3" id="text-yas-define-menu">
+<p>
+Define a snippet menu for <code>mode</code> according to <code>menu</code>, omitting <code>omit-items</code>.
+</p>
+
+<p>
+<code>menu</code> is a list, its elements can be:
+</p>
+
+<ul class="org-ul">
+<li>(yas-item <i>uuid</i>) : Creates an entry the snippet identified with
+<i>uuid</i>.  The menu entry for a snippet thus identified is
+permanent, i.e. it will never move (be reordered) in the menu.</li>
+
+<li>(yas-separator) : Creates a separator</li>
+
+<li>(yas-submenu <i>name</i> <i>submenu</i>) : Creates a submenu with <i>name</i>,
+<i>submenu</i> has the same form as <code>menu</code>.  <i>name</i> is also added to the
+list of groups of the snippets defined thereafter.</li>
+</ul>
+
+<p>
+<code>omit-items</code> is a list of snippet uuids that will always be
+omitted from <code>mode</code>'s menu, even if they're manually loaded.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orge1fa84f" class="outline-3">
+<h3 id="yas-current-field"><a id="orge1fa84f"></a><code class='function'>yas-current-field</code> ()</h3>
+<div class="outline-text-3" id="text-yas-current-field">
+<p>
+Return the currently active field.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgfe07069" class="outline-3">
+<h3 id="yas-unimplemented"><a id="orgfe07069"></a><code class='function'>yas-unimplemented</code> (<i>&amp;optional</i> <code>missing-feature</code>)</h3>
+<div class="outline-text-3" id="text-yas-unimplemented">
+<p>
+<b><i>warning</i></b>: no doc for symbol <code>yas-unimplemented</code>
+</p>
+</div>
+</div>
+
+<div id="outline-container-org1ef271d" class="outline-3">
+<h3 id="yas-define-condition-cache"><a id="org1ef271d"></a><code class='function'>yas-define-condition-cache</code> (<code>func</code> <code>doc</code> <i>&amp;rest</i> <code>body</code>)</h3>
+<div class="outline-text-3" id="text-yas-define-condition-cache">
+<p>
+Define a function <code>func</code> with doc <code>doc</code> and body <code>body</code>.
+<code>body</code> is executed at most once every snippet expansion attempt, to check
+expansion conditions.
+</p>
+
+<p>
+It doesn't make any sense to call <code>func</code> programatically.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org0be3ced" class="outline-3">
+<h3 id="yas-active-keys"><a id="org0be3ced"></a><code class='function'>yas-active-keys</code> ()</h3>
+<div class="outline-text-3" id="text-yas-active-keys">
+<p>
+Return all active trigger keys for current buffer and point.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org8832b06" class="outline-3">
+<h3 id="yas-text"><a id="org8832b06"></a><code class='function'>yas-text</code> ()</h3>
+<div class="outline-text-3" id="text-yas-text">
+<p>
+Return <a href="#yas-text"><code>yas-text</code></a> if that exists and is non-empty, else nil.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgd1443ec" class="outline-3">
+<h3 id="yas-next-field-will-exit-p"><a id="orgd1443ec"></a><code class='function'>yas-next-field-will-exit-p</code> (<i>&amp;optional</i> <code>arg</code>)</h3>
+<div class="outline-text-3" id="text-yas-next-field-will-exit-p">
+<p>
+Return non-nil if (yas-next-field <code>arg</code>) would exit the current snippet.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org0f3b541" class="outline-3">
+<h3 id="yas-active-snippets"><a id="org0f3b541"></a><code class='function'>yas-active-snippets</code> (<i>&amp;optional</i> <code>beg</code> <code>end</code>)</h3>
+<div class="outline-text-3" id="text-yas-active-snippets">
+<p>
+Return a sorted list of active snippets.
+The most recently-inserted snippets are returned first.
+</p>
+
+<p>
+Only snippets overlapping the region <code>beg</code> &#x2026; <code>end</code> are returned.
+Overlapping has the same meaning as described in <code>overlays-in</code>.
+If <code>end</code> is omitted, it defaults to (1+ <code>beg</code>).  If <code>beg</code> is omitted,
+it defaults to point.  A non-nil, non-buffer position <code>beg</code> is
+equivalent to a range covering the whole buffer.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org8cb42fb" class="outline-3">
+<h3 id="yas-verify-value"><a id="org8cb42fb"></a><code class='function'>yas-verify-value</code> (<code>possibilities</code>)</h3>
+<div class="outline-text-3" id="text-yas-verify-value">
+<p>
+Verify that the current field value is in <code>possibilities</code>.
+Otherwise signal <code>yas-exception</code>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgac7641b" class="outline-3">
+<h3 id="yas-default-from-field"><a id="orgac7641b"></a><code class='function'>yas-default-from-field</code> (<code>number</code>)</h3>
+<div class="outline-text-3" id="text-yas-default-from-field">
+<p>
+<b><i>warning</i></b>: no doc for symbol <code>yas-default-from-field</code>
+</p>
+</div>
+</div>
+
+<div id="outline-container-org6f26ba3" class="outline-3">
+<h3 id="yas-key-to-value"><a id="org6f26ba3"></a><code class='function'>yas-key-to-value</code> (<code>alist</code>)</h3>
+<div class="outline-text-3" id="text-yas-key-to-value">
+<p>
+<b><i>warning</i></b>: no doc for symbol <code>yas-key-to-value</code>
+</p>
+</div>
+</div>
+
+<div id="outline-container-org680ec9d" class="outline-3">
+<h3 id="yas-throw"><a id="org680ec9d"></a><code class='function'>yas-throw</code> (<code>text</code>)</h3>
+<div class="outline-text-3" id="text-yas-throw">
+<p>
+Signal <code>yas-exception</code> with <code>text</code> as the reason.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgf668193" class="outline-3">
+<h3 id="yas-hippie-try-expand"><a id="orgf668193"></a><code class='function'>yas-hippie-try-expand</code> (<code>first-time?</code>)</h3>
+<div class="outline-text-3" id="text-yas-hippie-try-expand">
+<p>
+Integrate with hippie expand.
+</p>
+
+<p>
+Just put this function in <code>hippie-expand-try-functions-list</code>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org03babb9" class="outline-3">
+<h3 id="yas-maybe-load-snippet-buffer"><a id="org03babb9"></a><code class='function'>yas-maybe-load-snippet-buffer</code> ()</h3>
+<div class="outline-text-3" id="text-yas-maybe-load-snippet-buffer">
+<p>
+Added to <code>after-save-hook</code> in <code>snippet-mode</code>.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-org9104429" class="outline-2">
+<h2 id="org9104429">Useful variables</h2>
+<div class="outline-text-2" id="text-org9104429">
+</div>
+<div id="outline-container-org221838a" class="outline-3">
+<h3 id="yas-key-syntaxes"><a id="org221838a"></a><code class='variable'>yas-key-syntaxes</code></h3>
+<div class="outline-text-3" id="text-yas-key-syntaxes">
+<p>
+Syntaxes and functions to help look for trigger keys before point.
+</p>
+
+<p>
+Each element in this list specifies how to skip buffer positions
+backwards and look for the start of a trigger key.
+</p>
+
+<p>
+Each element can be either a string or a function receiving the
+original point as an argument. A string element is simply passed
+to <code>skip-syntax-backward</code> whereas a function element is called
+with no arguments and should also place point before the original
+position.
+</p>
+
+<p>
+The string between the resulting buffer position and the original
+point is matched against the trigger keys in the active snippet
+tables.
+</p>
+
+<p>
+If no expandable snippets are found, the next element is the list
+is tried, unless a function element returned the symbol <code>again</code>,
+in which case it is called again from the previous position and
+may once more reposition point.
+</p>
+
+<p>
+For example, if <a href="#yas-key-syntaxes"><code>yas-key-syntaxes</code></a> has the value ("w" "w_"),
+trigger keys composed exclusively of "word"-syntax characters
+are looked for first. Failing that, longer keys composed of
+"word" or "symbol" syntax are looked for. Therefore,
+triggering after
+</p>
+
+<p>
+foo-bar
+</p>
+
+<p>
+will, according to the "w" element first try "barbaz". If
+that isn't a trigger key, "foo-barbaz" is tried, respecting the
+second "w_" element. Notice that even if "baz" is a trigger
+key for an active snippet, it won't be expanded, unless a
+function is added to <a href="#yas-key-syntaxes"><code>yas-key-syntaxes</code></a> that eventually places
+point between "bar" and "baz".
+</p>
+
+<p>
+See also Info node <a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Syntax-Descriptors.html">(elisp) Syntax Descriptors</a>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgd50e476" class="outline-3">
+<h3 id="yas-modified-p"><a id="orgd50e476"></a><code class='variable'>yas-modified-p</code></h3>
+<div class="outline-text-3" id="text-yas-modified-p">
+<p>
+Non-nil if field has been modified by user or transformation.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgfae78af" class="outline-3">
+<h3 id="yas-dont-activate-functions"><a id="orgfae78af"></a><code class='variable'>yas-dont-activate-functions</code></h3>
+<div class="outline-text-3" id="text-yas-dont-activate-functions">
+<p>
+Special hook to control which buffers <a href="#yas-global-mode"><code>yas-global-mode</code></a> affects.
+Functions are called with no argument, and should return non-nil to prevent
+<a href="#yas-global-mode"><code>yas-global-mode</code></a> from enabling yasnippet in this buffer.
+</p>
+
+<p>
+In Emacsen &lt; 24, this variable is buffer-local.  Because
+<a href="#yas-minor-mode-on"><code>yas-minor-mode-on</code></a> is called by <a href="#yas-global-mode"><code>yas-global-mode</code></a> after
+executing the buffer's major mode hook, setting this variable
+there is an effective way to define exceptions to the "global"
+activation behaviour.
+</p>
+
+<p>
+In Emacsen &gt;= 24, only the global value is used.  To define
+per-mode exceptions to the "global" activation behaviour, call
+<a href="#yas-minor-mode"><code>yas-minor-mode</code></a> with a negative argument directily in the major
+mode's hook.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orga7d4bc4" class="outline-3">
+<h3 id="yas-before-expand-snippet-hook"><a id="orga7d4bc4"></a><code class='variable'>yas-before-expand-snippet-hook</code></h3>
+<div class="outline-text-3" id="text-yas-before-expand-snippet-hook">
+<p>
+Hooks to run just before expanding a snippet.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org33614e1" class="outline-3">
+<h3 id="yas-maybe-skip-and-clear-field"><a id="org33614e1"></a><code class='variable'>yas-maybe-skip-and-clear-field</code></h3>
+<div class="outline-text-3" id="text-yas-maybe-skip-and-clear-field">
+<p>
+A conditional key definition.
+This can be used as a key definition in keymaps to bind a key to
+<a href="#yas-skip-and-clear-field"><code>yas-skip-and-clear-field</code></a> only when at the beginning of an
+unmodified snippey field.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgc2b8623" class="outline-3">
+<h3 id="yas-keymap"><a id="orgc2b8623"></a><code class='variable'>yas-keymap</code></h3>
+<div class="outline-text-3" id="text-yas-keymap">
+<p>
+The active keymap while a snippet expansion is in progress.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org5a9600a" class="outline-3">
+<h3 id="yas-verbosity"><a id="org5a9600a"></a><code class='variable'>yas-verbosity</code></h3>
+<div class="outline-text-3" id="text-yas-verbosity">
+<p>
+Log level for <code>yas--message</code> 4 means trace most anything, 0 means nothing.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgd1b3c39" class="outline-3">
+<h3 id="yas-minor-mode-hook"><a id="orgd1b3c39"></a><code class='variable'>yas-minor-mode-hook</code></h3>
+<div class="outline-text-3" id="text-yas-minor-mode-hook">
+<p>
+Hook run after entering or leaving <a href="#yas-minor-mode"><code>yas-minor-mode</code></a>.
+No problems result if this variable is not bound.
+<code>add-hook</code> automatically binds it.  (This is true for all hook variables.)
+</p>
+</div>
+</div>
+
+<div id="outline-container-org8274502" class="outline-3">
+<h3 id="yas-minor-mode-major-mode"><a id="org8274502"></a><code class='variable'>yas-minor-mode-major-mode</code></h3>
+<div class="outline-text-3" id="text-yas-minor-mode-major-mode">
+<p>
+<b><i>warning</i></b>: no doc for symbol <code>yas-minor-mode-major-mode</code>
+</p>
+</div>
+</div>
+
+<div id="outline-container-org3401da1" class="outline-3">
+<h3 id="yas-not-string-or-comment-condition"><a id="org3401da1"></a><code class='variable'>yas-not-string-or-comment-condition</code></h3>
+<div class="outline-text-3" id="text-yas-not-string-or-comment-condition">
+<p>
+Disables snippet expansion in strings and comments.
+To use, set <a href="#yas-buffer-local-condition"><code>yas-buffer-local-condition</code></a> to this value.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org02c5592" class="outline-3">
+<h3 id="yas-after-exit-snippet-hook"><a id="org02c5592"></a><code class='variable'>yas-after-exit-snippet-hook</code></h3>
+<div class="outline-text-3" id="text-yas-after-exit-snippet-hook">
+<p>
+Hooks to run after a snippet exited.
+</p>
+
+<p>
+The hooks will be run in an environment where some variables bound to
+proper values:
+</p>
+
+<p>
+<a href="#yas-snippet-beg"><code>yas-snippet-beg</code></a> : The beginning of the region of the snippet.
+</p>
+
+<p>
+<a href="#yas-snippet-end"><code>yas-snippet-end</code></a> : Similar to beg.
+</p>
+
+<p>
+Attention: These hooks are not run when exiting nested/stacked snippet expansion!
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgc328975" class="outline-3">
+<h3 id="yas-maybe-expand"><a id="orgc328975"></a><code class='variable'>yas-maybe-expand</code></h3>
+<div class="outline-text-3" id="text-yas-maybe-expand">
+<p>
+A conditional key definition.
+This can be used as a key definition in keymaps to bind a key to
+<a href="#yas-expand"><code>yas-expand</code></a> only when there is a snippet available to be
+expanded.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgad21ec9" class="outline-3">
+<h3 id="yas-after-reload-hook"><a id="orgad21ec9"></a><code class='variable'>yas-after-reload-hook</code></h3>
+<div class="outline-text-3" id="text-yas-after-reload-hook">
+<p>
+Hooks run after <a href="#yas-reload-all"><code>yas-reload-all</code></a>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgff2a0e1" class="outline-3">
+<h3 id="yas-new-snippet-buffer-name"><a id="orgff2a0e1"></a><code class='variable'>yas-new-snippet-buffer-name</code></h3>
+<div class="outline-text-3" id="text-yas-new-snippet-buffer-name">
+<p>
+<b><i>warning</i></b>: no doc for symbol <code>yas-new-snippet-buffer-name</code>
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgea4c71c" class="outline-3">
+<h3 id="yas-snippet-end"><a id="orgea4c71c"></a><code class='variable'>yas-snippet-end</code></h3>
+<div class="outline-text-3" id="text-yas-snippet-end">
+<p>
+End position of the last snippet committed.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org4d34f37" class="outline-3">
+<h3 id="yas-minor-mode-map"><a id="org4d34f37"></a><code class='variable'>yas-minor-mode-map</code></h3>
+<div class="outline-text-3" id="text-yas-minor-mode-map">
+<p>
+The keymap used when <a href="#yas-minor-mode"><code>yas-minor-mode</code></a> is active.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgbc602a6" class="outline-3">
+<h3 id="yas-global-mode-hook"><a id="orgbc602a6"></a><code class='variable'>yas-global-mode-hook</code></h3>
+<div class="outline-text-3" id="text-yas-global-mode-hook">
+<p>
+Hook run after entering or leaving <a href="#yas-global-mode"><code>yas-global-mode</code></a>.
+No problems result if this variable is not bound.
+<code>add-hook</code> automatically binds it.  (This is true for all hook variables.)
+</p>
+</div>
+</div>
+
+<div id="outline-container-org4b41bb4" class="outline-3">
+<h3 id="yas-snippet-beg"><a id="org4b41bb4"></a><code class='variable'>yas-snippet-beg</code></h3>
+<div class="outline-text-3" id="text-yas-snippet-beg">
+<p>
+Beginning position of the last snippet committed.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org87f157c" class="outline-3">
+<h3 id="yas-moving-away-p"><a id="org87f157c"></a><code class='variable'>yas-moving-away-p</code></h3>
+<div class="outline-text-3" id="text-yas-moving-away-p">
+<p>
+Non-nil if user is about to exit field.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org36923ad" class="outline-3">
+<h3 id="yas-maybe-expand-from-keymap"><a id="org36923ad"></a><code class='variable'>yas-maybe-expand-from-keymap</code></h3>
+<div class="outline-text-3" id="text-yas-maybe-expand-from-keymap">
+<p>
+<b><i>warning</i></b>: no doc for symbol <code>yas-maybe-expand-from-keymap</code>
+</p>
+</div>
+</div>
+
+<div id="outline-container-org19e9b22" class="outline-3">
+<h3 id="yas-global-mode-buffers"><a id="org19e9b22"></a><code class='variable'>yas-global-mode-buffers</code></h3>
+<div class="outline-text-3" id="text-yas-global-mode-buffers">
+<p>
+<b><i>warning</i></b>: no doc for symbol <code>yas-global-mode-buffers</code>
+</p>
+</div>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<hr><p class='creator'>Generated by <a href="https://www.gnu.org/software/emacs/">Emacs</a> 26.0.90 (<a href="http://orgmode.org">Org</a> mode 9.1.2) from 0.12.2-37-gdc6d7d2 (2018-02-18 12:46:06)</p>
+<p class='xhtml-validation'><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>
