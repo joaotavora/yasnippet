@@ -21,7 +21,7 @@
 
      - Using hippie-expand
 
-   - Call [[sym:yas-insert-snippet][=yas-insert-snippet=]] (use =M-x yas-insert-snippet== or its
+   - Call [[sym:yas-insert-snippet][=yas-insert-snippet=]] (use =M-x yas-insert-snippet= or its
      keybinding =C-c & C-s=).
 
    - Use m2m's excellent auto-complete

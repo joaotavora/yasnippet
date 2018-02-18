@@ -4,8 +4,9 @@
 
 * Basic structure
 
-   Snippet collections can be stored in plain text files. They are arranged by
-   sub-directories naming *snippet tables*. These mostly name Emacs major names.
+   Snippet collections can be stored in plain text files. They are
+   arranged by sub-directories naming *snippet tables*.  These mostly
+   name Emacs major mode names.
 
    #+begin_example
    .
