@@ -21,7 +21,7 @@
 
      - Using hippie-expand
 
-   - Call [[sym:yas-insert-snippet][=yas-insert-snippet=]] (use =M-x yas-insert-snippet== or its
+   - Call [[sym:yas-insert-snippet][=yas-insert-snippet=]] (use =M-x yas-insert-snippet= or its
      keybinding =C-c & C-s=).
 
    - Use m2m's excellent auto-complete
@@ -77,7 +77,7 @@ obsolete.
 
 ** Insert at point
 
-The command [[#yas-insert-snippet][=yas-insert-snippet=]] lets you insert snippets at point
+The command [[sym:yas-insert-snippet][=yas-insert-snippet=]] lets you insert snippets at point
 /for your current major mode/. It prompts you for the snippet key
 first, and then for a snippet template if more than one template
 exists for the same key.
@@ -94,7 +94,7 @@ The prompting methods used are again controlled by
 It's often useful to inject already written text in the middle of a
 snippet.  The variable [[sym:yas-wrap-around-region][=yas-wrap-around-region=]] when to t substitute
 the region contents into the =$0= placeholder of a snippet expanded by
-[[#yas-insert-snippet][=yas-insert-snippet=]].  Setting it to a character value (e.g. =?0=)
+[[sym:yas-insert-snippet][=yas-insert-snippet=]].  Setting it to a character value (e.g. =?0=)
 will insert the contents of corresponding register.
 
 Older (versions 0.9.1 and below) of Yasnippet, supported a setting of
@@ -169,7 +169,7 @@ In particular, the following things matter:
 
 -  Buffer-local list of extra modes
 
-   Use [[#yas-activate-extra-mode][=yas-activate-extra-mode=]] to
+   Use [[sym:yas-activate-extra-mode][=yas-activate-extra-mode=]] to
    consider snippet tables whose name does not correspond to a major
    mode. Typically, you call this from a minor mode hook, for example:
 

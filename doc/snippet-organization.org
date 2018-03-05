@@ -4,8 +4,9 @@
 
 * Basic structure
 
-   Snippet collections can be stored in plain text files. They are arranged by
-   sub-directories naming *snippet tables*. These mostly name Emacs major names.
+   Snippet collections can be stored in plain text files. They are
+   arranged by sub-directories naming *snippet tables*.  These mostly
+   name Emacs major mode names.
 
    #+begin_example
    .
@@ -81,7 +82,7 @@
 
    If you place an empty plain text file =.yas-make-groups= inside one
    of the mode directories, the names of these sub-directories are
-   considered groups of snippets and [[snippet-menu.org][the menu]] is organized much more
+   considered groups of snippets and [[file:snippet-menu.org][the menu]] is organized much more
    cleanly:
 
    [[./images/menu-groups.png]]
