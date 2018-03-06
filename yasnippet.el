@@ -4306,6 +4306,9 @@ The SNIPPET's markers are preserved."
            (forward-line 1)
            (let ((indent-line-function
                   (lambda ()
+                    ;; We need to be at beginning of line in order to
+                    ;; indent existing whitespace correctly.
+                    (beginning-of-line)
                     (indent-to-column yas--indent-original-column))))
              (yas--indent-region (line-beginning-position)
                                  (point-max)
