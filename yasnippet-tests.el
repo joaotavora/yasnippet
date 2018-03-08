@@ -447,6 +447,30 @@ end" (buffer-string)))
     (yas-expand-snippet "def foo\n\nend")
     (should (string= "def foo\n  \nend" (buffer-string)))))
 
+(ert-deftest yas-indent-first-line ()
+  (with-temp-buffer
+    (ruby-mode)
+    (yas-minor-mode 1)
+    (set (make-local-variable 'yas-indent-line) 'auto)
+    (set (make-local-variable 'yas-also-auto-indent-first-line) nil)
+    (set (make-local-variable 'yas-also-indent-empty-lines) nil)
+    (yas-expand-snippet "def foo\n$0\nend\n")
+    ;; First (and only) line should not indent.
+    (yas-expand-snippet "#not indented")
+    (should (equal "def foo\n#not indented\nend\n" (buffer-string)))))
+
+(ert-deftest yas-indent-first-line-fixed ()
+  (with-temp-buffer
+    (ruby-mode)
+    (yas-minor-mode 1)
+    (set (make-local-variable 'yas-indent-line) 'fixed)
+    (set (make-local-variable 'yas-also-auto-indent-first-line) nil)
+    (set (make-local-variable 'yas-also-indent-empty-lines) nil)
+    (yas-expand-snippet "    def foo\n    $0\n    end\n")
+    ;; First (and only) line should not indent.
+    (yas-expand-snippet "#not more indented")
+    (should (equal "    def foo\n    #not more indented\n    end\n" (buffer-string)))))
+
 (ert-deftest indentation-markers ()
   "Test a snippet with indentation markers (`$<')."
   (with-temp-buffer
