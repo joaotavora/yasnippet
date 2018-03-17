@@ -582,6 +582,15 @@ override bindings from other packages (e.g., `company-mode')."
   "The original value of `auto-fill-function'.")
 (make-variable-buffer-local 'yas--original-auto-fill-function)
 
+(defun yas--watch-auto-fill (_sym newval _op _where)
+  (when (and (null newval) (eq auto-fill-function 'yas--auto-fill))
+    (debug nil "`yas--original-auto-fill-function' unexpectedly nil! Please report this backtrace (hit `c' to continue)")) )
+
+;; Try to get more info on #873/919 (this only works for Emacs 26+).
+(when (fboundp 'add-variable-watcher)
+  (add-variable-watcher 'yas--original-auto-fill-function
+                        #'yas--watch-auto-fill))
+
 (defun yas--snippet-next-id ()
   (let ((id yas--snippet-id-seed))
     (cl-incf yas--snippet-id-seed)
@@ -3683,7 +3692,38 @@ field start.  This hook does nothing if an undo is in progress."
             reoverlays))
     (goto-char orig-point)
     (let ((yas--inhibit-overlay-hooks t))
-      (funcall yas--original-auto-fill-function))
+      (if (null yas--original-auto-fill-function)
+          ;; Try to get more info on #873/919.
+          (let ((yas--fill-fun-values `((t ,(default-value 'yas--original-auto-fill-function))))
+                (fill-fun-values `((t ,(default-value 'auto-fill-function))))
+                ;; Listing 2 buffers with the same value is enough
+                (print-length 3))
+            (save-current-buffer
+              (dolist (buf (let ((bufs (buffer-list)))
+                             ;; List the current buffer first.
+                             (setq bufs (cons (current-buffer)
+                                              (remq (current-buffer) bufs)))))
+                (set-buffer buf)
+                (let* ((yf-cell (assq yas--original-auto-fill-function
+                                      yas--fill-fun-values))
+                       (af-cell (assq auto-fill-function fill-fun-values)))
+                  (when (local-variable-p 'yas--original-auto-fill-function)
+                    (if yf-cell (setcdr yf-cell (cons buf (cdr yf-cell)))
+                      (push (list yas--original-auto-fill-function buf) yas--fill-fun-values)))
+                  (when (local-variable-p 'auto-fill-function)
+                    (if af-cell (setcdr af-cell (cons buf (cdr af-cell)))
+                      (push (list auto-fill-function buf) fill-fun-values))))))
+                 (lwarn '(yasnippet auto-fill bug) :error
+                        "`yas--original-auto-fill-function' unexpectedly nil in %S!  Disabling auto-fill.
+  %S
+  `auto-fill-function': %S"
+                        (current-buffer) yas--fill-fun-values fill-fun-values)
+                 ;; Try to avoid repeated triggering of this bug.
+                 (auto-fill-mode -1)
+                 ;; Don't pop up more than once in a session (still log though).
+                 (defvar warning-suppress-types) ; `warnings' is autoloaded by `lwarn'.
+                 (add-to-list 'warning-suppress-types '(yasnippet auto-fill bug)))
+        (funcall yas--original-auto-fill-function)))
     (save-excursion
       (setq end (progn (forward-paragraph) (point)))
       (setq beg (progn (backward-paragraph) (point))))
