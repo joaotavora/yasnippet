@@ -582,8 +582,16 @@ override bindings from other packages (e.g., `company-mode')."
   "The original value of `auto-fill-function'.")
 (make-variable-buffer-local 'yas--original-auto-fill-function)
 
-(defun yas--watch-auto-fill (_sym newval _op _where)
-  (when (and (null newval) (eq auto-fill-function 'yas--auto-fill))
+(defun yas--watch-auto-fill (_sym newval op _where)
+  (when (and (null newval) (eq auto-fill-function 'yas--auto-fill)
+             (fboundp 'backtrace-frames) ; Suppress compiler warning.
+             ;; If we're about to change `auto-fill-function' too,
+             ;; it's okay (probably).
+             (not (and (eq op 'makunbound)
+                       (not (eq (default-value 'auto-fill-function) 'yas--auto-fill))
+                       (cl-member 'kill-all-local-variables
+                                  (backtrace-frames 'yas--watch-auto-fill)
+                                  :key (lambda (frame) (nth 1 frame))))))
     (debug nil "`yas--original-auto-fill-function' unexpectedly nil! Please report this backtrace (hit `c' to continue)")) )
 
 ;; Try to get more info on #873/919 (this only works for Emacs 26+).
