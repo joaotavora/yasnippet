@@ -582,8 +582,16 @@ override bindings from other packages (e.g., `company-mode')."
   "The original value of `auto-fill-function'.")
 (make-variable-buffer-local 'yas--original-auto-fill-function)
 
-(defun yas--watch-auto-fill (_sym newval op _where)
-  (when (and (null newval) (eq auto-fill-function 'yas--auto-fill)
+(defvar yas--watch-auto-fill-backtrace nil)
+
+(defun yas--watch-auto-fill (sym newval op _where)
+  (when (and (or (and (eq sym 'yas--original-auto-fill-function)
+                      (null newval)
+                      (eq auto-fill-function 'yas--auto-fill))
+                 (and (eq sym 'auto-fill-function)
+                      (eq newval 'yas--auto-fill)
+                      (null yas--original-auto-fill-function)))
+             (null yas--watch-auto-fill-backtrace)
              (fboundp 'backtrace-frames) ; Suppress compiler warning.
              ;; If we're about to change `auto-fill-function' too,
              ;; it's okay (probably).
@@ -592,11 +600,14 @@ override bindings from other packages (e.g., `company-mode')."
                        (cl-member 'kill-all-local-variables
                                   (backtrace-frames 'yas--watch-auto-fill)
                                   :key (lambda (frame) (nth 1 frame))))))
-    (debug nil "`yas--original-auto-fill-function' unexpectedly nil! Please report this backtrace (hit `c' to continue)")) )
+    (setq yas--watch-auto-fill-backtrace
+          (backtrace-frames 'yas--watch-auto-fill))))
 
 ;; Try to get more info on #873/919 (this only works for Emacs 26+).
 (when (fboundp 'add-variable-watcher)
   (add-variable-watcher 'yas--original-auto-fill-function
+                        #'yas--watch-auto-fill)
+  (add-variable-watcher 'auto-fill-function
                         #'yas--watch-auto-fill))
 
 (defun yas--snippet-next-id ()
@@ -3724,8 +3735,14 @@ field start.  This hook does nothing if an undo is in progress."
                  (lwarn '(yasnippet auto-fill bug) :error
                         "`yas--original-auto-fill-function' unexpectedly nil in %S!  Disabling auto-fill.
   %S
-  `auto-fill-function': %S"
-                        (current-buffer) yas--fill-fun-values fill-fun-values)
+  `auto-fill-function': %S\n%s"
+                        (current-buffer) yas--fill-fun-values fill-fun-values
+                        (if (fboundp 'backtrace--print-frame)
+                            (with-output-to-string
+                              (mapc (lambda (frame)
+                                      (apply #'backtrace--print-frame frame))
+                                    yas--watch-auto-fill-backtrace))
+                          ""))
                  ;; Try to avoid repeated triggering of this bug.
                  (auto-fill-mode -1)
                  ;; Don't pop up more than once in a session (still log though).
@@ -4718,6 +4735,18 @@ When multiple expressions are found, only the last one counts."
 ;;
 (defun yas--post-command-handler ()
   "Handles various yasnippet conditions after each command."
+  (when (and yas--watch-auto-fill-backtrace
+             (fboundp 'backtrace--print-frame)
+             (null yas--original-auto-fill-function)
+             (eq auto-fill-function 'yas--auto-fill))
+    (lwarn '(yasnippet auto-fill bug) :error
+           "`yas--original-auto-fill-function' unexpectedly nil! Please report this backtrace\n%S"
+           (with-output-to-string
+             (mapc #'backtrace--print-frame
+                     yas--watch-auto-fill-backtrace)))
+    ;; Don't pop up more than once in a session (still log though).
+    (defvar warning-suppress-types) ; `warnings' is autoloaded by `lwarn'.
+    (add-to-list 'warning-suppress-types '(yasnippet auto-fill bug)))
   (condition-case err
       (progn (yas--finish-moving-snippets)
              (cond ((eq 'undo this-command)
