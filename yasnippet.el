@@ -3390,9 +3390,8 @@ This renders the snippet as ordinary text."
     ;;
     (yas--markers-to-points snippet)
 
-    ;; Take care of snippet revival
-    ;;
-    (if yas-snippet-revival
+    ;; Take care of snippet revival on undo.
+    (if (and yas-snippet-revival (listp buffer-undo-list))
         (push `(apply yas--snippet-revive ,yas-snippet-beg ,yas-snippet-end ,snippet)
               buffer-undo-list)
       ;; Dismember the snippet... this is useful if we get called
@@ -3963,8 +3962,9 @@ After revival, push the `yas--take-care-of-redo' in the
   (when (yas--maybe-move-to-active-field snippet)
     (setf (yas--snippet-control-overlay snippet) (yas--make-control-overlay snippet beg end))
     (overlay-put (yas--snippet-control-overlay snippet) 'yas--snippet snippet)
-    (push `(apply yas--take-care-of-redo ,snippet)
-          buffer-undo-list)))
+    (when (listp buffer-undo-list)
+      (push `(apply yas--take-care-of-redo ,snippet)
+            buffer-undo-list))))
 
 (defun yas--snippet-create (content expand-env begin end)
   "Create a snippet from a template inserted at BEGIN to END.
@@ -3984,16 +3984,18 @@ Returns the newly created snippet."
           (narrow-to-region begin end)
           (goto-char (point-min))
           (yas--snippet-parse-create snippet))
-        (push (cons (point-min) (point-max))
-              buffer-undo-list)
+        (when (listp buffer-undo-list)
+          (push (cons (point-min) (point-max))
+                buffer-undo-list))
 
         ;; Indent, collecting undo information normally.
         (yas--indent snippet)
 
         ;; Follow up with `yas--take-care-of-redo' on the newly
         ;; inserted snippet boundaries.
-        (push `(apply yas--take-care-of-redo ,snippet)
-              buffer-undo-list)
+        (when (listp buffer-undo-list)
+          (push `(apply yas--take-care-of-redo ,snippet)
+                buffer-undo-list))
 
         ;; Sort and link each field
         (yas--snippet-sort-fields snippet)
