@@ -3273,12 +3273,19 @@ equivalent to a range covering the whole buffer."
          (setq beg (point-min) end (point-max)))
         ((not end)
          (setq end (1+ beg))))
-  (cl-sort
-   (delete-dups ;; Snippets have multiple overlays.
-    (delq nil
-          (mapcar (lambda (ov) (overlay-get ov 'yas--snippet))
-                  (overlays-in beg end))))
-   #'>= :key #'yas--snippet-id))
+
+  ;; Note: don't use `mapcar' here, since it would allocate in
+  ;; proportion to the amount of overlays, even though the list of
+  ;; active snippets should be very small.  That is important because
+  ;; this function is called in the post-command hook (via
+  ;; `yas--check-commit-snippet').
+  (let ((snippets nil))
+    (dolist (ov (overlays-in beg end))
+      (let ((snippet (overlay-get ov 'yas--snippet)))
+        ;; Snippets have multiple overlays, so check for dups.
+        (when (and snippet (not (memq snippet snippets)))
+          (push snippet snippets))))
+    (cl-sort snippets #'>= :key #'yas--snippet-id)))
 
 (define-obsolete-function-alias 'yas--snippets-at-point
   'yas-active-snippets "0.12")
