@@ -1,8 +1,82 @@
 Yasnippet NEWS -- history of user-visible changes.
 
-Copyright (C) 2017 Free Software Foundation, Inc.
+Copyright (C) 2017-2018 Free Software Foundation, Inc.
 See the end of the file for license conditions.
 
+* 0.13.0 (May 13, 2018)
+
+** Changes
+
+*** Snippets for Yasnippet must now be installed separately.  The
+submodule linking to yasnippet-snippets was removed, as were the
+"classic" snippets that came with the GNU ELPA package.  The latter
+can now be installed via the 'yasnippet-classic-snippets' package from
+GNU ELPA.
+See Github #848, #858, #834, #775.
+
+*** 'snippet-mode' no longer derives from 'text-mode'.
+It will derive from 'prog-mode' where available (Emacs 24.1 and newer)
+or 'fundamental-mode' otherwise.  See Github #826.
+
+*** The default value of 'yas-key-syntaxes' is changed
+Longer snippet abbrev keys are now preferred over shorter ones.
+See Github #805.
+
+*** New snippets are now created for the current major mode by default
+Previously, extra activated modes could be guessed first.
+See Github #875.
+
+*** Yasnippet supports 'unload-feature' via 'yasnippet-unload-function'
+See Github #753, #891.
+
+*** New command 'yas-skip-and-clear-field' conditionally bound to 'C-d'
+replaces obsoleted 'yas-skip-and-clear-or-delete-char'.  The new
+function may be bound to any key via the conditional binding value
+'yas-maybe-skip-and-clear-field', instead of hardcoding the
+'delete-char' fallback action.  See Github #408, #892.
+
+*** 'yas-lookup-snippet' now returns a struct
+This allows 'yas-expand-snippet' to take looked up snippet's
+environment into account.  'yas-expand-snippet' handles both
+structured snippets, and plain text snippet bodies.
+See Github #897.
+
+** Fixed bugs
+
+*** Avoid crashing due to Emacs Bug#30931
+This prevents yasnippet's routines from triggering the bug, although
+it is still possible to trigger it independently.
+
+*** Don't enable undo when it's disabled
+
+*** yas-also-auto-indent-first-line is once again respected
+Yasnippet was behaving as if it was always t for single line snippets.
+See Github #912.
+
+*** Fixed handling of fixed indent with fields at beginning of line
+See Github #906, #908.
+
+*** Fixed incorrect snippets leaving "bad memory"
+and possibly corrupting future expansions.
+See Github #800.
+
+*** 'global-whitespace-mode' now functions in new snippet buffers.
+To fix this, the buffer name for new snippet buffers is now '+new
+snippet+' instead of '*new snippet*'.  See Github #842.
+
+*** Nest snippet expansion may clear default field text
+See Github #844.
+
+*** Fixed undo list corruption snippet expand+indent.
+See Github #869.
+
+*** The '# --' marker in snippets now allows trailing whitespace.
+See Github #862.
+
+*** Fixed handling of nested simple $n fields
+See Github #824, #894.
+
+
 * 0.12.2 (Aug 28, 2017)
 
 ** The new option 'yas-also-auto-indent-empty-lines' allows restoring
