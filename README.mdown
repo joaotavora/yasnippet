@@ -55,7 +55,7 @@ where you want YASnippet enabled.
 
 <a name="import"></a>
 
-Yasnippet no longer bundles snippets directly, but it's very easy to
+YASnippet no longer bundles snippets directly, but it's very easy to
 get some!
 
 1. [yasnippet-snippets] - a snippet collection package maintained by
@@ -95,11 +95,16 @@ should be added like this to `yas-snippet-dirs`:
 
 # Manual, issues etc
 
-Please refer to the comprehensive [documentation][docs] for full
-customisation and support.  If you find a bug in the code or in the
-documentation, please report it to the main Emacs bug list,
-bug-gnu-emacs@gnu.org, and put "yasnippet" somewhere in the subject.
-Alternatively, you may use the [Github issue tracker][issues].
+There's comprehensive [documentation][docs] on using and customising
+YASnippet.
+
+There's a [list of support issues][support-issues], with solutions to
+common problems and practical snippet examples.
+
+The [Github issue tracker][issues] is where most YASnippet-related
+discussion happens.  Nevertheless, since YASnippet is a part of Emacs,
+you may alternatively report bugs to the main Emacs bug list,
+bug-gnu-emacs@gnu.org, putting "yasnippet" somewhere in the subject.
 
 ## Important note regarding bug reporting
 
@@ -147,16 +152,11 @@ do `git log -1` in the dir).
 Any more info is welcome, but don't just paste a backtrace or an error
 message string you got, unless we ask for it.
 
-There is also a [YASnippet google group][forum]. I will keep the group
-open for reference and for discussion among users. Unfortunately I
-can't guarantee a timely response, so maybe it's better to create a
-github issue clearly marking your intent (user support/bug/feature
-request).
-
 Finally, thank you very much for using YASnippet!
 
 [docs]: http://joaotavora.github.io/yasnippet/
 [issues]: https://github.com/joaotavora/yasnippet/issues
+[support-issues]: https://github.com/joaotavora/yasnippet/issues?q=label%3Asupport
 [googlecode tracker]: http://code.google.com/p/yasnippet/issues/list
 [forum]: http://groups.google.com/group/smart-snippet
 [melpa]: http://melpa.milkbox.net/

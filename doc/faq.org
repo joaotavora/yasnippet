@@ -2,6 +2,11 @@
 
 #+TITLE: Frequently Asked Questions
 
+-  *Note*: In addition to the questions and answers presented here,
+  you might also with to visit the list of [[https://github.com/joaotavora/yasnippet/issues?q=label%3Asupport][solved support issues]] in
+  the Github issue tracker.  It might be more up-to-date than this
+  list.
+
 * Why is there an extra newline?
 
 If there is a newline at the end of a snippet definition file,
