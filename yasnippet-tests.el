@@ -193,6 +193,20 @@ attention to case differences."
     (should (string= (yas--buffer-contents)
                      "bla from another BLA"))))
 
+(ert-deftest yas-mirror-many-fields ()
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    (yas-expand-snippet "${1:brother} and ${2:brother} are${1:$(if (string= (yas-field-value 1) (yas-field-value 2)) \" \" \" not \")}the same word")
+    (should (string= (yas--buffer-contents)
+                     "brother and brother are the same word"))
+    (yas-mock-insert "bla")
+    (should (string= (yas--buffer-contents)
+                     "bla and brother are not the same word"))
+    (ert-simulate-command '(yas-next-field-or-maybe-expand))
+    (yas-mock-insert "bla")
+    (should (string= (yas--buffer-contents)
+                     "bla and bla are the same word"))))
+
 (ert-deftest mirror-with-transformation-and-autofill ()
   "Test interaction of autofill with mirror transforms"
   (let ((words "one two three four five")
