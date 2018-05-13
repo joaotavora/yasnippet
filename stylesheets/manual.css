@@ -1,5 +1,14 @@
-nav > ul > li.center > ul {
-    padding: 0;
+.center { margin-left: auto; margin-right: auto; text-align: center; }
+.current {
+    font-weight: bold;
+    background-color: #E0E8F0;
+}
+
+body { background-color:  #E4F0F4 }
+div#content {
+    max-width: 20cm;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 nav li {
@@ -9,20 +18,22 @@ nav li {
     list-style-type: none;
     padding: 0.5em;
 }
-
 nav > ul > li {
     display: inline-block;
 }
-
-/* match org's css for <pre> */
-code {
-    background-color: #F3F5F7;
-    font-family: courier, monospace;
+.nopad {
+    padding: 0;
+}
+li.border {
+    border: solid;
+    border-width: 1px;
 }
 
-#content {
-    margin-left: 5%;
-    margin-right: 10%;
+pre, code{ background-color: #F3F5F7; }
+code {
+    /* http://neugierig.org/software/chromium/notes/2009/09/monospace-fonts-workaround.html */
+    font-family: WorkAroundWebKitAndMozilla, monospace;
+    white-space: nowrap;
 }
 
 /* Styles for htmlize.el fontification.  */
