@@ -284,9 +284,9 @@ The number can be omitted if you don't want to create [[mirrors-fields][mirrors]
 
 ** Mirrors <<mirrors-fields>>
 
-We refer the tab stops with placeholders as a /field/. A field can have
-mirrors. Its mirrors will get updated when you change the text of a
-field. Here's an example:
+We refer the tab stops with placeholders as a /field/.  A field can
+have mirrors.  *All* mirrors get updated whenever you update any field
+text.  Here's an example:
 
 #+BEGIN_SRC snippet
   \begin{${1:enumerate}}
@@ -361,6 +361,20 @@ is not. Here's an snippet for rst title:
 
   $0
 #+END_SRC
+
+Note that a mirror with a transform is not restricted to the text of
+the field it is mirroring.  By making use of [[sym:yas-field-value][=yas-field-value=]], a
+mirror can look at any of the snippet's field (as mentioned above, all
+mirrors are updated when any field is updated).  Here is an example
+which shows a "live" result of calling format:
+
+#+BEGIN_SRC snippet
+(format "${1:formatted %s}" "${2:value}")
+=> "${1:$(ignore-errors (format (yas-field-value 1) (yas-field-value 2)))}"
+#+END_SRC
+
+To keep the example simple, it uses =ignore-errors= to suppress errors
+due to incomplete format codes.
 
 ** Fields with transformations
 
