@@ -603,6 +603,30 @@ mapconcat #'(lambda (arg)
       (ert-simulate-command '(yas-next-field))
       (should (looking-at (concat "blo" expected))))))
 
+(defmacro yas-saving-variables (&rest body)
+  (declare (debug t))
+  `(yas-call-with-saving-variables #'(lambda () ,@body)))
+
+(ert-deftest auto-next-field ()
+  "Automatically exit a field after evaluating its transform."
+  (with-temp-buffer
+    (yas-saving-variables
+     (yas-with-snippet-dirs
+      `((".emacs.d/snippets"
+         ("ruby-mode" ("snip" . ,(concat "foo ${1:$$"
+                                         (prin1-to-string '(yas-auto-next
+                                                            (yas-choose-value
+                                                             "bar" "foo")))
+                                         "} baz ${2:quinn} quinn")))))
+      (yas-reload-all)
+      (ruby-mode)
+      (yas-minor-mode 1)
+      (set (make-local-variable 'yas-prompt-functions) `(yas-no-prompt))
+      (yas-mock-insert "snip")
+      (ert-simulate-command '(yas-expand))
+      (yas-mock-insert "quux")
+      (should (equal "foo bar baz quux quinn" (buffer-string)))))))
+
 
 ;;; Snippet expansion and character escaping
 ;;; Thanks to @zw963 (Billy) for the testing
@@ -753,10 +777,6 @@ mapconcat #'(lambda (arg)
                       ,@body)
              (and (buffer-name ,temp-buffer)
                   (kill-buffer ,temp-buffer))))))))
-
-(defmacro yas-saving-variables (&rest body)
-  (declare (debug t))
-  `(yas-call-with-saving-variables #'(lambda () ,@body)))
 
 (ert-deftest example-for-issue-474 ()
   (yas--with-font-locked-temp-buffer

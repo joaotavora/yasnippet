@@ -420,8 +420,19 @@ The [[sym:yas-choose-value][=yas-choose-value=]] does this work for you. For exa
   </div>
 #+END_SRC
 
-See the definition of [[sym:yas-choose-value][=yas-choose-value=]] to see how it was written using
-the two variables.
+See the definition of [[sym:yas-choose-value][=yas-choose-value=]] to see how it was written
+using the two variables. If you're really lazy :) and can't spare a
+tab keypress, you can automatically move to the next field (or exit)
+after choosing the value with [[sym:yas-auto-next][=yas-auto-next=]]. The snippet above
+becomes:
+
+#+BEGIN_SRC snippet
+  <div align="${2:$$(yas-auto-next
+                      (yas-choose-value
+                        '("right" "center" "left")))}">
+    $0
+  </div>
+#+END_SRC
 
 Here's another use, for LaTeX-mode, which calls reftex-label just as you
 enter snippet field 2. This one makes use of [[sym:yas-modified-p][=yas-modified-p=]] directly.
