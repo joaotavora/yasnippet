@@ -9,3 +9,5 @@ extras/imported/**
 *.elc
 ert-x.*
 ert.*
+snippets/
+yasmate/
