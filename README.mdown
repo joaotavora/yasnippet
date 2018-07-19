@@ -61,7 +61,7 @@ get some!
 1. [yasnippet-snippets] - a snippet collection package maintained by
     [AndreaCrotti](https://github.com/AndreaCrotti).
 
-    It can be installed with `M-x install-package RET
+    It can be installed with `M-x package-install RET
     yasnippet-snippets` if you have added MELPA to your package
     sources.
 
