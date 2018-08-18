@@ -412,15 +412,17 @@ the field, and with some useful variables bound, notably
 can place a transformation in the primary field that lets you select
 default values for it.
 
-The [[sym:yas-choose-value][=yas-choose-value=]] does this work for you. For example:
+For example, the [[sym:yas-choose-value][=yas-completing-read=]] function is version of
+=completing-read= which checks these variables.  For example, asking
+the user for the initial value of a field:
 
 #+BEGIN_SRC snippet
-  <div align="${2:$$(yas-choose-value '("right" "center" "left"))}">
+  <div align="${2:$$(yas-completing-read "Alignment? " '("right" "center" "left"))}">
     $0
   </div>
 #+END_SRC
 
-See the definition of [[sym:yas-choose-value][=yas-choose-value=]] to see how it was written
+See the definition of [[sym:yas-choose-value][=yas-completing-read=]] to see how it was written
 using the two variables. If you're really lazy :) and can't spare a
 tab keypress, you can automatically move to the next field (or exit)
 after choosing the value with [[sym:yas-auto-next][=yas-auto-next=]]. The snippet above
@@ -428,7 +430,8 @@ becomes:
 
 #+BEGIN_SRC snippet
   <div align="${2:$$(yas-auto-next
-                      (yas-choose-value
+                      (yas-completing-read
+                        "Alignment? "
                         '("right" "center" "left")))}">
     $0
   </div>
@@ -440,8 +443,7 @@ enter snippet field 2. This one makes use of [[sym:yas-modified-p][=yas-modified
 #+BEGIN_SRC snippet
   \section{${1:"Titel der Tour"}}%
   \index{$1}%
-  \label{{2:"waiting for reftex-label call..."$(unless yas-modified-p (reftex-label nil 'dont-
-  insert))}}%
+  \label{{2:"waiting for reftex-label call..."$(unless yas-modified-p (reftex-label nil 'dont-insert))}}%
 #+END_SRC
 
 The function [[sym:yas-verify-value][=yas-verify-value=]] has another neat trick, and makes use

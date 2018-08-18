@@ -2987,6 +2987,16 @@ The last element of POSSIBILITIES may be a list of strings."
                (funcall fn "Choose: " possibilities))
              yas-prompt-functions)))
 
+(defun yas-completing-read (&rest args)
+  "A snippet-aware version of `completing-read'.
+This can be used to query the user for the initial value of a
+snippet field.  The arguments are the same as `completing-read'.
+
+\(fn PROMPT COLLECTION &optional PREDICATE REQUIRE-MATCH INITIAL-INPUT HIST DEF INHERIT-INPUT-METHOD)"
+  (unless (or yas-moving-away-p
+              yas-modified-p)
+    (apply #'completing-read args)))
+
 (defun yas--auto-next ()
   "Helper for `yas-auto-next'."
   (remove-hook 'post-command-hook #'yas--auto-next t)
@@ -3016,7 +3026,7 @@ The last element of POSSIBILITIES may be a list of strings."
 (defun yas-verify-value (possibilities)
   "Verify that the current field value is in POSSIBILITIES.
 Otherwise signal `yas-exception'."
-  (when (and yas-moving-away-p (cl-notany (lambda (pos) (string= pos yas-text)) possibilities))
+  (when (and yas-moving-away-p (not (member yas-text possibilities)))
     (yas-throw (format "Field only allows %s" possibilities))))
 
 (defun yas-field-value (number)
