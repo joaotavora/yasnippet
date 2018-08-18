@@ -623,13 +623,19 @@ override bindings from other packages (e.g., `company-mode')."
 
 (defvar yas--condition-cache-timestamp nil)
 
-(defun yas--maybe-expand-key-filter (cmd)
+(defun yas-maybe-expand-abbrev-key-filter (cmd)
+  "Return CMD if there is an expandable snippet at point.
+This function is useful as a `:filter' to a conditional key
+definition."
   (when (let ((yas--condition-cache-timestamp (current-time)))
           (yas--templates-for-key-at-point))
     cmd))
 
+(define-obsolete-function-alias 'yas--maybe-expand-key-filter
+  #'yas-maybe-expand-abbrev-key-filter "0.14")
+
 (defconst yas-maybe-expand
-  '(menu-item "" yas-expand :filter yas--maybe-expand-key-filter)
+  '(menu-item "" yas-expand :filter yas-maybe-expand-abbrev-key-filter)
   "A conditional key definition.
 This can be used as a key definition in keymaps to bind a key to
 `yas-expand' only when there is a snippet available to be
