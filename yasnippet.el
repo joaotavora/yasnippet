@@ -801,7 +801,10 @@ which decides on the snippet to expand.")
          (yas--dfs
           (lambda (mode)
             (cl-loop for neighbour
-                     in (cl-list* (get mode 'derived-mode-parent)
+                     in (cl-list* (or (get mode 'derived-mode-parent)
+                                      ;; Consider `fundamental-mode'
+                                      ;; as ultimate ancestor.
+                                      'fundamental-mode)
                                   ;; NOTE: `fboundp' check is redundant
                                   ;; since Emacs 24.4.
                                   (and (fboundp mode) (symbol-function mode))

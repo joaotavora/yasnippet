@@ -161,11 +161,13 @@ In particular, the following things matter:
    =M-x describe-variable RET major-mode RET= to find out which major
    mode you are in currently.
 
--  Parent tables
+- Parent tables
 
-   Snippet tables defined as the parent of some other eligible table are
-   also considered. This works recursively, i.e. parents of parents of
-   eligible tables are also considered.
+  Snippet tables defined as the parent of some other eligible table
+  are also considered.  This works recursively, i.e., parents of
+  parents of eligible tables are also considered.  As a special case,
+  if a mode doesn't have a parent, then =fundamental-mode= is
+  considered to be its parent.
 
 -  Buffer-local list of extra modes
 

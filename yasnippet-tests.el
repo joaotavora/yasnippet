@@ -1260,7 +1260,8 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
      (yas-reload-all)
      (with-temp-buffer
        (let* ((major-mode 'c-mode)
-              (expected `(c-mode
+              (expected `(fundamental-mode
+                          c-mode
                           cc-mode
                           yet-another-c-mode
                           and-also-this-one
@@ -1313,7 +1314,8 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
                          (yas-reload-all)
                          (with-temp-buffer
                            (let* ((major-mode 'yas--test-mode)
-                                  (expected `(c-mode
+                                  (expected `(fundamental-mode
+                                              c-mode
                                               ,@(if (fboundp 'prog-mode)
                                                     '(prog-mode))
                                               yas--phony-c-mode
