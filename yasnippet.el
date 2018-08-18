@@ -132,6 +132,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'eldoc) ; Needed for 24.
 (declare-function cl-progv-after "cl-extra") ; Needed for 23.4.
 (require 'easymenu)
 (require 'help-mode)
@@ -4951,6 +4952,12 @@ object satisfying `yas--field-p' to restrict the expansion to.")))
           (help-xref-button 1 'help-snippet-def template)
           (delete-region (match-end 1) (match-end 0))
           (delete-region (match-beginning 0) (match-beginning 1)))))))
+
+;;; Eldoc configuration.
+(eldoc-add-command 'yas-next-field-or-maybe-expand
+                   'yas-next-field 'yas-prev-field
+                   'yas-expand 'yas-expand-from-keymap
+                   'yas-expand-from-trigger-key)
 
 ;;; Utils
 
