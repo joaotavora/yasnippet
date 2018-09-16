@@ -4505,8 +4505,7 @@ Lisp expression."
                                                     current-string '(?`))))))
         (goto-char (match-beginning 0))
         (when transformed
-          (let ((marker (make-marker))
-                (before-change-functions (cdr before-change-functions)))
+          (let ((marker (make-marker)))
             (yas--save-restriction-and-widen
               (insert "Y") ;; quite horrendous, I love it :)
               (set-marker marker (point))
