@@ -7,6 +7,16 @@
   the Github issue tracker.  It might be more up-to-date than this
   list.
 
+* Why are my snippet abbrev keys triggering when I don't want them too?
+Expansion of abbrev keys is controlled by [[sym:yas-key-syntaxes][=yas-key-syntaxes=]].  Try
+removing entries which correspond to the abbrev key character syntax.
+For example, if you have a snippet with abbrev key "bar", that you
+don't want to trigger when point follows the text =foo_bar=, remove
+the ="w"= entry (since "bar" has only word syntax characters).
+
+* Why aren't my snippet abbrev keys triggering when I want them too?
+See previous question, but in reverse.
+
 * Why is there an extra newline?
 
 If there is a newline at the end of a snippet definition file,
@@ -33,9 +43,9 @@ active:
 This is apparently related to overlay priorities. For some reason, the
 =keymap= property of flyspell's overlays always takes priority over the
 same property in YASnippet's overlays, even if one sets the latter's
-=priority= property to something big. If you know emacs-lisp and can
-solve this problem, drop a line in the
-[[http://groups.google.com/group/smart-snippet][discussion group]].
+=priority= property to something big.  If you know emacs-lisp
+and can solve this problem, send a message to bug-gnu-emacs@gnus.org
+or the [[Github issue tracker][https://github.com/joaotavora/yasnippet/issues/]].
 
 * How do I use alternative keys, i.e. not TAB?
 
@@ -55,22 +65,6 @@ Edit the keymaps [[sym:yas-minor-mode-map][=yas-minor-mode-map=]] and
    (define-key yas-keymap (kbd "<new-next-field-key>") 'yas-next-field-or-maybe-expand)
    (define-key yas-keymap (kbd "<new-prev-field-key>") 'yas-prev)
 #+end_src
-
-* How do I turn off the minor mode where in some buffers?
-
-The best way, since version 0.6.1c, is to set the default value of the
-variable [[sym:yas-dont-activate][=yas-dont-activate=]] to a lambda function like so:
-
-#+BEGIN_SRC emacs-lisp
-  (set-default 'yas-dont-activate
-               #'(lambda ()
-                   (and yas-root-directory
-                        (null (yas-get-snippet-tables)))))
-#+END_SRC
-
-This is also the default value starting for that version. It skips the
-minor mode in buffers where it is not applicable (no snippet tables),
-but only once you have setup your yas-root-directory.
 
 * How do I define an abbrev key containing characters not supported by the filesystem?
 
