@@ -402,7 +402,15 @@ It must be set to nil before loading yasnippet to take effect."
   "A conditional key definition.
 This can be used as a key definition in keymaps to bind a key to
 `yas-skip-and-clear-field' only when at the beginning of an
-unmodified snippey field.")
+unmodified snippet field.")
+
+(defconst yas-maybe-clear-field
+    '(menu-item "" yas-clear-field
+                :filter yas--maybe-clear-field-filter)
+    "A conditional key definition.
+This can be used as a key definition in keymaps to bind a key to
+`yas-clear-field' only when at the beginning of an
+unmodified snippet field.")
 
 (defvar yas-keymap  (let ((map (make-sparse-keymap)))
                       (define-key map [(tab)]       'yas-next-field-or-maybe-expand)
@@ -411,6 +419,7 @@ unmodified snippey field.")
                       (define-key map [backtab]     'yas-prev-field)
                       (define-key map (kbd "C-g")   'yas-abort-snippet)
                       (define-key map (kbd "C-d")   yas-maybe-skip-and-clear-field)
+                      (define-key map (kbd "DEL")   yas-maybe-clear-field)
                       map)
   "The active keymap while a snippet expansion is in progress.")
 
@@ -3677,6 +3686,11 @@ Use as a `:filter' argument for a conditional keybinding."
   (interactive)
   (yas--skip-and-clear (or field (yas-current-field)))
   (yas-next-field 1))
+
+(defun yas-clear-field (&optional field)
+  "Clears unmodified FIELD if at field start."
+  (interactive)
+  (yas--skip-and-clear (or field (yas-current-field))))
 
 (defun yas-skip-and-clear-or-delete-char (&optional field)
   "Clears unmodified field if at field start, skips to next tab.
