@@ -3326,8 +3326,9 @@ Otherwise delegate to `yas-next-field'."
 If there's none, exit the snippet."
   (interactive)
   (unless arg (setq arg 1))
-  (let* ((snippet (car (yas-active-snippets)))
-         (active-field (overlay-get yas--active-field-overlay 'yas--field))
+  (let* ((active-field (overlay-get yas--active-field-overlay 'yas--field))
+         (snippet (car (yas-active-snippets (yas--field-start active-field)
+                                            (yas--field-end active-field))))
          (target-field (yas--find-next-field arg snippet active-field)))
     (yas--letenv (yas--snippet-expand-env snippet)
       ;; Apply transform to active field.
@@ -3745,7 +3746,15 @@ field start.  This hook does nothing if an undo is in progress."
                 ;; We delete text starting from the END of insertion.
                 (yas--skip-and-clear field end))
               (setf (yas--field-modified-p field) t)
-              (yas--advance-end-maybe field (overlay-end overlay))
+              ;; Adjust any pending active fields in case of stacked
+              ;; expansion.
+              (let ((pfield field)
+                    (psnippets (yas-active-snippets beg end)))
+                (while (and pfield psnippets)
+                  (let ((psnippet (pop psnippets)))
+                    (cl-assert (memq pfield (yas--snippet-fields psnippet)))
+                    (yas--advance-end-maybe pfield (overlay-end overlay))
+                    (setq pfield (yas--snippet-previous-active-field psnippet)))))
               (save-excursion
                 (yas--field-update-display field))
               (yas--update-mirrors snippet)))
