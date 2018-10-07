@@ -556,6 +556,22 @@ int foo()
   }
 }" (buffer-string)))))
 
+(ert-deftest indent-cc-mode-2 ()
+  "Handling of cc-mode's preprocessor indentation."
+  (with-temp-buffer
+    (c-mode)
+    (yas-minor-mode +1)
+    (yas-expand-snippet "\
+#ifndef `\"FOO\"`
+#define FOO
+#endif
+")
+    (should (string= "\
+#ifndef FOO
+#define FOO
+#endif
+" (buffer-substring-no-properties (point-min) (point-max))))))
+
 (ert-deftest indent-snippet-mode ()
   "Handling of snippet-mode indentation."
   ;; This is an interesting case because newlines match [[:space:]] in

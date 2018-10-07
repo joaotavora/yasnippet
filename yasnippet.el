@@ -4035,13 +4035,18 @@ Returns the newly created snippet."
         ;; content.
         (let ((buffer-undo-list t))
           ;; Some versions of cc-mode fail when inserting snippet
-          ;; content in a narrowed buffer.
+          ;; content in a narrowed buffer, so make sure to insert
+          ;; before narrowing.  Furthermore, call before and after
+          ;; change functions, otherwise cc-mode's cache can get
+          ;; messed up.
           (goto-char begin)
+          (run-hook-with-args 'before-change-functions begin begin)
           (insert content)
           (setq end (+ end (length content)))
           (narrow-to-region begin end)
           (goto-char (point-min))
-          (yas--snippet-parse-create snippet))
+          (yas--snippet-parse-create snippet)
+          (run-hook-with-args 'after-change-functions (point-min) (point-max) 0))
         (when (listp buffer-undo-list)
           (push (cons (point-min) (point-max))
                 buffer-undo-list))
