@@ -637,7 +637,8 @@ override bindings from other packages (e.g., `company-mode')."
   "Return CMD if there is an expandable snippet at point.
 This function is useful as a `:filter' to a conditional key
 definition."
-  (when (let ((yas--condition-cache-timestamp (current-time)))
+  (when (let ((yas--condition-cache-timestamp (current-time))
+              (this-command 'yas-expand))
           (yas--templates-for-key-at-point))
     cmd))
 
