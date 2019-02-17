@@ -33,7 +33,7 @@
    The default considers:
 
     - a personal collection that lives in =~/.emacs.d/snippets=
-    - the bundled collection, taken as a relative path to =yasnippet.el= localtion
+    - the bundled collection, taken as a relative path to =yasnippet.el= location
 
    When you come across other snippet collections, do the following to try them
    out:
