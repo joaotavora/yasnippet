@@ -8,7 +8,7 @@
 
 There are some ways you can quickly find a snippet file or create a new one:
 
--  =M-x yas-new-snippet=, key bindind: =C-c & C-n=
+-  =M-x yas-new-snippet=, key binding: =C-c & C-n=
 
    Creates a new buffer with a template for making a new snippet.  The
    buffer is in =snippet-mode= (see [[snippet-mode][below]]).  When you are done editing
@@ -62,7 +62,7 @@ expanded.
 Optionally, if the file contains a line of =# --=, the lines above it
 count as comments, some of which can be /directives/ (or meta data).
 Snippet directives look like =# property: value= and tweak certain
-snippets properties described below. If no =# --= is found, the whole
+snippet properties described below. If no =# --= is found, the whole
 file is considered the snippet template.
 
 Here's a typical example:
@@ -94,7 +94,7 @@ was loaded from.
 
 ** =# condition:= snippet condition
 
-This is a piece of Emacs-lisp code. If a snippet has a condition, then
+This is a piece of Emacs Lisp code. If a snippet has a condition, then
 it will only be expanded when the condition code evaluate to some
 non-nil value.
 
@@ -104,7 +104,7 @@ See also [[sym:yas-buffer-local-condition][=yas-buffer-local-condition=]] in
 ** =# group:= snippet menu grouping
 
 When expanding/visiting snippets from the menu-bar menu, snippets for a
-given mode can be grouped into sub-menus . This is useful if one has too
+given mode can be grouped into sub-menus. This is useful if one has too
 many snippets for a mode which will make the menu too long.
 
 The =# group:= property only affect menu construction (See
@@ -113,14 +113,14 @@ achieved by grouping snippets into sub-directories and using the
 =.yas-make-groups= special file (for this see
 [[./snippet-organization.org][Organizing Snippets]]
 
-Refer to the bundled snippets for =ruby-mode= for examples on the
+Refer to the bundled snippets for =ruby-mode= for examples of the
 =# group:= directive. Group can also be nested, e.g.
-=control structure.loops= tells that the snippet is under the =loops=
+=control structure.loops= indicates that the snippet is under the =loops=
 group which is under the =control structure= group.
 
 ** =# expand-env:= expand environment
 
-This is another piece of Emacs-lisp code in the form of a =let= /varlist
+This is another piece of Emacs Lisp code in the form of a =let= /varlist
 form/, i.e. a list of lists assigning values to variables. It can be
 used to override variable values while the snippet is being expanded.
 
@@ -154,9 +154,9 @@ You can use this directive to expand a snippet directly from a normal
 Emacs keybinding. The keybinding will be registered in the Emacs keymap
 named after the major mode the snippet is active for.
 
-Additionally a variable [[sym:yas-prefix][=yas-prefix=]] is set to to the prefix argument
+Additionally a variable [[sym:yas-prefix][=yas-prefix=]] is set to the prefix argument
 you normally use for a command. This allows for small variations on the
-same snippet, for example in this "html-mode" snippet.
+same snippet, for example in this =html-mode= snippet.
 
 #+BEGIN_SRC snippet
   # name: <p>...</p>
@@ -172,7 +172,7 @@ will expand the paragraph tag without newlines.
 ** =# type:= =snippet= or =command=
 
 If the =type= directive is set to =command=, the body of the snippet
-is interpreted as lisp code to be evaluated when the snippet is
+is interpreted as Lisp code to be evaluated when the snippet is
 triggered.
 
 If it's =snippet= (the default when there is no =type= directive), the
@@ -202,14 +202,14 @@ usually interpreted as plain text, except =$= and =`=. You need to
 use =\= to escape them: =\$= and =\`=. The =\= itself may also needed to be
 escaped as =\\= sometimes.
 
-** Embedded Emacs-lisp code
+** Embedded Emacs Lisp code
 
-Emacs-Lisp code can be embedded inside the template, written inside
-back-quotes (=`=). The lisp forms are evaluated when the snippet is
+Emacs Lisp code can be embedded inside the template, written inside
+back-quotes (=`=). The Lisp forms are evaluated when the snippet is
 being expanded. The evaluation is done in the same buffer as the
 snippet being expanded.
 
-Here's an example for c-mode to calculate the header file guard
+Here's an example for =c-mode= to calculate the header file guard
 dynamically:
 
 #+BEGIN_SRC snippet
@@ -221,8 +221,8 @@ dynamically:
   #endif /* $1 */
 #+END_SRC
 
-From version 0.6, snippets expansions are run with some special
-Emacs-lisp variables bound. One of this is [[sym:yas-selected-text][=yas-selected-text=]]. You can
+From version 0.6, snippet expansions are run with some special
+Emacs Lisp variables bound. One of these is [[sym:yas-selected-text][=yas-selected-text=]]. You can
 therefore define a snippet like:
 
 #+BEGIN_SRC snippet
@@ -237,7 +237,7 @@ Alternatively, you can also customize the variable
 
 *** Note: backquote expressions should not modify the buffer
 
-Please note that the lisp forms in backquotes should *not* modify the
+Please note that the Lisp forms in backquotes should *not* modify the
 buffer, doing so will trigger a warning.  For example, instead of
 doing
 
@@ -284,7 +284,7 @@ The number can be omitted if you don't want to create [[mirrors-fields][mirrors]
 
 ** Mirrors <<mirrors-fields>>
 
-We refer the tab stops with placeholders as a /field/.  A field can
+We refer to tab stops with placeholders as a /field/.  A field can
 have mirrors.  *All* mirrors get updated whenever you update any field
 text.  Here's an example:
 
@@ -299,15 +299,15 @@ also be inserted at =\end{$1}=. The best explanation is to see the
 screencast([[http://www.youtube.com/watch?v=vOj7btx3ATg][YouTube]] or [[http://yasnippet.googlecode.com/files/yasnippet.avi][avi video]]).
 
 The tab stops with the same number to the field act as its mirrors. If
-none of the tab stops has an initial value, the first one is selected as
-the field and others mirrors.
+none of the tab stops have an initial value, the first one is selected as
+the field and the others are its mirrors.
 
 ** Mirrors with transformations <<mirror-transformations>>
 
 If the value of an =${n:=-construct starts with and contains =$(=,
 then it is interpreted as a mirror for field =n= with a
 transformation. The mirror's text content is calculated according to
-this transformation, which is Emacs-lisp code that gets evaluated in
+this transformation, which is Emacs Lisp code that gets evaluated in
 an environment where the variable [[sym:yas-text][=yas-text=]] is bound to the text
 content (string) contained in the field =n=. Here's an example for
 Objective-C:
@@ -378,7 +378,7 @@ due to incomplete format codes.
 
 ** Fields with transformations
 
-From version 0.6 on, you can also have lisp transformation inside
+From version 0.6 on, you can also have Lisp transformation inside
 fields. These work mostly like mirror transformations. However, they
 are evaluated when you first enter the field, after each change you
 make to the field and also just before you exit the field.
@@ -437,7 +437,7 @@ becomes:
   </div>
 #+END_SRC
 
-Here's another use, for LaTeX-mode, which calls reftex-label just as you
+Here's another use, for =LaTeX-mode=, which calls reftex-label just as you
 enter snippet field 2. This one makes use of [[sym:yas-modified-p][=yas-modified-p=]] directly.
 
 #+BEGIN_SRC snippet
