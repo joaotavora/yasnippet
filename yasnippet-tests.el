@@ -1567,17 +1567,35 @@ TODO: be meaner"
       (should (eq (key-binding [(tab)]) 'yas-expand))
       (should (eq (key-binding (kbd "TAB")) 'yas-expand))))))
 
-(ert-deftest yas-org-native-tab-in-source-block ()
+(ert-deftest yas-org-native-tab-in-source-block-text ()
   "Test expansion of snippets in org source blocks."
-  :expected-result (if (and (fboundp 'org-in-src-block-p) (version< (org-version) "9"))
+  ;; org 9+ no longer runs fontification for text-mode, so our hacks
+  ;; don't work.  Note that old ert doesn't have skipping, so we have
+  ;; to expect failure instead.
+  :expected-result (if (and (fboundp 'org-in-src-block-p)
+                            (version< (org-version) "9"))
                        :passed :failed)
+  (let ((text-mode-hook #'yas-minor-mode))
+    (do-yas-org-native-tab-in-source-block "text")))
+
+(ert-deftest yas-org-native-tab-in-source-block-emacs-lisp ()
+  "Test expansion of snippets in org source blocks."
+  :expected-result (if (fboundp 'org-in-src-block-p)
+                       :passed :failed)
+  (let ((emacs-lisp-mode-hook #'yas-minor-mode)
+        ;; This makes the test a bit less comprehensive, but it's
+        ;; needed to avoid bumping into Emacs Bug#35264.
+        (org-src-preserve-indentation t))
+    (do-yas-org-native-tab-in-source-block "emacs-lisp")))
+
+(defun do-yas-org-native-tab-in-source-block (mode)
   (yas-saving-variables
    (yas-with-snippet-dirs
-    '((".emacs.d/snippets"
-       ("text-mode"
+    `((".emacs.d/snippets"
+       (,(concat mode "-mode")
         ("T" . "${1:one} $1\n${2:two} $2\n<<$0>> done!"))))
-    (let ((text-mode-hook '(yas-minor-mode))
-          (org-src-tab-acts-natively t)
+    ;; Binding both text and prog mode hook should cover everything.
+    (let ((org-src-tab-acts-natively t)
           ;; Org 8.x requires this in order for
           ;; `org-src-tab-acts-natively' to have effect.
           (org-src-fontify-natively t))
@@ -1586,7 +1604,7 @@ TODO: be meaner"
       (yas--with-font-locked-temp-buffer
        (org-mode)
        (yas-minor-mode 1)
-       (insert "#+BEGIN_SRC text\nT\n#+END_SRC")
+       (insert "#+BEGIN_SRC " mode "\nT\n#+END_SRC")
        (if (fboundp 'font-lock-ensure)
            (font-lock-ensure)
          (jit-lock-fontify-now))
@@ -1602,9 +1620,9 @@ TODO: be meaner"
        ;; Check snippet expansion, ignore leading whitespace due to
        ;; `org-edit-src-content-indentation'.
        (should (looking-at "\
-[[:space:]]*one one
-[[:space:]]*two two
-[[:space:]]*<<>> done!")))))))
+\[[:space:]]*one one
+\[[:space:]]*two two
+\[[:space:]]*<<>> done!")))))))
 
 
 (ert-deftest test-yas-activate-extra-modes ()
