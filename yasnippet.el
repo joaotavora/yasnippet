@@ -567,6 +567,16 @@ This is useful to control whether snippet navigation bindings
 override `keymap' overlay property bindings from other packages."
   :type 'integer)
 
+(defcustom yas-inhibit-overlay-modification-protection nil
+  "If nil, changing text outside the active field aborts the snippet.
+This protection is intended to prevent yasnippet from ending up
+in an inconsistent state.  However, some packages (e.g., the
+company completion package) may trigger this protection when it
+is not needed.  In that case, setting this variable to non-nil
+can be useful."
+  ;; See also `yas--on-protection-overlay-modification'.
+  :type 'boolean)
+
 
 ;;; Internal variables
 
@@ -3931,6 +3941,7 @@ Move the overlays, or create them if they do not exit."
 (defun yas--on-protection-overlay-modification (_overlay after? beg end &optional length)
   "Commit the snippet if the protection overlay is being killed."
   (unless (or yas--inhibit-overlay-hooks
+              yas-inhibit-overlay-modification-protection
               (not after?)
               (= length (- end beg)) ; deletion or insertion
               (yas--undo-in-progress))
