@@ -413,15 +413,25 @@ This can be used as a key definition in keymaps to bind a key to
 `yas-clear-field' only when at the beginning of an
 unmodified snippet field.")
 
-(defvar yas-keymap  (let ((map (make-sparse-keymap)))
-                      (define-key map [(tab)]       'yas-next-field-or-maybe-expand)
-                      (define-key map (kbd "TAB")   'yas-next-field-or-maybe-expand)
-                      (define-key map [(shift tab)] 'yas-prev-field)
-                      (define-key map [backtab]     'yas-prev-field)
-                      (define-key map (kbd "C-g")   'yas-abort-snippet)
-                      (define-key map (kbd "C-d")   yas-maybe-skip-and-clear-field)
-                      (define-key map (kbd "DEL")   yas-maybe-clear-field)
-                      map)
+(defun yas-filtered-definition (def)
+  "Return a condition key definition.
+The condition will respect the value of `yas-keymap-disable-hook'."
+  `(menu-item "" ,def
+              :filter ,(lambda (cmd) (unless (run-hook-with-args-until-success
+                                         'yas-keymap-disable-hook)
+                                  cmd))))
+
+(defvar yas-keymap
+  (let ((map (make-sparse-keymap)))
+    (define-key map [(tab)]       (yas-filtered-definition 'yas-next-field-or-maybe-expand))
+    (define-key map (kbd "TAB")   (yas-filtered-definition 'yas-next-field-or-maybe-expand))
+    (define-key map [(shift tab)] (yas-filtered-definition 'yas-prev-field))
+    (define-key map [backtab]     (yas-filtered-definition 'yas-prev-field))
+    (define-key map (kbd "C-g")   (yas-filtered-definition 'yas-abort-snippet))
+    ;; Yes, filters can be chained!
+    (define-key map (kbd "C-d")   (yas-filtered-definition yas-maybe-skip-and-clear-field))
+    (define-key map (kbd "DEL")   (yas-filtered-definition yas-maybe-clear-field))
+    map)
   "The active keymap while a snippet expansion is in progress.")
 
 (defvar yas-key-syntaxes (list #'yas-try-key-from-whitespace
@@ -545,10 +555,16 @@ conditions.
     (const :tag "Disable all snippet expansion" nil)
     sexp))
 
+(defcustom yas-keymap-disable-hook nil
+  "The `yas-keymap' bindings are disabled if any function in this list returns non-nil.
+This is useful to control whether snippet navigation bindings
+override bindings from other packages (e.g., `company-mode')."
+  :type 'hook)
+
 (defcustom yas-overlay-priority 100
   "Priority to use for yasnippets overlays.
 This is useful to control whether snippet navigation bindings
-override bindings from other packages (e.g., `company-mode')."
+override `keymap' overlay property bindings from other packages."
   :type 'integer)
 
 
@@ -2346,6 +2362,10 @@ object satisfying `yas--field-p' to restrict the expansion to."
       (yas--fallback))))
 
 (defun yas--maybe-expand-from-keymap-filter (cmd)
+  "Check whether a snippet may be expanded.
+If there are expandable snippets, return CMD (this is useful for
+conditional keybindings) or the list of expandable snippet
+template objects if CMD is nil (this is useful as a more general predicate)."
   (let* ((yas--condition-cache-timestamp (current-time))
          (vec (cl-subseq (this-command-keys-vector)
                          (if current-prefix-arg

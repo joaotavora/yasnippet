@@ -49,21 +49,24 @@ or the [[Github issue tracker][https://github.com/joaotavora/yasnippet/issues/]]
 
 * How do I use alternative keys, i.e. not TAB?
 
-Edit the keymaps [[sym:yas-minor-mode-map][=yas-minor-mode-map=]] and
-[[sym:yas-keymap][=yas-keymap=]] as you would any other keymap:
+Edit the keymaps [[sym:yas-minor-mode-map][=yas-minor-mode-map=]] and [[sym:yas-keymap][=yas-keymap=]] as you would
+any other keymap, but use [[sym:yas-filtered-definition][=yas-filtered-definition=]] on the definition
+if you want to respect [[sym:yas-keymap-disable-hook][=yas-keymap-disable-hook=]]:
 
 #+begin_src emacs-lisp :exports code
-   (define-key yas-minor-mode-map (kbd "<tab>") nil)
-   (define-key yas-minor-mode-map (kbd "TAB") nil)
-   (define-key yas-minor-mode-map (kbd "<the new key>") yas-maybe-expand)
+  (define-key yas-minor-mode-map (kbd "<tab>") nil)
+  (define-key yas-minor-mode-map (kbd "TAB") nil)
+  (define-key yas-minor-mode-map (kbd "<the new key>") yas-maybe-expand)
 
-   ;;keys for navigation
-   (define-key yas-keymap [(tab)]       nil)
-   (define-key yas-keymap (kbd "TAB")   nil)
-   (define-key yas-keymap [(shift tab)] nil)
-   (define-key yas-keymap [backtab]     nil)
-   (define-key yas-keymap (kbd "<new-next-field-key>") 'yas-next-field-or-maybe-expand)
-   (define-key yas-keymap (kbd "<new-prev-field-key>") 'yas-prev)
+  ;;keys for navigation
+  (define-key yas-keymap [(tab)]       nil)
+  (define-key yas-keymap (kbd "TAB")   nil)
+  (define-key yas-keymap [(shift tab)] nil)
+  (define-key yas-keymap [backtab]     nil)
+  (define-key yas-keymap (kbd "<new-next-field-key>")
+    (yas-keymap-disable-hook 'yas-next-field-or-maybe-expand))
+  (define-key yas-keymap (kbd "<new-prev-field-key>")
+    (yas-keymap-disable-hook 'yas-prev))
 #+end_src
 
 * How do I define an abbrev key containing characters not supported by the filesystem?
