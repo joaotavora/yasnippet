@@ -481,10 +481,8 @@ Attention: These hooks are not run when exiting nested/stacked snippet expansion
   "Hooks to run just before expanding a snippet.")
 
 (defconst yas-not-string-or-comment-condition
-  '(if (and (let ((ppss (syntax-ppss)))
-              (or (nth 3 ppss) (nth 4 ppss)))
-            (memq this-command '(yas-expand yas-expand-from-trigger-key
-                                            yas-expand-from-keymap)))
+  '(if (let ((ppss (syntax-ppss)))
+         (or (nth 3 ppss) (nth 4 ppss)))
        '(require-snippet-condition . force-in-comment)
      t)
   "Disables snippet expansion in strings and comments.
