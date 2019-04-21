@@ -3519,17 +3519,21 @@ This renders the snippet as ordinary text."
   ;; Org mode uses temp buffers for fontification and "native tab",
   ;; move all the snippets to the original org-mode buffer when it's
   ;; killed.
-  (let ((org-marker nil))
+  (let ((org-marker nil)
+        (org-buffer nil))
     (when (and yas-minor-mode
                (or (bound-and-true-p org-edit-src-from-org-mode)
                    (bound-and-true-p org-src--from-org-mode))
                (markerp
                 (setq org-marker
                       (or (bound-and-true-p org-edit-src-beg-marker)
-                          (bound-and-true-p org-src--beg-marker)))))
+                          (bound-and-true-p org-src--beg-marker))))
+               ;; If the org source buffer is killed before the temp
+               ;; fontification one, org-marker might point nowhere.
+               (setq org-buffer (marker-buffer org-marker)))
       (yas--prepare-snippets-for-move
        (point-min) (point-max)
-       (marker-buffer org-marker) org-marker))))
+       org-buffer org-marker))))
 
 (add-hook 'kill-buffer-hook #'yas--on-buffer-kill)
 
