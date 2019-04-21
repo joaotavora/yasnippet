@@ -30,22 +30,16 @@ final newline automatically.
 
 * Why doesn't TAB navigation work with flyspell
 
-A workaround is to inhibit flyspell overlays while the snippet is
-active:
+This is Emacs Bug#26672, so you should upgrade to version 25.3 or
+better.  Otherwise, a workaround is to inhibit flyspell overlays while
+the snippet is active:
 
 #+BEGIN_SRC emacs-lisp
   (add-hook 'flyspell-incorrect-hook
-            #'(lambda (dummy1 dummy2 dymmy3)
+            #'(lambda (&rest _)
                 (and yas-active-field-overlay
                      (overlay-buffer yas-active-field-overlay))))
 #+END_SRC
-
-This is apparently related to overlay priorities. For some reason, the
-=keymap= property of flyspell's overlays always takes priority over the
-same property in YASnippet's overlays, even if one sets the latter's
-=priority= property to something big.  If you know emacs-lisp
-and can solve this problem, send a message to bug-gnu-emacs@gnus.org
-or the [[Github issue tracker][https://github.com/joaotavora/yasnippet/issues/]].
 
 * How do I use alternative keys, i.e. not TAB?
 
