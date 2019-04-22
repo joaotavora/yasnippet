@@ -30,7 +30,7 @@ final newline automatically.
 
 * Why doesn't TAB navigation work with flyspell
 
-This is Emacs Bug#26672, so you should upgrade to version 25.3 or
+This is [[https://debbugs.gnu.org/26672][Emacs Bug#26672]], so you should upgrade to version 25.3 or
 better.  Otherwise, a workaround is to inhibit flyspell overlays while
 the snippet is active:
 
