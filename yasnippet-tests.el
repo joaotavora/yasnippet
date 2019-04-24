@@ -608,6 +608,28 @@ int foo()
     ;; Assuming 2 space indent.
     (should (string= "def xxx\n  xxx\nend" (buffer-string)))))
 
+(defun yas-test-delete-and-insert-command (beg end new)
+  "Simulate a completion command (similar to company-mode)."
+  (interactive "r\ns")
+  ;; Simulate a completion command (like what company-mode does)
+  ;; which deletes the "xxx" and then replaces it with something
+  ;; else.
+  (delete-region beg end)
+  (insert new))
+
+(ert-deftest indent-mirrors-on-complex-update ()
+  "Don't get messed up by command that deletes and then inserts."
+  (with-temp-buffer
+    (ruby-mode)
+    (yas-minor-mode 1)
+    (yas-expand-snippet "def foo\n  ${1:slice} = append($1)\nend")
+    (yas-mock-insert "xxx")
+    (ert-simulate-command `(yas-test-delete-and-insert-command
+                            ,(- (point) 3) ,(point) ,"yyy"))
+    ;; Assuming 2 space indent.
+    (should (string= "def foo\n  yyy = append(yyy)\nend" (buffer-string)))))
+
+
 
 (ert-deftest snippet-with-multiline-mirrors-issue-665 ()
   "In issue 665, a multi-line mirror is attempted."
