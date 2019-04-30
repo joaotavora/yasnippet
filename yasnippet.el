@@ -3695,6 +3695,14 @@ holds the keymap."
     (overlay-put overlay 'keymap yas-keymap)
     (overlay-put overlay 'priority yas-overlay-priority)
     (overlay-put overlay 'yas--snippet snippet)
+    ;; We need `buffer-invisibility-spec' to be a list for sensible
+    ;; sematics (see also Emacs Bug#16493).
+    (unless (listp buffer-invisibility-spec)
+      (setq buffer-invisibility-spec '(t)))
+    ;; If the mode starts making parts of the snippet text invisible,
+    ;; point may get pushed around in unexpected ways, so disable
+    ;; invisibility within the snippet.
+    (overlay-put overlay 'invisible 'yas--no-invisible)
     overlay))
 
 (defun yas-current-field ()
