@@ -1122,6 +1122,27 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
      (ert-simulate-command '(yas-next-field-or-maybe-expand))
      (should (string= (buffer-string) "<-<-abcdef\n")))))
 
+(ert-deftest nested-snippet-expansion-5-nested-delete ()
+  "See Github #996."
+  (let ((yas-triggers-in-field t))
+    (yas-with-snippet-dirs
+     '((".emacs.d/snippets"
+        ("text-mode"
+         ("sel" . "${1:ch}")
+         ("ch" . "<-${1:ch}"))))
+     (yas-reload-all)
+     (text-mode)
+     (yas-minor-mode +1)
+     (insert "sel")
+     (ert-simulate-command '(yas-expand))
+     (ert-simulate-command '(forward-word 1))
+     (ert-simulate-command '(yas-expand))
+     (ert-simulate-command '(forward-word 1))
+     ;; The (cl-assert (memq pfield (yas--snippet-fields psnippet)))
+     ;; in `yas--on-field-overlay-modification' failed here.
+     (ert-simulate-command '(delete-backward-char 1))
+     (should (string= (buffer-string) "<-c\n")))))
+
 
 ;;; Loading
 ;;;

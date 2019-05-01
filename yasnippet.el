@@ -3788,13 +3788,45 @@ BEG, END and LENGTH like overlay modification hooks."
 (defvar yas--todo-snippet-indent nil nil)
 (make-variable-buffer-local 'yas--todo-snippet-indent)
 
+(defvar yas--before-change-modified-snippets nil)
+
+(defun yas--merge-and-drop-dups (list1 list2 cmp key)
+  ;; `delete-consecutive-dups' + `cl-merge'.
+  (funcall (if (fboundp 'delete-consecutive-dups)
+               #'delete-consecutive-dups ; 24.4
+             #'delete-dups)
+           (cl-merge 'list list1 list2 cmp :key key)))
+
+(defun yas--gather-active-snippets (overlay beg end then-delete)
+  ;; Add active snippets in BEG..END into an OVERLAY keyed entry of
+  ;; `yas--before-change-modified-snippets'.  Return accumulated list.
+  ;; If THEN-DELETE is non-nil, delete the entry.
+  (let ((new (yas-active-snippets beg end))
+        (old (assq overlay yas--before-change-modified-snippets)))
+    (prog1 (cond ((and new old)
+                  (setf (cdr old)
+                        (yas--merge-and-drop-dups
+                         (cdr old) new
+                         ;; Sort like `yas-active-snippets'.
+                         #'>= #'yas--snippet-id)))
+                 (new (unless then-delete
+                        ;; Don't add new entry if we're about to
+                        ;; remove it anyway.
+                        (push (cons overlay new)
+                              yas--before-change-modified-snippets))
+                      new)
+                 (old (cdr old))
+                 (t nil))
+      (when then-delete
+        (cl-callf2 delq old yas--before-change-modified-snippets)))))
+
+
 (defun yas--on-field-overlay-modification (overlay after? beg end &optional length)
   "Clears the field and updates mirrors, conditionally.
 
 Only clears the field if it hasn't been modified and point is at
 field start.  This hook does nothing if an undo is in progress."
-  (unless (or (not after?)
-              yas--inhibit-overlay-hooks
+  (unless (or yas--inhibit-overlay-hooks
               (not (overlayp yas--active-field-overlay)) ; Avoid Emacs bug #21824.
               ;; If a single change hits multiple overlays of the same
               ;; snippet, then we delete the snippet the first time,
@@ -3807,33 +3839,37 @@ field start.  This hook does nothing if an undo is in progress."
            (field (overlay-get overlay 'yas--field))
            (snippet (overlay-get yas--active-field-overlay 'yas--snippet)))
       (if (yas--snippet-live-p snippet)
-          (save-match-data
-            (yas--letenv (yas--snippet-expand-env snippet)
-              (when (yas--skip-and-clear-field-p field beg end length)
-                ;; We delete text starting from the END of insertion.
-                (yas--skip-and-clear field end))
-              (setf (yas--field-modified-p field) t)
-              ;; Adjust any pending active fields in case of stacked
-              ;; expansion.
-              (let ((pfield field)
-                    (psnippets (yas-active-snippets beg end)))
-                (while (and pfield psnippets)
-                  (let ((psnippet (pop psnippets)))
-                    (cl-assert (memq pfield (yas--snippet-fields psnippet)))
-                    (yas--advance-end-maybe pfield (overlay-end overlay))
-                    (setq pfield (yas--snippet-previous-active-field psnippet)))))
-              ;; Update fields now, but delay auto indentation until
-              ;; post-command.  We don't want to run indentation on
-              ;; the intermediate state where field text might be
-              ;; removed (and hence the field could be deleted along
-              ;; with leading indentation).
-              (let ((yas-indent-line nil))
-                (save-excursion
-                  (yas--field-update-display field))
-                (yas--update-mirrors snippet))
-              (unless (or (not (eq yas-indent-line 'auto))
-                          (memq snippet yas--todo-snippet-indent))
-                (push snippet yas--todo-snippet-indent))))
+          (if after?
+              (save-match-data
+                (yas--letenv (yas--snippet-expand-env snippet)
+                  (when (yas--skip-and-clear-field-p field beg end length)
+                    ;; We delete text starting from the END of insertion.
+                    (yas--skip-and-clear field end))
+                  (setf (yas--field-modified-p field) t)
+                  ;; Adjust any pending active fields in case of stacked
+                  ;; expansion.
+                  (let ((pfield field)
+                        (psnippets (yas--gather-active-snippets
+                                    overlay beg end t)))
+                    (while (and pfield psnippets)
+                      (let ((psnippet (pop psnippets)))
+                        (cl-assert (memq pfield (yas--snippet-fields psnippet)))
+                        (yas--advance-end-maybe pfield (overlay-end overlay))
+                        (setq pfield (yas--snippet-previous-active-field psnippet)))))
+                  ;; Update fields now, but delay auto indentation until
+                  ;; post-command.  We don't want to run indentation on
+                  ;; the intermediate state where field text might be
+                  ;; removed (and hence the field could be deleted along
+                  ;; with leading indentation).
+                  (let ((yas-indent-line nil))
+                    (save-excursion
+                      (yas--field-update-display field))
+                    (yas--update-mirrors snippet))
+                  (unless (or (not (eq yas-indent-line 'auto))
+                              (memq snippet yas--todo-snippet-indent))
+                    (push snippet yas--todo-snippet-indent))))
+            ;; Remember active snippets to use for after the change.
+            (yas--gather-active-snippets overlay beg end nil))
         (lwarn '(yasnippet zombie) :warning "Killing zombie snippet!")
         (delete-overlay overlay)))))
 
