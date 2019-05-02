@@ -3778,10 +3778,6 @@ BEG, END and LENGTH like overlay modification hooks."
        (= beg (yas--field-start field)) ; Insertion at field start?
        (not (yas--field-modified-p field))))
 
-(defvar yas--todo-snippet-indent nil nil)
-(make-variable-buffer-local 'yas--todo-snippet-indent)
-
-(defvar yas--before-change-modified-snippets nil)
 
 (defun yas--merge-and-drop-dups (list1 list2 cmp key)
   ;; `delete-consecutive-dups' + `cl-merge'.
@@ -3789,6 +3785,9 @@ BEG, END and LENGTH like overlay modification hooks."
                #'delete-consecutive-dups ; 24.4
              #'delete-dups)
            (cl-merge 'list list1 list2 cmp :key key)))
+
+(defvar yas--before-change-modified-snippets nil)
+(make-variable-buffer-local 'yas--before-change-modified-snippets)
 
 (defun yas--gather-active-snippets (overlay beg end then-delete)
   ;; Add active snippets in BEG..END into an OVERLAY keyed entry of
@@ -3813,6 +3812,8 @@ BEG, END and LENGTH like overlay modification hooks."
       (when then-delete
         (cl-callf2 delq old yas--before-change-modified-snippets)))))
 
+(defvar yas--todo-snippet-indent nil nil)
+(make-variable-buffer-local 'yas--todo-snippet-indent)
 
 (defun yas--on-field-overlay-modification (overlay after? beg end &optional length)
   "Clears the field and updates mirrors, conditionally.
@@ -3866,7 +3867,9 @@ field start.  This hook does nothing if an undo is in progress."
         (lwarn '(yasnippet zombie) :warning "Killing zombie snippet!")
         (delete-overlay overlay)))))
 
-(defun yas--do-todo-field-updates ()
+(defun yas--do-todo-snippet-indent ()
+  ;; Do pending indentation of snippet fields, called from
+  ;; `yas--post-command-handler'.
   (when yas--todo-snippet-indent
     (save-excursion
       (cl-loop for snippet in yas--todo-snippet-indent
@@ -3875,6 +3878,7 @@ field start.  This hook does nothing if an undo is in progress."
       (setq yas--todo-snippet-indent nil))))
 
 (defun yas--auto-fill ()
+  ;; Preserve snippet markers during auto-fill.
   (let* ((orig-point (point))
          (end (progn (forward-paragraph) (point)))
          (beg (progn (backward-paragraph) (point)))
@@ -3890,44 +3894,44 @@ field start.  This hook does nothing if an undo is in progress."
             reoverlays))
     (goto-char orig-point)
     (let ((yas--inhibit-overlay-hooks t))
-      (if (null yas--original-auto-fill-function)
-          ;; Try to get more info on #873/919.
-          (let ((yas--fill-fun-values `((t ,(default-value 'yas--original-auto-fill-function))))
-                (fill-fun-values `((t ,(default-value 'auto-fill-function))))
-                ;; Listing 2 buffers with the same value is enough
-                (print-length 3))
-            (save-current-buffer
-              (dolist (buf (let ((bufs (buffer-list)))
-                             ;; List the current buffer first.
-                             (setq bufs (cons (current-buffer)
-                                              (remq (current-buffer) bufs)))))
-                (set-buffer buf)
-                (let* ((yf-cell (assq yas--original-auto-fill-function
-                                      yas--fill-fun-values))
-                       (af-cell (assq auto-fill-function fill-fun-values)))
-                  (when (local-variable-p 'yas--original-auto-fill-function)
-                    (if yf-cell (setcdr yf-cell (cons buf (cdr yf-cell)))
-                      (push (list yas--original-auto-fill-function buf) yas--fill-fun-values)))
-                  (when (local-variable-p 'auto-fill-function)
-                    (if af-cell (setcdr af-cell (cons buf (cdr af-cell)))
-                      (push (list auto-fill-function buf) fill-fun-values))))))
-                 (lwarn '(yasnippet auto-fill bug) :error
-                        "`yas--original-auto-fill-function' unexpectedly nil in %S!  Disabling auto-fill.
+      (if yas--original-auto-fill-function
+          (funcall yas--original-auto-fill-function)
+        ;; Shouldn't happen, gather more info about it (see #873/919).
+        (let ((yas--fill-fun-values `((t ,(default-value 'yas--original-auto-fill-function))))
+              (fill-fun-values `((t ,(default-value 'auto-fill-function))))
+              ;; Listing 2 buffers with the same value is enough
+              (print-length 3))
+          (save-current-buffer
+            (dolist (buf (let ((bufs (buffer-list)))
+                           ;; List the current buffer first.
+                           (setq bufs (cons (current-buffer)
+                                            (remq (current-buffer) bufs)))))
+              (set-buffer buf)
+              (let* ((yf-cell (assq yas--original-auto-fill-function
+                                    yas--fill-fun-values))
+                     (af-cell (assq auto-fill-function fill-fun-values)))
+                (when (local-variable-p 'yas--original-auto-fill-function)
+                  (if yf-cell (setcdr yf-cell (cons buf (cdr yf-cell)))
+                    (push (list yas--original-auto-fill-function buf) yas--fill-fun-values)))
+                (when (local-variable-p 'auto-fill-function)
+                  (if af-cell (setcdr af-cell (cons buf (cdr af-cell)))
+                    (push (list auto-fill-function buf) fill-fun-values))))))
+          (lwarn '(yasnippet auto-fill bug) :error
+                 "`yas--original-auto-fill-function' unexpectedly nil in %S!  Disabling auto-fill.
   %S
   `auto-fill-function': %S\n%s"
-                        (current-buffer) yas--fill-fun-values fill-fun-values
-                        (if (fboundp 'backtrace--print-frame)
-                            (with-output-to-string
-                              (mapc (lambda (frame)
-                                      (apply #'backtrace--print-frame frame))
-                                    yas--watch-auto-fill-backtrace))
-                          ""))
-                 ;; Try to avoid repeated triggering of this bug.
-                 (auto-fill-mode -1)
-                 ;; Don't pop up more than once in a session (still log though).
-                 (defvar warning-suppress-types) ; `warnings' is autoloaded by `lwarn'.
-                 (add-to-list 'warning-suppress-types '(yasnippet auto-fill bug)))
-        (funcall yas--original-auto-fill-function)))
+                 (current-buffer) yas--fill-fun-values fill-fun-values
+                 (if (fboundp 'backtrace--print-frame)
+                     (with-output-to-string
+                       (mapc (lambda (frame)
+                               (apply #'backtrace--print-frame frame))
+                             yas--watch-auto-fill-backtrace))
+                   ""))
+          ;; Try to avoid repeated triggering of this bug.
+          (auto-fill-mode -1)
+          ;; Don't pop up more than once in a session (still log though).
+          (defvar warning-suppress-types) ; `warnings' is autoloaded by `lwarn'.
+          (add-to-list 'warning-suppress-types '(yasnippet auto-fill bug)))))
     (save-excursion
       (setq end (progn (forward-paragraph) (point)))
       (setq beg (progn (backward-paragraph) (point))))
@@ -4958,7 +4962,7 @@ When multiple expressions are found, only the last one counts."
     ;; Don't pop up more than once in a session (still log though).
     (defvar warning-suppress-types) ; `warnings' is autoloaded by `lwarn'.
     (add-to-list 'warning-suppress-types '(yasnippet auto-fill bug)))
-  (yas--do-todo-field-updates)
+  (yas--do-todo-snippet-indent)
   (condition-case err
       (progn (yas--finish-moving-snippets)
              (cond ((eq 'undo this-command)
