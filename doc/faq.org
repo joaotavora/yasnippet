@@ -60,7 +60,7 @@ if you want to respect [[sym:yas-keymap-disable-hook][=yas-keymap-disable-hook=]
   (define-key yas-keymap (kbd "<new-next-field-key>")
     (yas-filtered-definition 'yas-next-field-or-maybe-expand))
   (define-key yas-keymap (kbd "<new-prev-field-key>")
-    (yas-filtered-definition 'yas-prev))
+    (yas-filtered-definition 'yas-prev-field))
 #+end_src
 
 * How do I define an abbrev key containing characters not supported by the filesystem?
