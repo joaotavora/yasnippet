@@ -1419,8 +1419,41 @@ conditions to filter out potential expansions."
 (defun yas--templates-for-key-at-point ()
   "Find `yas--template' objects for any trigger keys preceding point.
 Returns (TEMPLATES START END). This function respects
-`yas-key-syntaxes', which see."
+`yas-key-syntaxes', which see.
+
+If any regexp-key matches then only that keys template gets returned.
+
+Regexp-keys do not respect `yas-key-syntaxes'."
+  (let* ((regexp-keys (yas--filter-templates-by-condition
+                       (apply #'append (mapcar
+                                        #'yas--table-regexp-templates
+                                        (yas--get-snippet-tables))) #'cdar))
+         (found-regexp-match nil)
+         (found-template)
+         (found-key)
+         (found-start)
+         (found-end))
+    (setq found-regexp-match
+          (cl-block found-match
+            (cl-loop for k in regexp-keys do
+                     (let* ((regexp (caar k))
+                            (template (cdar k))
+                            (text (buffer-substring-no-properties (line-beginning-position) (point)))
+                            (matched-index (string-match regexp text))
+                            (matched-buffer-index (when matched-index
+                                                    (+ (line-beginning-position) matched-index))))
+                       (when matched-index
+                         (setq found-template template)
+                         (setq found-start (+ (line-beginning-position) matched-index))
+                         (setq found-end (point))
+                         (setq found-key (buffer-substring-no-properties found-start found-end))
+                         (cl-return-from found-match t))))))
+    (if found-regexp-match
+        (progn
+          (setq yas-matched-regexp-key found-key)
+          (list (list `(,found-key . ,found-template)) found-start found-end))
   (save-excursion
+        (setq yas-matched-regexp-key nil)
     (let ((original (point))
           (methods yas-key-syntaxes)
           (templates)
@@ -1452,7 +1485,7 @@ Returns (TEMPLATES START END). This function respects
                                (yas--fetch table possible-key))
                              (yas--get-snippet-tables))))))
       (when templates
-        (list templates (point) original)))))
+            (list templates (point) original)))))))
 
 (defun yas--table-all-keys (table)
   "Get trigger keys of all active snippets in TABLE."
@@ -2359,7 +2392,32 @@ value for the first time then always returns a cached value.")
                             )))
            (put ',func 'yas--condition-cache (cons yas--condition-cache-timestamp new-value))
            new-value)))))
-
+(defvar yas-matched-regexp-key nil
+  "The text that was used as a key for this snippet, if it was expanded using a regexp-key.")
+(defun yas-expand-regexp ()
+  (interactive)
+  (let* ((tables (yas--get-snippet-tables))
+         (regexp-keys (apply #'append (mapcar #'yas--table-regexp-templates tables)))
+         (found-regexp-match nil))
+    (setq found-regexp-match
+          (cl-block found-match
+            (cl-loop for k in regexp-keys do
+                     (let* ((regexp (car k))
+                            (template (cdr k))
+                            (text (buffer-substring-no-properties (line-beginning-position) (point)))
+                            (matched-index (string-match regexp text))
+                            (matched-buffer-index (when matched-index
+                                                    (+ (line-beginning-position) matched-index))))
+                       (when matched-index
+                         (setq yas-matched-regexp-key
+                               (buffer-substring-no-properties matched-buffer-index (point)))
+                         (delete-region matched-buffer-index (point))
+                         (yas-expand-snippet template)
+                         ;; Reset the value
+                         (setq yas-matched-regexp-key nil)
+                         (cl-return-from found-match t))))))
+    (when (not found-regexp-match)
+      (yas-expand))))
 (defalias 'yas-expand 'yas-expand-from-trigger-key)
 (defun yas-expand-from-trigger-key (&optional field)
   "Expand a snippet before point.
