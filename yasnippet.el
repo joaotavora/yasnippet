@@ -1251,8 +1251,12 @@ KEY can be a string (trigger key) of a vector (direct
 keybinding)."
   (let ((name (yas--template-name template))
         (key (yas--template-key template))
+        (regexp-key (yas--template-regexp-key template))
         (keybinding (yas--template-keybinding template))
         (_menu-binding-pair (yas--template-menu-binding-pair-get-create template)))
+    (when regexp-key
+      (setf (yas--table-regexp-templates table)
+            (cons `(,regexp-key . ,template) (yas--table-regexp-templates table))))
     (dolist (k (remove nil (list key keybinding)))
       (puthash name
                template
@@ -1828,7 +1832,7 @@ Optional PROMPT sets the prompt to use."
 SNIPPETS is a list of snippet definitions, each taking the
 following form
 
- (KEY TEMPLATE NAME CONDITION GROUP EXPAND-ENV LOAD-FILE KEYBINDING UUID REGEXP-KEY SAVE-FILE)
+ (KEY TEMPLATE NAME CONDITION GROUP EXPAND-ENV LOAD-FILE KEYBINDING UUID REGEXP-KEY REGEXP-ORDER SAVE-FILE)
 
 Within these, only KEY and TEMPLATE are actually mandatory.
 
@@ -1854,12 +1858,12 @@ the current buffers contents."
         (insert ";;; Snippet definitions:\n;;;\n")
         (dolist (snippet snippets)
           ;; Fill in missing elements with nil.
-          (setq snippet (append snippet (make-list (- 10 (length snippet)) nil)))
+          (setq snippet (append snippet (make-list (- 11 (length snippet)) nil)))
           ;; Move LOAD-FILE to SAVE-FILE because we will load from the
           ;; compiled file, not LOAD-FILE.
           (let ((load-file (nth 6 snippet)))
             (setcar (nthcdr 6 snippet) nil)
-            (setcar (nthcdr 9 snippet) load-file)))
+            (setcar (nthcdr 10 snippet) load-file)))
         (insert (pp-to-string
                  `(yas-define-snippets ',mode ',snippets)))
         (insert "\n\n"))
