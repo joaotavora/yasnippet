@@ -1593,7 +1593,7 @@ otherwise we attempt to calculate it from FILE.
 
 Return a snippet-definition, i.e. a list
 
- (KEY TEMPLATE NAME CONDITION GROUP VARS LOAD-FILE KEYBINDING UUID)
+ (KEY TEMPLATE NAME CONDITION GROUP VARS LOAD-FILE KEYBINDING UUID REGEXP-KEY REGEXP-ORDER)
 
 If the buffer contains a line of \"# --\" then the contents above
 this line are ignored. Directives can set most of these with the syntax:
@@ -1610,12 +1610,15 @@ Here's a list of currently recognized directives:
  * key
  * expand-env
  * binding
- * uuid"
+ * uuid
+ * regexp-key
+ * regexp-order"
   (goto-char (point-min))
   (let* ((type 'snippet)
          (name (and file
                     (file-name-nondirectory file)))
          (key nil)
+         (regexp-key nil)
          template
          bound
          condition
@@ -1639,6 +1642,8 @@ Here's a list of currently recognized directives:
                                 'snippet)))
                  (when (string= "key" (match-string-no-properties 1))
                    (setq key (match-string-no-properties 2)))
+                 (when (string= "regexp-key" (match-string-no-properties 1))
+                   (setq regexp-key (concat (match-string-no-properties 2) "$")))
                  (when (string= "name" (match-string-no-properties 1))
                    (setq name (match-string-no-properties 2)))
                  (when (string= "condition" (match-string-no-properties 1))
@@ -1647,7 +1652,7 @@ Here's a list of currently recognized directives:
                    (setq group (match-string-no-properties 2)))
                  (when (string= "expand-env" (match-string-no-properties 1))
                    (setq expand-env (yas--read-lisp (match-string-no-properties 2)
-                                                   'nil-on-error)))
+                                                    'nil-on-error)))
                  (when (string= "binding" (match-string-no-properties 1))
                    (setq binding (match-string-no-properties 2)))))
       (setq template
@@ -1658,7 +1663,7 @@ Here's a list of currently recognized directives:
       (setq template (yas--read-lisp (concat "(progn" template ")"))))
     (when group
       (setq group (split-string group "\\.")))
-    (list key template name condition group expand-env file binding uuid)))
+    (list key template name condition group expand-env file binding uuid regexp-key)))
 
 (defun yas--calculate-group (file)
   "Calculate the group for snippet file path FILE."
@@ -1823,7 +1828,7 @@ Optional PROMPT sets the prompt to use."
 SNIPPETS is a list of snippet definitions, each taking the
 following form
 
- (KEY TEMPLATE NAME CONDITION GROUP EXPAND-ENV LOAD-FILE KEYBINDING UUID SAVE-FILE)
+ (KEY TEMPLATE NAME CONDITION GROUP EXPAND-ENV LOAD-FILE KEYBINDING UUID REGEXP-KEY SAVE-FILE)
 
 Within these, only KEY and TEMPLATE are actually mandatory.
 
