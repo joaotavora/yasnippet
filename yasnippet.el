@@ -1075,7 +1075,7 @@ Meaning it's visiting a file under one of the mode directories in
                 (table
                  key content
                  &optional xname condition group
-                 expand-env load-file xkeybinding xuuid save-file
+                 expand-env load-file xkeybinding xuuid regexp-key save-file
                  &aux
                  (name (or xname
                            ;; A little redundant: we always get a name
@@ -1093,6 +1093,7 @@ Meaning it's visiting a file under one of the mode directories in
                   (and old (yas--template-perm-group old))))))
   "A template for a snippet."
   key
+  regexp-key
   content
   name
   condition
@@ -1136,12 +1137,21 @@ Has the following fields:
 `yas--table-uuidhash'
 
   A hash table mapping snippets uuid's to the same `yas--template'
-  objects. A snippet uuid defaults to the snippet's name."
+  objects. A snippet uuid defaults to the snippet's name.
+
+`yas--table-regexp-templates'
+
+  A list with elements on the form ((REGEXP-KEY . TEMPLATE) .
+  ORDER). REGEXP-KEY is a string, TEMPLATE is `yas--template'
+  object and ORDER is a number. The list is sorted by ORDER where
+  smaller values of ORDER are first."
+
   name
   (hash (make-hash-table :test 'equal))
   (uuidhash (make-hash-table :test 'equal))
   (parents nil)
-  (direct-keymap (make-sparse-keymap)))
+  (direct-keymap (make-sparse-keymap))
+  (regexp-templates '()))
 
 (defun yas--get-template-by-uuid (mode uuid)
   "Find the snippet template in MODE by its UUID."
