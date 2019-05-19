@@ -2397,7 +2397,8 @@ value for the first time then always returns a cached value.")
 (defun yas-expand-regexp ()
   (interactive)
   (let* ((tables (yas--get-snippet-tables))
-         (regexp-keys (apply #'append (mapcar #'yas--table-regexp-templates tables)))
+         (regexp-keys (yas--filter-templates-by-condition
+                       (apply #'append (mapcar #'yas--table-regexp-templates tables))))
          (found-regexp-match nil))
     (setq found-regexp-match
           (cl-block found-match
