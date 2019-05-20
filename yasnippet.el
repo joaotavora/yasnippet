@@ -1075,7 +1075,7 @@ Meaning it's visiting a file under one of the mode directories in
                 (table
                  key content
                  &optional xname condition group
-                 expand-env load-file xkeybinding xuuid regexp-key save-file
+                 expand-env load-file xkeybinding xuuid regexp-key regexp-order save-file
                  &aux
                  (name (or xname
                            ;; A little redundant: we always get a name
@@ -1094,6 +1094,7 @@ Meaning it's visiting a file under one of the mode directories in
   "A template for a snippet."
   key
   regexp-key
+  regexp-order
   content
   name
   condition
@@ -1252,11 +1253,18 @@ keybinding)."
   (let ((name (yas--template-name template))
         (key (yas--template-key template))
         (regexp-key (yas--template-regexp-key template))
+        (regexp-order (yas--template-regexp-order template))
         (keybinding (yas--template-keybinding template))
         (_menu-binding-pair (yas--template-menu-binding-pair-get-create template)))
     (when regexp-key
       (setf (yas--table-regexp-templates table)
-            (cons `(,regexp-key . ,template) (yas--table-regexp-templates table))))
+            (cons `((,regexp-key . ,template) . ,(if regexp-order
+                                                     regexp-order
+                                                   10))
+                  (yas--table-regexp-templates table)))
+      (setf (yas--table-regexp-templates table)
+            (sort (yas--table-regexp-templates table)
+                  (lambda (a b) (< (cdr a) (cdr b))))))
     (dolist (k (remove nil (list key keybinding regexp-key)))
       (puthash name
                template
@@ -1365,20 +1373,29 @@ string and TEMPLATE is a `yas--template' structure."
              nil))))
 
 
-(defun yas--filter-templates-by-condition (templates)
+(defun yas--filter-templates-by-condition (templates &optional get-template-func)
   "Filter the templates using the applicable condition.
 
 TEMPLATES is a list of cons (NAME . TEMPLATE) where NAME is a
 string and TEMPLATE is a `yas--template' structure.
 
 This function implements the rules described in
-`yas-buffer-local-condition'.  See that variables documentation."
+`yas-buffer-local-condition'.  See that variables documentation.
+
+GET-TEMPLATE-FUNC takes an element from TEMPLATES and returns the
+template object.
+
+If GET-TEMPLATE-FUNC is non-nil TEMPLATES do not have to be a
+list of cons-cells. It can be a list of anything as long as
+GET-TEMPLATE-FUNC can retreive it."
   (let ((requirement (yas--require-template-specific-condition-p)))
     (if (eq requirement 'always)
         templates
       (cl-remove-if-not (lambda (pair)
                           (yas--template-can-expand-p
-                           (yas--template-condition (cdr pair)) requirement))
+                           (yas--template-condition (if get-template-func
+                                                        (funcall get-template-func pair)
+                                                      (cdr pair))) requirement))
                         templates))))
 
 (defun yas--require-template-specific-condition-p ()
@@ -1656,6 +1673,7 @@ Here's a list of currently recognized directives:
                     (file-name-nondirectory file)))
          (key nil)
          (regexp-key nil)
+         (regexp-order nil)
          template
          bound
          condition
@@ -1681,6 +1699,8 @@ Here's a list of currently recognized directives:
                    (setq key (match-string-no-properties 2)))
                  (when (string= "regexp-key" (match-string-no-properties 1))
                    (setq regexp-key (concat (match-string-no-properties 2) "$")))
+                 (when (string= "regexp-order" (match-string-no-properties 1))
+                   (setq regexp-order (string-to-number (match-string-no-properties 2))))
                  (when (string= "name" (match-string-no-properties 1))
                    (setq name (match-string-no-properties 2)))
                  (when (string= "condition" (match-string-no-properties 1))
@@ -1700,7 +1720,7 @@ Here's a list of currently recognized directives:
       (setq template (yas--read-lisp (concat "(progn" template ")"))))
     (when group
       (setq group (split-string group "\\.")))
-    (list key template name condition group expand-env file binding uuid regexp-key)))
+    (list key template name condition group expand-env file binding uuid regexp-key regexp-order)))
 
 (defun yas--calculate-group (file)
   "Calculate the group for snippet file path FILE."
@@ -1891,12 +1911,12 @@ the current buffers contents."
         (insert ";;; Snippet definitions:\n;;;\n")
         (dolist (snippet snippets)
           ;; Fill in missing elements with nil.
-          (setq snippet (append snippet (make-list (- 11 (length snippet)) nil)))
+          (setq snippet (append snippet (make-list (- 12 (length snippet)) nil)))
           ;; Move LOAD-FILE to SAVE-FILE because we will load from the
           ;; compiled file, not LOAD-FILE.
           (let ((load-file (nth 6 snippet)))
             (setcar (nthcdr 6 snippet) nil)
-            (setcar (nthcdr 10 snippet) load-file)))
+            (setcar (nthcdr 11 snippet) load-file)))
         (insert (pp-to-string
                  `(yas-define-snippets ',mode ',snippets)))
         (insert "\n\n"))
