@@ -1456,7 +1456,7 @@ Regexp-keys do not respect `yas-key-syntaxes'."
                      (let* ((regexp (caar k))
                             (template (cdar k))
                             (text (buffer-substring-no-properties (line-beginning-position) (point)))
-                            (matched-index (string-match regexp text))
+                            (matched-index (string-match (concat regexp "$") text))
                             (matched-buffer-index (when matched-index
                                                     (+ (line-beginning-position) matched-index))))
                        (when matched-index
@@ -1698,7 +1698,7 @@ Here's a list of currently recognized directives:
                  (when (string= "key" (match-string-no-properties 1))
                    (setq key (match-string-no-properties 2)))
                  (when (string= "regexp-key" (match-string-no-properties 1))
-                   (setq regexp-key (concat (match-string-no-properties 2) "$")))
+                   (setq regexp-key (match-string-no-properties 2)))
                  (when (string= "regexp-order" (match-string-no-properties 1))
                    (setq regexp-order (string-to-number (match-string-no-properties 2))))
                  (when (string= "name" (match-string-no-properties 1))
