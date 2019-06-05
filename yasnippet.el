@@ -434,6 +434,7 @@ The condition will respect the value of `yas-keymap-disable-hook'."
     map)
   "The active keymap while a snippet expansion is in progress.")
 
+(defvar yas-regexp-key-syntaxes (list (lambda (original) (goto-char (line-beginning-position)))))
 (defvar yas-key-syntaxes (list #'yas-try-key-from-whitespace
                                "w_.()" "w_." "w_" "w")
   "Syntaxes and functions to help look for trigger keys before point.
@@ -1433,50 +1434,23 @@ conditions to filter out potential expansions."
                (yas--table-hash table))
       (yas--filter-templates-by-condition acc))))
 
-(defun yas--templates-for-key-at-point ()
-  "Find `yas--template' objects for any trigger keys preceding point.
-Returns (TEMPLATES START END). This function respects
-`yas-key-syntaxes', which see.
+(defun yas--templates-for-key-at-point-helper (methods template-fun)
+  "Helper function for yas--templates-for-key-at-point.
 
-If any regexp-key matches then only that keys template gets returned.
+Goes backwards according to METHODS(which is either
+yas-key-syntaxes or yas-regexp-key-syntaxes), then calls
+TEMPLATE-FUN with a possible-key start-pos and end-pos where
 
-Regexp-keys do not respect `yas-key-syntaxes'."
-  (let* ((regexp-keys (yas--filter-templates-by-condition
-                       (apply #'append (mapcar
-                                        #'yas--table-regexp-templates
-                                        (yas--get-snippet-tables))) #'cdar))
-         (found-regexp-match nil)
-         (found-template)
-         (found-key)
-         (found-start)
-         (found-end))
-    (setq found-regexp-match
-          (cl-block found-match
-            (cl-loop for k in regexp-keys do
-                     (let* ((regexp (caar k))
-                            (template (cdar k))
-                            (text (buffer-substring-no-properties (line-beginning-position) (point)))
-                            (matched-index (string-match (concat regexp "$") text))
-                            (matched-buffer-index (when matched-index
-                                                    (+ (line-beginning-position) matched-index))))
-                       (when matched-index
-                         (setq found-template template)
-                         (setq found-start (+ (line-beginning-position) matched-index))
-                         (setq found-end (point))
-                         (setq found-key (buffer-substring-no-properties found-start found-end))
-                         (cl-return-from found-match t))))))
-    (if found-regexp-match
-        (progn
-          (setq yas-matched-regexp-key found-key)
-          (list (list `(,found-key . ,found-template)) found-start found-end))
+- start-pos is the point where methods took us
+- end-pos is (point)
+- possible-key is the string between start-pos and end-pos"
   (save-excursion
-        (setq yas-matched-regexp-key nil)
+    (setq yas-matched-regexp-key nil)
     (let ((original (point))
-          (methods yas-key-syntaxes)
-          (templates)
+          (templates-and-pos)
           (method))
       (while (and methods
-                  (not templates))
+                  (not templates-and-pos))
         (unless (eq method (car methods))
           ;; TRICKY: `eq'-ness test means we can only be here if
           ;; `method' is a function that returned `again', and hence
@@ -1494,15 +1468,66 @@ Regexp-keys do not respect `yas-key-syntaxes'."
               (t
                (setq methods (cdr methods))
                (yas--warning "Invalid element `%s' in `yas-key-syntaxes'" method)))
-        (let ((possible-key (buffer-substring-no-properties (point) original)))
+        (let ((possible-key (buffer-substring-no-properties (point) original))
+              (syntax-start-pos (point)))
           (save-excursion
             (goto-char original)
-            (setq templates
-                  (cl-mapcan (lambda (table)
-                               (yas--fetch table possible-key))
-                             (yas--get-snippet-tables))))))
-      (when templates
-            (list templates (point) original)))))))
+            (setq templates-and-pos
+                  ;; (cl-mapcan (lambda (table)
+                  ;;              (yas--fetch table possible-key))
+                  ;;            (yas--get-snippet-tables))
+                  (funcall template-fun possible-key syntax-start-pos original)))))
+      (when templates-and-pos
+        templates-and-pos))))
+
+(defun  yas--templates-for-key-at-point ()
+  "Find `yas--template' objects for any trigger keys preceding point.
+Returns (TEMPLATES START END). This function respects
+`yas-key-syntaxes', which see.
+
+If any regexp-key matches then only that keys template gets returned."
+  (let* ((regexp-keys (yas--filter-templates-by-condition
+                       (apply #'append (mapcar
+                                        #'yas--table-regexp-templates
+                                        (yas--get-snippet-tables))) #'cdar))
+         (found-regexp-match nil)
+         (found-template)
+         (found-key)
+         (found-start)
+         (found-end))
+    (let ((templates
+           (yas--templates-for-key-at-point-helper
+            yas-regexp-key-syntaxes
+            (lambda (possible-key start-pos end-pos)
+              (setq found-regexp-match
+                    (cl-block found-match
+                      (cl-loop for k in regexp-keys do
+                               (let* ((regexp (caar k))
+                                      (template (cdar k))
+                                      (text possible-key)
+                                      (matched-index (string-match (concat regexp "\\'") text))
+                                      (matched-buffer-index (when matched-index
+                                                              (+ start-pos matched-index))))
+                                 (when matched-index
+                                   (setq found-template template)
+                                   (setq found-start (+ start-pos matched-index))
+                                   (setq found-end end-pos)
+                                   (setq found-key (buffer-substring-no-properties found-start found-end))
+                                   (cl-return-from found-match t))))))
+              (when found-regexp-match
+                (progn
+                  (setq yas-matched-regexp-key found-key)
+                  (list (list `(,found-key . ,found-template)) found-start found-end)))))))
+      (if templates
+          templates
+        (yas--templates-for-key-at-point-helper
+         yas-key-syntaxes
+         (lambda (possible-key start-pos end-pos)
+           (let ((templates(cl-mapcan (lambda (table)
+                                                 (yas--fetch table possible-key))
+                                               (yas--get-snippet-tables))))
+             (when (car templates)
+               (list templates start-pos end-pos)))))))))
 
 (defun yas--table-all-keys (table)
   "Get trigger keys of all active snippets in TABLE."
