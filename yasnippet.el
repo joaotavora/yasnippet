@@ -2439,31 +2439,6 @@ value for the first time then always returns a cached value.")
            new-value)))))
 (defvar yas-matched-regexp-key nil
   "The text that was used as a key for this snippet, if it was expanded using a regexp-key.")
-(defun yas-expand-regexp ()
-  (interactive)
-  (let* ((tables (yas--get-snippet-tables))
-         (regexp-keys (yas--filter-templates-by-condition
-                       (apply #'append (mapcar #'yas--table-regexp-templates tables))))
-         (found-regexp-match nil))
-    (setq found-regexp-match
-          (cl-block found-match
-            (cl-loop for k in regexp-keys do
-                     (let* ((regexp (car k))
-                            (template (cdr k))
-                            (text (buffer-substring-no-properties (line-beginning-position) (point)))
-                            (matched-index (string-match regexp text))
-                            (matched-buffer-index (when matched-index
-                                                    (+ (line-beginning-position) matched-index))))
-                       (when matched-index
-                         (setq yas-matched-regexp-key
-                               (buffer-substring-no-properties matched-buffer-index (point)))
-                         (delete-region matched-buffer-index (point))
-                         (yas-expand-snippet template)
-                         ;; Reset the value
-                         (setq yas-matched-regexp-key nil)
-                         (cl-return-from found-match t))))))
-    (when (not found-regexp-match)
-      (yas-expand))))
 (defalias 'yas-expand 'yas-expand-from-trigger-key)
 (defun yas-expand-from-trigger-key (&optional field)
   "Expand a snippet before point.
