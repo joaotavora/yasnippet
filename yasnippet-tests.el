@@ -346,6 +346,31 @@ attention to case differences."
         (ert-simulate-command '(undo))  ; Redo (re-expand snippet).
         (should (string-match-p "\\`one,and done" (buffer-string)))))))
 
+(ert-deftest undo-revive-and-do-again ()
+  "Check undo-revived snippet is properly ended."
+  ;; See https://github.com/joaotavora/yasnippet/issues/1006.
+  (yas-with-snippet-dirs '((".emacs.d/snippets"
+                            ("emacs-lisp-mode" ("x" . "${1:one},and done"))))
+    (with-temp-buffer
+      (emacs-lisp-mode)
+      (yas-reload-all)
+      (yas-minor-mode 1)
+      (yas-expand-snippet "x$0")
+      (setq buffer-undo-list nil)
+      (ert-simulate-command '(yas-expand))
+      (push nil buffer-undo-list)
+      (ert-simulate-command '(yas-next-field)) ; $1 -> exit snippet.
+      (should (string-match-p "\\`one,and done" (buffer-string)))
+      (push nil buffer-undo-list)
+      (ert-simulate-command '(undo))    ; Revive snippet.
+      (yas-mock-insert "abc")
+      (ert-simulate-command '(yas-next-field)) ; $1 -> exit snippet again.
+      (should (string-match-p "\\`abc,and done" (buffer-string)))
+      ;; We should have exited snippet and cleaned up any overlays.
+      (should-not (cl-some (lambda (o) (overlay-get o 'yas--snippet))
+                           (overlays-in (point-min) (point-max)))))))
+
+
 (defun yas-test-expand-and-undo (mode snippet-entry initial-contents)
   (yas-with-snippet-dirs
    `((".emacs.d/snippets" (,(symbol-name mode) ,snippet-entry)))

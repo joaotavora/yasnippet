@@ -254,6 +254,8 @@ buffer-locally, otherwise install it globally.  If HOOK is
             (setq yas-debug-target-snippets
                   (cl-delete-if-not #'yas--snippet-p yas-debug-target-snippets)))
           (let ((yas-debug-recently-live-indicators nil))
+            (printf "(length yas--snippets-snippets) => %d\n"
+                    (length yas--active-snippets))
             (dolist (snippet (or yas-debug-target-snippets
                                  (yas-active-snippets)))
               (printf "snippet %d\n" (yas--snippet-id snippet))
