@@ -1,6 +1,6 @@
-;;; yasnippet.el --- Yet another snippet extension for Emacs.
+;;; yasnippet.el --- Yet another snippet extension for Emacs
 
-;; Copyright (C) 2008-2018 Free Software Foundation, Inc.
+;; Copyright (C) 2008-2019 Free Software Foundation, Inc.
 ;; Authors: pluskid <pluskid@gmail.com>,
 ;;          João Távora <joaotavora@gmail.com>,
 ;;          Noam Postavsky <npostavs@gmail.com>
@@ -381,8 +381,7 @@ the trigger key itself."
 (defcustom yas-alias-to-yas/prefix-p t
   "If non-nil make aliases for the old style yas/ prefixed symbols.
 It must be set to nil before loading yasnippet to take effect."
-  :type 'boolean
-  :group 'yasnippet)
+  :type 'boolean)
 
 ;; Only two faces, and one of them shouldn't even be used...
 ;;
@@ -790,12 +789,12 @@ expanded.")
     ["About"            yas-about
      :help "Display some information about YASnippet"]))
 
+(define-obsolete-variable-alias 'yas-extra-modes 'yas--extra-modes "0.9.1")
 (defvar yas--extra-modes nil
   "An internal list of modes for which to also lookup snippets.
 
 This variable probably makes more sense as buffer-local, so
 ensure your use `make-local-variable' when you set it.")
-(define-obsolete-variable-alias 'yas-extra-modes 'yas--extra-modes "0.9.1")
 
 (defvar yas--tables (make-hash-table)
   "A hash table of mode symbols to `yas--table' objects.")
@@ -4689,7 +4688,10 @@ SAVED-QUOTES is the in format returned by `yas--save-backquotes'."
 (defun yas--scan-sexps (from count)
   (ignore-errors
     (save-match-data ; `scan-sexps' may modify match data.
+      ;; Parse using the syntax table corresponding to the yasnippet syntax.
       (with-syntax-table (standard-syntax-table)
+        ;; And ignore syntax-table properties that may have been placed by the
+        ;; major mode since these aren't related to the yasnippet syntax.
         (let ((parse-sexp-lookup-properties nil))
           (scan-sexps from count))))))
 
