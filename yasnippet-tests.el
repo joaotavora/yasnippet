@@ -694,7 +694,11 @@ mapconcat #'(lambda (arg)
                                          (prin1-to-string '(yas-auto-next
                                                             (yas-choose-value
                                                              "bar" "foo")))
-                                         "} baz ${2:quinn} quinn")))))
+                                         "} ${2:$$"
+                                         (prin1-to-string '(yas-auto-next
+                                                            (yas-choose-value
+                                                             "too" "foo")))
+                                         "} baz ${3:quinn} quinn")))))
       (yas-reload-all)
       (ruby-mode)
       (yas-minor-mode 1)
@@ -702,7 +706,7 @@ mapconcat #'(lambda (arg)
       (yas-mock-insert "snip")
       (ert-simulate-command '(yas-expand))
       (yas-mock-insert "quux")
-      (should (equal "foo bar baz quux quinn" (buffer-string)))))))
+      (should (equal "foo bar too baz quux quinn" (buffer-string)))))))
 
 
 ;;; Snippet expansion and character escaping
