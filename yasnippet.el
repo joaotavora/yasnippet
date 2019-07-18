@@ -1399,6 +1399,9 @@ conditions to filter out potential expansions."
                                 (push (cons name template) acc))
                             namehash))
                (yas--table-hash table))
+      (maphash #'(lambda (uuid template)
+                   (push (cons uuid template) acc))
+               (yas--table-uuidhash table))
       (yas--filter-templates-by-condition acc))))
 
 (defun yas--templates-for-key-at-point ()
