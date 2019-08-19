@@ -1509,13 +1509,26 @@ If any regexp-key matches then only that keys template gets returned."
                                       (matched-buffer-index (when matched-index
                                                               (+ start-pos matched-index))))
                                  (when matched-index
+                                   (setq yas-matched-regexp-key-groups
+                                         (reverse (let ((i 0)
+                                                        (new-list nil))
+                                                    (while (< i (length (match-data)))
+                                                      (setq new-list (cons
+                                                                      (let ((beg (nth i (match-data)))
+                                                                            (end (nth (+ i 1) (match-data))))
+                                                                        (substring text beg end))
+                                                                      new-list))
+                                                      (setq i (+ i 2)))
+                                                    new-list)))
                                    (setq found-template template)
                                    (setq found-start (+ start-pos matched-index))
                                    (setq found-end end-pos)
                                    (setq found-key (buffer-substring-no-properties found-start found-end))
+
                                    (cl-return-from found-match t))))))
               (when found-regexp-match
                 (progn
+
                   (setq yas-matched-regexp-key found-key)
                   (list (list `(,found-key . ,found-template)) found-start found-end)))))))
       (if templates
@@ -2437,6 +2450,20 @@ value for the first time then always returns a cached value.")
                             )))
            (put ',func 'yas--condition-cache (cons yas--condition-cache-timestamp new-value))
            new-value)))))
+(defvar yas-matched-regexp-key-groups nil
+  "A list containg match-data from the regexp-search made with the regexp-key.
+The first item is the whole text matched by the regexp.
+Subsequent items are text matched by the nth parenthesized expression by the
+ regexp-key.
+Example:
+# regexp-key: \([A-Za-z]\)\([0-9]\)
+# name: subscript
+# --
+`(nth 1 yas-matched-regexp-key-groups)`_`(nth 2 yas-matched-regexp-key-groups)`
+
+The snippet above will match any text on the form {Letter}{Number}. This is then
+expanded to {Letter}_{Number} (i.e. the snippet places a underscore between any
+letter and number).")
 (defvar yas-matched-regexp-key nil
   "The text that was used as a key for this snippet, if it was expanded using a regexp-key.")
 (defalias 'yas-expand 'yas-expand-from-trigger-key)
