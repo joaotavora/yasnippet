@@ -4730,7 +4730,14 @@ When multiple expressions are found, only the last one counts."
   ;;
   (save-excursion
     (while (re-search-forward yas--field-regexp nil t)
-      (let* ((real-match-end-0 (yas--scan-sexps (1+ (match-beginning 0)) 1))
+      (let* ((brace-scan (yas--scan-sexps (1+ (match-beginning 0)) 1))
+             ;; if the `brace-scan' didn't reach a brace, we have a
+             ;; snippet with invalid escaping, probably a closing
+             ;; brace escaped with two backslashes (github#979). But
+             ;; be lenient, because we can.
+             (real-match-end-0 (if (eq ?} (char-before brace-scan))
+                                   brace-scan
+                                 (point)))
              (number (and (match-string-no-properties 1)
                           (string-to-number (match-string-no-properties 1))))
              (brand-new-field (and real-match-end-0

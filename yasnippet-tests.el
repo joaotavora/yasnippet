@@ -781,6 +781,20 @@ mapconcat #'(lambda (arg)
       (yas-expand-snippet "Look ma! ${1:`(yas-selected-text)`} OK?")
       (should (string= (yas--buffer-contents) "Look ma! He)}o world! OK?")))))
 
+(ert-deftest escaping-for-lsp-style-snippet-syntax ()
+  "See Github #979."
+  (should
+   (string= (with-temp-buffer
+              (yas-minor-mode 1)
+              (yas-expand-snippet
+               "Printf(${1:format string}, ${2:args ...interface{\\}})${0}")
+              (yas--buffer-contents))
+            (with-temp-buffer
+              (yas-minor-mode 1)
+              (yas-expand-snippet
+               "Printf(${1:format string}, ${2:args ...interface\\{\\}})${0}")
+              (yas--buffer-contents)))))
+
 (ert-deftest insert-snippet-with-backslashes-in-active-field ()
   ;; This test case fails if `yas--inhibit-overlay-hooks' is not bound
   ;; in `yas-expand-snippet' (see Github #844).
