@@ -3390,6 +3390,7 @@ If there's none, exit the snippet."
          (snippet (car (yas-active-snippets (yas--field-start active-field)
                                             (yas--field-end active-field))))
          (target-field (yas--find-next-field arg snippet active-field)))
+    (run-hook-with-args 'yas-next-field-hook active-field snippet)
     (yas--letenv (yas--snippet-expand-env snippet)
       ;; Apply transform to active field.
       (when active-field
