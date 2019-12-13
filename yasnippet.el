@@ -386,7 +386,7 @@ It must be set to nil before loading yasnippet to take effect."
 ;; Only two faces, and one of them shouldn't even be used...
 ;;
 (defface yas-field-highlight-face
-  '((t (:inherit 'region)))
+  '((t (:inherit region)))
   "The face used to highlight the currently active field of a snippet")
 
 (defface yas--field-debug-face
