@@ -5,7 +5,7 @@
 ;;          João Távora <joaotavora@gmail.com>,
 ;;          Noam Postavsky <npostavs@gmail.com>
 ;; Maintainer: Noam Postavsky <npostavs@gmail.com>
-;; Version: 0.13.0
+;; Version: 0.14.0
 ;; X-URL: http://github.com/joaotavora/yasnippet
 ;; Keywords: convenience, emulation
 ;; URL: http://github.com/joaotavora/yasnippet
@@ -160,7 +160,7 @@
 
 (defconst yas-installed-snippets-dir (expand-file-name "snippets" yas--loaddir))
 (make-obsolete-variable 'yas-installed-snippets-dir "\
-Yasnippet no longer comes with installed snippets" "0.13")
+Yasnippet no longer comes with installed snippets" "0.14")
 
 (defconst yas--default-user-snippets-dir
   (expand-file-name "snippets" user-emacs-directory))
@@ -579,7 +579,7 @@ can be useful."
 
 ;;; Internal variables
 
-(defconst yas--version "0.13.0")
+(defconst yas--version "0.14.0")
 
 (defvar yas--menu-table (make-hash-table)
   "A hash table of MAJOR-MODE symbols to menu keymaps.")
