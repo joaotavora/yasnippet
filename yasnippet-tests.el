@@ -1099,6 +1099,24 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
         (should (= (length (yas--snippet-fields (nth 0 snippets))) 2))
         (should (= (length (yas--snippet-fields (nth 1 snippets))) 1))))))
 
+(ert-deftest nested-snippet-expansion-depth-2 ()
+  (with-temp-buffer
+    (yas-with-snippet-dirs
+      '((".emacs.d/snippets"
+         ("text-mode"
+          ("nest" . "( $1"))))
+      (let ((yas-triggers-in-field t))
+        (yas-reload-all)
+        (text-mode)
+        (yas-minor-mode +1)
+        (dotimes (_ 3)
+          (yas-mock-insert "nest")
+          (ert-simulate-command '(yas-expand)))
+        (dotimes (_ 3)
+          (yas-mock-insert ")")
+          (ert-simulate-command '(yas-next-field-or-maybe-expand)))
+        ))))
+
 (ert-deftest nested-snippet-expansion-2 ()
   (let ((yas-triggers-in-field t))
     (yas-with-snippet-dirs
