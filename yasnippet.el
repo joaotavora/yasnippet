@@ -4719,6 +4719,13 @@ SAVED-QUOTES is the in format returned by `yas--save-backquotes'."
           yas--indent-markers))
   (setq yas--indent-markers (nreverse yas--indent-markers)))
 
+(defun yas--scan-for-field-end ()
+  (while (progn (re-search-forward "\\${\\|}")
+                (when (eq (char-before) ?\{)
+                  ;; Nested field.
+                  (yas--scan-for-field-end))))
+  (point))
+
 (defun yas--field-parse-create (snippet &optional parent-field)
   "Parse most field expressions in SNIPPET, except for the simple one \"$n\".
 
@@ -4735,7 +4742,9 @@ When multiple expressions are found, only the last one counts."
   ;;
   (save-excursion
     (while (re-search-forward yas--field-regexp nil t)
-      (let* ((brace-scan (yas--scan-sexps (1+ (match-beginning 0)) 1))
+      (let* ((brace-scan (save-match-data
+                           (goto-char (match-beginning 2))
+                           (yas--scan-for-field-end)))
              ;; if the `brace-scan' didn't reach a brace, we have a
              ;; snippet with invalid escaping, probably a closing
              ;; brace escaped with two backslashes (github#979). But

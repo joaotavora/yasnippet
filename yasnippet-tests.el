@@ -947,6 +947,18 @@ mapconcat #'(lambda (arg)
       (yas-mock-insert "baz")
       (should (string= (yas--buffer-contents) "foobaaarbazok")))))
 
+(ert-deftest yas-escaping-close-brace ()
+  "Close braces may be escaped with braces, reduction from eglot issue.
+See https://github.com/joaotavora/eglot/issues/336."
+  (with-temp-buffer
+    (yas-minor-mode +1)
+    ;; NOTE: put a period at the end to avoid the bug tested by
+    ;; `protection-overlay-no-cheating'.
+    (yas-expand-snippet "${1:one{\\}}, ${2:two{\\}}.")
+    (yas-next-field)
+    (yas-next-field)
+    (should (string= (buffer-string) "one{}, two{}."))))
+
 
 ;;; Misc tests
 ;;;
