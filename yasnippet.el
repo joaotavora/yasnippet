@@ -2142,6 +2142,13 @@ This works by stubbing a few functions, then calling
                        version))))
                yas--version)))
 
+(defun yas-try-expanding-auto-snippets ()
+  "Expand snippets with the `auto' condition.
+This is intended to be added to `post-command-hook'."
+  (when (bound-and-true-p yas-minor-mode)
+    (let ((yas-buffer-local-condition ''(require-snippet-condition . auto)))
+      (yas-expand))))
+
 
 ;;; Apropos snippet menu:
 ;;
