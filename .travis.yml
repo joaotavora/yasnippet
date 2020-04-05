@@ -1,5 +1,7 @@
 language: generic
-sudo: false
+os: linux
+dist: xenial
+
 git:
   submodules: false
 
@@ -8,7 +10,7 @@ env:
     - Wlexical=t
     - Werror=t
     - tests_Werror=t # For yasnippet-tests.el
-  matrix:
+  jobs:
     - EMACS_VERSION=23.4
     # 24.3 gives a bunch of 'value returned from (car value-N) is
     # unused' warnings.
