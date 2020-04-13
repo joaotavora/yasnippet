@@ -4178,9 +4178,10 @@ Returns the newly created snippet."
           (run-hook-with-args 'before-change-functions begin end)
           (let ((before-change-functions nil)
                 (after-change-functions nil))
-            ;; Some versions of cc-mode fail when inserting snippet
-            ;; content in a narrowed buffer, so make sure to insert
-            ;; before narrowing.
+            ;; Some versions of cc-mode (might be the one with Emacs
+            ;; 24.3 only) fail when inserting snippet content in a
+            ;; narrowed buffer, so make sure to insert before
+            ;; narrowing.
             (insert content)
             (narrow-to-region begin (point))
             (goto-char (point-min))

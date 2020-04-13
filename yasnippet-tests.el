@@ -855,6 +855,8 @@ mapconcat #'(lambda (arg)
 
 (defmacro yas--with-font-locked-temp-buffer (&rest body)
   "Like `with-temp-buffer', but ensure `font-lock-mode'."
+  ;; NOTE: Replace all uses of this with `font-lock-ensure' when we
+  ;; drop support for Emacs 24.
   (declare (indent 0) (debug t))
   (let ((temp-buffer (make-symbol "temp-buffer")))
     ;; NOTE: buffer name must not start with a space, otherwise
@@ -874,6 +876,8 @@ mapconcat #'(lambda (arg)
                   (kill-buffer ,temp-buffer))))))))
 
 (ert-deftest example-for-issue-474 ()
+  ;; This issue only reproduces in Emacs 24.3, most likely due to some
+  ;; bug in the cc-mode included with that Emacs version.
   (yas--with-font-locked-temp-buffer
     (c-mode)
     (yas-minor-mode 1)
