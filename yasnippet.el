@@ -4188,7 +4188,7 @@ Returns the newly created snippet."
             (yas--snippet-parse-create snippet))
           (run-hook-with-args 'after-change-functions
                               (point-min) (point-max)
-                              (- (point-max) (point-min))))
+                              (- end begin)))
         (when (listp buffer-undo-list)
           (push (cons (point-min) (point-max))
                 buffer-undo-list))
