@@ -1505,7 +1505,7 @@ Also tries to work around Emacs Bug#30931."
               (let ((result (eval form)))
                 (when result
                   (format "%s" result))))))
-      ((debug error) (cdr oops)))))
+      ((debug error) (error-message-string oops)))))
 
 (defun yas--eval-for-effect (form)
   (yas--safely-call-fun (apply-partially #'eval form)))

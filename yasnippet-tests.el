@@ -847,7 +847,7 @@ mapconcat #'(lambda (arg)
   ;; See https://github.com/joaotavora/yasnippet/issues/800.
   (with-temp-buffer
     (yas-minor-mode 1)
-    (should-error (yas-expand-snippet "```foo\n\n```"))
+    (yas-expand-snippet "```foo\n\n```")
     (erase-buffer) ; Bad snippet may leave wrong text.
     ;; But expanding the corrected snippet should work fine.
     (yas-expand-snippet "\\`\\`\\`foo\n\n\\`\\`\\`")
