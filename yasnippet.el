@@ -378,6 +378,10 @@ letter of the snippet tab trigger was typed immediately before
 the trigger key itself."
   :type '(repeat function))
 
+(defcustom yas-snippet-trim nil
+  "If non-nil, trim begging and end spaces/newlines before expand snippet."
+  :type 'boolean)
+
 (defcustom yas-alias-to-yas/prefix-p t
   "If non-nil make aliases for the old style yas/ prefixed symbols.
 It must be set to nil before loading yasnippet to take effect."
@@ -4034,6 +4038,17 @@ Move the overlays, or create them if they do not exit."
 ;; running, but if managed correctly (including overlay priorities)
 ;; they should account for all situations...
 
+(defun yas--string-trim (str &optional trim-left trim-right)
+  "Trim STR of leading and trailing strings matching TRIM-LEFT and TRIM-RIGHT.
+
+TRIM-LEFT and TRIM-RIGHT default to \"[ \\t\\n\\r]+\".
+Original function is `string-trim'.
+This function is polyfill for Emacs<24.4."
+  (let ((res str))
+    (setq res (replace-regexp-in-string (or trim-left "\\`[ \t\n\r]*") "" res))
+    (setq res (replace-regexp-in-string (or trim-right "[ \t\n\r]*\\'") "" res))
+    res))
+
 (defun yas-expand-snippet (snippet &optional start end expand-env)
   "Expand SNIPPET at current point.
 
@@ -4083,9 +4098,12 @@ for normal snippets, and a list for command snippets)."
     (when to-delete
       (delete-region start end))
 
-    (let ((content (if (yas--template-p snippet)
-                       (yas--template-content snippet)
-                     snippet)))
+    (let* ((content (if (yas--template-p snippet)
+                        (yas--template-content snippet)
+                      snippet))
+           (content (if yas-snippet-trim
+                        (yas--string-trim content)
+                      content)))
       (when (and (not expand-env) (yas--template-p snippet))
         (setq expand-env (yas--template-expand-env snippet)))
       (cond ((listp content)
