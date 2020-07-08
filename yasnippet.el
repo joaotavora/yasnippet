@@ -2934,7 +2934,7 @@ DEBUG is for debugging the YASnippet engine itself."
      #'(lambda (group templates)
          (setq group (truncate-string-to-width group 25 0 ?  "..."))
          (insert (make-string 100 ?-) "\n")
-         (dolist (p templates)
+         (dolist (p (cl-sort templates #'string< :key #'yas--template-name))
            (let* ((name (truncate-string-to-width (propertize (format "\\\\snippet `%s'" (yas--template-name p))
                                                               'yasnippet p)
                                                   50 0 ? "..."))
