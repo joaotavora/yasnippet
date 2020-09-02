@@ -1863,6 +1863,55 @@ the current buffers contents."
                                                snippet-table)))
       template)))
 
+(defun yas-define-snippets-for-compile (mode snippets)
+  "Define SNIPPETS for MODE.
+
+SNIPPETS is a list of snippet definitions, each taking the
+following form
+
+ (KEY TEMPLATE NAME CONDITION GROUP EXPAND-ENV LOAD-FILE KEYBINDING UUID SAVE-FILE)
+
+Within these, only KEY and TEMPLATE are actually mandatory.
+
+TEMPLATE might be a Lisp form or a string, depending on whether
+this is a snippet or a snippet-command.
+
+CONDITION, EXPAND-ENV and KEYBINDING are Lisp forms, they have
+been `yas--read-lisp'-ed and will eventually be
+`yas--eval-for-string'-ed.
+
+The remaining elements are strings.
+
+FILE is probably of very little use if you're programatically
+defining snippets.
+
+UUID is the snippet's \"unique-id\". Loading a second snippet
+file with the same uuid would replace the previous snippet.
+
+You can use `yas--parse-template' to return such lists based on
+the current buffers contents."
+  (if yas--creating-compiled-snippets
+      (let ((print-length nil))
+        (insert ";;; Snippet definitions:\n;;;\n")
+        (dolist (snippet snippets)
+          ;; Fill in missing elements with nil.
+          (setq snippet (append snippet (make-list (- 10 (length snippet)) nil)))
+          ;; Move LOAD-FILE to SAVE-FILE because we will load from the
+          ;; compiled file, not LOAD-FILE.
+          (let ((load-file (nth 6 snippet)))
+            (setcar (nthcdr 6 snippet) nil)
+            (setcar (nthcdr 9 snippet) load-file)))
+        (insert (pp-to-string
+                 `(yas-define-snippets ',mode ',snippets)))
+        (insert "\n\n"))
+    ;; Normal case.
+    (let ((snippet-table (yas--table-get-create mode))
+          (template nil))
+      (dolist (snippet snippets)
+        (setq template (yas--define-snippets-1 snippet
+                                               snippet-table)))
+      template)))
+
 
 ;;; Loading snippets from files
 
@@ -1943,6 +1992,58 @@ With prefix argument USE-JIT do jit-loading of snippets."
   (when interactive
     (yas--message 3 "Loaded snippets from %s." top-level-dir)))
 
+(defun yas-load-directory-for-compile (top-level-dir &optional use-jit interactive)
+  "Load snippets in directory hierarchy TOP-LEVEL-DIR.
+
+Below TOP-LEVEL-DIR each directory should be a mode name.
+
+With prefix argument USE-JIT do jit-loading of snippets."
+  (interactive
+   (list (read-directory-name "Select the root directory: " nil nil t)
+         current-prefix-arg t))
+  (unless yas-snippet-dirs
+    (setq yas-snippet-dirs top-level-dir))
+  (let ((impatient-buffers))
+    (dolist (dir (yas--subdirs top-level-dir))
+      (let* ((major-mode-and-parents (yas--compute-major-mode-and-parents
+                                      (concat dir "/dummy")))
+             (mode-sym (car major-mode-and-parents))
+             (parents (cdr major-mode-and-parents)))
+        ;; Attention: The parents and the menus are already defined
+        ;; here, even if the snippets are later jit-loaded.
+        ;;
+        ;; * We need to know the parents at this point since entering a
+        ;;   given mode should jit load for its parents
+        ;;   immediately. This could be reviewed, the parents could be
+        ;;   discovered just-in-time-as well
+        ;;
+        ;; * We need to create the menus here to support the `full'
+        ;;   option to `yas-use-menu' (all known snippet menus are shown to the user)
+        ;;
+        (yas--define-parents mode-sym parents)
+        (yas--menu-keymap-get-create mode-sym)
+        (let ((fun (apply-partially #'yas--load-directory-1-for-compile dir mode-sym)))
+          (if use-jit
+              (yas--schedule-jit mode-sym fun)
+            (funcall fun)))
+        ;; Look for buffers that are already in `mode-sym', and so
+        ;; need the new snippets immediately...
+        ;;
+        (when use-jit
+          (cl-loop for buffer in (buffer-list)
+                   do (with-current-buffer buffer
+                        (when (eq major-mode mode-sym)
+                          (yas--message 4 "Discovered there was already %s in %s" buffer mode-sym)
+                          (push buffer impatient-buffers)))))))
+    ;; ...after TOP-LEVEL-DIR has been completely loaded, call
+    ;; `yas--load-pending-jits' in these impatient buffers.
+    ;;
+    (cl-loop for buffer in impatient-buffers
+             do (with-current-buffer buffer (yas--load-pending-jits))))
+  (when interactive
+    (yas--message 3 "Loaded snippets from %s." top-level-dir)))
+
+
 (defun yas--load-directory-1 (directory mode-sym)
   "Recursively load snippet templates from DIRECTORY."
   (if yas--creating-compiled-snippets
@@ -1961,7 +2062,51 @@ With prefix argument USE-JIT do jit-loading of snippets."
         (yas--message 4 "Loading snippet files from %s" directory)
         (yas--load-directory-2 directory mode-sym)))))
 
+(defun yas--load-directory-1-for-compile (directory mode-sym)
+  "Recursively load snippet templates from DIRECTORY."
+  (if yas--creating-compiled-snippets
+      (let ((output-file (expand-file-name ".yas-compiled-snippets.el"
+                                           directory)))
+        (with-temp-file output-file
+          (insert (format ";;; Compiled snippets and support files for `%s'\n"
+                          mode-sym))
+          (yas--load-directory-2-for-compile directory mode-sym)
+          (insert (format ";;; Do not edit! File generated at %s\n"
+                          (current-time-string)))))
+    ;; Normal case.
+    (unless (file-exists-p (expand-file-name ".yas-skip" directory))
+      (unless (and (load (expand-file-name ".yas-compiled-snippets" directory) 'noerror (<= yas-verbosity 3))
+                   (progn (yas--message 4 "Loaded compiled snippets from %s" directory) t))
+        (yas--message 4 "Loading snippet files from %s" directory)
+        (yas--load-directory-2 directory mode-sym)))))
+
 (defun yas--load-directory-2 (directory mode-sym)
+  ;; Load .yas-setup.el files wherever we find them
+  ;;
+  (yas--load-yas-setup-file (expand-file-name ".yas-setup" directory))
+  (let* ((default-directory directory)
+         (snippet-defs nil))
+    ;; load the snippet files
+    ;;
+    (with-temp-buffer
+      (dolist (file (yas--subdirs directory 'no-subdirs-just-files))
+        (when (file-readable-p file)
+          ;; Erase the buffer instead of passing non-nil REPLACE to
+          ;; `insert-file-contents' (avoids Emacs bug #23659).
+          (erase-buffer)
+          (insert-file-contents file)
+          (push (yas--parse-template file)
+                snippet-defs))))
+    (when snippet-defs
+      (yas-define-snippets mode-sym
+                           snippet-defs))
+    ;; now recurse to a lower level
+    ;;
+    (dolist (subdir (yas--subdirs directory))
+      (yas--load-directory-2 subdir
+                            mode-sym))))
+
+(defun yas--load-directory-2-for-compile (directory mode-sym)
   ;; Load .yas-setup.el files wherever we find them
   ;;
   (yas--load-yas-setup-file (expand-file-name ".yas-setup" directory))
@@ -1977,19 +2122,18 @@ With prefix argument USE-JIT do jit-loading of snippets."
           ;; `insert-file-contents' (avoids Emacs bug #23659).
           (erase-buffer)
           (insert-file-contents file)
-          (setq parsed (yas--parse-template file))
+          (setq parsed (yas--parse-template-for-compile file))
           (if (listp (car parsed)) ;; If car is a list
               (dolist (sp parsed)
                 (push sp snippet-defs))
-            (push parsed snippet-defs)
-            ))))
+            (push parsed snippet-defs)))))
     (when snippet-defs
-      (yas-define-snippets mode-sym
+      (yas-define-snippets-for-compile mode-sym
                            snippet-defs))
     ;; now recurse to a lower level
     ;;
     (dolist (subdir (yas--subdirs directory))
-      (yas--load-directory-2 subdir
+      (yas--load-directory-2-for-compile subdir
                             mode-sym))))
 
 (defun yas--load-snippet-dirs (&optional nojit)
@@ -2104,6 +2248,15 @@ prefix argument."
 
 
 ;;; Snippet compilation function
+
+(defun yas-compile-directory-for-compile (top-level-dir)
+  "Create .yas-compiled-snippets.el files under subdirs of TOP-LEVEL-DIR.
+
+This works by stubbing a few functions, then calling
+`yas-load-directory'."
+  (interactive "DTop level snippet directory?")
+  (let ((yas--creating-compiled-snippets t))
+    (yas-load-directory-for-compile top-level-dir nil)))
 
 (defun yas-compile-directory (top-level-dir)
   "Create .yas-compiled-snippets.el files under subdirs of TOP-LEVEL-DIR.
