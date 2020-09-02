@@ -1615,6 +1615,84 @@ Here's a list of currently recognized directives:
                      (yas--calculate-group file)))
          expand-env
          binding
+         uuid)
+    (if (re-search-forward "^# --\\s-*\n" nil t)
+        (progn (setq template
+                     (buffer-substring-no-properties (point)
+                                                     (point-max)))
+               (setq bound (point))
+               (goto-char (point-min))
+               (while (re-search-forward "^# *\\([^ ]+?\\) *: *\\(.*?\\)[[:space:]]*$" bound t)
+                 (when (string= "uuid" (match-string-no-properties 1))
+                   (setq uuid (match-string-no-properties 2)))
+                 (when (string= "type" (match-string-no-properties 1))
+                   (setq type (if (string= "command" (match-string-no-properties 2))
+                                  'command
+                                'snippet)))
+                 (when (string= "key" (match-string-no-properties 1))
+                   (setq key (match-string-no-properties 2)))
+                 (when (string= "name" (match-string-no-properties 1))
+                   (setq name (match-string-no-properties 2)))
+                 (when (string= "condition" (match-string-no-properties 1))
+                   (setq condition (yas--read-lisp (match-string-no-properties 2))))
+                 (when (string= "group" (match-string-no-properties 1))
+                   (setq group (match-string-no-properties 2)))
+                 (when (string= "expand-env" (match-string-no-properties 1))
+                   (setq expand-env (yas--read-lisp (match-string-no-properties 2)
+                                                   'nil-on-error)))
+                 (when (string= "binding" (match-string-no-properties 1))
+                   (setq binding (match-string-no-properties 2)))))
+      (setq template
+            (buffer-substring-no-properties (point-min) (point-max))))
+    (unless (or key binding)
+      (setq key (and file (file-name-nondirectory file))))
+    (when (eq type 'command)
+      (setq template (yas--read-lisp (concat "(progn" template ")"))))
+    (when group
+      (setq group (split-string group "\\.")))
+    (list key template name condition group expand-env file binding uuid)))
+
+(defun yas--parse-template-for-mulkey (&optional file)
+  "Parse the template in the current buffer.
+
+Optional FILE is the absolute file name of the file being
+parsed.
+
+Optional GROUP is the group where the template is to go,
+otherwise we attempt to calculate it from FILE.
+
+Return a snippet-definition, i.e. a list
+
+ (KEY TEMPLATE NAME CONDITION GROUP VARS LOAD-FILE KEYBINDING UUID)
+
+If the buffer contains a line of \"# --\" then the contents above
+this line are ignored. Directives can set most of these with the syntax:
+
+# directive-name : directive-value
+
+Here's a list of currently recognized directives:
+
+ * type
+ * name
+ * contributor
+ * condition
+ * group
+ * key
+ * expand-env
+ * binding
+ * uuid"
+  (goto-char (point-min))
+  (let* ((type 'snippet)
+         (name (and file
+                    (file-name-nondirectory file)))
+         (key nil)
+         template
+         bound
+         condition
+         (group (and file
+                     (yas--calculate-group file)))
+         expand-env
+         binding
          uuid
          results)
     (if (re-search-forward "^# --\\s-*\n" nil t)
@@ -1646,8 +1724,7 @@ Here's a list of currently recognized directives:
       (setq template
             (buffer-substring-no-properties (point-min) (point-max))))
     (unless (or key binding)
-      (cl-pushnew (and file (file-name-nondirectory file)) key)
-      )
+      (cl-pushnew (and file (file-name-nondirectory file)) key))
     (when (eq type 'command)
       (setq template (yas--read-lisp (concat "(progn" template ")"))))
     (when group
@@ -1656,8 +1733,7 @@ Here's a list of currently recognized directives:
         (dolist (k key results)
           (push (list k template (format "%s (%s)" name k) condition group expand-env file binding uuid) results))
       (setq results (list (list key template name condition group expand-env file binding uuid))))
-    results
-    ))
+    results))
 
 (defun yas--calculate-group (file)
   "Calculate the group for snippet file path FILE."
@@ -1863,7 +1939,7 @@ the current buffers contents."
                                                snippet-table)))
       template)))
 
-(defun yas-define-snippets-for-compile (mode snippets)
+(defun yas-define-snippets-for-mulkey (mode snippets)
   "Define SNIPPETS for MODE.
 
 SNIPPETS is a list of snippet definitions, each taking the
@@ -1992,7 +2068,7 @@ With prefix argument USE-JIT do jit-loading of snippets."
   (when interactive
     (yas--message 3 "Loaded snippets from %s." top-level-dir)))
 
-(defun yas-load-directory-for-compile (top-level-dir &optional use-jit interactive)
+(defun yas-load-directory-for-mulkey (top-level-dir &optional use-jit interactive)
   "Load snippets in directory hierarchy TOP-LEVEL-DIR.
 
 Below TOP-LEVEL-DIR each directory should be a mode name.
@@ -2022,7 +2098,7 @@ With prefix argument USE-JIT do jit-loading of snippets."
         ;;
         (yas--define-parents mode-sym parents)
         (yas--menu-keymap-get-create mode-sym)
-        (let ((fun (apply-partially #'yas--load-directory-1-for-compile dir mode-sym)))
+        (let ((fun (apply-partially #'yas--load-directory-1-for-mulkey dir mode-sym)))
           (if use-jit
               (yas--schedule-jit mode-sym fun)
             (funcall fun)))
@@ -2062,7 +2138,7 @@ With prefix argument USE-JIT do jit-loading of snippets."
         (yas--message 4 "Loading snippet files from %s" directory)
         (yas--load-directory-2 directory mode-sym)))))
 
-(defun yas--load-directory-1-for-compile (directory mode-sym)
+(defun yas--load-directory-1-for-mulkey (directory mode-sym)
   "Recursively load snippet templates from DIRECTORY."
   (if yas--creating-compiled-snippets
       (let ((output-file (expand-file-name ".yas-compiled-snippets.el"
@@ -2070,7 +2146,7 @@ With prefix argument USE-JIT do jit-loading of snippets."
         (with-temp-file output-file
           (insert (format ";;; Compiled snippets and support files for `%s'\n"
                           mode-sym))
-          (yas--load-directory-2-for-compile directory mode-sym)
+          (yas--load-directory-2-for-mulkey directory mode-sym)
           (insert (format ";;; Do not edit! File generated at %s\n"
                           (current-time-string)))))
     ;; Normal case.
@@ -2106,7 +2182,7 @@ With prefix argument USE-JIT do jit-loading of snippets."
       (yas--load-directory-2 subdir
                             mode-sym))))
 
-(defun yas--load-directory-2-for-compile (directory mode-sym)
+(defun yas--load-directory-2-for-mulkey (directory mode-sym)
   ;; Load .yas-setup.el files wherever we find them
   ;;
   (yas--load-yas-setup-file (expand-file-name ".yas-setup" directory))
@@ -2122,18 +2198,18 @@ With prefix argument USE-JIT do jit-loading of snippets."
           ;; `insert-file-contents' (avoids Emacs bug #23659).
           (erase-buffer)
           (insert-file-contents file)
-          (setq parsed (yas--parse-template-for-compile file))
+          (setq parsed (yas--parse-template-for-mulkey file))
           (if (listp (car parsed)) ;; If car is a list
               (dolist (sp parsed)
                 (push sp snippet-defs))
             (push parsed snippet-defs)))))
     (when snippet-defs
-      (yas-define-snippets-for-compile mode-sym
+      (yas-define-snippets-for-mulkey mode-sym
                            snippet-defs))
     ;; now recurse to a lower level
     ;;
     (dolist (subdir (yas--subdirs directory))
-      (yas--load-directory-2-for-compile subdir
+      (yas--load-directory-2-for-mulkey subdir
                             mode-sym))))
 
 (defun yas--load-snippet-dirs (&optional nojit)
@@ -2249,14 +2325,14 @@ prefix argument."
 
 ;;; Snippet compilation function
 
-(defun yas-compile-directory-for-compile (top-level-dir)
+(defun yas-compile-directory-for-mulkey (top-level-dir)
   "Create .yas-compiled-snippets.el files under subdirs of TOP-LEVEL-DIR.
 
 This works by stubbing a few functions, then calling
 `yas-load-directory'."
   (interactive "DTop level snippet directory?")
   (let ((yas--creating-compiled-snippets t))
-    (yas-load-directory-for-compile top-level-dir nil)))
+    (yas-load-directory-for-mulkey top-level-dir nil)))
 
 (defun yas-compile-directory (top-level-dir)
   "Create .yas-compiled-snippets.el files under subdirs of TOP-LEVEL-DIR.
