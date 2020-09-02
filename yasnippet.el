@@ -1615,7 +1615,8 @@ Here's a list of currently recognized directives:
                      (yas--calculate-group file)))
          expand-env
          binding
-         uuid)
+         uuid
+         results)
     (if (re-search-forward "^# --\\s-*\n" nil t)
         (progn (setq template
                      (buffer-substring-no-properties (point)
@@ -1630,7 +1631,7 @@ Here's a list of currently recognized directives:
                                   'command
                                 'snippet)))
                  (when (string= "key" (match-string-no-properties 1))
-                   (setq key (match-string-no-properties 2)))
+                   (cl-pushnew (match-string-no-properties 2) key))
                  (when (string= "name" (match-string-no-properties 1))
                    (setq name (match-string-no-properties 2)))
                  (when (string= "condition" (match-string-no-properties 1))
@@ -1645,12 +1646,18 @@ Here's a list of currently recognized directives:
       (setq template
             (buffer-substring-no-properties (point-min) (point-max))))
     (unless (or key binding)
-      (setq key (and file (file-name-nondirectory file))))
+      (cl-pushnew (and file (file-name-nondirectory file)) key)
+      )
     (when (eq type 'command)
       (setq template (yas--read-lisp (concat "(progn" template ")"))))
     (when group
       (setq group (split-string group "\\.")))
-    (list key template name condition group expand-env file binding uuid)))
+    (if key
+        (dolist (k key results)
+          (push (list k template (format "%s (%s)" name k) condition group expand-env file binding uuid) results))
+      (setq results (list (list key template name condition group expand-env file binding uuid))))
+    results
+    ))
 
 (defun yas--calculate-group (file)
   "Calculate the group for snippet file path FILE."
@@ -1959,7 +1966,8 @@ With prefix argument USE-JIT do jit-loading of snippets."
   ;;
   (yas--load-yas-setup-file (expand-file-name ".yas-setup" directory))
   (let* ((default-directory directory)
-         (snippet-defs nil))
+         (snippet-defs nil)
+         parsed)
     ;; load the snippet files
     ;;
     (with-temp-buffer
@@ -1969,8 +1977,12 @@ With prefix argument USE-JIT do jit-loading of snippets."
           ;; `insert-file-contents' (avoids Emacs bug #23659).
           (erase-buffer)
           (insert-file-contents file)
-          (push (yas--parse-template file)
-                snippet-defs))))
+          (setq parsed (yas--parse-template file))
+          (if (listp (car parsed)) ;; If car is a list
+              (dolist (sp parsed)
+                (push sp snippet-defs))
+            (push parsed snippet-defs)
+            ))))
     (when snippet-defs
       (yas-define-snippets mode-sym
                            snippet-defs))
