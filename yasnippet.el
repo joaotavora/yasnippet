@@ -2348,6 +2348,11 @@ This works by stubbing a few functions, then calling
   (interactive)
   (mapc #'yas-compile-directory (yas-snippet-dirs)))
 
+(defun yas-recompile-all-for-mulkey ()
+  "Compile every dir in `yas-snippet-dirs'."
+  (interactive)
+  (mapc #'yas-compile-directory-for-mulkey (yas-snippet-dirs)))
+
 
 ;;; JIT loading
 ;;;
