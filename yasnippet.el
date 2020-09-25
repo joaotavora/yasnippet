@@ -1781,9 +1781,13 @@ Optional PROMPT sets the prompt to use."
 (defun yas-completing-prompt (prompt choices &optional display-fn completion-fn)
   (let* ((formatted-choices
           (if display-fn (mapcar display-fn choices) choices))
+         (default (car choices))
          (chosen (funcall (or completion-fn #'completing-read)
-                          prompt formatted-choices
-                          nil 'require-match nil nil)))
+                          (replace-regexp-in-string
+                           "\\(:\s+\\)$" (concat " (default " default ")\\1")
+                           prompt)
+                          formatted-choices nil 'require-match nil nil
+                          default)))
     (if (eq choices formatted-choices)
         chosen
       (nth (or (cl-position chosen formatted-choices :test #'string=) 0)
