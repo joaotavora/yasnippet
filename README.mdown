@@ -1,4 +1,6 @@
 [![Build Status](https://travis-ci.org/joaotavora/yasnippet.png)](https://travis-ci.org/joaotavora/yasnippet)
+[![MELPA](https://melpa.org/packages/yasnippet-badge.svg)](https://melpa.org/#/yasnippet)
+[![MELPA Stable](https://stable.melpa.org/packages/yasnippet-badge.svg)](https://stable.melpa.org/#/yasnippet)
 
 # Intro
 
