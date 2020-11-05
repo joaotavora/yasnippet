@@ -227,7 +227,7 @@ For the full set of possible conditions, see the documentation for
 
 ** Multiples snippet with the same key
 
-The rules outlined [[Eligible%20snippets][above]] can return more than
+The rules outlined [[Eligible snippets][above]] can return more than
 one snippet to be expanded at point.
 
 When there are multiple candidates, YASnippet will let you select one.
