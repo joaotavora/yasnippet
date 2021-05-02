@@ -1389,6 +1389,9 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
                           ;; prog-mode doesn't exist in emacs 23.4
                           ,@(if (fboundp 'prog-mode)
                                 '(prog-mode))
+                          ;; lisp-data-mode doesn't exist in emacs 27.1
+                          ,@(if (fboundp 'lisp-data-mode)
+                                '(lisp-data-mode))
                           emacs-lisp-mode
                           lisp-interaction-mode))
               (observed (yas--modes-to-activate)))
@@ -1416,6 +1419,9 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
                                ;; prog-mode doesn't exist in emacs 23.4
                                ,@(if (fboundp 'prog-mode)
                                      '(prog-mode))
+                               ;; lisp-data-mode doesn't exist in emacs 27.1
+                               ,@(if (fboundp 'lisp-data-mode)
+                                     '(lisp-data-mode))
                                emacs-lisp-mode
                                and-also-this-one
                                lisp-interaction-mode))
