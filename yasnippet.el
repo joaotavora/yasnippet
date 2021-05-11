@@ -2682,7 +2682,7 @@ NO-TEMPLATE is non-nil."
     (set (make-local-variable 'default-directory)
          (car (cdr (car guessed-directories))))
     (if (and (not no-template) yas-new-snippet-default)
-        (yas-expand-snippet yas-new-snippet-default))))
+        (yas-expand-snippet yas-new-snippet-default nil nil '((yas-wrap-around-region nil))))))
 
 (defun yas--compute-major-mode-and-parents (file)
   "Given FILE, find the nearest snippet directory for a given mode.
