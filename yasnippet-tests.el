@@ -1,6 +1,6 @@
 ;;; yasnippet-tests.el --- some yasnippet tests  -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012-2015, 2017-2018  Free Software Foundation, Inc.
+;; Copyright (C) 2012-2015, 2017-2018, 2021  Free Software Foundation, Inc.
 
 ;; Author: João Távora <joaot@siscog.pt>
 ;; Keywords: emulations, convenience
@@ -556,16 +556,19 @@ XXXXX   ------------------------"))))
     (yas-mock-insert "foo bar")
     (ert-simulate-command '(yas-next-field))
     (goto-char (point-min))
-    (let ((expected (with-temp-buffer
-                      (insert (format (concat "* Test foo bar\n"
-                                              "  " org-property-format "\n"
-                                              "  " org-property-format "\n"
-                                              "  " org-property-format)
-                                      ":PROPERTIES:" ""
-                                      ":ID:" "foo bar-after"
-                                      ":END:" ""))
-                      (delete-trailing-whitespace)
-                      (buffer-string))))
+    ;; The default value of `org-adapt-indentation' changed between Org-mode 9.4
+    ;; and 9.5, so force a specific value.
+    (let* ((org-adapt-indentation nil)
+           (expected (with-temp-buffer
+                       (insert (format (concat "* Test foo bar\n"
+                                               org-property-format "\n"
+                                               org-property-format "\n"
+                                               org-property-format)
+                                       ":PROPERTIES:" ""
+                                       ":ID:" "foo bar-after"
+                                       ":END:" ""))
+                       (delete-trailing-whitespace)
+                       (buffer-string))))
       ;; Some org-mode versions leave trailing whitespace, some don't.
       (delete-trailing-whitespace)
       (should (equal expected (buffer-string))))))
@@ -1390,7 +1393,9 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
                           ,@(if (fboundp 'prog-mode)
                                 '(prog-mode))
                           emacs-lisp-mode
-                          lisp-interaction-mode))
+                          lisp-interaction-mode
+                          ;; `lisp-data-mode' doesn't exist prior to Emacs 28.
+                          ,@(and (fboundp 'lisp-data-mode) '(lisp-data-mode))))
               (observed (yas--modes-to-activate)))
          (should (equal major-mode (car observed)))
          (should (equal (sort expected #'string<) (sort observed #'string<))))))))
@@ -1418,7 +1423,11 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
                                      '(prog-mode))
                                emacs-lisp-mode
                                and-also-this-one
-                               lisp-interaction-mode))
+                               lisp-interaction-mode
+                               ;; `lisp-data-mode' doesn't exist prior to
+                               ;; Emacs 28.
+                               ,@(and (fboundp 'lisp-data-mode)
+                                      '(lisp-data-mode))))
               (observed (yas--modes-to-activate)))
          (should (equal expected-first
                         (cl-subseq observed 0 (length expected-first))))
@@ -1691,9 +1700,11 @@ TODO: be meaner"
   "Test expansion of snippets in org source blocks."
   ;; org 9+ no longer runs fontification for text-mode, so our hacks
   ;; don't work.  Note that old ert doesn't have skipping, so we have
-  ;; to expect failure instead.
+  ;; to expect failure instead.  Starting with Org-mode 9.5 this seems
+  ;; to work again.
   :expected-result (if (and (fboundp 'org-in-src-block-p)
-                            (version< (org-version) "9"))
+                            (or (version< (org-version) "9")
+                                (version<= "9.5" (org-version))))
                        :passed :failed)
   (let ((text-mode-hook #'yas-minor-mode))
     (do-yas-org-native-tab-in-source-block "text")))
