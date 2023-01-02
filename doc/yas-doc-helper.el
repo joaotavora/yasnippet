@@ -96,7 +96,7 @@
                 "\\\\{[^}]+}"
                 (lambda (match)
                   (concat "#+BEGIN_EXAMPLE\n"
-                          (substitute-command-keys match)
+                          match
                           "#+END_EXAMPLE\n"))
                 body t t)
           body (substitute-command-keys body)
