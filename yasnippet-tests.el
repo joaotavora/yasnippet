@@ -1,8 +1,8 @@
 ;;; yasnippet-tests.el --- some yasnippet tests  -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012-2015, 2017-2018, 2021  Free Software Foundation, Inc.
+;; Copyright (C) 2012-2023  Free Software Foundation, Inc.
 
-;; Author: Jo„o T·vora <joaot@siscog.pt>
+;; Author: Jo√£o T√°vora <joaot@siscog.pt>
 ;; Keywords: emulations, convenience
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -136,9 +136,6 @@ This lets `yas--maybe-expand-from-keymap-filter' work as expected."
 
 ;;; Older emacsen
 ;;;
-(unless (fboundp 'special-mode)
-  ;; FIXME: Why provide this default definition here?!?
-  (defalias 'special-mode 'fundamental))
 
 (unless (fboundp 'string-suffix-p)
   ;; introduced in Emacs 24.4
@@ -1440,7 +1437,7 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
          (should (equal (sort expected-rest #'string<)
                         (sort (cl-subseq observed (length expected-first)) #'string<))))))))
 
-(defalias 'yas--phony-c-mode 'c-mode)
+(defalias 'yas--phony-c-mode #'c-mode)
 
 (ert-deftest issue-492-and-494 ()
   (define-derived-mode yas--test-mode yas--phony-c-mode "Just a test mode")
@@ -1679,14 +1676,14 @@ TODO: be meaner"
                            :test #'eq :key #'car))))
     (define-key yas-minor-mode-map [tab] nil)
     (define-key yas-minor-mode-map (kbd "TAB") nil)
-    (define-key yas-minor-mode-map (kbd "SPC") 'yas-expand)
+    (define-key yas-minor-mode-map (kbd "SPC") #'yas-expand)
     (with-temp-buffer
       (yas-minor-mode 1)
-      (should-not (eq (key-binding (kbd "TAB")) 'yas-expand))
+      (should-not (eq (key-binding (kbd "TAB")) #'yas-expand))
       (should (eq (key-binding (kbd "SPC")) 'yas-expand))
       (yas-reload-all)
-      (should-not (eq (key-binding (kbd "TAB")) 'yas-expand))
-      (should (eq (key-binding (kbd "SPC")) 'yas-expand)))))
+      (should-not (eq (key-binding (kbd "TAB")) #'yas-expand))
+      (should (eq (key-binding (kbd "SPC")) #'yas-expand)))))
 
 (ert-deftest test-yas-in-org ()
   (yas-saving-variables
