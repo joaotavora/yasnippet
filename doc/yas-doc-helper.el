@@ -1,6 +1,6 @@
-;;; yas-doc-helper.el --- Help generate documentation for YASnippet
+;;; yas-doc-helper.el --- Help generate documentation for YASnippet  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2012, 2013  Free Software Foundation, Inc.
+;; Copyright (C) 2012-2023  Free Software Foundation, Inc.
 
 ;; Author: João Távora <joaotavora@gmail.com>
 ;; Keywords: convenience
@@ -29,6 +29,12 @@
 (require 'org)
 (require 'ox-publish)
 (require 'yasnippet) ; docstrings must be loaded
+
+;; Presumably one of org/ox-publish provided the following vars:
+(defvar org-publish-project-alist)
+(defvar org-publish-use-timestamps-flag)
+(defvar org-export-copy-to-kill-ring)
+(defvar org-html-htmlize-output-type)
 
 (defun yas--org-raw-html (tag content &optional attrs)
   ;; in version 8.0 org-mode changed the export syntax, see
@@ -148,7 +154,7 @@
   (interactive)
   (yas-expand-snippet "[[#$1][=${1:`yas/selected-text`}=]]"))
 
-(define-key org-mode-map [M-f8] 'yas--internal-link-snippet)
+(define-key org-mode-map [M-f8] #'yas--internal-link-snippet)
 
 ;; This lets all the org files be exported to HTML with
 ;; `org-publish-current-project' (C-c C-e P).
