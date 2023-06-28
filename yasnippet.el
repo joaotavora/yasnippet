@@ -474,20 +474,20 @@ See also Info node `(elisp) Syntax Descriptors'.")
 
 (defvar yas-after-exit-snippet-hook
   '()
-  "Hooks to run after a snippet exited.
+  "Hook run after a snippet exited.
 
-The hooks will be run in an environment where some variables bound to
+The functions will be run in an environment where some variables bound to
 proper values:
 
 `yas-snippet-beg' : The beginning of the region of the snippet.
 
 `yas-snippet-end' : Similar to beg.
 
-Attention: These hooks are not run when exiting nested/stacked snippet expansion!")
+Attention: This hook is not run when exiting nested/stacked snippet expansion!")
 
 (defvar yas-before-expand-snippet-hook
   '()
-  "Hooks to run just before expanding a snippet.")
+  "Hook run just before expanding a snippet.")
 
 (defconst yas-not-string-or-comment-condition
   '(if (let ((ppss (syntax-ppss)))
@@ -651,9 +651,9 @@ expanded.")
     ;; complain to that other package!
     ;;(define-key map [(tab)]     yas-maybe-expand)
     (define-key map (kbd "TAB") yas-maybe-expand)
-    (define-key map "\C-c&\C-s" 'yas-insert-snippet)
-    (define-key map "\C-c&\C-n" 'yas-new-snippet)
-    (define-key map "\C-c&\C-v" 'yas-visit-snippet-file)
+    (define-key map "\C-c&\C-s" #'yas-insert-snippet)
+    (define-key map "\C-c&\C-n" #'yas-new-snippet)
+    (define-key map "\C-c&\C-v" #'yas-visit-snippet-file)
     map)
   "The keymap used when `yas-minor-mode' is active.")
 
@@ -1785,7 +1785,8 @@ Optional PROMPT sets the prompt to use."
 SNIPPETS is a list of snippet definitions, each taking the
 following form
 
- (KEY TEMPLATE NAME CONDITION GROUP EXPAND-ENV LOAD-FILE KEYBINDING UUID SAVE-FILE)
+ (KEY TEMPLATE
+  NAME CONDITION GROUP EXPAND-ENV LOAD-FILE KEYBINDING UUID SAVE-FILE)
 
 Within these, only KEY and TEMPLATE are actually mandatory.
 
@@ -2046,7 +2047,7 @@ prefix argument."
                              "successfully")))))))
 
 (defvar yas-after-reload-hook nil
-  "Hooks run after `yas-reload-all'.")
+  "Hook run after `yas-reload-all'.")
 
 (defun yas--load-pending-jits ()
   (dolist (mode (yas--modes-to-activate))
@@ -2313,7 +2314,7 @@ value for the first time then always returns a cached value.")
            (put ',func 'yas--condition-cache (cons yas--condition-cache-timestamp new-value))
            new-value)))))
 
-(defalias 'yas-expand 'yas-expand-from-trigger-key)
+(defalias 'yas-expand #'yas-expand-from-trigger-key)
 (defun yas-expand-from-trigger-key (&optional field)
   "Expand a snippet before point.
 
@@ -2952,7 +2953,8 @@ marks it as something else (typically comment ender)."
     'again))
 
 (defun yas-longest-key-from-whitespace (start-point)
-  "As `yas-key-syntaxes' element, look for longest key between point and whitespace.
+  "Look for longest key between point and whitespace.
+For use as `yas-key-syntaxes' element.
 
 A newline will be considered whitespace even if the mode syntax
 marks it as something else (typically comment ender)."
@@ -3321,7 +3323,7 @@ equivalent to a range covering the whole buffer."
       (cl-sort snippets #'>= :key #'yas--snippet-id))))
 
 (define-obsolete-function-alias 'yas--snippets-at-point
-  'yas-active-snippets "0.12")
+  #'yas-active-snippets "0.12")
 
 (defun yas-next-field-or-maybe-expand ()
   "Try to expand a snippet at a key before point.
@@ -3700,8 +3702,8 @@ Use as a `:filter' argument for a conditional keybinding."
   "Clears unmodified field if at field start, skips to next tab.
 
 Otherwise deletes a character normally by calling `delete-char'."
-  (interactive)
   (declare (obsolete "Bind to `yas-maybe-skip-and-clear-field' instead." "0.13"))
+  (interactive)
   (cond ((yas--maybe-clear-field-filter t)
          (yas--skip-and-clear (or field (yas-current-field)))
          (yas-next-field 1))
@@ -4674,10 +4676,11 @@ The following count as a field:
 
 * \"${n: text}\", for a numbered field with default text, as long as N is not 0;
 
-* \"${n: text$(expression)}, the same with a Lisp expression;
-  this is caught with the curiously named `yas--multi-dollar-lisp-expression-regexp'
+* \"${n: text$(expression)}, the same with a Lisp expression; this is caught
+  with the curiously named `yas--multi-dollar-lisp-expression-regexp'
 
-* the same as above but unnumbered, (no N:) and number is calculated automatically.
+* the same as above but unnumbered, (no N:) and number is calculated
+  automatically.
 
 When multiple expressions are found, only the last one counts."
   ;;
