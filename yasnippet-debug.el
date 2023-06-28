@@ -1,6 +1,6 @@
 ;;; yasnippet-debug.el --- debug functions for yasnippet -*- lexical-binding: t -*-
 
-;; Copyright (C) 2010, 2013-2014, 2017-2018  Free Software Foundation, Inc.
+;; Copyright (C) 2010-2023  Free Software Foundation, Inc.
 
 ;; Author: João Távora
 ;; Keywords: emulations, convenience
@@ -40,9 +40,6 @@
                         ;; Don't require '-L <path>' when debugging.
                         (expand-file-name "yasnippet" yas--loaddir)))
 (require 'cl-lib)
-(eval-when-compile
-  (unless (fboundp 'cl-flet)
-    (defalias 'cl-flet 'flet)))
 (require 'color nil t)
 (require 'edebug)
 (eval-when-compile
@@ -224,13 +221,15 @@
   (setq yas-debug-undo value)
   (yas--message 3 "debug undo %sabled" (if yas-debug-undo "en" "dis")))
 
-(defadvice yas--snippet-parse-create (before yas-debug-target-snippet (snippet))
+(advice-add 'yas--snippet-parse-create :before #'yas-debug--target-snippet)
+(defun yas-debug--target-snippet (snippet)
   (add-to-list 'yas-debug-target-snippets snippet))
 
-(defadvice yas--commit-snippet (after yas-debug-untarget-snippet (snippet))
+(advice-add 'yas--commit-snippet :after #'yas-debug--untarget-snippet)
+(defun yas-debug--untarget-snippet (snippet)
   (setq yas-debug-target-snippets
         (remq snippet yas-debug-target-snippets))
-  (maphash (lambda (k color-ov)
+  (maphash (lambda (_k color-ov)
              (delete-overlay (cdr color-ov)))
            yas-debug-live-indicators)
   (clrhash yas-debug-live-indicators))
