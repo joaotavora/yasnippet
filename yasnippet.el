@@ -644,7 +644,12 @@ expanded.")
 
 (defvar yas-minor-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map [(tab)]     yas-maybe-expand)
+    ;; Modes should always bind to TAB instead of `tab', so as not to override
+    ;; bindings that should take higher precedence but which bind to `TAB`
+    ;; instead (relying on `function-key-map` to remap `tab` to TAB).
+    ;; If this causes problem because of another package that binds to `tab`,
+    ;; complain to that other package!
+    ;;(define-key map [(tab)]     yas-maybe-expand)
     (define-key map (kbd "TAB") yas-maybe-expand)
     (define-key map "\C-c&\C-s" 'yas-insert-snippet)
     (define-key map "\C-c&\C-n" 'yas-new-snippet)
