@@ -9,3 +9,7 @@ extras/imported/**
 *.elc
 ert-x.*
 ert.*
+
+# ELPA-generated files
+/yasnippet-autoloads.el
+/yasnippet-pkg.el
