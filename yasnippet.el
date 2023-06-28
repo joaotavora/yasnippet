@@ -1,6 +1,6 @@
-;;; yasnippet.el --- Yet another snippet extension for Emacs
+;;; yasnippet.el --- Yet another snippet extension for Emacs  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2008-2019 Free Software Foundation, Inc.
+;; Copyright (C) 2008-2023 Free Software Foundation, Inc.
 ;; Authors: pluskid <pluskid@gmail.com>,
 ;;          João Távora <joaotavora@gmail.com>,
 ;;          Noam Postavsky <npostavs@gmail.com>
@@ -1344,7 +1344,7 @@ string and TEMPLATE is a `yas--template' structure."
       (save-excursion
         (save-restriction
           (save-match-data
-            (eval condition))))
+            (eval condition t))))
     (error (progn
              (yas--message 1 "Error in condition evaluation: %s" (error-message-string err))
              nil))))
@@ -1502,7 +1502,7 @@ Also tries to work around Emacs Bug#30931."
         (save-excursion
           (yas--save-restriction-and-widen
             (save-match-data
-              (let ((result (eval form)))
+              (let ((result (eval form t)))
                 (when result
                   (format "%s" result))))))
       ((debug error) (error-message-string oops)))))
@@ -3208,7 +3208,7 @@ expression that evaluates to its value."
     `(let ((,envvar ,env))
        (cl-progv
            (mapcar #'car ,envvar)
-           (mapcar (lambda (v-f) (eval (cadr v-f))) ,envvar)
+           (mapcar (lambda (v-f) (eval (cadr v-f) t)) ,envvar)
          ,@body))))
 
 (defun yas--snippet-map-markers (fun snippet)
