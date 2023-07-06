@@ -2309,7 +2309,11 @@ Just put this function in `hippie-expand-try-functions-list'."
     (if (not old)
         (let ((yas-fallback-behavior 'return-nil))
           (yas-expand))
-      (undo 1)
+      (let ((old-this-command this-command))
+        ;; undo sets this-command, but that would confuse hippie-expand, so we
+        ;; just restore the value.
+        (undo 1)
+        (setq this-command old-this-command))
       nil)))
 
 
