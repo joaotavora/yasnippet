@@ -39,13 +39,12 @@
 ;;
 ;;       `yas-snippet-dirs'
 ;;
-;;           The directory where user-created snippets are to be
-;;           stored.  Can also be a list of directories.  In that case,
-;;           when used for bulk (re)loading of snippets (at startup or
-;;           via `yas-reload-all'), directories appearing earlier in
-;;           the list override other dir's snippets.  Also, the first
-;;           directory is taken as the default for storing the user's
-;;           new snippets.
+;;           List of directories where user-created snippets are to be
+;;           stored.  When used for bulk (re)loading of snippets (at
+;;           startup orxvia `yas-reload-all'), directories appearing
+;;           earlier in the list override other dir's snippets.  Also,
+;;           the first directory is taken as the default for storing
+;;           the user's new snippets.
 ;;
 ;;           The deprecated `yas/root-directory' aliases this variable
 ;;           for backward-compatibility.
@@ -177,9 +176,7 @@ snippets.
 
 The first directory is taken as the default for storing snippet's
 created with `yas-new-snippet'. "
-  :type '(choice (directory :tag "Single directory")
-                 (repeat :tag "List of directories"
-                         (choice (directory) (variable))))
+  :type '(repeat (directory))
   :set #'(lambda (symbol new)
            (let ((old (and (boundp symbol)
                            (symbol-value symbol))))
