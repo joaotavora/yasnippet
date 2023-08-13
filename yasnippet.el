@@ -1490,7 +1490,7 @@ return an expression that when evaluated will issue an error."
   (condition-case err
       (read string)
     (error (and (not nil-on-error)
-                `(error (error-message-string ,err))))))
+                `(error (error-message-string ',err))))))
 
 (defun yas--read-keybinding (keybinding)
   "Read KEYBINDING as a snippet keybinding, return a vector."
@@ -3041,8 +3041,7 @@ snippet field.  The arguments are the same as `completing-read'.
 (defun yas-throw (text)
   "Signal `yas-exception' with TEXT as the reason."
   (signal 'yas-exception (list text)))
-(put 'yas-exception 'error-conditions '(error yas-exception))
-(put 'yas-exception 'error-message "[yas] Exception")
+(define-error 'yas-exception "[yas] Exception")
 
 (defun yas-verify-value (possibilities)
   "Verify that the current field value is in POSSIBILITIES.
@@ -3942,8 +3941,6 @@ Move the overlays, or create them if they do not exit."
       (yas--message 2 "Committing snippets. Action would destroy a protection overlay.")
       (cl-loop for snippet in snippets
                do (yas--commit-snippet snippet)))))
-
-(add-to-list 'debug-ignored-errors "^Exit the snippet first!$")
 
 
 ;;; Snippet expansion and "stacked" expansion:
