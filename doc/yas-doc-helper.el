@@ -25,10 +25,9 @@
 ;;; Code:
 
 (eval-when-compile
-  (require 'cl))
+  (require 'cl-lib))
 (require 'org)
-(or (require 'org-publish nil t)
-    (require 'ox-publish))
+(require 'ox-publish)
 (require 'yasnippet) ; docstrings must be loaded
 
 (defun yas--org-raw-html (tag content &optional attrs)
@@ -132,18 +131,18 @@
 (defun yas--document-symbols (level &rest names-and-predicates)
   (let ((sym-lists (make-vector (length names-and-predicates) nil))
         (stars (make-string level ?*)))
-    (loop for sym in yas--exported-syms
-          do (loop for test in (mapcar #'cdr names-and-predicates)
-                   for i from 0
-                   do (when (funcall test sym)
-                        (push sym (aref sym-lists i))
-                        (return))))
-    (loop for slist across sym-lists
-          for name in (mapcar #'car names-and-predicates)
-          concat (format "\n%s %s\n" stars name)
-          concat (mapconcat (lambda (sym)
-                              (yas--document-symbol sym (1+ level)))
-                            slist "\n\n"))))
+    (cl-loop for sym in yas--exported-syms
+             do (cl-loop for test in (mapcar #'cdr names-and-predicates)
+                         for i from 0
+                         do (when (funcall test sym)
+                              (push sym (aref sym-lists i))
+                              (cl-return))))
+    (cl-loop for slist across sym-lists
+             for name in (mapcar #'car names-and-predicates)
+             concat (format "\n%s %s\n" stars name)
+             concat (mapconcat (lambda (sym)
+                                 (yas--document-symbol sym (1+ level)))
+                               slist "\n\n"))))
 
 (defun yas--internal-link-snippet ()
   (interactive)
