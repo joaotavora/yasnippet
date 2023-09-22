@@ -3919,6 +3919,12 @@ field start.  This hook does nothing if an undo is in progress."
                 (when (local-variable-p 'auto-fill-function)
                   (if af-cell (setcdr af-cell (cons buf (cdr af-cell)))
                     (push (list auto-fill-function buf) fill-fun-values))))))
+          ;; Prevent infinite recursion if printing the warning tries to
+          ;; auto-fill.
+          (let ((buffer (get-buffer "*Warnings*")))
+            (when (buffer-live-p buffer)
+              (with-current-buffer buffer
+                (auto-fill-mode -1))))
           (lwarn '(yasnippet auto-fill bug) :error
                  "`yas--original-auto-fill-function' unexpectedly nil in %S!  Disabling auto-fill.
   %S
