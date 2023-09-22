@@ -433,6 +433,7 @@ The condition will respect the value of `yas-keymap-disable-hook'."
     map)
   "The active keymap while a snippet expansion is in progress.")
 
+(defvar yas-regexp-key-syntaxes (list (lambda (original) (goto-char (line-beginning-position)))))
 (defvar yas-key-syntaxes (list #'yas-try-key-from-whitespace
                                "w_.()" "w_." "w_" "w")
   "Syntaxes and functions to help look for trigger keys before point.
@@ -1074,7 +1075,7 @@ Meaning it's visiting a file under one of the mode directories in
                 (table
                  key content
                  &optional xname condition group
-                 expand-env load-file xkeybinding xuuid save-file
+                 expand-env load-file xkeybinding xuuid regexp-key regexp-order save-file
                  &aux
                  (name (or xname
                            ;; A little redundant: we always get a name
@@ -1092,6 +1093,8 @@ Meaning it's visiting a file under one of the mode directories in
                   (and old (yas--template-perm-group old))))))
   "A template for a snippet."
   key
+  regexp-key
+  regexp-order
   content
   name
   condition
@@ -1135,12 +1138,21 @@ Has the following fields:
 `yas--table-uuidhash'
 
   A hash table mapping snippets uuid's to the same `yas--template'
-  objects. A snippet uuid defaults to the snippet's name."
+  objects. A snippet uuid defaults to the snippet's name.
+
+`yas--table-regexp-templates'
+
+  A list with elements on the form ((REGEXP-KEY . TEMPLATE) .
+  ORDER). REGEXP-KEY is a string, TEMPLATE is `yas--template'
+  object and ORDER is a number. The list is sorted by ORDER where
+  smaller values of ORDER are first."
+
   name
   (hash (make-hash-table :test 'equal))
   (uuidhash (make-hash-table :test 'equal))
   (parents nil)
-  (direct-keymap (make-sparse-keymap)))
+  (direct-keymap (make-sparse-keymap))
+  (regexp-templates '()))
 
 (defun yas--get-template-by-uuid (mode uuid)
   "Find the snippet template in MODE by its UUID."
@@ -1240,9 +1252,20 @@ KEY can be a string (trigger key) of a vector (direct
 keybinding)."
   (let ((name (yas--template-name template))
         (key (yas--template-key template))
+        (regexp-key (yas--template-regexp-key template))
+        (regexp-order (yas--template-regexp-order template))
         (keybinding (yas--template-keybinding template))
         (_menu-binding-pair (yas--template-menu-binding-pair-get-create template)))
-    (dolist (k (remove nil (list key keybinding)))
+    (when regexp-key
+      (setf (yas--table-regexp-templates table)
+            (cons `((,regexp-key . ,template) . ,(if regexp-order
+                                                     regexp-order
+                                                   10))
+                  (yas--table-regexp-templates table)))
+      (setf (yas--table-regexp-templates table)
+            (sort (yas--table-regexp-templates table)
+                  (lambda (a b) (< (cdr a) (cdr b))))))
+    (dolist (k (remove nil (list key keybinding regexp-key)))
       (puthash name
                template
                (or (gethash k
@@ -1350,20 +1373,29 @@ string and TEMPLATE is a `yas--template' structure."
              nil))))
 
 
-(defun yas--filter-templates-by-condition (templates)
+(defun yas--filter-templates-by-condition (templates &optional get-template-func)
   "Filter the templates using the applicable condition.
 
 TEMPLATES is a list of cons (NAME . TEMPLATE) where NAME is a
 string and TEMPLATE is a `yas--template' structure.
 
 This function implements the rules described in
-`yas-buffer-local-condition'.  See that variables documentation."
+`yas-buffer-local-condition'.  See that variables documentation.
+
+GET-TEMPLATE-FUNC takes an element from TEMPLATES and returns the
+template object.
+
+If GET-TEMPLATE-FUNC is non-nil TEMPLATES do not have to be a
+list of cons-cells. It can be a list of anything as long as
+GET-TEMPLATE-FUNC can retreive it."
   (let ((requirement (yas--require-template-specific-condition-p)))
     (if (eq requirement 'always)
         templates
       (cl-remove-if-not (lambda (pair)
                           (yas--template-can-expand-p
-                           (yas--template-condition (cdr pair)) requirement))
+                           (yas--template-condition (if get-template-func
+                                                        (funcall get-template-func pair)
+                                                      (cdr pair))) requirement))
                         templates))))
 
 (defun yas--require-template-specific-condition-p ()
@@ -1404,17 +1436,23 @@ conditions to filter out potential expansions."
                (yas--table-uuidhash table))
       (yas--filter-templates-by-condition acc))))
 
-(defun yas--templates-for-key-at-point ()
-  "Find `yas--template' objects for any trigger keys preceding point.
-Returns (TEMPLATES START END). This function respects
-`yas-key-syntaxes', which see."
+(defun yas--templates-for-key-at-point-helper (methods template-fun)
+  "Helper function for yas--templates-for-key-at-point.
+
+Goes backwards according to METHODS(which is either
+yas-key-syntaxes or yas-regexp-key-syntaxes), then calls
+TEMPLATE-FUN with a possible-key start-pos and end-pos where
+
+- start-pos is the point where methods took us
+- end-pos is (point)
+- possible-key is the string between start-pos and end-pos"
   (save-excursion
+    (setq yas-matched-regexp-key nil)
     (let ((original (point))
-          (methods yas-key-syntaxes)
-          (templates)
+          (templates-and-pos)
           (method))
       (while (and methods
-                  (not templates))
+                  (not templates-and-pos))
         (unless (eq method (car methods))
           ;; TRICKY: `eq'-ness test means we can only be here if
           ;; `method' is a function that returned `again', and hence
@@ -1432,15 +1470,79 @@ Returns (TEMPLATES START END). This function respects
               (t
                (setq methods (cdr methods))
                (yas--warning "Invalid element `%s' in `yas-key-syntaxes'" method)))
-        (let ((possible-key (buffer-substring-no-properties (point) original)))
+        (let ((possible-key (buffer-substring-no-properties (point) original))
+              (syntax-start-pos (point)))
           (save-excursion
             (goto-char original)
-            (setq templates
-                  (cl-mapcan (lambda (table)
-                               (yas--fetch table possible-key))
-                             (yas--get-snippet-tables))))))
-      (when templates
-        (list templates (point) original)))))
+            (setq templates-and-pos
+                  ;; (cl-mapcan (lambda (table)
+                  ;;              (yas--fetch table possible-key))
+                  ;;            (yas--get-snippet-tables))
+                  (funcall template-fun possible-key syntax-start-pos original)))))
+      (when templates-and-pos
+        templates-and-pos))))
+
+(defun  yas--templates-for-key-at-point ()
+  "Find `yas--template' objects for any trigger keys preceding point.
+Returns (TEMPLATES START END). This function respects
+`yas-key-syntaxes', which see.
+
+If any regexp-key matches then only that keys template gets returned."
+  (let* ((regexp-keys (yas--filter-templates-by-condition
+                       (apply #'append (mapcar
+                                        #'yas--table-regexp-templates
+                                        (yas--get-snippet-tables))) #'cdar))
+         (found-regexp-match nil)
+         (found-template)
+         (found-key)
+         (found-start)
+         (found-end))
+    (let ((templates
+           (yas--templates-for-key-at-point-helper
+            yas-regexp-key-syntaxes
+            (lambda (possible-key start-pos end-pos)
+              (setq found-regexp-match
+                    (cl-block found-match
+                      (cl-loop for k in regexp-keys do
+                               (let* ((regexp (caar k))
+                                      (template (cdar k))
+                                      (text possible-key)
+                                      (matched-index (string-match (concat regexp "\\'") text))
+                                      (matched-buffer-index (when matched-index
+                                                              (+ start-pos matched-index))))
+                                 (when matched-index
+                                   (setq yas-matched-regexp-key-groups
+                                         (reverse (let ((i 0)
+                                                        (new-list nil))
+                                                    (while (< i (length (match-data)))
+                                                      (setq new-list (cons
+                                                                      (let ((beg (nth i (match-data)))
+                                                                            (end (nth (+ i 1) (match-data))))
+                                                                        (substring text beg end))
+                                                                      new-list))
+                                                      (setq i (+ i 2)))
+                                                    new-list)))
+                                   (setq found-template template)
+                                   (setq found-start (+ start-pos matched-index))
+                                   (setq found-end end-pos)
+                                   (setq found-key (buffer-substring-no-properties found-start found-end))
+
+                                   (cl-return-from found-match t))))))
+              (when found-regexp-match
+                (progn
+
+                  (setq yas-matched-regexp-key found-key)
+                  (list (list `(,found-key . ,found-template)) found-start found-end)))))))
+      (if templates
+          templates
+        (yas--templates-for-key-at-point-helper
+         yas-key-syntaxes
+         (lambda (possible-key start-pos end-pos)
+           (let ((templates(cl-mapcan (lambda (table)
+                                                 (yas--fetch table possible-key))
+                                               (yas--get-snippet-tables))))
+             (when (car templates)
+               (list templates start-pos end-pos)))))))))
 
 (defun yas--table-all-keys (table)
   "Get trigger keys of all active snippets in TABLE."
@@ -1585,7 +1687,7 @@ otherwise we attempt to calculate it from FILE.
 
 Return a snippet-definition, i.e. a list
 
- (KEY TEMPLATE NAME CONDITION GROUP VARS LOAD-FILE KEYBINDING UUID)
+ (KEY TEMPLATE NAME CONDITION GROUP VARS LOAD-FILE KEYBINDING UUID REGEXP-KEY REGEXP-ORDER)
 
 If the buffer contains a line of \"# --\" then the contents above
 this line are ignored. Directives can set most of these with the syntax:
@@ -1602,12 +1704,16 @@ Here's a list of currently recognized directives:
  * key
  * expand-env
  * binding
- * uuid"
+ * uuid
+ * regexp-key
+ * regexp-order"
   (goto-char (point-min))
   (let* ((type 'snippet)
          (name (and file
                     (file-name-nondirectory file)))
          (key nil)
+         (regexp-key nil)
+         (regexp-order nil)
          template
          bound
          condition
@@ -1631,6 +1737,10 @@ Here's a list of currently recognized directives:
                                 'snippet)))
                  (when (string= "key" (match-string-no-properties 1))
                    (setq key (match-string-no-properties 2)))
+                 (when (string= "regexp-key" (match-string-no-properties 1))
+                   (setq regexp-key (match-string-no-properties 2)))
+                 (when (string= "regexp-order" (match-string-no-properties 1))
+                   (setq regexp-order (string-to-number (match-string-no-properties 2))))
                  (when (string= "name" (match-string-no-properties 1))
                    (setq name (match-string-no-properties 2)))
                  (when (string= "condition" (match-string-no-properties 1))
@@ -1639,18 +1749,18 @@ Here's a list of currently recognized directives:
                    (setq group (match-string-no-properties 2)))
                  (when (string= "expand-env" (match-string-no-properties 1))
                    (setq expand-env (yas--read-lisp (match-string-no-properties 2)
-                                                   'nil-on-error)))
+                                                    'nil-on-error)))
                  (when (string= "binding" (match-string-no-properties 1))
                    (setq binding (match-string-no-properties 2)))))
       (setq template
             (buffer-substring-no-properties (point-min) (point-max))))
-    (unless (or key binding)
+    (unless (or key binding regexp-key)
       (setq key (and file (file-name-nondirectory file))))
     (when (eq type 'command)
       (setq template (yas--read-lisp (concat "(progn" template ")"))))
     (when group
       (setq group (split-string group "\\.")))
-    (list key template name condition group expand-env file binding uuid)))
+    (list key template name condition group expand-env file binding uuid regexp-key regexp-order)))
 
 (defun yas--calculate-group (file)
   "Calculate the group for snippet file path FILE."
@@ -1813,7 +1923,7 @@ Optional PROMPT sets the prompt to use."
 SNIPPETS is a list of snippet definitions, each taking the
 following form
 
- (KEY TEMPLATE NAME CONDITION GROUP EXPAND-ENV LOAD-FILE KEYBINDING UUID SAVE-FILE)
+ (KEY TEMPLATE NAME CONDITION GROUP EXPAND-ENV LOAD-FILE KEYBINDING UUID REGEXP-KEY REGEXP-ORDER SAVE-FILE)
 
 Within these, only KEY and TEMPLATE are actually mandatory.
 
@@ -1839,12 +1949,12 @@ the current buffers contents."
         (insert ";;; Snippet definitions:\n;;;\n")
         (dolist (snippet snippets)
           ;; Fill in missing elements with nil.
-          (setq snippet (append snippet (make-list (- 10 (length snippet)) nil)))
+          (setq snippet (append snippet (make-list (- 12 (length snippet)) nil)))
           ;; Move LOAD-FILE to SAVE-FILE because we will load from the
           ;; compiled file, not LOAD-FILE.
           (let ((load-file (nth 6 snippet)))
             (setcar (nthcdr 6 snippet) nil)
-            (setcar (nthcdr 9 snippet) load-file)))
+            (setcar (nthcdr 11 snippet) load-file)))
         (insert (pp-to-string
                  `(yas-define-snippets ',mode ',snippets)))
         (insert "\n\n"))
@@ -2340,7 +2450,22 @@ value for the first time then always returns a cached value.")
                             )))
            (put ',func 'yas--condition-cache (cons yas--condition-cache-timestamp new-value))
            new-value)))))
+(defvar yas-matched-regexp-key-groups nil
+  "A list containg match-data from the regexp-search made with the regexp-key.
+The first item is the whole text matched by the regexp.
+Subsequent items are text matched by the nth parenthesized expression by the
+ regexp-key.
+Example:
+# regexp-key: \([A-Za-z]\)\([0-9]\)
+# name: subscript
+# --
+`(nth 1 yas-matched-regexp-key-groups)`_`(nth 2 yas-matched-regexp-key-groups)`
 
+The snippet above will match any text on the form {Letter}{Number}. This is then
+expanded to {Letter}_{Number} (i.e. the snippet places a underscore between any
+letter and number).")
+(defvar yas-matched-regexp-key nil
+  "The text that was used as a key for this snippet, if it was expanded using a regexp-key.")
 (defalias 'yas-expand 'yas-expand-from-trigger-key)
 (defun yas-expand-from-trigger-key (&optional field)
   "Expand a snippet before point.

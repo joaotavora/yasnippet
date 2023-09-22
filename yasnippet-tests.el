@@ -1786,6 +1786,110 @@ add the snippets associated with the given mode."
        (yas-should-expand '(("car" . "(car )")))))))
 
 
+(ert-deftest regexp-key-simple-integration-test ()
+  (clrhash yas--tables)
+  (with-temp-buffer
+    (insert "# name: test\n# regexp-key: [a-z]*\n# --\nfoo")
+    (yas-define-snippets 'fundamental-mode (list (yas--parse-template))))
+  (yas-minor-mode 1)
+  (insert "foobarquux")
+  (ert-simulate-command '(yas-expand))
+  (should (equal (buffer-string) "foo"))
+  (clrhash yas--tables))
+
+(ert-deftest regexp-key-simple-integration-test-key-syntaxes ()
+  (clrhash yas--tables)
+  (with-temp-buffer
+    (insert "# name: test\n# regexp-key: ([^b-a]*)\n# --\nfoo")
+    (yas-define-snippets 'fundamental-mode (list (yas--parse-template))))
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    (insert "(asdf)")
+    (ert-simulate-command '(yas-expand))
+    (should (equal (buffer-string) "foo")))
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    (insert " (test whitespace before)")
+    (ert-simulate-command '(yas-expand))
+    (should (equal (buffer-string) " foo")))
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    (insert "(kdkd\n)")
+    (ert-simulate-command '(yas-expand))
+    (should (equal (buffer-string) "(kdkd\n)")))
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    (insert "(foobarquux\n)")
+    (let ((yas-regexp-key-syntaxes (list (lambda (original) (goto-char (line-beginning-position 0))))))
+      (ert-simulate-command '(yas-expand)))
+    (should (equal (buffer-string) "foo")))
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    (insert "(foobarquux)")
+    (let ((yas-regexp-key-syntaxes (list "(w)")))
+      (ert-simulate-command '(yas-expand)))
+    (should (equal (buffer-string) "foo")))
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    (insert "(foo barquux)")
+    (let ((yas-regexp-key-syntaxes (list "(w)")))
+      (ert-simulate-command '(yas-expand)))
+    (should (equal (buffer-string) "(foo barquux)")))
+  (clrhash yas--tables))
+(ert-deftest regexp-matched-regexp-key ()
+  (clrhash yas--tables)
+  (with-temp-buffer
+    (insert "# name: test\n# regexp-key: [a-z]*\n# --\n(`yas-matched-regexp-key`)")
+    (yas-define-snippets 'fundamental-mode (list (yas--parse-template))))
+  (yas-minor-mode 1)
+  (insert "foobarquux")
+  (ert-simulate-command '(yas-expand))
+  (should (equal (buffer-string) "(foobarquux)"))
+  (clrhash yas--tables))
+
+(ert-deftest regexp-key-order-default ()
+  (clrhash yas--tables)
+  (with-temp-buffer
+    (insert "# name: test\n# regexp-order: 1\n# regexp-key: [a-z]*\n# --\norder1")
+    (yas-define-snippets 'fundamental-mode (list (yas--parse-template))))
+  (with-temp-buffer
+    (insert "# name: test\n# regexp-key: [a-z]*\n# --\norderdefault")
+    (yas-define-snippets 'fundamental-mode (list (yas--parse-template))))
+  (yas-minor-mode 1)
+  (insert "foobarquux")
+  (ert-simulate-command '(yas-expand))
+  (should (equal (buffer-string) "order1"))
+  (clrhash yas--tables))
+
+(ert-deftest regexp-key-order ()
+  (clrhash yas--tables)
+  (with-temp-buffer
+    (insert "# name: test\n# regexp-order: 0\n# regexp-key: [a-z]*\n# --\norder0")
+    (yas-define-snippets 'fundamental-mode (list (yas--parse-template))))
+  (with-temp-buffer
+    (insert "# name: test\n# regexp-order: 1\n# regexp-key: [a-z]*\n# --\norder1")
+    (yas-define-snippets 'fundamental-mode (list (yas--parse-template))))
+  (yas-minor-mode 1)
+  (insert "foobarquux")
+  (ert-simulate-command '(yas-expand))
+  (should (equal (buffer-string) "order0"))
+  (clrhash yas--tables))
+
+(ert-deftest regexp-key-simple-nested ()
+  (clrhash yas--tables)
+  (with-temp-buffer
+    (insert "# name: test\n\n# regexp-key: foo+\n# --\n(${1:foo})$0")
+    (yas-define-snippets 'fundamental-mode (list (yas--parse-template))))
+  (with-temp-buffer
+    (insert "# name: test1\n\n# regexp-key: bar+\n# --\nbaz")
+    (yas-define-snippets 'fundamental-mode (list (yas--parse-template))))
+  (yas-minor-mode 1)
+  (insert "foo")
+  (ert-simulate-command '(yas-expand))
+  (insert "bar")
+  (ert-simulate-command '(yas-expand))
+  (should (equal (buffer-string) "(baz)"))
+  (clrhash yas--tables))
 
 (provide 'yasnippet-tests)
 ;; Local Variables:
