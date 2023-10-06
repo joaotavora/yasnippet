@@ -71,10 +71,6 @@ get some!
     To use these snippets you have to run the tool first, so
     [see its doc][yasmate]), and then point the `yas-snippet-dirs`
     variable to the `.../yasmate/snippets` subdir.
-
-    If you have a working ruby environment, you can probably get lucky
-    directly with `rake convert-bundles`.
-
 3.  [textmate-to-yas.el]
 
     This is another textmate bundle converting tool using Elisp
