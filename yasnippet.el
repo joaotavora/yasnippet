@@ -820,6 +820,9 @@ which decides on the snippet to expand.")
                                   ;; NOTE: `fboundp' check is redundant
                                   ;; since Emacs 24.4.
                                   (and (fboundp mode) (symbol-function mode))
+                                  (and (boundp 'major-mode-remap-alist)
+                                       (car (rassq mode
+                                                   major-mode-remap-alist)))
                                   (gethash mode yas--parents))
                      when (and neighbour
                                (not (memq neighbour explored))
