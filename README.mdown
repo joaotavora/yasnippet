@@ -15,7 +15,7 @@ YASnippet. Watch [a demo on YouTube][youtube-demo].
 
 # Installation
 
-## Install the most recent version
+## Manual install from Git
 
 Clone this repository somewhere
 
@@ -33,8 +33,12 @@ Add your own snippets to `~/.emacs.d/snippets` by placing files there or invokin
 
 ## Install with `package-install`
 
-In a recent emacs `M-x list-packages` is the recommended way to list and install packages.
-[MELPA][melpa] keeps a very recent snapshot of YASnippet, see http://melpa.org/#installing.
+In a recent emacs `M-x list-packages` is the recommended way to list
+and install packages.
+It's available from [GNU ELPA][gnuelpa].
+If you need a very recent snapshot, you can get it from
+[GNU-devel ELPA][gnudevel] as well as [MELPA][melpa]
+(see http://melpa.org/#installing).
 
 ## Install with el-get
 
@@ -156,6 +160,8 @@ Finally, thank you very much for using YASnippet!
 [googlecode tracker]: http://code.google.com/p/yasnippet/issues/list
 [forum]: http://groups.google.com/group/smart-snippet
 [melpa]: http://melpa.milkbox.net/
+[gnuelpa]: http://elpa.gnu.org/packages/
+[gnudevel]: http://elpa.gnu.org/devel/
 [yasmate]: http://github.com/joaotavora/yasmate
 [textmate-to-yas.el]: https://github.com/mattfidler/textmate-to-yas.el
 [yasnippet-snippets]: http://github.com/AndreaCrotti/yasnippet-snippets
