@@ -1,6 +1,6 @@
 ;;; yasnippet.el --- Yet another snippet extension for Emacs  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2008-2023 Free Software Foundation, Inc.
+;; Copyright (C) 2008-2024 Free Software Foundation, Inc.
 ;; Authors: pluskid <pluskid@gmail.com>,
 ;;          João Távora <joaotavora@gmail.com>,
 ;;          Noam Postavsky <npostavs@gmail.com>
@@ -342,8 +342,8 @@ If non-nil insert region contents.  This can be overridden on a
 per-snippet basis.  A value of `cua' is considered equivalent to
 `?0' for backwards compatibility."
   :type '(choice (character :tag "Insert from register")
-                 (const t :tag "Insert region contents")
-                 (const nil :tag "Don't insert anything")
+                 (const :tag "Insert region contents" t)
+                 (const :tag "Don't insert anything" nil)
                  (const cua))) ; backwards compat
 
 (defcustom yas-good-grace t
