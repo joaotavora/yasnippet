@@ -2074,6 +2074,9 @@ This works by stubbing a few functions, then calling
            (or (ignore-errors (car (let ((default-directory yas--loaddir))
                                      (process-lines "git" "describe"
                                                     "--tags" "--dirty"))))
+               (eval-when-compile
+                 (and (fboundp 'package-get-version)
+                      (package-get-version)))
                (when (and (featurep 'package)
                           (fboundp 'package-desc-version)
                           (fboundp 'package-version-join))
