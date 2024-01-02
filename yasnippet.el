@@ -813,13 +813,12 @@ which decides on the snippet to expand.")
          (yas--dfs
           (lambda (mode)
             (cl-loop for neighbour
+                     ;; FIXME: Use `derived-mode-all-parents'.
                      in (cl-list* (or (get mode 'derived-mode-parent)
                                       ;; Consider `fundamental-mode'
                                       ;; as ultimate ancestor.
                                       'fundamental-mode)
-                                  ;; NOTE: `fboundp' check is redundant
-                                  ;; since Emacs 24.4.
-                                  (and (fboundp mode) (symbol-function mode))
+                                  (symbol-function mode)
                                   (and (boundp 'major-mode-remap-alist)
                                        (car (rassq mode
                                                    major-mode-remap-alist)))
@@ -892,13 +891,8 @@ Key bindings:
 The function can be called in the hook of a minor mode to
 activate snippets associated with that mode."
   (interactive
-   (let (modes
-         symbol)
-     (maphash (lambda (k _)
-                (setq modes (cons (list k) modes)))
-              yas--parents)
-     (setq symbol (completing-read
-                   "Activate mode: " modes nil t))
+   (let ((symbol (completing-read
+                  "Activate mode: " yas--parents nil t)))
      (list
       (when (not (string= "" symbol))
         (intern symbol)))))
@@ -926,20 +920,10 @@ activate snippets associated with that mode."
 Functions are called with no argument, and should return non-nil to prevent
 `yas-global-mode' from enabling yasnippet in this buffer.
 
-In Emacsen < 24, this variable is buffer-local.  Because
-`yas-minor-mode-on' is called by `yas-global-mode' after
-executing the buffer's major mode hook, setting this variable
-there is an effective way to define exceptions to the \"global\"
-activation behaviour.
-
-In Emacsen >= 24, only the global value is used.  To define
+Only the global value is used.  To define
 per-mode exceptions to the \"global\" activation behaviour, call
 `yas-minor-mode' with a negative argument directily in the major
-mode's hook.")
-(unless (> emacs-major-version 23)
-  (with-no-warnings
-    (make-variable-buffer-local 'yas-dont-activate)))
-
+mode's hook.") ;; FIXME: Why do we say "Only the global value is used"?
 
 (defun yas-minor-mode-on ()
   "Turn on YASnippet minor mode.
@@ -1006,23 +990,13 @@ Honour `yas-dont-activate-functions', which see."
 
 
 ;;;###autoload(autoload 'snippet-mode "yasnippet" "A mode for editing yasnippets" t nil)
-(eval-and-compile
-  (if (fboundp 'prog-mode)
-      ;; `prog-mode' is new in 24.1.
-      (define-derived-mode snippet-mode prog-mode "Snippet"
-        "A mode for editing yasnippets"
-        (setq font-lock-defaults '(yas--font-lock-keywords))
-        (set (make-local-variable 'require-final-newline) nil)
-        (set (make-local-variable 'comment-start) "#")
-        (set (make-local-variable 'comment-start-skip) "#+[\t ]*")
-        (add-hook 'after-save-hook #'yas-maybe-load-snippet-buffer nil t))
-    (define-derived-mode snippet-mode fundamental-mode "Snippet"
-      "A mode for editing yasnippets"
-      (setq font-lock-defaults '(yas--font-lock-keywords))
-      (set (make-local-variable 'require-final-newline) nil)
-      (set (make-local-variable 'comment-start) "#")
-      (set (make-local-variable 'comment-start-skip) "#+[\t ]*")
-      (add-hook 'after-save-hook #'yas-maybe-load-snippet-buffer nil t))))
+(define-derived-mode snippet-mode prog-mode "Snippet"
+  "A mode for editing yasnippets"
+  (setq font-lock-defaults '(yas--font-lock-keywords))
+  (set (make-local-variable 'require-final-newline) nil)
+  (set (make-local-variable 'comment-start) "#")
+  (set (make-local-variable 'comment-start-skip) "#+[\t ]*")
+  (add-hook 'after-save-hook #'yas-maybe-load-snippet-buffer nil t))
 
 (defun yas-snippet-mode-buffer-p ()
   "Return non-nil if current buffer should be in `snippet-mode'.
@@ -1724,12 +1698,10 @@ Optional PROMPT sets the prompt to use."
     (redisplay)
     (or
      (x-popup-menu
-      (if (fboundp 'posn-at-point)
-          (let ((x-y (posn-x-y (posn-at-point (point)))))
-            (list (list (+ (car x-y) 10)
-                        (+ (cdr x-y) 20))
-                  (selected-window)))
-        t)
+      (let ((x-y (posn-x-y (posn-at-point (point)))))
+        (list (list (+ (car x-y) 10)
+                    (+ (cdr x-y) 20))
+              (selected-window)))
       `(,prompt ("title"
                  ,@(cl-mapcar (lambda (c d) `(,(concat "   " d) . ,c))
                               choices
@@ -3765,10 +3737,8 @@ BEG, END and LENGTH like overlay modification hooks."
 
 (defun yas--merge-and-drop-dups (list1 list2 cmp key)
   ;; `delete-consecutive-dups' + `cl-merge'.
-  (funcall (if (fboundp 'delete-consecutive-dups)
-               #'delete-consecutive-dups ; 24.4
-             #'delete-dups)
-           (cl-merge 'list list1 list2 cmp :key key)))
+  (delete-consecutive-dups
+   (cl-merge 'list list1 list2 cmp :key key)))
 
 (defvar yas--before-change-modified-snippets nil)
 (make-variable-buffer-local 'yas--before-change-modified-snippets)
