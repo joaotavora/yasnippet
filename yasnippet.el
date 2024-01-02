@@ -763,7 +763,7 @@ expanded.")
      :help "Display some information about YASnippet"]))
 
 (define-obsolete-variable-alias 'yas-extra-modes 'yas--extra-modes "0.9.1")
-(defvar yas--extra-modes nil
+(defvar yas--extra-modes nil            ;FIXME: Use `defvar-local'?
   "An internal list of modes for which to also lookup snippets.
 
 This variable probably makes more sense as buffer-local, so
@@ -906,9 +906,8 @@ activate snippets associated with that mode."
    (list (intern
           (completing-read
            "Deactivate mode: " (mapcar #'list yas--extra-modes) nil t))))
-  (set (make-local-variable 'yas--extra-modes)
-       (remove mode
-               yas--extra-modes)))
+  (setq-local yas--extra-modes
+              (remove mode yas--extra-modes)))
 
 (defun yas-temp-buffer-p (&optional buffer)
   (eq (aref (buffer-name buffer) 0) ?\s))
@@ -993,9 +992,9 @@ Honour `yas-dont-activate-functions', which see."
 (define-derived-mode snippet-mode prog-mode "Snippet"
   "A mode for editing yasnippets"
   (setq font-lock-defaults '(yas--font-lock-keywords))
-  (set (make-local-variable 'require-final-newline) nil)
-  (set (make-local-variable 'comment-start) "#")
-  (set (make-local-variable 'comment-start-skip) "#+[\t ]*")
+  (setq-local require-final-newline nil)
+  (setq-local comment-start "#")
+  (setq-local comment-start-skip "#+[\t ]*")
   (add-hook 'after-save-hook #'yas-maybe-load-snippet-buffer nil t))
 
 (defun yas-snippet-mode-buffer-p ()
@@ -2524,7 +2523,7 @@ visited file in `snippet-mode'."
     (cond ((and file (file-readable-p file))
            (find-file-other-window file)
            (snippet-mode)
-           (set (make-local-variable 'yas--editing-template) template))
+           (setq-local yas--editing-template template))
           (file
            (message "Original file %s no longer exists!" file))
           (t
@@ -2546,9 +2545,10 @@ visited file in `snippet-mode'."
                          (pp-to-string (yas--template-content template))
                        (yas--template-content template))))
            (snippet-mode)
-           (set (make-local-variable 'yas--editing-template) template)
-           (set (make-local-variable 'default-directory)
-                (car (cdr (car (yas--guess-snippet-directories (yas--template-table template))))))))))
+           (setq-local yas--editing-template template)
+           (setq-local default-directory
+                       (car (cdr (car (yas--guess-snippet-directories
+                                       (yas--template-table template))))))))))
 
 (defun yas--guess-snippet-directories-1 (table)
   "Guess possible snippet subdirectories for TABLE."
@@ -2624,11 +2624,11 @@ NO-TEMPLATE is non-nil."
     (kill-all-local-variables)
     (snippet-mode)
     (yas-minor-mode 1)
-    (set (make-local-variable 'yas--guessed-modes)
-         (mapcar (lambda (d) (yas--table-mode (car d)))
-                 guessed-directories))
-    (set (make-local-variable 'default-directory)
-         (car (cdr (car guessed-directories))))
+    (setq-local yas--guessed-modes
+                (mapcar (lambda (d) (yas--table-mode (car d)))
+                        guessed-directories))
+    (setq-local default-directory
+                (car (cdr (car guessed-directories))))
     (if (and (not no-template) yas-new-snippet-default)
         (yas-expand-snippet yas-new-snippet-default))))
 
@@ -2678,8 +2678,8 @@ neither do the elements of PARENTS."
                          ido-mode)
                     'ido-completing-read 'completing-read)))
     (unless yas--guessed-modes
-      (set (make-local-variable 'yas--guessed-modes)
-           (or (yas--compute-major-mode-and-parents buffer-file-name))))
+      (setq-local yas--guessed-modes
+                  (yas--compute-major-mode-and-parents buffer-file-name)))
     (intern
      (funcall prompt (format "Choose or enter a table (yas guesses %s): "
                              (if yas--guessed-modes
@@ -2711,11 +2711,12 @@ Return the `yas--template' object created"
    ;;
    (t
     (unless yas--guessed-modes
-      (set (make-local-variable 'yas--guessed-modes) (or (yas--compute-major-mode-and-parents buffer-file-name))))
+      (setq-local yas--guessed-modes
+                  (or (yas--compute-major-mode-and-parents buffer-file-name))))
     (let* ((table (yas--table-get-create table)))
-      (set (make-local-variable 'yas--editing-template)
-           (yas--define-snippets-1 (yas--parse-template buffer-file-name)
-                                  table)))))
+      (setq-local yas--editing-template
+                  (yas--define-snippets-1 (yas--parse-template buffer-file-name)
+                                          table)))))
   (when interactive
     (yas--message 3 "Snippet \"%s\" loaded for %s."
                   (yas--template-name yas--editing-template)
@@ -3072,14 +3073,13 @@ other fields."
 
 ;;; Snippet expansion and field management
 
-(defvar yas--active-field-overlay nil
+(defvar-local yas--active-field-overlay nil
   "Overlays the currently active field.")
 
-(defvar yas--active-snippets nil
+(defvar-local yas--active-snippets nil
   "List of currently active snippets")
-(make-variable-buffer-local 'yas--active-snippets)
 
-(defvar yas--field-protection-overlays nil
+(defvar-local yas--field-protection-overlays nil
   "Two overlays protect the current active field.")
 
 (defvar yas-selected-text nil
@@ -3088,8 +3088,6 @@ other fields."
 (defvar yas--start-column nil
   "The column where the snippet expansion started.")
 
-(make-variable-buffer-local 'yas--active-field-overlay)
-(make-variable-buffer-local 'yas--field-protection-overlays)
 (put 'yas--active-field-overlay 'permanent-local t)
 (put 'yas--field-protection-overlays 'permanent-local t)
 
@@ -3469,8 +3467,7 @@ This renders the snippet as ordinary text."
 
   (yas--message 4 "Snippet %s exited." (yas--snippet-id snippet)))
 
-(defvar yas--snippets-to-move nil)
-(make-variable-buffer-local 'yas--snippets-to-move)
+(defvar-local yas--snippets-to-move nil)
 
 (defun yas--prepare-snippets-for-move (beg end buf pos)
   "Gather snippets in BEG..END for moving to POS in BUF."
@@ -3740,8 +3737,7 @@ BEG, END and LENGTH like overlay modification hooks."
   (delete-consecutive-dups
    (cl-merge 'list list1 list2 cmp :key key)))
 
-(defvar yas--before-change-modified-snippets nil)
-(make-variable-buffer-local 'yas--before-change-modified-snippets)
+(defvar-local yas--before-change-modified-snippets nil)
 
 (defun yas--gather-active-snippets (overlay beg end then-delete)
   ;; Add active snippets in BEG..END into an OVERLAY keyed entry of
@@ -3766,8 +3762,7 @@ BEG, END and LENGTH like overlay modification hooks."
       (when then-delete
         (cl-callf2 delq old yas--before-change-modified-snippets)))))
 
-(defvar yas--todo-snippet-indent nil nil)
-(make-variable-buffer-local 'yas--todo-snippet-indent)
+(defvar-local yas--todo-snippet-indent nil nil)
 
 (defun yas--on-field-overlay-modification (overlay after? beg end &optional length)
   "Clears the field and updates mirrors, conditionally.
