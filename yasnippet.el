@@ -132,8 +132,7 @@
 ;;; Code:
 
 (require 'cl-lib)
-(require 'eldoc) ; Needed for 24.
-(declare-function cl-progv-after "cl-extra") ; Needed for 23.4.
+(require 'eldoc) ; Needed for Emacs<25.
 (require 'easymenu)
 (require 'help-mode)
 
@@ -773,7 +772,7 @@ ensure your use `make-local-variable' when you set it.")
   "A hash table of mode symbols to `yas--table' objects.")
 
 (defvar yas--parents (make-hash-table)
-  "A hash table of mode symbols do lists of direct parent mode symbols.
+  "A hash table of mode symbols to lists of direct parent mode symbols.
 
 This list is populated when reading the \".yas-parents\" files
 found when traversing snippet directories with
@@ -805,31 +804,59 @@ which decides on the snippet to expand.")
                      yas--direct-keymaps))
            yas--tables))
 
+(defalias 'yas--merge-ordered-lists
+  (if (fboundp 'merge-ordered-lists)    ;Emacs≥30.
+      #'merge-ordered-lists
+    (lambda (lists)
+      (setq lists (delq nil lists))
+      (if (null (cdr lists)) (car lists) ;Common case.
+        (delete-dups (apply #'append
+                            ;; Prevent sharing the tail.
+                            (append lists '(()) )))))))
+
+(defun yas--all-parents (mode)
+  "Like `derived-mode-all-parents' but obeying `yas--parents'."
+  (or (get mode 'yas--all-parents) ;; FIXME: Use `with-memoization'?
+      (progn
+        (put mode 'yas--all-parents (list mode)) ;; Stop inf-loop with cycles.
+        (put mode 'yas--all-parents
+             (if (fboundp 'derived-mode-all-parents)
+                 (let* ((ap (derived-mode-all-parents mode))
+                        (extras
+                         (mapcar (lambda (parent)
+                                   (yas--merge-ordered-lists
+                                    (mapcar #'yas--all-parents
+                                            (gethash parent yas--parents))))
+                                 ap)))
+                   (yas--merge-ordered-lists
+                    (cons (append ap '(fundamental-mode)) extras)))
+               (cons mode
+                     (yas--merge-ordered-lists
+                      (mapcar #'yas--all-parents
+                              (remq nil
+                                    `(,(or (get mode 'derived-mode-parent)
+                                           ;; Consider `fundamental-mode'
+                                           ;; as ultimate ancestor.
+                                           'fundamental-mode)
+                                      ,(let ((alias (symbol-function mode)))
+                                         (when (symbolp alias) alias))
+                                      ,@(gethash mode yas--parents)))))))))))
+
 (defun yas--modes-to-activate (&optional mode)
   "Compute list of mode symbols that are active for `yas-expand' and friends."
-  (defvar yas--dfs)        ;We rely on dynbind.  We could use `letrec' instead!
-  (let* ((explored (if mode (list mode) ; Building up list in reverse.
-                     (cons major-mode (reverse yas--extra-modes))))
-         (yas--dfs
-          (lambda (mode)
-            (cl-loop for neighbour
-                     ;; FIXME: Use `derived-mode-all-parents'.
-                     in (cl-list* (or (get mode 'derived-mode-parent)
-                                      ;; Consider `fundamental-mode'
-                                      ;; as ultimate ancestor.
-                                      'fundamental-mode)
-                                  (symbol-function mode)
-                                  (and (boundp 'major-mode-remap-alist)
-                                       (car (rassq mode
-                                                   major-mode-remap-alist)))
-                                  (gethash mode yas--parents))
-                     when (and neighbour
-                               (not (memq neighbour explored))
-                               (symbolp neighbour))
-                     do (push neighbour explored)
-                     (funcall yas--dfs neighbour)))))
-    (mapc yas--dfs explored)
-    (nreverse explored)))
+  (let* ((modes
+          (delete-dups
+           (remq nil `(,(or mode major-mode)
+                       ;; FIXME: Alternative major modes should use
+                       ;; `derived-mode-add-parents', but until that
+                       ;; becomes common, use `major-mode-remap-alist'
+                       ;; as a crutch to supplement the mode hierarchy.
+                       ,(and (boundp 'major-mode-remap-alist)
+                             (car (rassq (or mode major-mode)
+                                         major-mode-remap-alist)))
+                       ,@(unless mode (reverse yas--extra-modes)))))))
+    (yas--merge-ordered-lists
+     (mapcar #'yas--all-parents modes))))
 
 (defvar yas-minor-mode-hook nil
   "Hook run when `yas-minor-mode' is turned on.")
