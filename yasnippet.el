@@ -819,28 +819,31 @@ which decides on the snippet to expand.")
   (or (get mode 'yas--all-parents) ;; FIXME: Use `with-memoization'?
       (progn
         (put mode 'yas--all-parents (list mode)) ;; Stop inf-loop with cycles.
-        (put mode 'yas--all-parents
-             (if (fboundp 'derived-mode-all-parents)
-                 (let* ((ap (derived-mode-all-parents mode))
-                        (extras
-                         (mapcar (lambda (parent)
-                                   (yas--merge-ordered-lists
-                                    (mapcar #'yas--all-parents
-                                            (gethash parent yas--parents))))
-                                 ap)))
-                   (yas--merge-ordered-lists
-                    (cons (append ap '(fundamental-mode)) extras)))
-               (cons mode
+        (let ((all-parents
+               (if (fboundp 'derived-mode-all-parents)
+                   (let* ((ap (derived-mode-all-parents mode))
+                          (extras
+                           (mapcar (lambda (parent)
+                                     (yas--merge-ordered-lists
+                                      (mapcar #'yas--all-parents
+                                              (gethash parent yas--parents))))
+                                   ap)))
                      (yas--merge-ordered-lists
-                      (mapcar #'yas--all-parents
-                              (remq nil
-                                    `(,(or (get mode 'derived-mode-parent)
-                                           ;; Consider `fundamental-mode'
-                                           ;; as ultimate ancestor.
-                                           'fundamental-mode)
-                                      ,(let ((alias (symbol-function mode)))
-                                         (when (symbolp alias) alias))
-                                      ,@(gethash mode yas--parents)))))))))))
+                      (cons (append ap '(fundamental-mode)) extras)))
+                 (cons mode
+                       (yas--merge-ordered-lists
+                        (mapcar #'yas--all-parents
+                                (remq nil
+                                      `(,(or (get mode 'derived-mode-parent)
+                                             ;; Consider `fundamental-mode'
+                                             ;; as ultimate ancestor.
+                                             'fundamental-mode)
+                                        ,(let ((alias (symbol-function mode)))
+                                           (when (symbolp alias) alias))
+                                        ,@(gethash mode yas--parents)))))))))
+          (dolist (parent all-parents)
+            (cl-pushnew mode (get parent 'yas--all-children)))
+          (put mode 'yas--all-parents all-parents)))))
 
 (defun yas--modes-to-activate (&optional mode)
   "Compute list of mode symbols that are active for `yas-expand' and friends."
@@ -1854,6 +1857,8 @@ the current buffers contents."
 
 (defun yas--define-parents (mode parents)
   "Add PARENTS to the list of MODE's parents."
+  (dolist (child (get mode 'yas--all-children))
+    (put child 'yas--all-parents nil))  ;Flush the cache for all children.
   (puthash mode (cl-remove-duplicates
                  (append parents
                          (gethash mode yas--parents)))
