@@ -1393,9 +1393,7 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
                           ,@(if (fboundp 'lisp-data-mode)
                                 '(lisp-data-mode))
                           emacs-lisp-mode
-                          lisp-interaction-mode
-                          ;; `lisp-data-mode' doesn't exist prior to Emacs 28.
-                          ,@(and (fboundp 'lisp-data-mode) '(lisp-data-mode))))
+                          lisp-interaction-mode))
               (observed (yas--modes-to-activate)))
          (should (equal major-mode (car observed)))
          (should (equal (sort expected #'string<) (sort observed #'string<))))))))
@@ -1426,11 +1424,7 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
                                      '(lisp-data-mode))
                                emacs-lisp-mode
                                and-also-this-one
-                               lisp-interaction-mode
-                               ;; `lisp-data-mode' doesn't exist prior to
-                               ;; Emacs 28.
-                               ,@(and (fboundp 'lisp-data-mode)
-                                      '(lisp-data-mode))))
+                               lisp-interaction-mode))
               (observed (yas--modes-to-activate)))
          (should (equal expected-first
                         (cl-subseq observed 0 (length expected-first))))
