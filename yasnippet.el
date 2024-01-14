@@ -829,7 +829,9 @@ which decides on the snippet to expand.")
                                               (gethash parent yas--parents))))
                                    ap)))
                      (yas--merge-ordered-lists
-                      (cons (append ap '(fundamental-mode)) extras)))
+                      (cons (if (eq (car ap) 'fundamental-mode) ap
+                              (append ap '(fundamental-mode)))
+                            extras)))
                  (cons mode
                        (yas--merge-ordered-lists
                         (mapcar #'yas--all-parents
@@ -842,7 +844,7 @@ which decides on the snippet to expand.")
                                            (when (symbolp alias) alias))
                                         ,@(gethash mode yas--parents)))))))))
           (dolist (parent all-parents)
-            (cl-pushnew mode (get parent 'yas--all-children)))
+            (cl-pushnew mode (get parent 'yas--cached-children)))
           (put mode 'yas--all-parents all-parents)))))
 
 (defun yas--modes-to-activate (&optional mode)
@@ -1857,8 +1859,9 @@ the current buffers contents."
 
 (defun yas--define-parents (mode parents)
   "Add PARENTS to the list of MODE's parents."
-  (dolist (child (get mode 'yas--all-children))
-    (put child 'yas--all-parents nil))  ;Flush the cache for all children.
+  (dolist (child (get mode 'yas--cached-children))
+    (put child 'yas--all-parents nil))  ;Flush the cache for children.
+  (put 'mode 'yas--cached-children nil)
   (puthash mode (cl-remove-duplicates
                  (append parents
                          (gethash mode yas--parents)))
