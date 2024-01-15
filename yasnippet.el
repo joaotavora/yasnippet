@@ -828,10 +828,12 @@ which decides on the snippet to expand.")
                                       (mapcar #'yas--all-parents
                                               (gethash parent yas--parents))))
                                    ap)))
-                     (yas--merge-ordered-lists
-                      (cons (if (eq (car ap) 'fundamental-mode) ap
-                              (append ap '(fundamental-mode)))
-                            extras)))
+                     (cl-assert (eq mode (car ap)))
+                     (cons mode
+                           (yas--merge-ordered-lists
+                            (cons (if (eq mode 'fundamental-mode) ()
+                                    (append (cdr ap) '(fundamental-mode)))
+                                  extras))))
                  (cons mode
                        (yas--merge-ordered-lists
                         (mapcar #'yas--all-parents
@@ -851,15 +853,15 @@ which decides on the snippet to expand.")
   "Compute list of mode symbols that are active for `yas-expand' and friends."
   (let* ((modes
           (delete-dups
-           (remq nil `(,(or mode major-mode)
+           (remq nil `(,@(unless mode yas--extra-modes)
+                       ,(or mode major-mode)
                        ;; FIXME: Alternative major modes should use
                        ;; `derived-mode-add-parents', but until that
                        ;; becomes common, use `major-mode-remap-alist'
                        ;; as a crutch to supplement the mode hierarchy.
                        ,(and (boundp 'major-mode-remap-alist)
                              (car (rassq (or mode major-mode)
-                                         major-mode-remap-alist)))
-                       ,@(unless mode (reverse yas--extra-modes)))))))
+                                         major-mode-remap-alist))))))))
     (yas--merge-ordered-lists
      (mapcar #'yas--all-parents modes))))
 
@@ -1281,7 +1283,7 @@ Return TEMPLATE."
       (cl-assert menu-keymap)
       (yas--delete-from-keymap menu-keymap (yas--template-uuid template))
 
-      ;; Add necessary subgroups as necessary.
+      ;; Add subgroups as necessary.
       ;;
       (dolist (subgroup group)
         (let ((subgroup-keymap (lookup-key menu-keymap (vector (make-symbol subgroup)))))
@@ -1491,7 +1493,7 @@ Also tries to work around Emacs Bug#30931."
   (yas--safely-call-fun (apply-partially #'eval form)))
 
 (defun yas--read-lisp (string &optional nil-on-error)
-  "Read STRING as a elisp expression and return it.
+  "Read STRING as an Elisp expression and return it.
 
 In case STRING in an invalid expression and NIL-ON-ERROR is nil,
 return an expression that when evaluated will issue an error."

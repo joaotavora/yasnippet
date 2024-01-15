@@ -121,7 +121,8 @@ This lets `yas--maybe-expand-from-keymap-filter' work as expected."
         (funcall fn)
       (cl-loop for var in vars
                for saved in saved-values
-               do (set var saved)))))
+               do (unless (eq (symbol-value var) saved) ;Beware read-only vars!
+                    (set var saved))))))
 
 (defun yas-call-with-snippet-dirs (dirs fn)
   (let* ((default-directory (make-temp-file "yasnippet-fixture" t))
@@ -1229,11 +1230,11 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
   (let ((saved-sym (make-symbol "yas--buffer-list")))
     `(let ((,saved-sym (symbol-function 'buffer-list)))
        (cl-letf (((symbol-function 'buffer-list)
-                  (lambda ()
+                  (lambda (&rest args)
                     (cl-remove-if (lambda (buf)
                                     (with-current-buffer buf
                                       (eq major-mode 'lisp-interaction-mode)))
-                                  (funcall ,saved-sym)))))
+                                  (apply ,saved-sym args)))))
          ,@body))))
 
 
@@ -1386,19 +1387,14 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
                           yet-another-c-mode
                           and-also-this-one
                           and-that-one
-                          ;; prog-mode doesn't exist in emacs 23.4
-                          ,@(if (fboundp 'prog-mode)
-                                '(prog-mode))
-                          ;; lisp-data-mode doesn't exist in emacs 27.1
-                          ,@(if (fboundp 'lisp-data-mode)
+                          prog-mode
+                          ,@(if (fboundp 'lisp-data-mode) ;Emacs≥28
                                 '(lisp-data-mode))
                           emacs-lisp-mode
-                          lisp-interaction-mode
-                          ;; `lisp-data-mode' doesn't exist prior to Emacs 28.
-                          ,@(and (fboundp 'lisp-data-mode) '(lisp-data-mode))))
+                          lisp-interaction-mode))
               (observed (yas--modes-to-activate)))
          (should (equal major-mode (car observed)))
-         (should (equal (sort expected #'string<) (sort observed #'string<))))))))
+         (should-not (cl-set-exclusive-or expected observed)))))))
 
 (ert-deftest extra-modes-parenthood ()
   "Test activation of parents of `yas--extra-modes'."
@@ -1415,27 +1411,21 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
        (yas-activate-extra-mode 'and-that-one)
        (let* ((expected-first `(and-that-one
                                 yet-another-c-mode
-                                c-mode
-                                ,major-mode))
+                                c-mode))
               (expected-rest `(cc-mode
-                               ;; prog-mode doesn't exist in emacs 23.4
-                               ,@(if (fboundp 'prog-mode)
-                                     '(prog-mode))
-                               ;; lisp-data-mode doesn't exist in emacs 27.1
-                               ,@(if (fboundp 'lisp-data-mode)
+                               prog-mode
+                               ,@(if (fboundp 'lisp-data-mode) ;Emacs≥28
                                      '(lisp-data-mode))
                                emacs-lisp-mode
                                and-also-this-one
-                               lisp-interaction-mode
-                               ;; `lisp-data-mode' doesn't exist prior to
-                               ;; Emacs 28.
-                               ,@(and (fboundp 'lisp-data-mode)
-                                      '(lisp-data-mode))))
-              (observed (yas--modes-to-activate)))
-         (should (equal expected-first
-                        (cl-subseq observed 0 (length expected-first))))
-         (should (equal (sort expected-rest #'string<)
-                        (sort (cl-subseq observed (length expected-first)) #'string<))))))))
+                               lisp-interaction-mode))
+              (observed (remq 'fundamental-mode (yas--modes-to-activate))))
+         (should-not (cl-set-exclusive-or
+                      expected-first
+                      (cl-subseq observed 0 (length expected-first))))
+         (should-not (cl-set-exclusive-or
+                      expected-rest
+                      (cl-subseq observed (length expected-first)))))))))
 
 (defalias 'yas--phony-c-mode #'c-mode)
 
