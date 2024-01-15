@@ -42,7 +42,7 @@ If you need a very recent snapshot, you can get it from
 
 ## Install with el-get
 
-El-get is a nice way to get the most recent version, too. See
+El-get is another nice way to get the most recent version, too. See
 https://github.com/dimitri/el-get for instructions.
 
 ## Use `yas-minor-mode` on a per-buffer basis
@@ -103,8 +103,9 @@ common problems and practical snippet examples.
 
 The [Github issue tracker][issues] is where most YASnippet-related
 discussion happens.  Nevertheless, since YASnippet is a part of Emacs,
-you may alternatively report bugs to the main Emacs bug list,
-bug-gnu-emacs@gnu.org, putting "yasnippet" somewhere in the subject.
+you may alternatively report bugs to Emacs via `M-x report-emacs-bug` or
+sending an email to `bug-gnu-emacs@gnu.org`, putting "yasnippet"
+somewhere in the subject.
 
 ## Important note regarding bug reporting
 
@@ -160,8 +161,8 @@ Finally, thank you very much for using YASnippet!
 [googlecode tracker]: http://code.google.com/p/yasnippet/issues/list
 [forum]: http://groups.google.com/group/smart-snippet
 [melpa]: http://melpa.milkbox.net/
-[gnuelpa]: http://elpa.gnu.org/packages/
-[gnudevel]: http://elpa.gnu.org/devel/
+[gnuelpa]: http://elpa.gnu.org/packages/yasnippet.html
+[gnudevel]: http://elpa.gnu.org/devel/yasnippet.html
 [yasmate]: http://github.com/joaotavora/yasmate
 [textmate-to-yas.el]: https://github.com/mattfidler/textmate-to-yas.el
 [yasnippet-snippets]: http://github.com/AndreaCrotti/yasnippet-snippets
