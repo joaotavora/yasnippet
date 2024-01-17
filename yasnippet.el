@@ -554,9 +554,12 @@ conditions.
     sexp))
 
 (defcustom yas-keymap-disable-hook nil
-  "The `yas-keymap' bindings are disabled if any function in this list returns non-nil.
+  "Abnormal hook run to decide when `yas-keymap' bindings are enabled.
+The bindings are disabled whenever any function in this list returns non-nil.
 This is useful to control whether snippet navigation bindings
-override bindings from other packages (e.g., `company-mode')."
+override bindings from other packages (e.g., `company-mode').
+This is run (several times) every time we perform a key lookup, so
+it has to be fast."
   :type 'hook)
 
 (defcustom yas-overlay-priority 100
@@ -3938,12 +3941,13 @@ Move the overlays, or create them if they do not exit."
              ;; (overlay-put ov 'evaporate t)
              (overlay-put ov 'modification-hooks '(yas--on-protection-overlay-modification)))))))
 
-(defun yas--on-protection-overlay-modification (_overlay after? beg end &optional length)
+(defun yas--on-protection-overlay-modification (overlay after? beg end &optional length)
   "Commit the snippet if the protection overlay is being killed."
   (unless (or yas--inhibit-overlay-hooks
               yas-inhibit-overlay-modification-protection
               (not after?)
               (= length (- end beg)) ; deletion or insertion
+              (>= beg (overlay-start overlay)) ;Emacs=29.1 bug#65929
               (yas--undo-in-progress))
     (let ((snippets (yas-active-snippets)))
       (yas--message 2 "Committing snippets. Action would destroy a protection overlay.")
