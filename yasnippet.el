@@ -3606,8 +3606,8 @@ If so cleans up the whole snippet up."
                  (yas--commit-snippet snippet)
                  (setq exited-snippets-p t))
                 ((and active-field
-                      (or (not yas--active-field-overlay)
-                          (not (overlay-buffer yas--active-field-overlay))))
+                      (not (and yas--active-field-overlay
+                                (overlay-buffer yas--active-field-overlay))))
                  ;;
                  ;; stacked expansion: this case is mainly for recent
                  ;; snippet exits that place us back int the field of
@@ -3721,7 +3721,7 @@ Otherwise deletes a character normally by calling `delete-char'."
         (t (call-interactively 'delete-char))))
 
 (defun yas--skip-and-clear (field &optional from)
-  "Deletes the region of FIELD and sets it's modified state to t.
+  "Delete the region of FIELD and set its modified state to t.
 If given, FROM indicates position to start at instead of FIELD's beginning."
   ;; Just before skipping-and-clearing the field, mark its children
   ;; fields as modified, too. If the children have mirrors-in-fields
@@ -3994,9 +3994,7 @@ for normal snippets, and a list for command snippets)."
   (run-hooks 'yas-before-expand-snippet-hook)
 
   (let* ((clear-field
-          (let ((field (and yas--active-field-overlay
-                            (overlay-buffer yas--active-field-overlay)
-                            (overlay-get yas--active-field-overlay 'yas--field))))
+          (let ((field (yas-current-field)))
             (and field (yas--skip-and-clear-field-p
                         field (point) (point) 0)
                  field)))
@@ -4043,9 +4041,7 @@ for normal snippets, and a list for command snippets)."
 
              ;; Stacked-expansion: This checks for stacked expansion, save the
              ;; `yas--previous-active-field' and advance its boundary.
-             (let ((existing-field (and yas--active-field-overlay
-                                        (overlay-buffer yas--active-field-overlay)
-                                        (overlay-get yas--active-field-overlay 'yas--field))))
+             (let ((existing-field (yas-current-field)))
                (when existing-field
                  (setf (yas--snippet-previous-active-field snippet) existing-field)
                  (yas--advance-end-maybe-previous-fields

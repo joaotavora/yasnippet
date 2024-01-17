@@ -711,7 +711,7 @@ mapconcat #'(lambda (arg)
 
 
 ;;; Snippet expansion and character escaping
-;;; Thanks to @zw963 (Billy) for the testing
+;; Thanks to @zw963 (Billy) for the testing
 ;;;
 (ert-deftest escape-dollar ()
   (with-temp-buffer
@@ -1227,6 +1227,9 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
 
 (defmacro yas-with-overriden-buffer-list (&rest body)
   (declare (debug t))
+  ;; FIXME: This macro was added by commit 185c771dedea as part of the
+  ;; fix for https://github.com/joaotavora/yasnippet/issues/253,
+  ;; but I don't know why it was/is needed.
   (let ((saved-sym (make-symbol "yas--buffer-list")))
     `(let ((,saved-sym (symbol-function 'buffer-list)))
        (cl-letf (((symbol-function 'buffer-list)
