@@ -3939,7 +3939,8 @@ Move the overlays, or create them if they do not exit."
              (overlay-put ov 'face 'yas--field-debug-face)
              (overlay-put ov 'yas--snippet snippet)
              ;; (overlay-put ov 'evaporate t)
-             (overlay-put ov 'modification-hooks '(yas--on-protection-overlay-modification)))))))
+             (overlay-put ov 'modification-hooks
+                          '(yas--on-protection-overlay-modification)))))))
 
 (defun yas--on-protection-overlay-modification (overlay after? beg end &optional length)
   "Commit the snippet if the protection overlay is being killed."
@@ -3947,7 +3948,7 @@ Move the overlays, or create them if they do not exit."
               yas-inhibit-overlay-modification-protection
               (not after?)
               (= length (- end beg)) ; deletion or insertion
-              (>= beg (overlay-start overlay)) ;Emacs=29.1 bug#65929
+              (>= beg (overlay-end overlay)) ;Emacs=29.1 bug#65929
               (yas--undo-in-progress))
     (let ((snippets (yas-active-snippets)))
       (yas--message 2 "Committing snippets. Action would destroy a protection overlay.")
