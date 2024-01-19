@@ -421,7 +421,12 @@ The condition will respect the value of `yas-keymap-disable-hook'."
 
 (defvar yas-keymap
   (let ((map (make-sparse-keymap)))
-    (define-key map [(tab)]       (yas-filtered-definition 'yas-next-field-or-maybe-expand))
+    ;; Modes should always bind to TAB instead of `tab', so as not to override
+    ;; bindings that should take higher precedence but which bind to `TAB`
+    ;; instead (relying on `function-key-map` to remap `tab` to TAB).
+    ;; If this causes problem because of another package that binds to `tab`,
+    ;; complain to that other package!
+    ;; (define-key map [tab]       (yas-filtered-definition 'yas-next-field-or-maybe-expand))
     (define-key map (kbd "TAB")   (yas-filtered-definition 'yas-next-field-or-maybe-expand))
     (define-key map [(shift tab)] (yas-filtered-definition 'yas-prev-field))
     (define-key map [backtab]     (yas-filtered-definition 'yas-prev-field))
@@ -651,7 +656,7 @@ expanded.")
     ;; instead (relying on `function-key-map` to remap `tab` to TAB).
     ;; If this causes problem because of another package that binds to `tab`,
     ;; complain to that other package!
-    ;;(define-key map [(tab)]     yas-maybe-expand)
+    ;;(define-key map [tab]     yas-maybe-expand)
     (define-key map (kbd "TAB") yas-maybe-expand)
     (define-key map "\C-c&\C-s" #'yas-insert-snippet)
     (define-key map "\C-c&\C-n" #'yas-new-snippet)
@@ -1510,7 +1515,7 @@ return an expression that when evaluated will issue an error."
   (when (and keybinding
              (not (string-match "keybinding" keybinding)))
     (condition-case err
-        (let ((res (or (and (string-match "^\\[.*\\]$" keybinding)
+        (let ((res (or (and (string-match "\\`\\[.*\\]\\'" keybinding)
                             (read keybinding))
                        (read-kbd-macro keybinding 'need-vector))))
           res)
@@ -1594,7 +1599,6 @@ Here's a list of currently recognized directives:
                     (file-name-nondirectory file)))
          (key nil)
          template
-         bound
          condition
          (group (and file
                      (yas--calculate-group file)))
@@ -1602,31 +1606,26 @@ Here's a list of currently recognized directives:
          binding
          uuid)
     (if (re-search-forward "^# --\\s-*\n" nil t)
-        (progn (setq template
-                     (buffer-substring-no-properties (point)
-                                                     (point-max)))
-               (setq bound (point))
-               (goto-char (point-min))
-               (while (re-search-forward "^# *\\([^ ]+?\\) *: *\\(.*?\\)[[:space:]]*$" bound t)
-                 (when (string= "uuid" (match-string-no-properties 1))
-                   (setq uuid (match-string-no-properties 2)))
-                 (when (string= "type" (match-string-no-properties 1))
-                   (setq type (if (string= "command" (match-string-no-properties 2))
-                                  'command
-                                'snippet)))
-                 (when (string= "key" (match-string-no-properties 1))
-                   (setq key (match-string-no-properties 2)))
-                 (when (string= "name" (match-string-no-properties 1))
-                   (setq name (match-string-no-properties 2)))
-                 (when (string= "condition" (match-string-no-properties 1))
-                   (setq condition (yas--read-lisp (match-string-no-properties 2))))
-                 (when (string= "group" (match-string-no-properties 1))
-                   (setq group (match-string-no-properties 2)))
-                 (when (string= "expand-env" (match-string-no-properties 1))
-                   (setq expand-env (yas--read-lisp (match-string-no-properties 2)
-                                                   'nil-on-error)))
-                 (when (string= "binding" (match-string-no-properties 1))
-                   (setq binding (match-string-no-properties 2)))))
+        (let ((bound (point)))
+          (setq template
+                (buffer-substring-no-properties (point)
+                                                (point-max)))
+          (goto-char (point-min))
+          (while (re-search-forward
+                  "^# *\\([^ ]+?\\) *: *\\(.*?\\)[[:space:]]*$" bound t)
+            (let ((val (match-string-no-properties 2)))
+              (pcase (match-string-no-properties 1)
+                ("uuid"      (setq uuid val))
+                ("type"      (setq type (intern val)))
+                ("key"       (setq key val))
+                ("name"      (setq name val))
+                ("condition" (setq condition (yas--read-lisp val)))
+                ("group"     (setq group val))
+                ("expand-env"
+                 (setq expand-env (yas--read-lisp val 'nil-on-error)))
+                ("binding" (setq binding val))
+                ("contributor" nil) ;Documented in `snippet-development.org'.
+                (dir (message "Ignoring unknown directive: %s" dir))))))
       (setq template
             (buffer-substring-no-properties (point-min) (point-max))))
     (unless (or key binding)
