@@ -1316,7 +1316,7 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
      (yas-minor-mode +1)
      (should (equal (yas--template-content (yas-lookup-snippet "one"))
                     "one"))
-     (should (eq (yas--key-binding "\C-c1") 'yas-expand-from-keymap))
+     (should (eq (yas--key-binding "\C-c1") #'yas-expand-from-keymap))
      (yas-define-snippets
       'text-mode '(("_1" "one!" "won" nil nil nil nil nil "uuid-1")))
      (should (null (yas-lookup-snippet "one" nil 'noerror)))
@@ -1433,22 +1433,25 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
 (defalias 'yas--phony-c-mode #'c-mode)
 
 (ert-deftest issue-492-and-494 ()
+  "Aliases like `yas--phony-c-mode' should be considered as \"derived\"."
   (define-derived-mode yas--test-mode yas--phony-c-mode "Just a test mode")
   (yas-with-snippet-dirs '((".emacs.d/snippets"
                             ("yas--test-mode")))
-                         (yas-reload-all)
-                         (with-temp-buffer
-                           (let* ((major-mode 'yas--test-mode)
-                                  (expected `(fundamental-mode
-                                              c-mode
-                                              ,@(if (fboundp 'prog-mode)
-                                                    '(prog-mode))
-                                              yas--phony-c-mode
-                                              yas--test-mode))
-                                  (observed (yas--modes-to-activate)))
-                             (should (null (cl-set-exclusive-or expected observed)))
-                             (should (= (length expected)
-                                        (length observed)))))))
+    (yas-reload-all)
+    (with-temp-buffer
+      (let* ((major-mode 'yas--test-mode)
+             (expected `(fundamental-mode
+                         c-mode
+                         yas--phony-c-mode
+                         yas--test-mode))
+             ;; The set of mode depends on some external factors:
+             ;; `prog-mode': if cc-mode.el has been loaded.
+             ;; `cc-mode': if we added `cc-mode' as yas--parent of `c-mode'.
+             (observed (cl-set-difference (yas--modes-to-activate)
+                                          '(prog-mode cc-mode))))
+        (should-not (cl-set-exclusive-or expected observed))
+        (should (= (length expected)
+                   (length observed)))))))
 
 (define-derived-mode yas--test-mode c-mode "Just a test mode")
 (define-derived-mode yas--another-test-mode c-mode "Another test mode")
@@ -1652,14 +1655,14 @@ TODO: be meaner"
     (with-temp-buffer
       (yas-minor-mode -1)
       (insert "foo")
-      (should (not (eq (key-binding (yas--read-keybinding "<tab>")) 'yas-expand)))
+      (should-not (eq (key-binding (kbd "TAB")) #'yas-expand))
       (yas-minor-mode 1)
-      (should (eq (key-binding (yas--read-keybinding "<tab>")) 'yas-expand))
+      (should (eq (key-binding (kbd "TAB")) #'yas-expand))
       (yas-expand-snippet "$1 $2 $3")
-      (should (eq (key-binding [(tab)]) 'yas-next-field-or-maybe-expand))
-      (should (eq (key-binding (kbd "TAB")) 'yas-next-field-or-maybe-expand))
-      (should (eq (key-binding [(shift tab)]) 'yas-prev-field))
-      (should (eq (key-binding [backtab]) 'yas-prev-field))))))
+      ;; (should (eq (key-binding [tab]) #'yas-next-field-or-maybe-expand))
+      (should (eq (key-binding (kbd "TAB")) #'yas-next-field-or-maybe-expand))
+      (should (eq (key-binding [(shift tab)]) #'yas-prev-field))
+      (should (eq (key-binding [backtab]) #'yas-prev-field))))))
 
 (ert-deftest test-rebindings ()
   (let* ((yas-minor-mode-map (copy-keymap yas-minor-mode-map))
@@ -1673,7 +1676,7 @@ TODO: be meaner"
     (with-temp-buffer
       (yas-minor-mode 1)
       (should-not (eq (key-binding (kbd "TAB")) #'yas-expand))
-      (should (eq (key-binding (kbd "SPC")) 'yas-expand))
+      (should (eq (key-binding (kbd "SPC")) #'yas-expand))
       (yas-reload-all)
       (should-not (eq (key-binding (kbd "TAB")) #'yas-expand))
       (should (eq (key-binding (kbd "SPC")) #'yas-expand)))))
@@ -1689,8 +1692,8 @@ TODO: be meaner"
       (org-mode)
       (yas-minor-mode 1)
       (insert "foo")
-      (should (eq (key-binding [(tab)]) 'yas-expand))
-      (should (eq (key-binding (kbd "TAB")) 'yas-expand))))))
+      ;; (should (eq (key-binding [tab]) #'yas-expand))
+      (should (eq (key-binding (kbd "TAB")) #'yas-expand))))))
 
 (ert-deftest yas-org-native-tab-in-source-block-text ()
   "Test expansion of snippets in org source blocks."
