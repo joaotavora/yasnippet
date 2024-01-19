@@ -494,18 +494,19 @@ Attention: This hook is not run when exiting nested/stacked snippet expansion!")
   "Hook run just before expanding a snippet.")
 
 (defconst yas-not-string-or-comment-condition
-  '(if (let ((ppss (syntax-ppss)))
-         (or (nth 3 ppss) (nth 4 ppss)))
-       '(require-snippet-condition . force-in-comment)
-     t)
+  (lambda ()
+    (if (let ((ppss (syntax-ppss)))
+          (or (nth 3 ppss) (nth 4 ppss)))
+        '(require-snippet-condition . force-in-comment)
+      t))
   "Disables snippet expansion in strings and comments.
 To use, set `yas-buffer-local-condition' to this value.")
 
 (defcustom yas-buffer-local-condition t
   "Snippet expanding condition.
 
-This variable is a Lisp form which is evaluated every time a
-snippet expansion is attempted:
+This variable is either a Lisp function (called with no arguments)
+or a Lisp form.  It is evaluated every time a snippet expansion is attempted:
 
     * If it evaluates to nil, no snippets can be expanded.
 
@@ -543,12 +544,13 @@ inside comments, in `python-mode' only, with the exception of
 snippets returning the symbol `force-in-comment' in their
 conditions.
 
- (add-hook \\='python-mode-hook
-           (lambda ()
-              (setq yas-buffer-local-condition
-                    \\='(if (python-syntax-comment-or-string-p)
-                         \\='(require-snippet-condition . force-in-comment)
-                       t))))"
+    (add-hook \\='python-mode-hook
+              (lambda ()
+                (setq yas-buffer-local-condition
+                      (lambda ()
+                        (if (python-syntax-comment-or-string-p)
+                            \\='(require-snippet-condition . force-in-comment)
+                          t)))))"
   :type
   `(choice
     (const :tag "Disable snippet expansion inside strings and comments"
@@ -1329,14 +1331,15 @@ string and TEMPLATE is a `yas--template' structure."
 
 ;;; Filtering/condition logic
 
-(defun yas--eval-condition (condition)
+(defun yas--funcall-condition (fun &rest args)
   (condition-case err
       (save-excursion
         (save-restriction
           (save-match-data
-            (eval condition t))))
+            (apply fun args))))
     (error (progn
-             (yas--message 1 "Error in condition evaluation: %s" (error-message-string err))
+             (yas--message 1 "Error in condition evaluation: %s"
+                           (error-message-string err))
              nil))))
 
 
@@ -1361,9 +1364,13 @@ This function implements the rules described in
 conditions to filter out potential expansions."
   (if (eq 'always yas-buffer-local-condition)
       'always
-    (let ((local-condition (or (and (consp yas-buffer-local-condition)
-                                    (yas--eval-condition yas-buffer-local-condition))
-                               yas-buffer-local-condition)))
+    (let ((local-condition
+           (or (cond
+                ((consp yas-buffer-local-condition)
+                 (yas--funcall-condition #'eval yas-buffer-local-condition t))
+                ((functionp yas-buffer-local-condition)
+                 (yas--funcall-condition yas-buffer-local-condition)))
+               yas-buffer-local-condition)))
       (when local-condition
         (if (eq local-condition t)
             t
@@ -1375,7 +1382,7 @@ conditions to filter out potential expansions."
 (defun yas--template-can-expand-p (condition requirement)
   "Evaluate CONDITION and REQUIREMENT and return a boolean."
   (let* ((result (or (null condition)
-                     (yas--eval-condition condition))))
+                     (yas--funcall-condition #'eval condition t))))
     (cond ((eq requirement t)
            result)
           (t
@@ -2935,7 +2942,8 @@ DEBUG is for debugging the YASnippet engine itself."
                                       (if (and condition
                                                original-buffer)
                                           (with-current-buffer original-buffer
-                                            (if (yas--eval-condition condition)
+                                            (if (yas--funcall-condition
+                                                 #'eval condition t)
                                                 "(y)"
                                               "(s)"))
                                         "(a)")))

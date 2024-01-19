@@ -210,11 +210,12 @@ inside a comment?  Set [[sym:yas-buffer-local-condition][=yas-buffer-local-condi
 
 #+BEGIN_SRC emacs-lisp
   (add-hook 'python-mode-hook
-            (lambda ()
-              (setq yas-buffer-local-condition
-                    '(if (python-syntax-comment-or-string-p)
-                         '(require-snippet-condition . force-in-comment)
-                       t))))
+	    (lambda ()
+	      (setq yas-buffer-local-condition
+	            (lambda ()
+		      (if (python-syntax-comment-or-string-p)
+			  '(require-snippet-condition . force-in-comment)
+		        t)))))
 #+END_SRC
 
 ... and for a snippet that you want to expand in comments, specify a
