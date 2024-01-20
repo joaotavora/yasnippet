@@ -2090,13 +2090,19 @@ prefix argument."
   "Create .yas-compiled-snippets.el files under subdirs of TOP-LEVEL-DIR.
 
 This works by stubbing a few functions, then calling
-`yas-load-directory'."
+`yas-load-directory'.
+
+Remember to recompile the directory after adding or updating snippets,
+or they will not be effective."
   (interactive "DTop level snippet directory?")
   (let ((yas--creating-compiled-snippets t))
     (yas-load-directory top-level-dir nil)))
 
 (defun yas-recompile-all ()
-  "Compile every dir in `yas-snippet-dirs'."
+  "Compile every dir in `yas-snippet-dirs'.
+
+Remember to recompile all after adding or updating snippets,
+or they will not be effective."
   (interactive)
   (mapc #'yas-compile-directory (yas-snippet-dirs)))
 
