@@ -1366,10 +1366,10 @@ conditions to filter out potential expansions."
       'always
     (let ((local-condition
            (or (cond
-                ((consp yas-buffer-local-condition)
-                 (yas--funcall-condition #'eval yas-buffer-local-condition t))
                 ((functionp yas-buffer-local-condition)
-                 (yas--funcall-condition yas-buffer-local-condition)))
+                 (yas--funcall-condition yas-buffer-local-condition))
+                ((consp yas-buffer-local-condition)
+                 (yas--funcall-condition #'eval yas-buffer-local-condition t)))
                yas-buffer-local-condition)))
       (when local-condition
         (if (eq local-condition t)
