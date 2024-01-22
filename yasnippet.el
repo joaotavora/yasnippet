@@ -4521,7 +4521,8 @@ The SNIPPET's markers are preserved."
                              remarkers)))
                    (unwind-protect
                        (progn (back-to-indentation)
-                              (indent-according-to-mode))
+                              (with-demoted-errors "%S"
+                                (indent-according-to-mode)))
                      (save-restriction
                        (narrow-to-region bol (line-end-position))
                        (dolist (remarker remarkers)
