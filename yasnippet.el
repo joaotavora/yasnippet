@@ -1827,14 +1827,6 @@ the current buffers contents."
   (if yas--creating-compiled-snippets
       (let ((print-length nil))
         (insert ";;; Snippet definitions:\n;;;\n")
-        (dolist (snippet snippets)
-          ;; Fill in missing elements with nil.
-          (setq snippet (append snippet (make-list (- 10 (length snippet)) nil)))
-          ;; Move LOAD-FILE to SAVE-FILE because we will load from the
-          ;; compiled file, not LOAD-FILE.
-          (let ((load-file (nth 6 snippet)))
-            (setcar (nthcdr 6 snippet) nil)
-            (setcar (nthcdr 9 snippet) load-file)))
         (insert (pp-to-string
                  `(yas-define-snippets ',mode ',snippets)))
         (insert "\n\n"))
@@ -1942,7 +1934,8 @@ With prefix argument USE-JIT do jit-loading of snippets."
                           (current-time-string)))))
     ;; Normal case.
     (unless (file-exists-p (expand-file-name ".yas-skip" directory))
-      (unless (and (load (expand-file-name ".yas-compiled-snippets" directory) 'noerror (<= yas-verbosity 3))
+      (unless (and (load (expand-file-name ".yas-compiled-snippets" directory)
+                         'noerror (<= yas-verbosity 3))
                    (progn (yas--message 4 "Loaded compiled snippets from %s" directory) t))
         (yas--message 4 "Loading snippet files from %s" directory)
         (yas--load-directory-2 directory mode-sym)))))
@@ -2091,7 +2084,7 @@ prefix argument."
 
 This works by stubbing a few functions, then calling
 `yas-load-directory'."
-  (interactive "DTop level snippet directory?")
+  (interactive "DTop level snippet directory? ")
   (let ((yas--creating-compiled-snippets t))
     (yas-load-directory top-level-dir nil)))
 
@@ -4971,6 +4964,7 @@ When multiple expressions are found, only the last one counts."
                     ;; When not in an undo, check if we must commit the snippet
                     ;; (user exited it).
                     (yas--check-commit-snippet))))
+    ;; FIXME: Why?
     ((debug error) (signal (car err) (cdr err)))))
 
 ;;; Fancy docs:
