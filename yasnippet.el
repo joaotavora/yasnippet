@@ -5,7 +5,7 @@
 ;;          João Távora <joaotavora@gmail.com>,
 ;;          Noam Postavsky <npostavs@gmail.com>
 ;; Maintainer: Noam Postavsky <npostavs@gmail.com>
-;; Version: 0.14.0
+;; Version: 0.14.1
 ;; X-URL: http://github.com/joaotavora/yasnippet
 ;; Keywords: convenience, emulation
 ;; URL: http://github.com/joaotavora/yasnippet
@@ -1632,7 +1632,8 @@ Here's a list of currently recognized directives:
                  (setq expand-env (yas--read-lisp val 'nil-on-error)))
                 ("binding" (setq binding val))
                 ("contributor" nil) ;Documented in `snippet-development.org'.
-                (dir (message "Ignoring unknown directive: %s" dir))))))
+                (dir (message "Ignoring unknown directive %S in file: %s"
+                              dir file))))))
       (setq template
             (buffer-substring-no-properties (point-min) (point-max))))
     (unless (or key binding)
