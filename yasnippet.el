@@ -1833,10 +1833,17 @@ the current buffers contents."
         (insert "\n\n"))
     ;; Normal case.
     (let ((snippet-table (yas--table-get-create mode))
+          (uuids nil)
           (template nil))
       (dolist (snippet snippets)
         (setq template (yas--define-snippets-1 snippet
-                                               snippet-table)))
+                                               snippet-table))
+        (let ((uuid (yas--template-uuid template)))
+          (if (member uuid uuids)
+              ;; It's normal for a snippet to override another one
+              ;; in `snippet-table`, but not one in `snippets`.
+              (message "Multiple snippets with same identity: %S" uuid)
+            (push uuid uuids))))
       template)))
 
 
@@ -3994,7 +4001,7 @@ SNIPPET may be a snippet structure (e.g., as returned by
 `yas-lookup-snippet'), or just a snippet body (which is a string
 for normal snippets, and a list for command snippets)."
   (cl-assert (and yas-minor-mode
-                  (memq 'yas--post-command-handler post-command-hook))
+                  (memq #'yas--post-command-handler post-command-hook))
              nil
              "[yas] `yas-expand-snippet' needs properly setup `yas-minor-mode'")
   (run-hooks 'yas-before-expand-snippet-hook)
@@ -4715,20 +4722,22 @@ When multiple expressions are found, only the last one counts."
                                  (point)))
              (number (and (match-string-no-properties 1)
                           (string-to-number (match-string-no-properties 1))))
-             (brand-new-field (and real-match-end-0
-                                   ;; break if on "$(" immediately
-                                   ;; after the ":", this will be
-                                   ;; caught as a mirror with
-                                   ;; transform later.
-                                   (not (string-match-p "\\`\\$[ \t\n]*("
-                                                        (match-string-no-properties 2)))
-                                   ;; allow ${0: some exit text}
-                                   ;; (not (and number (zerop number)))
-                                   (yas--make-field number
-                                                   (yas--make-marker (match-beginning 2))
-                                                   (yas--make-marker (1- real-match-end-0))
-                                                   parent-field))))
-        (when brand-new-field
+             (field2 (match-string-no-properties 2))
+             (simple-fom (string-match-p "\\`[0-9]+\\'" field2))
+             (brand-new-field
+              (and ;; break if on "$(" immediately after the ":", this
+               ;; will be caught as a mirror with transform later.
+               (not (string-match-p "\\`\\$[ \t\n]*(" field2))
+               ;; allow ${0: some exit text}
+               ;; (not (and number (zerop number)))
+               (yas--make-field number
+                                (yas--make-marker (match-beginning 2))
+                                (yas--make-marker (1- real-match-end-0))
+                                parent-field))))
+        (cond
+         ((and (not number) simple-fom)
+          (yas--one-simple-fom snippet field2))
+         (brand-new-field
           (goto-char real-match-end-0)
           (push (cons (1- real-match-end-0) real-match-end-0)
                 yas--dollar-regions)
@@ -4737,9 +4746,11 @@ When multiple expressions are found, only the last one counts."
           (push brand-new-field (yas--snippet-fields snippet))
           (save-excursion
             (save-restriction
-              (narrow-to-region (yas--field-start brand-new-field) (yas--field-end brand-new-field))
+              (narrow-to-region (yas--field-start brand-new-field)
+                                (yas--field-end brand-new-field))
               (goto-char (point-min))
-              (yas--field-parse-create snippet brand-new-field)))))))
+              (yas--field-parse-create snippet brand-new-field))))))))
+
   ;; if we entered from a parent field, now search for the
   ;; `yas--multi-dollar-lisp-expression-regexp'. This is used for
   ;; primary field transformations
@@ -4796,31 +4807,35 @@ When multiple expressions are found, only the last one counts."
 (defun yas--simple-fom-create (snippet)
   "Parse the simple \"$n\" fields/mirrors/exitmarkers in SNIPPET."
   (while (re-search-forward yas--simple-mirror-regexp nil t)
-    (let ((number (string-to-number (match-string-no-properties 1))))
-      (cond ((zerop number)
-             (setf (yas--snippet-exit snippet)
-                   (yas--make-exit (yas--make-marker (match-end 0))))
-             (push (cons (match-beginning 0) (yas--exit-marker (yas--snippet-exit snippet)))
-                   yas--dollar-regions))
-            (t
-             (let ((field (yas--snippet-find-field snippet number))
-                   (fom))
-               (if field
-                   (push
-                    (setq fom (yas--make-mirror
-                               (yas--make-marker (match-beginning 0))
-                               (yas--make-marker (match-beginning 0))
-                               nil))
-                    (yas--field-mirrors field))
+    (yas--one-simple-fom snippet (match-string-no-properties 1))))
+
+(defun yas--one-simple-fom (snippet numstring)
+  (let ((number (string-to-number numstring)))
+    (cond ((zerop number)
+           (setf (yas--snippet-exit snippet)
+                 (yas--make-exit (yas--make-marker (match-end 0))))
+           (push (cons (match-beginning 0)
+                       (yas--exit-marker (yas--snippet-exit snippet)))
+                 yas--dollar-regions))
+          (t
+           (let ((field (yas--snippet-find-field snippet number))
+                 (fom))
+             (if field
                  (push
-                  (setq fom (yas--make-field number
-                                             (yas--make-marker (match-beginning 0))
-                                             (yas--make-marker (match-beginning 0))
-                                             nil))
-                  (yas--snippet-fields snippet)))
-               (yas--calculate-simple-fom-parentage snippet fom))
-             (push (cons (match-beginning 0) (match-end 0))
-                   yas--dollar-regions))))))
+                  (setq fom (yas--make-mirror
+                             (yas--make-marker (match-beginning 0))
+                             (yas--make-marker (match-beginning 0))
+                             nil))
+                  (yas--field-mirrors field))
+               (push
+                (setq fom (yas--make-field number
+                                           (yas--make-marker (match-beginning 0))
+                                           (yas--make-marker (match-beginning 0))
+                                           nil))
+                (yas--snippet-fields snippet)))
+             (yas--calculate-simple-fom-parentage snippet fom))
+           (push (cons (match-beginning 0) (match-end 0))
+                 yas--dollar-regions)))))
 
 (defun yas--delete-regions (regions)
   "Sort disjuct REGIONS by start point, then delete from the back."
