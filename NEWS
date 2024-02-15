@@ -6,6 +6,10 @@ See the end of the file for license conditions.
 Changes since 0.14.0:
 
 - Bug fixes and code cleanups.
+- Accept ${N} as another syntax for $N (issue #1012).
+- Understand the new AUCTeX modes hierarchy (issue #1193).
+- Try and use `major-mode-remap-alist` to find the right snippets for
+  Tree Sitter modes (issue #1169).
 
 * 0.14.0 (Dec 22, 2019)
 
