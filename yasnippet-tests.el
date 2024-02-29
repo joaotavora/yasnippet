@@ -1438,6 +1438,7 @@ hello ${1:$(when (stringp yas-text) (funcall func yas-text))} foo${1:$$(concat \
   (yas-with-snippet-dirs '((".emacs.d/snippets"
                             ("yas--test-mode")))
     (yas-reload-all)
+    (put 'c-mode 'yas--all-parents nil)
     (with-temp-buffer
       (let* ((major-mode 'yas--test-mode)
              (expected `(fundamental-mode
