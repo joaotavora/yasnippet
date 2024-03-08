@@ -824,6 +824,10 @@ which decides on the snippet to expand.")
                             ;; Prevent sharing the tail.
                             (append lists '(()) )))))))
 
+(defun yas--flush-all-parents (mode)
+  (if (get mode 'yas--all-parents)
+      (put mode 'yas--all-parents nil)))
+
 (defun yas--all-parents (mode)
   "Like `derived-mode-all-parents' but obeying `yas--parents'."
   (or (get mode 'yas--all-parents) ;; FIXME: Use `with-memoization'?
@@ -2010,6 +2014,9 @@ prefix argument."
                                (with-current-buffer buffer
                                  yas--editing-template))
                              (buffer-list))))
+
+      (mapatoms #'yas--flush-all-parents)
+
       ;; Warn if there are buffers visiting snippets, since reloading will break
       ;; any on-line editing of those buffers.
       ;;
