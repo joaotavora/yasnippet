@@ -848,18 +848,19 @@ which decides on the snippet to expand.")
                             (cons (if (eq mode 'fundamental-mode) ()
                                     (append (cdr ap) '(fundamental-mode)))
                                   extras))))
-                 (cons mode
-                       (yas--merge-ordered-lists
-                        (mapcar #'yas--all-parents
-                                (remq nil
-                                      `(,(or (get mode 'derived-mode-parent)
-                                             ;; Consider `fundamental-mode'
-                                             ;; as ultimate ancestor.
-                                             'fundamental-mode)
-                                        ,(let ((alias (symbol-function mode)))
-                                           (when (symbolp alias) alias))
-                                        ,@(get mode 'derived-mode-extra-parents)
-                                        ,@(gethash mode yas--parents)))))))))
+                 (delete-dups
+                  (cons mode
+                        (yas--merge-ordered-lists
+                         (mapcar #'yas--all-parents
+                                 (remq nil
+                                       `(,(or (get mode 'derived-mode-parent)
+                                              ;; Consider `fundamental-mode'
+                                              ;; as ultimate ancestor.
+                                              'fundamental-mode)
+                                         ,(let ((alias (symbol-function mode)))
+                                            (when (symbolp alias) alias))
+                                         ,@(get mode 'derived-mode-extra-parents)
+                                         ,@(gethash mode yas--parents))))))))))
           (dolist (parent all-parents)
             (cl-pushnew mode (get parent 'yas--cached-children)))
           (put mode 'yas--all-parents all-parents)))))
