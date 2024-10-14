@@ -2824,6 +2824,23 @@ and `kill-buffer' instead."
         (save-buffer)))
     (quit-window kill)))
 
+  (defun yas-load-snippet-buffer-and-close-noconfirm()
+    "Load and save the snippet buffer and quit the window
+while selecting the default table, file path, and not prompting
+the user to save the buffer"
+    (interactive)
+    (unless yas--guessed-modes
+      (setq-local yas--guessed-modes (yas--compute-major-mode-and-parents buffer-file-name)))
+    (let ((template (yas-load-snippet-buffer (cl-first yas--guessed-modes) t)))
+      (when (buffer-modified-p)
+        (let ((default-directory (car (cdr (car (yas--guess-snippet-directories
+                                                 (yas--template-table template))))))
+              (default-file-name (yas--template-name template)))
+          (setq buffer-file-name (concat default-directory default-file-name))
+          (rename-buffer default-file-name t)
+          (save-buffer)))
+      (quit-window t)))
+
 (declare-function yas-debug-snippets "yasnippet-debug")
 
 (defun yas-tryout-snippet (&optional debug)
