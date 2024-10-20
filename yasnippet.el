@@ -2833,8 +2833,8 @@ the user to save the buffer"
       (setq-local yas--guessed-modes (yas--compute-major-mode-and-parents buffer-file-name)))
     (let ((template (yas-load-snippet-buffer (cl-first yas--guessed-modes) t)))
       (when (buffer-modified-p)
-        (let ((default-directory (car (cdr (car (yas--guess-snippet-directories
-                                                 (yas--template-table template))))))
+        (let ((default-directory (cadar (yas--guess-snippet-directories
+                                                 (yas--template-table template))))
               (default-file-name (yas--template-name template)))
           (setq buffer-file-name (concat default-directory default-file-name))
           (rename-buffer default-file-name t)
