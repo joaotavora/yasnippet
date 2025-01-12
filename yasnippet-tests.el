@@ -1,6 +1,6 @@
 ;;; yasnippet-tests.el --- some yasnippet tests  -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012-2024  Free Software Foundation, Inc.
+;; Copyright (C) 2012-2025  Free Software Foundation, Inc.
 
 ;; Author: João Távora <joaot@siscog.pt>
 ;; Keywords: emulations, convenience
@@ -1665,14 +1665,14 @@ TODO: be meaner"
       (should (eq (key-binding [backtab]) #'yas-prev-field))))))
 
 (ert-deftest test-rebindings ()
-  (let* ((yas-minor-mode-map (copy-keymap yas-minor-mode-map))
+  (let* ((test-map (make-composed-keymap nil yas-minor-mode-map))
          (minor-mode-map-alist
-          (cons `(yas-minor-mode . ,yas-minor-mode-map)
+          (cons `(yas-minor-mode . ,test-map)
                 (cl-remove 'yas-minor-mode minor-mode-map-alist
                            :test #'eq :key #'car))))
-    (define-key yas-minor-mode-map [tab] nil)
-    (define-key yas-minor-mode-map (kbd "TAB") nil)
-    (define-key yas-minor-mode-map (kbd "SPC") #'yas-expand)
+    (define-key test-map [tab] nil)
+    (define-key test-map (kbd "TAB") nil)
+    (define-key test-map (kbd "SPC") #'yas-expand)
     (with-temp-buffer
       (yas-minor-mode 1)
       (should-not (eq (key-binding (kbd "TAB")) #'yas-expand))

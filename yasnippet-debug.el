@@ -1,6 +1,6 @@
 ;;; yasnippet-debug.el --- debug functions for yasnippet -*- lexical-binding: t -*-
 
-;; Copyright (C) 2010-2023  Free Software Foundation, Inc.
+;; Copyright (C) 2010-2025  Free Software Foundation, Inc.
 
 ;; Author: João Távora
 ;; Keywords: emulations, convenience
@@ -221,11 +221,9 @@
   (setq yas-debug-undo value)
   (yas--message 3 "debug undo %sabled" (if yas-debug-undo "en" "dis")))
 
-(advice-add 'yas--snippet-parse-create :before #'yas-debug--target-snippet)
 (defun yas-debug--target-snippet (snippet)
   (add-to-list 'yas-debug-target-snippets snippet))
 
-(advice-add 'yas--commit-snippet :after #'yas-debug--untarget-snippet)
 (defun yas-debug--untarget-snippet (snippet)
   (setq yas-debug-target-snippets
         (remq snippet yas-debug-target-snippets))
@@ -270,10 +268,8 @@ buffer-locally, otherwise install it globally.  If HOOK is
                      do (printf "%S\n" undo-elem))))
         (when hook
           (setq yas-debug-target-buffer (current-buffer))
-          (ad-enable-advice 'yas--snippet-parse-create 'before 'yas-debug-target-snippet)
-          (ad-activate 'yas--snippet-parse-create)
-          (ad-enable-advice 'yas--commit-snippet 'after 'yas-debug-untarget-snippet)
-          (ad-activate 'yas--commit-snippet)
+          (advice-add 'yas--snippet-parse-create :before #'yas-debug--target-snippet)
+          (advice-add 'yas--commit-snippet :after #'yas-debug--untarget-snippet)
           (add-hook 'post-command-hook #'yas-debug-snippets
                     nil (eq hook 'snippet-navigation))
           ;; Window management is slapped together, it does what I
