@@ -1,6 +1,6 @@
 ;;; yasnippet.el --- Yet another snippet extension for Emacs  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2008-2024 Free Software Foundation, Inc.
+;; Copyright (C) 2008-2025 Free Software Foundation, Inc.
 ;; Authors: pluskid <pluskid@gmail.com>,
 ;;          João Távora <joaotavora@gmail.com>,
 ;;          Noam Postavsky <npostavs@gmail.com>
@@ -2784,18 +2784,20 @@ Return the `yas--template' object created"
 
 (defun yas-maybe-load-snippet-buffer ()
   "Added to `after-save-hook' in `snippet-mode'."
-  (let* ((mode (intern (file-name-sans-extension
-                        (file-name-nondirectory
-                         (directory-file-name default-directory)))))
-         (current-snippet
-          (apply #'yas--define-snippets-2 (yas--table-get-create mode)
-                 (yas--parse-template buffer-file-name)))
-         (uuid (yas--template-uuid current-snippet)))
-    (unless (equal current-snippet
-                   (if uuid (yas--get-template-by-uuid mode uuid)
-                     (yas--lookup-snippet-1
-                      (yas--template-name current-snippet) mode)))
-      (yas-load-snippet-buffer mode t))))
+  (save-excursion ;; Issue #1146.  Here or in `yas--parse-template`?
+    (let* ((mode (intern (file-name-sans-extension
+                          (file-name-nondirectory
+                           (directory-file-name default-directory)))))
+           (current-snippet
+            (apply #'yas--define-snippets-2 (yas--table-get-create mode)
+                   ;; FIXME: `yas-load-snippet-buffer' will *re*parse!
+                   (yas--parse-template buffer-file-name)))
+           (uuid (yas--template-uuid current-snippet)))
+      (unless (equal current-snippet
+                     (if uuid (yas--get-template-by-uuid mode uuid)
+                       (yas--lookup-snippet-1
+                        (yas--template-name current-snippet) mode)))
+        (yas-load-snippet-buffer mode t)))))
 
 (defun yas-load-snippet-buffer-and-close (table &optional kill)
   "Load and save the snippet, then `quit-window' if saved.
