@@ -164,6 +164,10 @@ Yasnippet no longer comes with installed snippets" "0.14")
 (defconst yas--default-user-snippets-dir
   (expand-file-name "snippets" user-emacs-directory))
 
+(defcustom yas-lighter " yas"
+  "Minor mode lighter in mode-line."
+  :type 'string)
+
 (defcustom yas-snippet-dirs (list yas--default-user-snippets-dir)
   "List of top-level snippet directories.
 
@@ -903,7 +907,7 @@ Negative prefix argument turns off the mode.
 
 Key bindings:
 \\{yas-minor-mode-map}"
-  :lighter " yas" ;; The indicator for the mode line.
+  :lighter yas-lighter ;; The indicator for the mode line.
   (cond ((and yas-minor-mode (featurep 'yasnippet))
          ;; Install the direct keymaps in `emulation-mode-map-alists'
          ;; (we use `add-hook' even though it's not technically a hook,
