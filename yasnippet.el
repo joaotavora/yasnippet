@@ -974,6 +974,7 @@ per-mode exceptions to the \"global\" activation behaviour, call
 `yas-minor-mode' with a negative argument directily in the major
 mode's hook.") ;; FIXME: Why do we say "Only the global value is used"?
 
+;;;###autoload
 (defun yas-minor-mode-on ()
   "Turn on YASnippet minor mode.
 
