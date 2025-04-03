@@ -891,18 +891,10 @@ which decides on the snippet to expand.")
 
 ;;;###autoload
 (define-minor-mode yas-minor-mode
-  "Toggle YASnippet mode.
+  "YASnippet minor mode.
 
 When YASnippet mode is enabled, `yas-expand', normally bound to
-the TAB key, expands snippets of code depending on the major
-mode.
-
-With no argument, this command toggles the mode.
-positive prefix argument turns on the mode.
-Negative prefix argument turns off the mode.
-
-Key bindings:
-\\{yas-minor-mode-map}"
+the TAB key, expands snippets of code depending on the major mode."
   :lighter " yas" ;; The indicator for the mode line.
   (cond ((and yas-minor-mode (featurep 'yasnippet))
          ;; Install the direct keymaps in `emulation-mode-map-alists'
@@ -1463,7 +1455,7 @@ Returns (TEMPLATES START END). This function respects
 (defun yas--remove-misc-free-from-undo (old-undo-list)
   "Tries to work around Emacs Bug#30931.
 Helper function for `yas--save-restriction-and-widen'."
-  ;; If Bug#30931 is unfixed, we get (#<Lisp_Misc_Free> . INTEGER)
+  ;; If Bug#30931 is unfixed (Emacs<26.2), we get (#<Lisp_Misc_Free> . INTEGER)
   ;; entries in the undo list.  If we call `type-of' on the
   ;; Lisp_Misc_Free object then Emacs aborts, so try to find it by
   ;; checking that its type is none of the expected ones.
@@ -1487,15 +1479,16 @@ Helper function for `yas--save-restriction-and-widen'."
 
 (defmacro yas--save-restriction-and-widen (&rest body)
   "Equivalent to (save-restriction (widen) BODY).
-Also tries to work around Emacs Bug#30931."
+Also tries to work around Emacs Bug#30931, fixed in Emacs-26.2."
   (declare (debug (body)) (indent 0))
-  ;; Disable garbage collection, since it could cause an abort.
-  `(let ((gc-cons-threshold most-positive-fixnum)
-         (old-undo-list buffer-undo-list))
-     (prog1 (save-restriction
-              (widen)
-              ,@body)
-       (yas--remove-misc-free-from-undo old-undo-list))))
+  (let ((main `(save-restriction (widen) ,@body)))
+    (if (< emacs-major-version 27)
+        ;; Disable garbage collection, since it could cause an abort.
+        `(let ((gc-cons-threshold most-positive-fixnum)
+               (old-undo-list buffer-undo-list))
+           (prog1 ,main
+            (yas--remove-misc-free-from-undo old-undo-list)))
+      main)))
 
 (defun yas--eval-for-string (form)
   "Evaluate FORM and convert the result to string."
@@ -4133,7 +4126,7 @@ Returns the newly created snippet."
         (unwind-protect
             (let ((buffer-undo-list t))
               (goto-char begin)
-              (if (> emacs-major-version 29)
+              (if (< emacs-major-version 27)
                   ;; Don't use the workaround for CC-mode's cache,
                   ;; since it was presumably a bug in CC-mode, so either
                   ;; it's fixed already, or it should get fixed.
@@ -4161,6 +4154,7 @@ Returns the newly created snippet."
                 (run-hook-with-args 'after-change-functions
                                     (point-min) (point-max)
                                     (- end begin))))
+          ;; FIXME: Use `undo-amalgamate-change-group'?
           (when (listp buffer-undo-list)
             (push (cons (point-min) (point-max))
                   buffer-undo-list)))
@@ -5056,7 +5050,7 @@ object satisfying `yas--field-p' to restrict the expansion to.")))
 (define-button-type 'help-snippet-def
   :supertype 'help-xref
   'help-function (lambda (template) (yas--visit-snippet-file-1 template))
-  'help-echo (purecopy "mouse-2, RET: find snippets's definition"))
+  'help-echo "mouse-2, RET: find snippets's definition")
 
 (defun yas--snippet-description-finish-runonce ()
   "Final adjustments for the help buffer when snippets are concerned."
