@@ -588,8 +588,6 @@ can be useful."
 
 ;;; Internal variables
 
-(defconst yas--version "0.14.0")
-
 (defvar yas--menu-table (make-hash-table)
   "A hash table of MAJOR-MODE symbols to menu keymaps.")
 
@@ -1672,8 +1670,9 @@ Here's a list of currently recognized directives:
                 (directory-files directory t)))
 
 (defun yas--make-menu-binding (template)
-  (let ((mode (yas--table-mode (yas--template-table template))))
-    `(lambda () (interactive) (yas--expand-or-visit-from-menu ',mode ,(yas--template-uuid template)))))
+  (let ((mode (yas--table-mode (yas--template-table template)))
+        (uuid (yas--template-uuid template)))
+    (lambda () (interactive) (yas--expand-or-visit-from-menu mode uuid))))
 
 (defun yas--expand-or-visit-from-menu (mode uuid)
   (let* ((table (yas--table-get-create mode))
@@ -2120,27 +2119,23 @@ This works by stubbing a few functions, then calling
 (defun yas-about ()
   (interactive)
   (message "yasnippet (version %s) -- pluskid/joaotavora/npostavs"
-           (or (ignore-errors (car (let ((default-directory yas--loaddir))
-                                     (process-lines "git" "describe"
-                                                    "--tags" "--dirty"))))
-               (eval-when-compile
+           (or (eval-when-compile
                  (and (fboundp 'package-get-version)
                       (package-get-version)))
-               (when (and (featurep 'package)
+               (when (and (boundp 'package-alist)
                           (fboundp 'package-desc-version)
                           (fboundp 'package-version-join))
-                 (defvar package-alist)
                  (ignore-errors
-                   (let* ((yas-pkg (cdr (assq 'yasnippet package-alist)))
-                          (version (package-version-join
-                                    (package-desc-version (car yas-pkg)))))
-                     ;; Special case for MELPA's bogus version numbers.
-                     (if (string-match "\\`20..[01][0-9][0-3][0-9][.][0-9]\\{3,4\\}\\'"
-                                       version)
-                         (concat yas--version "-snapshot" version)
-                       version))))
-               yas--version)))
-
+                   (let* ((yas-pkg (cdr (assq 'yasnippet package-alist))))
+                     (when yas-pkg
+                       (package-version-join
+                        (package-desc-version (car yas-pkg)))))))
+               ;; The Git description can be misleading, for lack of
+               ;; recent tags, so we prefer package version info.
+               (ignore-errors (car (let ((default-directory yas--loaddir))
+                                     (process-lines "git" "describe"
+                                                    "--tags" "--dirty"))))
+               "unknown")))
 
 ;;; Apropos snippet menu:
 ;;
