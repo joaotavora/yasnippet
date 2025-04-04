@@ -352,7 +352,7 @@ is a valid title but
   ===
 #+END_SRC
 
-is not. Here's an snippet for rst title:
+is not. Here's a snippet for rst title:
 
 #+BEGIN_SRC snippet
   ${1:$(make-string (string-width yas-text) ?\=)}
