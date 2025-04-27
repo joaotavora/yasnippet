@@ -2295,15 +2295,19 @@ will only be expanded when the condition evaluated to non-nil."
   (yas-define-snippets mode
                        (list (list key template name condition group))))
 
-(defun yas-hippie-try-expand (first-time?)
+(defun yas-hippie-try-expand (old)
   "Integrate with hippie expand.
 
 Just put this function in `hippie-expand-try-functions-list'."
   (when yas-minor-mode
-    (if (not first-time?)
+    (if (not old)
         (let ((yas-fallback-behavior 'return-nil))
           (yas-expand))
-      (undo 1)
+      (let ((old-this-command this-command))
+        ;; undo sets this-command, but that would confuse hippie-expand, so we
+        ;; just restore the value.
+        (undo 1)
+        (setq this-command old-this-command))
       nil)))
 
 
