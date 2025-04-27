@@ -382,6 +382,10 @@ the trigger key itself."
 It must be set to nil before loading yasnippet to take effect."
   :type 'boolean)
 
+(defcustom yas-default-filename-transform-function #'default
+  "Transform the snippet name to a filename."
+  :type 'function)
+
 ;; Only two faces, and one of them shouldn't even be used...
 ;;
 (defface yas-field-highlight-face
@@ -2805,7 +2809,7 @@ and `kill-buffer' instead."
                         (yas--table-name (yas--template-table template)))))
       (let ((default-directory (car (cdr (car (yas--guess-snippet-directories
                                                (yas--template-table template))))))
-            (default-file-name (yas--template-name template)))
+            (default-file-name (funcall yas-default-filename-transform-function (yas--template-name template))))
         (unless (or buffer-file-name (not default-file-name))
           (setq buffer-file-name
                 (read-file-name "File to save snippet in: "
