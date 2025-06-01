@@ -1933,16 +1933,18 @@ With prefix argument USE-JIT do jit-loading of snippets."
       (let ((output-file (expand-file-name ".yas-compiled-snippets.el"
                                            directory)))
         (with-temp-file output-file
-          (insert (format ";;; Compiled snippets and support files for `%s'\n"
+          (insert (format ";;; \"Compiled\" snippets and support files for `%S'  -*- lexical-binding:t -*-\n"
                           mode-sym))
           (yas--load-directory-2 directory mode-sym)
           (insert (format ";;; Do not edit! File generated at %s\n"
                           (current-time-string)))))
     ;; Normal case.
     (unless (file-exists-p (expand-file-name ".yas-skip" directory))
-      (unless (and (load (expand-file-name ".yas-compiled-snippets" directory)
-                         'noerror (<= yas-verbosity 3))
-                   (progn (yas--message 4 "Loaded compiled snippets from %s" directory) t))
+      (if (let ((warning-inhibit-types
+                 '((files missing-lexbind-cookie))))
+            (load (expand-file-name ".yas-compiled-snippets" directory)
+                  'noerror (<= yas-verbosity 3)))
+          (yas--message 4 "Loaded compiled snippets from %s" directory)
         (yas--message 4 "Loading snippet files from %s" directory)
         (yas--load-directory-2 directory mode-sym)))))
 
@@ -3200,12 +3202,13 @@ ENV is a lisp expression that evaluates to list of elements with
 the form (VAR FORM), where VAR is a symbol and FORM is a lisp
 expression that evaluates to its value."
   (declare (debug (form body)) (indent 1))
-  (let ((envvar (make-symbol "envvar")))
-    `(let ((,envvar ,env))
-       (cl-progv
-           (mapcar #'car ,envvar)
-           (mapcar (lambda (v-f) (eval (cadr v-f) t)) ,envvar)
-         ,@body))))
+  `(yas--letenv-f ,env (lambda () ,@body)))
+
+(defun yas--letenv-f (env body-fun)
+  (cl-progv
+      (mapcar #'car env)
+      (mapcar (lambda (v-f) (eval (cadr v-f) t)) env)
+    (funcall body-fun)))
 
 (defun yas--snippet-map-markers (fun snippet)
   "Apply FUN to all marker (sub)fields in SNIPPET.
