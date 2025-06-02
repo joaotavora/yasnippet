@@ -5118,6 +5118,40 @@ object satisfying `yas--field-p' to restrict the expansion to.")))
   nil)
 
 
+;;; Completion at point function based on the key
+(defun yas--getkeys (mode)
+  "Get all the snippet keys for a mode"
+  (let (result)
+    (dolist (tab (yas--get-snippet-tables major-mode) result)
+      (setq result (nconc result (cl-remove-if-not #'stringp (yas--table-all-keys tab)))))))
+
+(defvar yas-completion-props
+  (list
+   :annotation-function (lambda (_) " Snippet")
+	 :exclusive 'no
+	 :category 'snippet
+   :exit-function #'(lambda (_ _)
+                      (call-interactively #'yas-expand)))
+    "The properties for the yas-c-a-p-f.
+
+CAVEAT: When using corfu, set `corfu-on-exact-match' to nil
+to avoid automatic expansion. A key could also be regular
+input (a word, function, variable, etc.).
+")
+
+;;;###autoload
+(defun yas-completion-at-point()
+  "Completion at point function for yasnippets.
+
+Rationale: look at what you are typing and
+find keys that match."
+  (when-let* ((keywords (yas--getkeys major-mode))
+	      (bounds (bounds-of-thing-at-point 'word))
+	      (start (car bounds))
+	      (end (cdr bounds)))
+    `(,start ,end ,keywords . ,yas-completion-props)))
+
+
 ;;; Backward compatibility to yasnippet <= 0.7
 
 (defun yas-initialize ()
