@@ -138,17 +138,6 @@ This lets `yas--maybe-expand-from-keymap-filter' work as expected."
 ;;; Older emacsen
 ;;;
 
-(unless (fboundp 'string-suffix-p)
-  ;; introduced in Emacs 24.4
-  (defun string-suffix-p (suffix string &optional ignore-case)
-    "Return non-nil if SUFFIX is a suffix of STRING.
-If IGNORE-CASE is non-nil, the comparison is done without paying
-attention to case differences."
-    (let ((start-pos (- (length string) (length suffix))))
-      (and (>= start-pos 0)
-           (eq t (compare-strings suffix nil nil
-                                  string start-pos nil ignore-case))))))
-
 
 ;;; Snippet mechanics
 
@@ -1735,7 +1724,7 @@ TODO: be meaner"
        (org-mode)
        (yas-minor-mode 1)
        (insert "#+BEGIN_SRC " mode "\nT\n#+END_SRC")
-       (if (fboundp 'font-lock-ensure)
+       (if (fboundp 'font-lock-ensure)  ;Emacs≥25
            (font-lock-ensure)
          (jit-lock-fontify-now))
        (re-search-backward "^T$") (goto-char (match-end 0))

@@ -1,10 +1,11 @@
 Yasnippet NEWS -- history of user-visible changes.
 
-Copyright (C) 2017-2024 Free Software Foundation, Inc.
+Copyright (C) 2017-2025 Free Software Foundation, Inc.
 See the end of the file for license conditions.
 
 Changes since 0.14.0:
 
+- Silence warning about missing lexical-binding cookie.
 - Bug fixes and code cleanups.
 - Accept ${N} as another syntax for $N (issue #1012).
 - Understand the new AUCTeX modes hierarchy (issue #1193).
