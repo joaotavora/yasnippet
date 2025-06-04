@@ -80,6 +80,10 @@ get some!
     This is another textmate bundle converting tool using Elisp
     instead of Ruby.
 
+4.  [ultyas] is a command-line tool for converting UltiSnips snippets into
+    YASnippet format. It simplifies the migration from UltiSnips to YASnippet or
+    can be used to maintain consistent snippets across Vim/Neovim and Emacs.
+
 Naturally, you can point `yas-snippet-dirs` to good snippet collections out
 there. If you have created snippets for a mode, or multiple modes,
 consider creating a repository to host them, then tell users that it
@@ -165,4 +169,5 @@ Finally, thank you very much for using YASnippet!
 [gnudevel]: http://elpa.gnu.org/devel/yasnippet.html
 [yasmate]: http://github.com/joaotavora/yasmate
 [textmate-to-yas.el]: https://github.com/mattfidler/textmate-to-yas.el
+[ultyas]: https://github.com/jamescherti/ultyas
 [yasnippet-snippets]: http://github.com/AndreaCrotti/yasnippet-snippets
