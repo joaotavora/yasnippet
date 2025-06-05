@@ -1767,6 +1767,20 @@ add the snippets associated with the given mode."
        (yas-should-not-expand '("_"))
        (yas-should-expand '(("car" . "(car )")))))))
 
+(ert-deftest simple-trim ()
+  (let ((yas-snippet-trim t))
+    (with-temp-buffer
+      (yas-minor-mode 1)
+      (yas-expand-snippet "
+${1:brother} from another $1
+
+")
+      (should (string= (yas--buffer-contents)
+                       "brother from another brother"))
+      (yas-mock-insert "bla")
+      (should (string= (yas--buffer-contents)
+                       "bla from another bla")))))
+
 
 
 (provide 'yasnippet-tests)
