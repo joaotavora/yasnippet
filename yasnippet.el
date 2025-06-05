@@ -3387,18 +3387,36 @@ If there's none, exit the snippet."
   (unless arg (setq arg 1))
   (let* ((active-field (overlay-get yas--active-field-overlay 'yas--field))
          (snippet (car (yas-active-snippets (yas--field-start active-field)
-                                            (yas--field-end active-field))))
-         (target-field (yas--find-next-field arg snippet active-field)))
-    (yas--letenv (yas--snippet-expand-env snippet)
-      ;; Apply transform to active field.
-      (when active-field
-        (let ((yas-moving-away-p t))
-          (when (yas--field-update-display active-field)
-            (yas--update-mirrors snippet))))
-      ;; Now actually move...
-      (if target-field
-          (yas--move-to-field snippet target-field)
-        (yas-exit-snippet snippet)))))
+                                            (yas--field-end active-field)))))
+    (if (not snippet) ;; <<<< ADDED CHECK
+        ;; Handle inconsistent state: field overlay exists, but no snippet found
+        (progn
+          (yas--warning "Inconsistent state: Active field found, but no corresponding snippet. Aborting snippet.")
+          ;; Clean up the orphaned active field overlay
+          (when (and yas--active-field-overlay (overlayp yas--active-field-overlay) (overlay-buffer yas--active-field-overlay))
+            (let ((yas--inhibit-overlay-hooks t)) ; Prevent modification hooks from firing during cleanup
+              (delete-overlay yas--active-field-overlay)))
+          (setq yas--active-field-overlay nil)
+          ;; Optionally, consider cleaning up protection overlays if they are found dangling
+          (when yas--field-protection-overlays
+             (let ((yas--inhibit-overlay-hooks t))
+               (mapc (lambda (ov)
+                       (when (and (overlayp ov) (overlay-buffer ov))
+                         (delete-overlay ov)))
+                     yas--field-protection-overlays))
+             (setq yas--field-protection-overlays nil)))
+      ;; Original logic: Snippet found, proceed as normal
+      (let ((target-field (yas--find-next-field arg snippet active-field)))
+        (yas--letenv (yas--snippet-expand-env snippet)
+          ;; Apply transform to active field.
+          (when active-field
+            (let ((yas-moving-away-p t))
+              (when (yas--field-update-display active-field)
+                (yas--update-mirrors snippet))))
+          ;; Now actually move...
+          (if target-field
+              (yas--move-to-field snippet target-field)
+            (yas-exit-snippet snippet)))))))
 
 (defun yas--place-overlays (snippet field)
   "Correctly place overlays for SNIPPET's FIELD."
