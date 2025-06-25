@@ -395,7 +395,9 @@ every time.
 Note that to tell this kind of expression from a mirror with a
 transformation, YASnippet needs extra text between the =:= and the
 transformation's =$=. If you don't want this extra-text, you can use two
-=$='s instead.
+=$='s instead. 
+Refer to the [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Case-Conversion.html][emacs manual]] 
+for more information on case conversion.
 
 :  #define "${1:$$(upcase yas-text)}"
 
