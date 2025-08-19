@@ -35,6 +35,9 @@
 (require 'cl-lib)
 (require 'org)
 
+(with-eval-after-load 'comp
+  (push 'buffer-list native-comp-never-optimize-functions))
+
 
 ;;; Helper macros and function
 
