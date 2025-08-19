@@ -926,7 +926,7 @@ the TAB key, expands snippets of code depending on the major mode."
                (remove 'yas--direct-keymaps emulation-mode-map-alists)))))
 
 (defun yas-activate-extra-mode (mode)
-  "Activates the snippets for the given `mode' in the buffer.
+  "Activates the snippets for the given `MODE' in the buffer.
 
 The function can be called in the hook of a minor mode to
 activate snippets associated with that mode."
@@ -938,10 +938,13 @@ activate snippets associated with that mode."
         (intern symbol)))))
   (when mode
     (add-to-list (make-local-variable 'yas--extra-modes) mode)
+    (let ((name (intern (format "yas--direct-%s" mode))))
+      (set-default name nil)
+      (set (make-local-variable name) t))
     (yas--load-pending-jits)))
 
 (defun yas-deactivate-extra-mode (mode)
-  "Deactivates the snippets for the given `mode' in the buffer."
+  "Deactivates the snippets for the given `MODE' in the buffer."
   (interactive
    (list (intern
           (completing-read
