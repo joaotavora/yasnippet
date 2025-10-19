@@ -986,6 +986,12 @@ Honour `yas-dont-activate-functions', which see."
 
 (add-hook 'yas-global-mode-hook #'yas--global-mode-reload-with-jit-maybe)
 
+;; Emacs LISP semantic fontify adds too much fontification
+;; to the snippet editing buffer
+(when (boundp elisp-fontify-semantically)
+  (add-hook 'snippet-mode-hook
+            #'(lambda()
+                (setq elisp-fontify-semantically nil))))
 
 ;;; Major mode stuff
 
@@ -993,8 +999,7 @@ Honour `yas-dont-activate-functions', which see."
   (append '(("^#.*$" (0 'font-lock-comment-face)))
           (with-temp-buffer
             (let ((prog-mode-hook nil)
-                  (emacs-lisp-mode-hook nil)
-                  (elisp-fontify-semantically nil))
+                  (emacs-lisp-mode-hook nil))
               (ignore-errors (emacs-lisp-mode)))
             (font-lock-set-defaults)
             (if (eq t (car-safe font-lock-keywords))
