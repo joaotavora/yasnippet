@@ -5263,6 +5263,14 @@ i.e. the ones with \"yas-\" single dash prefix. I will try to
 keep them in future yasnippet versions and other elisp libraries
 can more or less safely rely upon them.")
 
+;; Workarounf for emacs master(31)
+;; It introduces semantic highlighting for emacs lisp and 
+;; that makes the new snippet edit buffer llok confusing.
+(when (boundp elisp-fontify-semantically)
+  (add-hook 'snippet-mode-hook
+            #'(lambda()
+                (setq-local elisp-fontify-semantically nil))))
+
 
 (provide 'yasnippet)
 ;; Local Variables:
