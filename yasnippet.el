@@ -382,6 +382,10 @@ the trigger key itself."
 It must be set to nil before loading yasnippet to take effect."
   :type 'boolean)
 
+(defcustom yas-separator "; "
+  "String used to separate multiple choices in a field."
+  :type 'string)
+
 ;; Only two faces, and one of them shouldn't even be used...
 ;;
 (defface yas-field-highlight-face
@@ -3030,6 +3034,25 @@ The last element of POSSIBILITIES may be a list of strings."
     (cl-some (lambda (fn)
                (funcall fn "Choose: " possibilities))
              yas-prompt-functions)))
+
+
+(defun yas-choose-multiple (&rest possibilities)
+  "Prompt for a string in POSSIBILITIES and return all selected values.
+
+Selected values are returned as a concatenated string, with values
+separated by `yas-separator'.  To select multiple values, the user has 
+to separate entries with `,'.
+
+The last element of POSSIBILITIES may be a list of strings."
+  (unless (or yas-moving-away-p
+              yas-modified-p)
+    (let* ((last-link (last possibilities))
+           (last-elem (car last-link)))
+      (when (listp last-elem)
+        (setcar last-link (car last-elem))
+        (setcdr last-link (cdr last-elem))))
+    (string-join (completing-read-multiple "Choose: " possibilities)
+                 yas-separator)))
 
 (defun yas-completing-read (&rest args)
   "A snippet-aware version of `completing-read'.
