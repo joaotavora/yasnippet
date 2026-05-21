@@ -3385,20 +3385,30 @@ Otherwise delegate to `yas-next-field'."
 If there's none, exit the snippet."
   (interactive)
   (unless arg (setq arg 1))
-  (let* ((active-field (overlay-get yas--active-field-overlay 'yas--field))
-         (snippet (car (yas-active-snippets (yas--field-start active-field)
-                                            (yas--field-end active-field))))
-         (target-field (yas--find-next-field arg snippet active-field)))
-    (yas--letenv (yas--snippet-expand-env snippet)
-      ;; Apply transform to active field.
-      (when active-field
-        (let ((yas-moving-away-p t))
-          (when (yas--field-update-display active-field)
-            (yas--update-mirrors snippet))))
-      ;; Now actually move...
-      (if target-field
-          (yas--move-to-field snippet target-field)
-        (yas-exit-snippet snippet)))))
+  (let* ((active-field (and (overlayp yas--active-field-overlay)
+                            (overlay-get yas--active-field-overlay 'yas--field)))
+         (snippet (and (yas--field-p active-field)
+                       (car (yas-active-snippets (yas--field-start active-field)
+                                                 (yas--field-end active-field))))))
+    (if (not snippet)
+        (progn
+          (when yas--active-field-overlay
+            (delete-overlay yas--active-field-overlay))
+          (setq yas--active-field-overlay nil)
+          (when yas--field-protection-overlays
+            (mapc #'delete-overlay yas--field-protection-overlays))
+          (setq yas--field-protection-overlays nil))
+      (let ((target-field (yas--find-next-field arg snippet active-field)))
+        (yas--letenv (yas--snippet-expand-env snippet)
+          ;; Apply transform to active field.
+          (when active-field
+            (let ((yas-moving-away-p t))
+              (when (yas--field-update-display active-field)
+                (yas--update-mirrors snippet))))
+          ;; Now actually move...
+          (if target-field
+              (yas--move-to-field snippet target-field)
+            (yas-exit-snippet snippet)))))))
 
 (defun yas--place-overlays (snippet field)
   "Correctly place overlays for SNIPPET's FIELD."
