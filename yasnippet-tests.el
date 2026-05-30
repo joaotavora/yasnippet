@@ -177,6 +177,22 @@ This lets `yas--maybe-expand-from-keymap-filter' work as expected."
     (should-not yas--active-field-overlay)
     (should-not yas--field-protection-overlays)))
 
+(ert-deftest expansion-after-fieldless-snippet ()
+  (with-temp-buffer
+    (yas-with-snippet-dirs
+      '((".emacs.d/snippets"
+         ("text-mode"
+          ("foo" . "FOO")
+          ("bar" . "BAR"))))
+      (yas-reload-all)
+      (text-mode)
+      (yas-minor-mode 1)
+      (insert "foo")
+      (ert-simulate-command '(yas-expand))
+      (insert "\nbar")
+      (ert-simulate-command '(yas-next-field-or-maybe-expand))
+      (should (string= (yas--buffer-contents) "FOO\nBAR")))))
+
 (ert-deftest simple-mirror ()
   (with-temp-buffer
     (yas-minor-mode 1)

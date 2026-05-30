@@ -3355,13 +3355,16 @@ equivalent to a range covering the whole buffer."
 
 Otherwise delegate to `yas-next-field'."
   (interactive)
-  (if yas-triggers-in-field
-      (let ((yas-fallback-behavior 'return-nil)
-            (active-field (overlay-get yas--active-field-overlay 'yas--field)))
-        (when active-field
-          (unless (yas-expand-from-trigger-key active-field)
-            (yas-next-field))))
-    (yas-next-field)))
+  (let ((yas-fallback-behavior 'return-nil)
+        (active-field (and (overlayp yas--active-field-overlay)
+                           (overlay-get yas--active-field-overlay 'yas--field))))
+    (cond
+     ((and yas-triggers-in-field active-field)
+      (unless (yas-expand-from-trigger-key active-field)
+        (yas-next-field)))
+     (t
+      (unless (yas-expand-from-trigger-key)
+        (yas-next-field))))))
 
 (defun yas-next-field-will-exit-p (&optional arg)
   "Return non-nil if (yas-next-field ARG) would exit the current snippet."
@@ -3389,9 +3392,24 @@ If there's none, exit the snippet."
                             (overlay-get yas--active-field-overlay 'yas--field)))
          (snippet (and (yas--field-p active-field)
                        (car (yas-active-snippets (yas--field-start active-field)
-                                                 (yas--field-end active-field))))))
+                                                 (yas--field-end active-field)))))
+         (active-snippet (or snippet
+                             (car (cl-remove-if-not
+                                   (lambda (candidate)
+                                     (let ((overlay
+                                            (yas--snippet-control-overlay
+                                             candidate)))
+                                       (and (overlayp overlay)
+                                            (overlay-buffer overlay)
+                                            (<= (overlay-start overlay)
+                                                (point))
+                                            (<= (point)
+                                                (overlay-end overlay)))))
+                                   yas--active-snippets)))))
     (if (not snippet)
         (progn
+          (when active-snippet
+            (yas-exit-snippet active-snippet))
           (when yas--active-field-overlay
             (delete-overlay yas--active-field-overlay))
           (setq yas--active-field-overlay nil)
