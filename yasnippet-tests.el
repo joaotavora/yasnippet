@@ -160,6 +160,39 @@ This lets `yas--maybe-expand-from-keymap-filter' work as expected."
     (ert-simulate-command '(yas-prev-field))
     (should (looking-at "brother"))))
 
+(ert-deftest field-navigation-with-stale-active-field ()
+  (with-temp-buffer
+    (yas-minor-mode 1)
+    (yas-expand-snippet "${1:brother}")
+    (let ((snippet (car yas--active-snippets)))
+      (overlay-put yas--active-field-overlay 'yas--snippet nil)
+      (delete-overlay (yas--snippet-control-overlay snippet))
+      (mapc #'delete-overlay yas--field-protection-overlays))
+    (should-not
+     (condition-case nil
+         (progn
+           (yas-next-field)
+           nil)
+       (error t)))
+    (should-not yas--active-field-overlay)
+    (should-not yas--field-protection-overlays)))
+
+(ert-deftest expansion-after-fieldless-snippet ()
+  (with-temp-buffer
+    (yas-with-snippet-dirs
+      '((".emacs.d/snippets"
+         ("text-mode"
+          ("foo" . "FOO")
+          ("bar" . "BAR"))))
+      (yas-reload-all)
+      (text-mode)
+      (yas-minor-mode 1)
+      (insert "foo")
+      (ert-simulate-command '(yas-expand))
+      (insert "\nbar")
+      (ert-simulate-command '(yas-next-field-or-maybe-expand))
+      (should (string= (yas--buffer-contents) "FOO\nBAR")))))
+
 (ert-deftest simple-mirror ()
   (with-temp-buffer
     (yas-minor-mode 1)

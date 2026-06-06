@@ -3355,13 +3355,16 @@ equivalent to a range covering the whole buffer."
 
 Otherwise delegate to `yas-next-field'."
   (interactive)
-  (if yas-triggers-in-field
-      (let ((yas-fallback-behavior 'return-nil)
-            (active-field (overlay-get yas--active-field-overlay 'yas--field)))
-        (when active-field
-          (unless (yas-expand-from-trigger-key active-field)
-            (yas-next-field))))
-    (yas-next-field)))
+  (let ((yas-fallback-behavior 'return-nil)
+        (active-field (and (overlayp yas--active-field-overlay)
+                           (overlay-get yas--active-field-overlay 'yas--field))))
+    (cond
+     ((and yas-triggers-in-field active-field)
+      (unless (yas-expand-from-trigger-key active-field)
+        (yas-next-field)))
+     (t
+      (unless (yas-expand-from-trigger-key)
+        (yas-next-field))))))
 
 (defun yas-next-field-will-exit-p (&optional arg)
   "Return non-nil if (yas-next-field ARG) would exit the current snippet."
@@ -3385,20 +3388,45 @@ Otherwise delegate to `yas-next-field'."
 If there's none, exit the snippet."
   (interactive)
   (unless arg (setq arg 1))
-  (let* ((active-field (overlay-get yas--active-field-overlay 'yas--field))
-         (snippet (car (yas-active-snippets (yas--field-start active-field)
-                                            (yas--field-end active-field))))
-         (target-field (yas--find-next-field arg snippet active-field)))
-    (yas--letenv (yas--snippet-expand-env snippet)
-      ;; Apply transform to active field.
-      (when active-field
-        (let ((yas-moving-away-p t))
-          (when (yas--field-update-display active-field)
-            (yas--update-mirrors snippet))))
-      ;; Now actually move...
-      (if target-field
-          (yas--move-to-field snippet target-field)
-        (yas-exit-snippet snippet)))))
+  (let* ((active-field (and (overlayp yas--active-field-overlay)
+                            (overlay-get yas--active-field-overlay 'yas--field)))
+         (snippet (and (yas--field-p active-field)
+                       (car (yas-active-snippets (yas--field-start active-field)
+                                                 (yas--field-end active-field)))))
+         (active-snippet (or snippet
+                             (car (cl-remove-if-not
+                                   (lambda (candidate)
+                                     (let ((overlay
+                                            (yas--snippet-control-overlay
+                                             candidate)))
+                                       (and (overlayp overlay)
+                                            (overlay-buffer overlay)
+                                            (<= (overlay-start overlay)
+                                                (point))
+                                            (<= (point)
+                                                (overlay-end overlay)))))
+                                   yas--active-snippets)))))
+    (if (not snippet)
+        (progn
+          (when active-snippet
+            (yas-exit-snippet active-snippet))
+          (when yas--active-field-overlay
+            (delete-overlay yas--active-field-overlay))
+          (setq yas--active-field-overlay nil)
+          (when yas--field-protection-overlays
+            (mapc #'delete-overlay yas--field-protection-overlays))
+          (setq yas--field-protection-overlays nil))
+      (let ((target-field (yas--find-next-field arg snippet active-field)))
+        (yas--letenv (yas--snippet-expand-env snippet)
+          ;; Apply transform to active field.
+          (when active-field
+            (let ((yas-moving-away-p t))
+              (when (yas--field-update-display active-field)
+                (yas--update-mirrors snippet))))
+          ;; Now actually move...
+          (if target-field
+              (yas--move-to-field snippet target-field)
+            (yas-exit-snippet snippet)))))))
 
 (defun yas--place-overlays (snippet field)
   "Correctly place overlays for SNIPPET's FIELD."
