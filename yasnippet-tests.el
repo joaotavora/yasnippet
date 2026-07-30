@@ -674,6 +674,30 @@ mapconcat #'(lambda (arg)
   (declare (debug t))
   `(yas-call-with-saving-variables #'(lambda () ,@body)))
 
+(ert-deftest post-command-handler-keeps-mode-setup-after-quit ()
+  "Keep YASnippet setup intact when an exit-transform prompt is quit."
+  (yas-saving-variables
+   (yas-with-snippet-dirs
+       '((".emacs.d/snippets"
+          ("fundamental-mode"
+           ("wi" . "${1:field}${0:$$(yas-choose-value \"one\" \"two\")}")
+           ("ok" . "expanded"))))
+     (yas-reload-all)
+     (with-temp-buffer
+       (let ((yas-prompt-functions '(yas-completing-prompt)))
+         (yas-minor-mode 1)
+         (insert "wi")
+         (ert-simulate-command '(yas-expand))
+         (cl-letf (((symbol-function 'completing-read)
+                    (lambda (&rest _) (signal 'minibuffer-quit nil))))
+           (ert-simulate-command '(yas-next-field))))
+       (should yas-minor-mode)
+       (should (memq #'yas--post-command-handler post-command-hook))
+       (erase-buffer)
+       (insert "ok")
+       (ert-simulate-command '(yas-expand))
+       (should (equal (buffer-string) "expanded"))))))
+
 (ert-deftest auto-next-field ()
   "Automatically exit a field after evaluating its transform."
   (with-temp-buffer

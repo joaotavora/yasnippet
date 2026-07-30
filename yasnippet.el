@@ -4962,9 +4962,9 @@ When multiple expressions are found, only the last one counts."
 ;;
 (defun yas--post-command-handler ()
   "Handles various yasnippet conditions after each command."
-  (yas--do-todo-snippet-indent)
   (condition-case err
-      (progn (yas--finish-moving-snippets)
+      (progn (yas--do-todo-snippet-indent)
+             (yas--finish-moving-snippets)
              (cond ((eq 'undo this-command)
                     ;;
                     ;; After undo revival the correct field is sometimes not
@@ -4985,6 +4985,7 @@ When multiple expressions are found, only the last one counts."
                     ;; When not in an undo, check if we must commit the snippet
                     ;; (user exited it).
                     (yas--check-commit-snippet))))
+    (quit (message "%s" (error-message-string err)))
     ;; FIXME: Why?
     ((debug error) (signal (car err) (cdr err)))))
 
