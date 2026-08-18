@@ -1815,7 +1815,7 @@ been `yas--read-lisp'-ed and will eventually be
 
 The remaining elements are strings.
 
-FILE is probably of very little use if you're programatically
+FILE is probably of very little use if you're programmatically
 defining snippets.
 
 UUID is the snippet's \"unique-id\". Loading a second snippet
@@ -2319,7 +2319,7 @@ Just put this function in `hippie-expand-try-functions-list'."
 BODY is executed at most once every snippet expansion attempt, to check
 expansion conditions.
 
-It doesn't make any sense to call FUNC programatically."
+It doesn't make any sense to call FUNC programmatically."
   `(defun ,func () ,(if (and doc
                              (stringp doc))
                         (concat doc
@@ -4618,7 +4618,7 @@ With optional string TEXT do it in string instead of the buffer."
 
 (defun yas--save-backquotes ()
   "Save all \"\\=`(lisp-expression)\\=`\"-style expressions.
-Return a list of (MARKER . STRING) entires for each backquoted
+Return a list of (MARKER . STRING) entries for each backquoted
 Lisp expression."
   (let* ((saved-quotes nil)
          (yas--snippet-buffer (current-buffer))

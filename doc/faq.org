@@ -67,7 +67,7 @@ if you want to respect [[sym:yas-keymap-disable-hook][=yas-keymap-disable-hook=]
 
 -  *Note*: This question applies if you're still defining snippets
    whose key /is/ the filename. This is behavior still provided by
-   version 0.6 for backward compatibilty, but is somewhat
+   version 0.6 for backward compatibility, but is somewhat
    deprecated...
 
 For example, you want to define a snippet by the key =<= which is not a
