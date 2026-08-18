@@ -156,7 +156,7 @@ In particular, the following things matter:
 
 -  Major mode of the current buffer
 
-   If the currrent major mode matches one of the loaded snippet tables,
+   If the current major mode matches one of the loaded snippet tables,
    then all that table's snippets are considered for expansion. Use
    =M-x describe-variable RET major-mode RET= to find out which major
    mode you are in currently.
