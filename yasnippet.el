@@ -1981,7 +1981,7 @@ prompt the user to select one."
     (if (null yas-snippet-dirs)
         (call-interactively 'yas-load-directory)
       (when (member yas--default-user-snippets-dir yas-snippet-dirs)
-        (make-directory yas--default-user-snippets-dir t))
+        (ignore-errors (make-directory yas--default-user-snippets-dir t)))
       (dolist (directory (reverse (yas-snippet-dirs)))
         (cond ((file-directory-p directory)
                (yas-load-directory directory (not nojit))
